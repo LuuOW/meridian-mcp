@@ -10,7 +10,7 @@
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "@meridian/skills-mcp",
+      "identifier": "meridian-skills-mcp",
       "version": "0.1.0",
       "transport": {
         "type": "stdio"
