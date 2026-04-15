@@ -28,10 +28,8 @@
   ],
   "remotes": [
     {
-      "transport": {
-        "type": "streamable-http",
-        "url": "https://ask-meridian.uk/api/mcp"
-      }
+      "type": "streamable-http",
+      "url": "https://ask-meridian.uk/api/mcp"
     }
   ]
 }
