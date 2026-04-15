@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.LuuOW/meridian-skills",
+  "description": "Calibrated AI skill routing via orbital mechanics — picks the right expertise for every query. 73 curated skills (hosted) or bring your own.",
+  "repository": {
+    "url": "https://github.com/LuuOW/meridian-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@meridian/skills-mcp",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "MERIDIAN_SKILLS_ROOT",
+          "description": "Directory containing your skill corpus (folders with SKILL.md files). Defaults to /opt/skills.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "transport": {
+        "type": "streamable-http",
+        "url": "https://ask-meridian.uk/api/mcp"
+      }
+    }
+  ]
+}
