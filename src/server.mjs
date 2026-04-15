@@ -1,6 +1,7 @@
 // server.mjs — HTTP MCP + Stripe checkout/webhook routes.
 // Listens on localhost:8002; nginx proxies public paths to here.
 import express                         from 'express'
+import { readFileSync }                 from 'node:fs'
 import { Server }                      from '@modelcontextprotocol/sdk/server/index.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import {
@@ -16,7 +17,9 @@ import { validateAndTouch, createKey, pendingStore, pendingClaim } from './keyst
 import { createCheckoutSession, verifyWebhook, PLAN_QUOTAS } from './stripe-helper.mjs'
 import {
   verifyWorldProof, issueSession, getSession, incrementUsage,
-  summarizeQuota, answerQuery,
+  summarizeQuota, summarizeQuotaWithPremium, answerQuery,
+  beginPayment, completePayment, isPremium,
+  getSkillDetail,
 } from './miniapp.mjs'
 
 const PORT                   = parseInt(process.env.MERIDIAN_MCP_PORT || '8002', 10)
@@ -86,9 +89,21 @@ app.use((req, _res, next) => {
   next()
 })
 
-app.get('/health', (_req, res) =>
-  res.json({ ok: true, service: 'meridian-mcp', skills: listSkillsFromDisk().length })
-)
+app.get('/health', (_req, res) => {
+  let manifest = null
+  try {
+    const path = (process.env.MERIDIAN_SKILLS_ROOT || '/opt/skills') + '/skills_manifest.json'
+    manifest = JSON.parse(readFileSync(path, 'utf8'))
+  } catch {}
+  res.json({
+    ok: true,
+    service: 'meridian-mcp',
+    skills:  listSkillsFromDisk().length,
+    skills_version: manifest?.version      || null,
+    engine_hash:    manifest?.engine_hash  || null,
+    corpus_hash:    manifest?.corpus_hash  || null,
+  })
+})
 
 // ── WEBHOOK — must be mounted BEFORE express.json() so we get the raw body ──
 app.post('/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -184,7 +199,7 @@ app.post('/miniapp/verify', async (req, res) => {
       verified:      true,
       level,
       nullifier:     payload.nullifier_hash.slice(0, 10) + '…',  // not the full one
-      quota:         summarizeQuota(session),
+      quota:         summarizeQuotaWithPremium(session),
       session_token: token,
     })
   } catch (e) {
@@ -198,7 +213,61 @@ app.get('/miniapp/session', (req, res) => {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
   const session = getSession(token)
   if (!session) return res.status(401).json({ error: 'session not found or expired' })
-  res.json({ level: session.level, quota: summarizeQuota(session) })
+  res.json({ level: session.level, quota: summarizeQuotaWithPremium(session) })
+})
+
+// Skill detail — SKILL.md body + physics props (gated by World ID session)
+app.get('/miniapp/skill/:slug', async (req, res) => {
+  try {
+    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+    const session = getSession(token)
+    if (!session) return res.status(401).json({ error: 'verify with World ID first' })
+    const detail = getSkillDetail(req.params.slug)
+    res.json(detail)
+  } catch (e) {
+    console.error('skill detail failed:', e.message)
+    res.status(404).json({ error: e.message })
+  }
+})
+
+// ── Premium upgrade via WLD payment ───────────────────────────────────────
+app.post('/miniapp/upgrade/begin', async (req, res) => {
+  try {
+    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+    const session = getSession(token)
+    if (!session) return res.status(401).json({ error: 'verify with World ID first' })
+    if (isPremium(session)) return res.status(400).json({ error: 'already premium' })
+    res.json(beginPayment({ session_hash: session.hash }))
+  } catch (e) {
+    console.error('upgrade begin failed:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.post('/miniapp/upgrade/complete', async (req, res) => {
+  try {
+    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+    const session = getSession(token)
+    if (!session) return res.status(401).json({ error: 'verify with World ID first' })
+    const { reference, transaction_id, app_id } = req.body || {}
+    if (!reference || !transaction_id) return res.status(400).json({ error: 'reference and transaction_id required' })
+
+    await completePayment({
+      session_hash: session.hash,
+      reference,
+      transaction_id,
+      app_id: app_id || process.env.WORLD_APP_ID_STAGING || process.env.WORLD_APP_ID_PROD,
+    })
+    // Re-fetch the updated session to get premium flag
+    const updated = getSession(token)
+    res.json({
+      premium: isPremium(updated),
+      quota:   summarizeQuotaWithPremium(updated),
+    })
+  } catch (e) {
+    console.error('upgrade complete failed:', e.message)
+    res.status(400).json({ error: e.message })
+  }
 })
 
 // Ask — gated by World ID session
@@ -208,7 +277,7 @@ app.post('/miniapp/ask', async (req, res) => {
     const session = getSession(token)
     if (!session) return res.status(401).json({ error: 'verify with World ID first' })
 
-    const q = summarizeQuota(session)
+    const q = summarizeQuotaWithPremium(session)
     if (!q.unlimited && q.used >= q.limit) {
       return res.status(429).json({
         error: `daily quota reached (${q.used}/${q.limit}). Upgrade with Orb verification for unlimited.`,
@@ -224,7 +293,7 @@ app.post('/miniapp/ask', async (req, res) => {
     res.json({
       task:     result.task,
       selected: result.selected,
-      quota:    summarizeQuota(updated),
+      quota:    summarizeQuotaWithPremium(updated),
     })
   } catch (e) {
     console.error('miniapp ask failed:', e.message)
