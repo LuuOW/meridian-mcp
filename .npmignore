@@ -1,0 +1,8 @@
+data/
+tests/
+.github/
+.git/
+.gitignore
+.npmignore
+package-lock.json
+CHANGELOG.md
