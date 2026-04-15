@@ -3,7 +3,7 @@
 **Calibrated AI skill routing via orbital mechanics.**
 An MCP server that picks the right expertise for every AI query. Deterministic scoring. 73 curated skills (hosted) or bring your own.
 
-[![npm](https://img.shields.io/npm/v/@meridian/skills-mcp.svg)](https://www.npmjs.com/package/@meridian/skills-mcp)
+[![npm](https://img.shields.io/npm/v/meridian-skills-mcp.svg)](https://www.npmjs.com/package/meridian-skills-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Install
@@ -23,7 +23,7 @@ Works with Claude Code, Cursor, Windsurf, or any MCP client.
 ### Self-hosted (free, OSS)
 
 ```bash
-npm install -g @meridian/skills-mcp
+npm install -g meridian-skills-mcp
 claude mcp add meridian meridian-mcp
 ```
 
