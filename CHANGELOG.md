@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1] — 2026-04-15
+
+### Changed
+- Switched hosted endpoint to clean subdomain: `https://api.ask-meridian.uk/mcp` (was `/api/mcp`).
+- Documentation now at `https://docs.ask-meridian.uk` (sidebar nav, MCP-native).
+- Trading dashboard moved to `https://bot.ask-meridian.uk` (legacy `/app/` still works).
+
 ## [0.1.0] — 2026-04-15
 
 Initial public release.
