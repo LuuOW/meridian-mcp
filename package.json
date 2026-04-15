@@ -1,5 +1,5 @@
 {
-  "name": "@meridian/skills-mcp",
+  "name": "meridian-skills-mcp",
   "version": "0.1.0",
   "description": "Calibrated AI skill routing via orbital mechanics \u2014 an MCP server for Claude, Cursor, Windsurf",
   "type": "module",
