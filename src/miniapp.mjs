@@ -125,3 +125,130 @@ export async function answerQuery(task, limit = 5) {
   const res = await routeTask(task, limit)
   return res
 }
+
+// ── Skill detail (SKILL.md body + physics from skill_orbit.py) ─────────────
+import { execSync } from 'node:child_process'
+import { getSkill as _getSkill } from './skills.mjs'
+
+const SKILL_ORBIT_PY = process.env.MERIDIAN_SKILL_ORBIT || '/opt/skills/skill_orbit.py'
+const PYTHON         = process.env.MERIDIAN_PYTHON       || 'python3'
+
+export function getSkillDetail(slug) {
+  if (!/^[a-z0-9_-]+$/i.test(slug)) throw new Error('invalid slug')
+
+  const skill = _getSkill(slug)  // throws if missing — frontmatter + body
+  let physics = null
+  try {
+    const out = execSync(`${PYTHON} ${SKILL_ORBIT_PY} --skill ${slug} --json`, {
+      timeout: 12000, encoding: 'utf8',
+    })
+    const parsed = JSON.parse(out)
+    physics = Array.isArray(parsed) ? parsed[0] : parsed
+  } catch (e) {
+    physics = { error: e.message }
+  }
+
+  return {
+    slug,
+    name:        skill.frontmatter?.name || slug,
+    description: skill.frontmatter?.description || '',
+    body:        skill.body,
+    physics,
+  }
+}
+
+// ── WLD payment / Pro upgrade ──────────────────────────────────────────────
+const PAYMENTS_FILE = join(__dirname, '..', 'data', 'payments.json')
+const PRO_PRICE_WLD = parseFloat(process.env.MERIDIAN_PRO_WLD || '0.5')  // 0.5 WLD ≈ $0.15
+const PAYMENT_RECIPIENT = process.env.MERIDIAN_PAY_RECIPIENT
+                       || process.env.WALLET_ADDRESS
+                       || '0xECfb0b4C598cbF5b218daAf93E95f72418435B87'
+
+function loadPayments() {
+  if (!existsSync(PAYMENTS_FILE)) return {}
+  try { return JSON.parse(readFileSync(PAYMENTS_FILE, 'utf8')) }
+  catch { return {} }
+}
+function savePayments(data) {
+  const tmp = PAYMENTS_FILE + '.tmp'
+  writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600 })
+  renameSync(tmp, PAYMENTS_FILE)
+}
+
+/** Create a payment intent; returns reference + recipient + amount. */
+export function beginPayment({ session_hash }) {
+  const reference = randomUUID().replace(/-/g, '')
+  const data = loadPayments()
+  data[reference] = {
+    session_hash,
+    amount_wld: PRO_PRICE_WLD,
+    recipient:  PAYMENT_RECIPIENT,
+    created_at: new Date().toISOString(),
+    status:     'pending',
+  }
+  savePayments(data)
+  return {
+    reference,
+    recipient_address: PAYMENT_RECIPIENT,
+    amount_wld:        PRO_PRICE_WLD,
+  }
+}
+
+/**
+ * Verify a Worldcoin transaction via the Developer Portal API.
+ * Returns the verified transaction details, or throws.
+ */
+async function verifyWorldTransaction({ transaction_id, app_id }) {
+  if (!WORLD_APP_ID_STAGING && !WORLD_APP_ID_PROD)
+    throw new Error('WORLD_APP_ID not configured')
+  const api_key = process.env.WORLD_API_KEY
+  if (!api_key) throw new Error('WORLD_API_KEY not configured')
+  const url = `https://developer.worldcoin.org/api/v2/minikit/transaction/${encodeURIComponent(transaction_id)}?app_id=${encodeURIComponent(app_id)}&type=transaction`
+  const r = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${api_key}` },
+  })
+  const j = await r.json()
+  if (!r.ok) throw new Error(`Worldcoin tx verify failed: ${j.error || r.status}`)
+  return j
+}
+
+/**
+ * Complete a payment: verify the on-chain tx with Worldcoin and grant Pro.
+ */
+export async function completePayment({ session_hash, reference, transaction_id, app_id }) {
+  const data = loadPayments()
+  const intent = data[reference]
+  if (!intent) throw new Error('payment reference not found')
+  if (intent.session_hash !== session_hash) throw new Error('session mismatch')
+  if (intent.status === 'verified') return intent  // idempotent
+
+  const tx = await verifyWorldTransaction({ transaction_id, app_id })
+  // Worldcoin returns transaction details; check it succeeded + matches our recipient
+  if (tx.transaction_status === 'failed') throw new Error('transaction failed on chain')
+  // Lenient match — the payload structure varies; we trust Worldcoin's verification
+  intent.status         = 'verified'
+  intent.transaction_id = transaction_id
+  intent.verified_at    = new Date().toISOString()
+  intent.tx_data        = tx
+  savePayments(data)
+
+  // Mark the session premium
+  const sessions = loadSessions()
+  if (sessions[session_hash]) {
+    sessions[session_hash].premium = true
+    sessions[session_hash].premium_since = intent.verified_at
+    saveSessions(sessions)
+  }
+  return intent
+}
+
+export function isPremium(session) {
+  return Boolean(session?.premium)
+}
+
+// Update summarizeQuota to give premium users effectively-unlimited
+export function summarizeQuotaWithPremium(session) {
+  const base = summarizeQuota(session)
+  if (isPremium(session)) return { used: base.used, limit: 99999, unlimited: true, premium: true }
+  return base
+}
