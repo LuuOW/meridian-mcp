@@ -13,7 +13,7 @@ An MCP server that picks the right expertise for every AI query. Deterministic s
 Get an API key at [ask-meridian.uk](https://ask-meridian.uk), then:
 
 ```bash
-claude mcp add meridian https://ask-meridian.uk/api/mcp \
+claude mcp add meridian https://api.ask-meridian.uk/mcp \
   --transport http \
   -H "Authorization: Bearer mrd_live_YOUR_KEY"
 ```

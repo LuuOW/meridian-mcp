@@ -14,6 +14,10 @@ import {
 } from './skills.mjs'
 import { validateAndTouch, createKey, pendingStore, pendingClaim } from './keystore.mjs'
 import { createCheckoutSession, verifyWebhook, PLAN_QUOTAS } from './stripe-helper.mjs'
+import {
+  verifyWorldProof, issueSession, getSession, incrementUsage,
+  summarizeQuota, answerQuery,
+} from './miniapp.mjs'
 
 const PORT                   = parseInt(process.env.MERIDIAN_MCP_PORT || '8002', 10)
 const STRIPE_WEBHOOK_SECRET  = process.env.STRIPE_WEBHOOK_SECRET || ''
@@ -163,6 +167,69 @@ app.get('/checkout/claim', (req, res) => {
   const rawKey = pendingClaim(sid)
   if (!rawKey) return res.status(404).json({ error: 'no key available (expired or already claimed)' })
   res.json({ api_key: rawKey })
+})
+
+// ── Mini App endpoints (World ID verified, session-tokened) ─────────────────
+// Verify a MiniKit proof → issue a session token + quota
+app.post('/miniapp/verify', async (req, res) => {
+  try {
+    const { payload, action, app_id } = req.body || {}
+    const result = await verifyWorldProof({ payload, action, signal: '', appIdFromClient: app_id })
+    const level = result.verification_level || 'device'
+    const { token, session } = issueSession({
+      nullifier_hash: payload.nullifier_hash,
+      level,
+    })
+    res.json({
+      verified:      true,
+      level,
+      nullifier:     payload.nullifier_hash.slice(0, 10) + '…',  // not the full one
+      quota:         summarizeQuota(session),
+      session_token: token,
+    })
+  } catch (e) {
+    console.error('miniapp verify failed:', e.message)
+    res.status(400).json({ error: e.message })
+  }
+})
+
+// Check session validity + current quota
+app.get('/miniapp/session', (req, res) => {
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+  const session = getSession(token)
+  if (!session) return res.status(401).json({ error: 'session not found or expired' })
+  res.json({ level: session.level, quota: summarizeQuota(session) })
+})
+
+// Ask — gated by World ID session
+app.post('/miniapp/ask', async (req, res) => {
+  try {
+    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+    const session = getSession(token)
+    if (!session) return res.status(401).json({ error: 'verify with World ID first' })
+
+    const q = summarizeQuota(session)
+    if (!q.unlimited && q.used >= q.limit) {
+      return res.status(429).json({
+        error: `daily quota reached (${q.used}/${q.limit}). Upgrade with Orb verification for unlimited.`,
+        quota: q,
+      })
+    }
+    const task  = String(req.body?.task || '').trim()
+    const limit = Math.min(10, Math.max(1, parseInt(req.body?.limit) || 5))
+    if (!task) return res.status(400).json({ error: 'task required' })
+
+    const result = await answerQuery(task, limit)
+    const updated = incrementUsage(session.hash)
+    res.json({
+      task:     result.task,
+      selected: result.selected,
+      quota:    summarizeQuota(updated),
+    })
+  } catch (e) {
+    console.error('miniapp ask failed:', e.message)
+    res.status(500).json({ error: e.message })
+  }
 })
 
 // ── Auth middleware for /mcp ────────────────────────────────────────────────
