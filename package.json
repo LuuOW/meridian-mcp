@@ -1,0 +1,27 @@
+{
+  "name": "@meridian/skills-mcp",
+  "version": "0.1.0",
+  "description": "Calibrated AI skill routing via orbital mechanics — an MCP server for Claude, Cursor, Windsurf",
+  "type": "module",
+  "bin": { "meridian-mcp": "./src/index.mjs" },
+  "main": "./src/index.mjs",
+  "files": ["src", "example-skills", "README.md", "LICENSE"],
+  "scripts": {
+    "start":  "node src/server.mjs",
+    "stdio":  "node src/index.mjs",
+    "setup:stripe": "node src/setup-stripe.mjs",
+    "test":   "node --test tests/"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "express": "^5.0.0",
+    "stripe":  "^22.0.0"
+  },
+  "keywords": ["mcp", "model-context-protocol", "ai", "agents", "skills", "routing", "claude", "cursor"],
+  "author": "Meridian <hello@ask-meridian.uk>",
+  "license": "MIT",
+  "homepage": "https://ask-meridian.uk",
+  "repository": { "type": "git", "url": "git+https://github.com/ask-meridian/meridian-mcp.git" },
+  "bugs": { "url": "https://github.com/ask-meridian/meridian-mcp/issues" }
+}
