@@ -1,6 +1,8 @@
 ---
 name: knowledge
 description: Knowledge systems authority — RAG pipelines, vector search with Qdrant, embedding generation, semantic chunking, knowledge graph construction, retrieval evaluation, and citation-aware QA patterns
+keywords: ["knowledge", "rag", "qdrant", "qa", "systems", "authority", "pipelines", "vector", "search", "embedding", "generation", "semantic", "chunking", "graph", "construction", "retrieval"]
+orb_class: trojan
 ---
 
 # knowledge

@@ -1,6 +1,8 @@
 ---
 name: rate-limiting
 description: Rate limiting fragments — nginx request throttling, iptables connection rate rules, fail2ban threshold tuning, and per-IP burst control for API and web services
+keywords: ["rate", "limiting", "ip", "api", "fragments", "nginx", "request", "throttling", "iptables", "connection", "rules", "fail2ban", "threshold", "tuning", "per-ip", "burst", "control"]
+orb_class: trojan
 ---
 
 # rate-limiting

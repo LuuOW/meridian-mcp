@@ -1,6 +1,8 @@
 ---
 name: auth
 description: JWT patterns, API key auth, Supabase Auth, OAuth2 flows, RBAC, FastAPI security dependencies
+keywords: ["auth", "jwt", "api", "supabase", "oauth2", "rbac", "fastapi", "patterns", "key", "flows", "security", "dependencies"]
+orb_class: trojan
 ---
 
 # auth

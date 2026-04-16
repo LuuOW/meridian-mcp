@@ -1,6 +1,8 @@
 ---
 name: wireguard
 description: WireGuard VPN setup and management — server/client config, key management, peer routing, split-tunnel vs full-tunnel, multi-peer topologies, and systemd integration for production admin access
+keywords: ["wireguard", "vpn", "management", "setup", "server/client", "config", "key", "peer", "routing", "split-tunnel", "full-tunnel", "multi-peer", "topologies", "systemd", "integration"]
+orb_class: irregular_satellite
 ---
 
 # wireguard

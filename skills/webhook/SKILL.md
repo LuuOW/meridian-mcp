@@ -1,6 +1,8 @@
 ---
 name: webhook
 description: Webhook receiver patterns — HMAC signature verification, idempotency, retry handling, delivery guarantees, dead-letter logging, and local testing with ngrok or smee
+keywords: ["webhook", "hmac", "receiver", "patterns", "signature", "verification", "idempotency", "retry", "handling", "delivery", "guarantees", "dead-letter", "logging", "local", "testing"]
+orb_class: moon
 ---
 
 # webhook

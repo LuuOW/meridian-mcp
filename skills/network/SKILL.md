@@ -1,6 +1,8 @@
 ---
 name: network
 description: Framework-agnostic production networking authority — TCP/IP stack, interface and routing management, firewall policy, traffic inspection, VPN, bandwidth diagnostics, and cross-layer reachability debugging for bare-metal and cloud VPS environments
+keywords: ["network", "framework", "tcp", "ip", "vpn", "vps", "framework-agnostic", "production", "networking", "authority", "tcp/ip", "stack", "interface", "routing", "management", "firewall", "policy", "traffic", "inspection", "bandwidth"]
+orb_class: planet
 ---
 
 # network

@@ -1,6 +1,8 @@
 ---
 name: curl-recipes
 description: curl one-liners for HTTP debugging, API testing, auth header patterns, file upload, response inspection, timing breakdown, and connection tracing
+keywords: ["curl", "recipes", "http", "api", "one-liners", "debugging", "testing", "auth", "header", "patterns", "file", "upload", "response", "inspection", "timing", "breakdown"]
+orb_class: moon
 ---
 
 # curl-recipes

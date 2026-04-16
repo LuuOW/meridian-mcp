@@ -1,6 +1,8 @@
 ---
 name: browser-stealth
 description: Browser automation stealth and residential proxy routing — patchright anti-detection, Playwright proxy at correct context level, sticky residential sessions, navigator.webdriver masking, datacenter vs residential IP fingerprinting, and page.evaluate fetch fallback
+keywords: ["browser", "stealth", "playwright", "ip", "residential", "proxy", "automation", "routing", "patchright", "anti-detection", "correct", "context", "level", "sticky", "sessions", "navigator"]
+orb_class: moon
 ---
 
 # browser-stealth

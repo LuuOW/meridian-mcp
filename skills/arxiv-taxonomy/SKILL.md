@@ -1,6 +1,8 @@
 ---
 name: arxiv-taxonomy
 description: Complete arXiv category taxonomy, cross-listing rules, submission conventions, and query patterns. Use when fetching, filtering, or routing papers by discipline; when a user references "astro-ph.CO" or "hep-ph" and you need to know what that covers; when building recommender logic across adjacent categories.
+keywords: ["arxiv", "taxonomy", "complete", "use", "co", "category", "cross-listing", "rules", "submission", "conventions", "query", "patterns", "fetching", "filtering", "routing", "papers", "discipline"]
+orb_class: moon
 ---
 
 # arxiv-taxonomy

@@ -1,6 +1,8 @@
 ---
 name: kubernetes
 description: Kubernetes orchestration authority — pods, deployments, services, ingress, helm charts, kustomize overlays, RBAC, network policies, operators, StatefulSets for databases, production-grade cluster hardening, and kubectl workflows
+keywords: ["kubernetes", "rbac", "statefulsets", "orchestration", "authority", "pods", "deployments", "services", "ingress", "helm", "charts", "kustomize", "overlays", "network", "policies", "operators"]
+orb_class: comet
 ---
 
 # kubernetes

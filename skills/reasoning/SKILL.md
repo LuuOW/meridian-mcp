@@ -1,6 +1,8 @@
 ---
 name: reasoning
 description: AI reasoning authority — prompt engineering, chain-of-thought, self-consistency, evaluation frameworks, LLM judging, structured output, and prompt versioning patterns for production AI systems
+keywords: ["reasoning", "ai", "llm", "prompt", "authority", "engineering", "chain-of-thought", "self-consistency", "evaluation", "frameworks", "judging", "structured", "output", "versioning", "patterns", "production"]
+orb_class: moon
 ---
 
 # reasoning

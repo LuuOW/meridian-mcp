@@ -1,6 +1,8 @@
 ---
 name: uncertainty-quantification
 description: How to express, preserve, and reason about uncertainty — in statistical claims, LLM outputs, API results, and your own predictions. Use when tempted to state something confidently that you should hedge, when parsing "3σ" vs "3.5σ (2σ global)" from a paper, when combining independent error estimates, or when an LLM classifier (like the depeg monitor's Grok call) returns yes/no without a probability.
+keywords: ["uncertainty", "quantification", "how", "llm", "api", "use", "grok", "express", "preserve", "reason", "statistical", "claims", "outputs", "results", "your", "own", "predictions", "tempted", "state"]
+orb_class: moon
 ---
 
 # uncertainty-quantification

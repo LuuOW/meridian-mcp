@@ -1,3 +1,10 @@
+---
+name: edward-sturm
+description: Partner skill simulating Edward Sturm's SEO, GEO, and AEO methodology — evidence-backed reasoning patterns drawn exclusively from verified source corpus
+orb_class: irregular_satellite
+keywords: ["seo", "geo", "aeo", "edward-sturm", "partner-skill", "content-strategy", "search-optimization", "generative-engine-optimization", "answer-engine-optimization"]
+---
+
 # Edward Sturm Partner Skill
 
 **Skill type**: Evidence-backed partner simulation

@@ -1,6 +1,8 @@
 ---
 name: database
 description: Relational database authority — PostgreSQL, async ORM (SQLAlchemy 2 / asyncpg), Alembic schema migrations, Supabase Python and JS clients, query optimisation, index strategy, connection pooling, transaction patterns, and bulk operations across Python and Node stacks
+keywords: ["database", "relational", "postgresql", "orm", "sqlalchemy", "alembic", "supabase", "python", "js", "node", "authority", "async", "asyncpg", "schema", "migrations", "clients", "query"]
+orb_class: comet
 ---
 
 # database

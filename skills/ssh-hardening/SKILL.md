@@ -1,6 +1,8 @@
 ---
 name: ssh-hardening
 description: SSH daemon hardening fragments — sshd_config directives, key-only auth, port and user restrictions, agent forwarding policy, and authorized_keys access control patterns
+keywords: ["ssh", "hardening", "daemon", "fragments", "sshd", "config", "directives", "key-only", "auth", "port", "user", "restrictions", "agent", "forwarding", "policy"]
+orb_class: comet
 ---
 
 # ssh-hardening

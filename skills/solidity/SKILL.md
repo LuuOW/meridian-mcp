@@ -1,6 +1,8 @@
 ---
 name: solidity
 description: Solidity smart-contract authoring authority — ERC20/ERC721/ERC1155 token standards, reentrancy guards, access control, gas optimisation, upgradeable proxies, Foundry testing, fuzzing, invariant checks, and production contract security for EVM chains
+keywords: ["solidity", "erc20", "erc721", "erc1155", "foundry", "evm", "smart-contract", "authoring", "authority", "erc20/erc721/erc1155", "token", "standards", "reentrancy", "guards", "access", "control", "gas", "optimisation", "upgradeable", "proxies"]
+orb_class: moon
 ---
 
 # solidity

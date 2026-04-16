@@ -1,6 +1,8 @@
 ---
 name: dns
 description: DNS record management, Cloudflare API automation, TTL strategy, Let's Encrypt DNS challenges, split-horizon DNS, and resolver debugging for production domains
+keywords: ["dns", "cloudflare", "api", "ttl", "let", "encrypt", "record", "management", "automation", "strategy", "challenges", "split-horizon", "resolver", "debugging", "production"]
+orb_class: moon
 ---
 
 # dns

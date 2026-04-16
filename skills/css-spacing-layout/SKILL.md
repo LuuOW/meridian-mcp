@@ -1,6 +1,8 @@
 ---
 name: css-spacing-layout
 description: CSS Spacing & Container Layout Architect — expert in padding, margin, borders, container hierarchy, spacing scales, and layout consistency across breakpoints
+keywords: ["css", "spacing", "layout", "container", "architect", "expert", "padding", "margin", "borders", "hierarchy", "scales", "consistency", "breakpoints"]
+orb_class: asteroid_belt
 ---
 
 # CSS Spacing & Container Layout Architect

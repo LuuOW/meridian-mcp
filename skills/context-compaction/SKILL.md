@@ -1,6 +1,8 @@
 ---
 name: context-compaction
 description: Reduce context entropy and token burn by compacting stale state, preserving only reusable signal, and reshaping long tasks into short high-coherence context windows
+keywords: ["context", "compaction", "reduce", "entropy", "token", "burn", "compacting", "stale", "state", "preserving", "only", "reusable", "signal", "reshaping", "long", "tasks"]
+orb_class: trojan
 ---
 
 # context-compaction

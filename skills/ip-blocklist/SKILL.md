@@ -1,6 +1,8 @@
 ---
 name: ip-blocklist
 description: IP allowlist and blocklist fragments — iptables/nftables set-based blocking, nginx geo blocks, Cloudflare IP rules, and dynamic blocklist management for network access control
+keywords: ["blocklist", "ip", "cloudflare", "allowlist", "fragments", "iptables/nftables", "set-based", "blocking", "nginx", "geo", "blocks", "rules", "dynamic", "management", "network", "access"]
+orb_class: trojan
 ---
 
 # ip-blocklist

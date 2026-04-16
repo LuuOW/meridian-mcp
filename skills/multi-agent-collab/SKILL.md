@@ -1,6 +1,8 @@
 ---
 name: multi-agent-collab
 description: Running multiple AI coding agents (Claude Code, Codex, OpenClaw) in isolated containers that share a single repo clone via /opt bind mounts, communicate over SSH, and avoid redundant git clones — container topology, volume strategy, inter-agent SSH, and coordination patterns
+keywords: ["multi", "agent", "collab", "running", "ai", "claude", "code", "codex", "openclaw", "ssh", "multiple", "coding", "agents", "isolated", "containers", "share", "single", "repo", "clone"]
+orb_class: moon
 ---
 
 # multi-agent-collab

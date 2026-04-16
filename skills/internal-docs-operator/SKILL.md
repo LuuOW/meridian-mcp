@@ -1,6 +1,8 @@
 ---
 name: internal-docs-operator
 description: Use when working against the internal documentation surfaces on :4401 and :4400, especially for target-specific doc updates, source-of-truth checks, verification of live state, and preventing false completion claims
+keywords: ["internal", "docs", "operator", "use", "working", "against", "documentation", "surfaces", "especially", "target-specific", "doc", "updates", "source-of-truth", "checks", "verification", "live", "state", "preventing"]
+orb_class: irregular_satellite
 ---
 
 # internal-docs-operator

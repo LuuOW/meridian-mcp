@@ -1,6 +1,8 @@
 ---
 name: background-tasks
 description: Async task execution authority — Celery workers and beat scheduler, APScheduler in-process cron, bare Redis LPUSH/BRPOP queues, dead-letter queues, idempotency patterns, task monitoring, and Docker Compose worker definitions for Python pipelines
+keywords: ["background", "tasks", "async", "celery", "apscheduler", "redis", "lpush", "brpop", "docker", "compose", "python", "task", "queues", "execution", "authority", "workers", "beat", "scheduler", "in-process", "cron"]
+orb_class: trojan
 ---
 
 # background-tasks

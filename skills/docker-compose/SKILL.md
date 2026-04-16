@@ -1,6 +1,8 @@
 ---
 name: docker-compose
 description: Multi-service docker-compose orchestration — service dependency ordering, profiles, override files, environment-specific configs, rolling restarts, and compose-based dev/prod parity patterns
+keywords: ["docker", "compose", "multi", "multi-service", "docker-compose", "orchestration", "service", "dependency", "ordering", "profiles", "override", "files", "environment-specific", "configs", "rolling", "restarts", "compose-based", "dev/prod"]
+orb_class: moon
 ---
 
 # docker-compose

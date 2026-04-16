@@ -1,6 +1,8 @@
 ---
 name: state-management
 description: Frontend single source of truth — server state with TanStack Query (caching, invalidation, optimistic updates), client state with Zustand (slices, middleware, persistence), URL as state, Redux Toolkit for coordinated entity state, and the discipline of never duplicating remote data in local stores
+keywords: ["state", "management", "frontend", "tanstack", "query", "zustand", "url", "redux", "toolkit", "single", "source", "truth", "server", "caching", "invalidation", "optimistic", "updates", "client", "slices"]
+orb_class: trojan
 ---
 
 # state-management

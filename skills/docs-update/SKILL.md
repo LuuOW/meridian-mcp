@@ -1,6 +1,8 @@
 ---
 name: docs-update
 description: Rapidly catch up on any codebase by reading only .md files first — orientation protocol, what each doc type reveals, how to ask targeted follow-up questions, and how to keep docs in sync with code changes
+keywords: ["docs", "update", "rapidly", "catch", "codebase", "reading", "only", "files", "first", "orientation", "protocol", "doc", "type", "reveals", "ask", "targeted", "follow-up"]
+orb_class: planet
 ---
 
 # docs-update

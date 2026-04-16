@@ -1,6 +1,8 @@
 ---
 name: ssl-tls
 description: TLS certificate lifecycle — Let's Encrypt HTTP-01 and DNS-01 issuance, renewal automation, mTLS, HSTS, OCSP stapling, certificate inspection, and Nginx TLS hardening
+keywords: ["ssl", "tls", "let", "encrypt", "http", "dns", "hsts", "ocsp", "nginx", "certificate", "lifecycle", "http-01", "dns-01", "issuance", "renewal", "automation", "mtls", "stapling", "inspection"]
+orb_class: moon
 ---
 
 # ssl-tls

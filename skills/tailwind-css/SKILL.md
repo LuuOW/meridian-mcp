@@ -1,6 +1,8 @@
 ---
 name: tailwind-css expert
 description: Tailwind CSS — configuration, token strategy, CSS variable theming, color-mix patterns, button variants, card utilities, dark mode, production quality checklist
+keywords: ["tailwind", "css", "configuration", "token", "strategy", "variable", "theming", "color-mix", "patterns", "button", "variants", "card", "utilities", "dark", "mode"]
+orb_class: moon
 ---
 
 # Tailwind CSS Skill Guide

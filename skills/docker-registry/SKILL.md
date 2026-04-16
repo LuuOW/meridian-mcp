@@ -1,6 +1,8 @@
 ---
 name: docker-registry
 description: Container image registry workflows — GHCR, Docker Hub, and private registry auth, tagging strategies, CI push pipelines, image pruning, and multi-platform manifest publishing
+keywords: ["docker", "registry", "container", "ghcr", "hub", "ci", "image", "workflows", "private", "auth", "tagging", "strategies", "push", "pipelines", "pruning", "multi-platform"]
+orb_class: comet
 ---
 
 # docker-registry

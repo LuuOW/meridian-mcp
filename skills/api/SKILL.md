@@ -1,6 +1,8 @@
 ---
 name: api
 description: FastAPI + async/sync HTTP client patterns, JWT auth, multi-provider routing, Pydantic request/response models, CORS, background tasks, and typed frontend API clients — synthesized from lead-gen-engine and seo-geo-aeo-engine
+keywords: ["api", "fastapi", "http", "jwt", "pydantic", "cors", "async/sync", "client", "patterns", "auth", "multi-provider", "routing", "request/response", "models", "background", "tasks"]
+orb_class: planet
 ---
 
 # api
