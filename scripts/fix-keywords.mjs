@@ -20,7 +20,7 @@ import { execSync }      from 'node:child_process'
 const __dirname  = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT  = join(__dirname, '..')
 const SKILLS_DIR = join(REPO_ROOT, 'skills')
-const ORBIT_PY   = process.env.MERIDIAN_SKILL_ORBIT || '/opt/skills/skill_orbit.py'
+const ORBIT_PY   = process.env.MERIDIAN_SKILL_ORBIT || './skills/skill_orbit.py'
 const WRITE      = process.argv.includes('--write')
 
 // ── Stop words to filter from description ─────────────────────────────────
