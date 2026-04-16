@@ -1,6 +1,8 @@
 ---
 name: partner-skill-compiler
 description: Partner skill compiler authority — synthesize grounded public evidence into a reusable partner prompt, persona profile, and SKILL.md with worldview, operating style, audience, offers, voice anchors, and strict anti-hallucination constraints
+keywords: ["partner", "skill", "compiler", "authority", "synthesize", "grounded", "public", "evidence", "reusable", "prompt", "persona", "profile", "worldview", "operating", "audience"]
+orb_class: trojan
 ---
 
 # partner-skill-compiler

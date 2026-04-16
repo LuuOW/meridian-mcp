@@ -1,6 +1,8 @@
 ---
 name: orchestration
 description: Multi-agent orchestration authority — agent memory protocols, task delegation, SOUL/AGENTS patterns, session startup, inter-agent communication, OpenClaw workspace coordination, and agent lifecycle management
+keywords: ["orchestration", "multi", "soul", "agents", "openclaw", "agent", "multi-agent", "authority", "memory", "protocols", "task", "delegation", "soul/agents", "patterns", "session", "startup", "inter-agent", "communication"]
+orb_class: moon
 ---
 
 # orchestration

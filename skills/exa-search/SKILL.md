@@ -1,6 +1,8 @@
 ---
 name: exa-search
 description: Exa search specialist — semantic web discovery, source ranking, entity finding, citation set building, and lightweight content retrieval for evidence-driven agent workflows
+keywords: ["exa", "search", "specialist", "semantic", "web", "discovery", "source", "ranking", "entity", "finding", "citation", "set", "building", "lightweight", "content"]
+orb_class: moon
 ---
 
 # exa-search

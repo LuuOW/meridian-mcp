@@ -1,6 +1,8 @@
 ---
 name: latex
 description: LaTeX and mathematical notation authority — typesetting equations, document structure, AMS math environments, BibTeX citations, arXiv submission formatting, KaTeX/MathJax web rendering, and converting mathematical prose to precise symbolic notation
+keywords: ["latex", "ams", "bibtex", "katex", "mathjax", "mathematical", "notation", "authority", "typesetting", "equations", "document", "structure", "math", "environments", "citations", "arxiv", "submission"]
+orb_class: moon
 ---
 
 # latex

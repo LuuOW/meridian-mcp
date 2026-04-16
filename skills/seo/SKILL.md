@@ -1,6 +1,8 @@
 ---
 name: seo
 description: SEO authority — SERP analysis, GEO/AEO citation patterns, E-E-A-T signals, keyword research, technical SEO audits, structured data, and content-to-ranking pipeline patterns for AI-assisted publishing workflows
+keywords: ["seo", "serp", "geo", "aeo", "ai", "patterns", "authority", "analysis", "geo/aeo", "citation", "e-e-a-t", "signals", "keyword", "research", "technical", "audits", "structured", "data"]
+orb_class: trojan
 ---
 
 # seo

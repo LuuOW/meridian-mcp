@@ -1,6 +1,8 @@
 ---
 name: react-native
 description: React Native mobile app authority — Expo SDK, native modules, iOS and Android builds, push notifications, deep linking, App Store and Play Store submission, over-the-air updates, native gesture handlers, and cross-platform mobile app architecture
+keywords: ["react", "native", "expo", "sdk", "android", "app", "store", "play", "mobile", "authority", "modules", "ios", "builds", "push", "notifications", "deep"]
+orb_class: moon
 ---
 
 # react-native

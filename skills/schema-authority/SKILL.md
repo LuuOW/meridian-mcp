@@ -1,6 +1,8 @@
 ---
 name: schema-authority
 description: Single source of truth authority — define once in Pydantic / SQLModel / OpenAPI / Protobuf, generate TypeScript types, validators, docs, mocks, and contract tests from that canonical definition; schema registry patterns, spec-first API design, consumer-driven contract testing, and database-model alignment
+keywords: ["schema", "authority", "single", "pydantic", "sqlmodel", "openapi", "protobuf", "typescript", "api", "contract", "source", "truth", "define", "once", "generate", "types", "validators"]
+orb_class: trojan
 ---
 
 # schema-authority

@@ -1,6 +1,8 @@
 ---
 name: github
 description: GitHub workflow — creating and managing repos, always working on feature/development branches (never committing core changes directly to main), PR conventions, branch protection, and gh CLI patterns
+keywords: ["github", "pr", "cli", "workflow", "creating", "managing", "repos", "always", "working", "feature/development", "branches", "never", "committing", "core", "changes", "directly", "main"]
+orb_class: planet
 ---
 
 # github

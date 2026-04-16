@@ -1,6 +1,8 @@
 ---
 name: ci-cd
 description: CI/CD pipelines for GitHub Actions and Docker-based deployments — lint, test, build, push, deploy stages; environment secrets; branch-gated workflows; health-check rollbacks; and PM2/systemd service restarts
+keywords: ["ci", "cd", "github", "actions", "docker", "pm2", "ci/cd", "pipelines", "docker-based", "deployments", "lint", "test", "build", "push", "deploy", "stages", "environment", "secrets", "branch-gated"]
+orb_class: comet
 ---
 
 # ci-cd

@@ -1,6 +1,8 @@
 ---
 name: scientific-writing-voice
 description: Voice and structure rules for science journalism prose — the register used by Quanta Magazine, Nature News, New Scientist research features, and high-caliber popular-science briefs. Use when summarizing a technical paper for a physics-literate but time-constrained reader, drafting research digests, or writing a "brief" that preserves quantitative precision without jargon walls.
+keywords: ["scientific", "writing", "voice", "quanta", "magazine", "nature", "news", "new", "scientist", "use", "research", "structure", "rules", "science", "journalism", "prose", "register", "features"]
+orb_class: moon
 ---
 
 # scientific-writing-voice

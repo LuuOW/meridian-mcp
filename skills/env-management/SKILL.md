@@ -1,6 +1,8 @@
 ---
 name: env-management
 description: Environment variable patterns for Python (python-dotenv, Pydantic BaseSettings) and TypeScript (VITE_, NEXT_PUBLIC_) projects — .env.example authorship, schema validation, mock/feature flags, and safe defaults — synthesized from lead-gen-engine and seo-geo-aeo-engine
+keywords: ["env", "management", "environment", "python", "pydantic", "basesettings", "typescript", "variable", "patterns", "python-dotenv", "vite", "next", "public", "projects", "example", "authorship"]
+orb_class: trojan
 ---
 
 # env-management

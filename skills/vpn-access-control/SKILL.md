@@ -1,6 +1,8 @@
 ---
 name: vpn-access-control
 description: VPN-gated deployment security — UFW + Docker DOCKER-USER chain coexistence, per-port and per-domain VPN gating, vpn-on/vpn-off alias pattern, split-tunnel with public IP routing, and multi-layer access control for VPS infrastructure
+keywords: ["vpn", "access", "control", "ufw", "docker", "user", "ip", "vps", "vpn-gated", "deployment", "security", "docker-user", "chain", "coexistence", "per-port", "per-domain", "gating", "vpn-on/vpn-off", "alias", "pattern"]
+orb_class: irregular_satellite
 ---
 
 # vpn-access-control

@@ -1,6 +1,8 @@
 ---
 name: port-scanner
 description: nmap and masscan recipes for host discovery, open port enumeration, service fingerprinting, and firewall validation on VPS deployments
+keywords: ["port", "scanner", "vps", "nmap", "masscan", "recipes", "host", "discovery", "open", "enumeration", "service", "fingerprinting", "firewall", "validation", "deployments"]
+orb_class: trojan
 ---
 
 # port-scanner

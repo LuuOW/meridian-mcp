@@ -1,6 +1,8 @@
 ---
 name: physics-units-si
 description: SI units, CODATA constants, dimensional analysis, and rigorous unit conversion. Use when extracting, normalizing, or computing physical quantities (energy, frequency, length, mass, time, temperature). Handles eV/keV/MeV/GeV/TeV, Hz/kHz/MHz/GHz/THz, meter/cm/Å/fm, kg/g/u, second/ms/μs/ns/fs, Kelvin/eV-temperature equivalents.
+keywords: ["physics", "units", "si", "codata", "use", "handles", "mev", "gev", "tev", "hz", "mhz", "ghz", "thz", "kelvin", "constants", "dimensional", "analysis", "rigorous", "unit", "conversion"]
+orb_class: moon
 ---
 
 # physics-units-si

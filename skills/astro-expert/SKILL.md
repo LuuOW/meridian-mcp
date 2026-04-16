@@ -1,6 +1,8 @@
 ---
 name: astro-expert
 description: Astro framework expertise — islands architecture, SSR/hybrid modes, React integration, performance, and production-ready frontend scaffolding
+keywords: ["astro", "expert", "ssr", "react", "framework", "expertise", "islands", "architecture", "ssr/hybrid", "modes", "integration", "performance", "production-ready", "frontend", "scaffolding"]
+orb_class: moon
 ---
 
 # astro-expert

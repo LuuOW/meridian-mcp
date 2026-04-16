@@ -1,6 +1,8 @@
 ---
 name: unit-test
 description: pytest + pytest-asyncio patterns for Python FastAPI services (fixtures, DB safety guards, mock mode, Celery eager, markers) and Vitest + Testing Library for React/TypeScript frontends — synthesized from lead-gen-engine and seo-geo-aeo-engine
+keywords: ["unit", "test", "python", "fastapi", "db", "celery", "vitest", "testing", "library", "react", "typescript", "pytest", "pytest-asyncio", "patterns", "services", "fixtures", "safety", "guards", "mock", "mode"]
+orb_class: trojan
 ---
 
 # unit-test

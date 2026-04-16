@@ -1,6 +1,8 @@
 ---
 name: api-reference
 description: OpenAPI/AsyncAPI spec authoring, Swagger UI hosting, endpoint doc patterns, request/response examples, error catalogs, and SDK reference generation for REST and WebSocket APIs
+keywords: ["api", "reference", "openapi", "asyncapi", "swagger", "ui", "sdk", "rest", "websocket", "apis", "openapi/asyncapi", "spec", "authoring", "hosting", "endpoint", "doc", "patterns", "request/response", "examples", "error"]
+orb_class: moon
 ---
 
 # api-reference

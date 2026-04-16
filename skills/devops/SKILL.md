@@ -1,6 +1,8 @@
 ---
 name: devops
 description: General-purpose DevOps for VPS-based deployments — Nginx reverse proxy, SSL with Let's Encrypt, PM2 process management, systemd services, firewall rules, log rotation, monitoring, and backup strategies
+keywords: ["devops", "general", "vps", "nginx", "ssl", "let", "encrypt", "pm2", "general-purpose", "vps-based", "deployments", "reverse", "proxy", "process", "management", "systemd", "services"]
+orb_class: planet
 ---
 
 # devops

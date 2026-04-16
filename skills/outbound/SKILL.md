@@ -1,6 +1,8 @@
 ---
 name: outbound
 description: Outbound growth authority — cold email sequences, lead scoring, ICP definition, CRM integration, Apollo and Instantly patterns, deliverability, reply handling, and pipeline-to-revenue tracking
+keywords: ["outbound", "icp", "crm", "apollo", "instantly", "growth", "authority", "cold", "email", "sequences", "lead", "scoring", "definition", "integration", "patterns"]
+orb_class: moon
 ---
 
 # outbound

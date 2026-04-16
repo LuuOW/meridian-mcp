@@ -1,6 +1,8 @@
 ---
 name: ml-training
 description: Machine learning model training authority — classifier and regressor training with scikit-learn and PyTorch, feature engineering, cross-validation, hyperparameter tuning, fine-tuning transformer models with HuggingFace, dataset splits, loss functions, learning rate schedules, and reproducible training runs
+keywords: ["training", "machine", "pytorch", "huggingface", "learning", "model", "authority", "classifier", "regressor", "scikit-learn", "feature", "engineering", "cross-validation", "hyperparameter", "tuning", "fine-tuning"]
+orb_class: moon
 ---
 
 # ml-training

@@ -1,6 +1,8 @@
 ---
 name: persona-research
 description: Public persona research authority — discover, rank, and curate public sources for a person across websites, YouTube, podcasts, newsletters, LinkedIn, and social profiles while avoiding name collisions, wrong-identity contamination, and low-signal pages
+keywords: ["persona", "research", "public", "youtube", "linkedin", "authority", "discover", "rank", "curate", "sources", "person", "websites", "podcasts", "newsletters", "social"]
+orb_class: trojan
 ---
 
 # persona-research

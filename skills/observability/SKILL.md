@@ -1,6 +1,8 @@
 ---
 name: observability
 description: Structured logging (structlog/Python, pino/Node), health endpoints, PM2 and Docker metrics, alerting patterns
+keywords: ["observability", "structured", "python", "node", "pm2", "docker", "logging", "structlog/python", "pino/node", "health", "endpoints", "metrics", "alerting", "patterns"]
+orb_class: moon
 ---
 
 # observability

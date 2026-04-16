@@ -1,6 +1,8 @@
 ---
 name: docker
 description: Docker platform authority — image architecture, multi-stage builds, runtime security, networking models, volume strategies, container orchestration patterns, registry workflows, and production-grade containerization across Python, Node, and multi-service systems
+keywords: ["docker", "python", "node", "platform", "authority", "image", "architecture", "multi-stage", "builds", "runtime", "security", "networking", "models", "volume", "strategies", "container", "orchestration"]
+orb_class: planet
 ---
 
 # docker

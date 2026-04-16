@@ -1,6 +1,8 @@
 ---
 name: analytics
 description: Growth analytics authority — GA4 event tracking, conversion funnels, attribution models, cohort analysis, A/B testing, Supabase analytics queries, and revenue reporting patterns
+keywords: ["analytics", "growth", "ga4", "supabase", "authority", "event", "tracking", "conversion", "funnels", "attribution", "models", "cohort", "analysis", "a/b", "testing"]
+orb_class: moon
 ---
 
 # analytics

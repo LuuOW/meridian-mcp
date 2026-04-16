@@ -1,6 +1,8 @@
 ---
 name: defi-protocols
 description: DeFi protocol authority — flashloans, AMM design, lending markets, concentrated liquidity, MEV, triangular and cross-DEX arbitrage, stablecoin depeg dynamics, and on-chain capital routing across Uniswap V3, Aerodrome, Balancer, Curve, and Aave V3 on Ethereum, Base, Arbitrum, Optimism, and Polygon
+keywords: ["defi", "protocols", "amm", "mev", "dex", "uniswap", "v3", "aerodrome", "balancer", "curve", "aave", "ethereum", "base", "arbitrum", "optimism", "polygon", "protocol", "authority", "flashloans", "design"]
+orb_class: moon
 ---
 
 # defi-protocols

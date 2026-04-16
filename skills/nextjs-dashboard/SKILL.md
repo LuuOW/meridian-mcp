@@ -1,6 +1,8 @@
 ---
 name: nextjs-dashboard
 description: Next.js 15+ App Router dashboard skill — server/client components, mobile nav, polling, data tables, skeleton states, and production-grade dashboard UX patterns
+keywords: ["nextjs", "dashboard", "next", "app", "router", "ux", "skill", "server/client", "components", "mobile", "nav", "polling", "data", "tables", "skeleton", "states", "production-grade"]
+orb_class: moon
 ---
 
 # nextjs-dashboard

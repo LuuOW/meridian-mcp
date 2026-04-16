@@ -1,6 +1,8 @@
 ---
 name: token-awareness
 description: Token cost–benefit and energy analysis before implementing — estimate read/write overhead, compare full implementation vs targeted workaround, model signal-per-token efficiency, and apply the minimum-effective-change principle
+keywords: ["token", "awareness", "cost", "benefit", "energy", "analysis", "implementing", "estimate", "read/write", "overhead", "compare", "full", "implementation", "targeted", "workaround", "model"]
+orb_class: planet
 ---
 
 # token-awareness

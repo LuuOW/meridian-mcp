@@ -1,6 +1,8 @@
 ---
 name: multi-llm-routing
 description: Multi-LLM routing authority — provider selection, cost-aware tiering, fallback chains, latency budgets, health checks, A/B model testing, and unified client abstraction across Anthropic/OpenAI/Mistral
+keywords: ["multi", "llm", "routing", "anthropic", "openai", "mistral", "multi-llm", "authority", "provider", "selection", "cost-aware", "tiering", "fallback", "chains", "latency", "budgets", "health", "checks", "a/b", "model"]
+orb_class: trojan
 ---
 
 # multi-llm-routing

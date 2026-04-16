@@ -1,6 +1,8 @@
 ---
 name: container-security
 description: Container runtime security — non-root users, read-only filesystems, capability dropping, secrets hygiene, image scanning, supply-chain verification, and runtime policy enforcement
+keywords: ["container", "security", "runtime", "non-root", "users", "read-only", "filesystems", "capability", "dropping", "secrets", "hygiene", "image", "scanning", "supply-chain", "verification"]
+orb_class: moon
 ---
 
 # container-security

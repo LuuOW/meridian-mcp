@@ -1,6 +1,8 @@
 ---
 name: event-driven
 description: Event-driven architecture authority — Redis pub/sub, event bus patterns, async event pipelines, channel management, startup recovery, dead-letter handling, and reactive system design
+keywords: ["event", "driven", "redis", "event-driven", "architecture", "authority", "pub/sub", "bus", "patterns", "async", "pipelines", "channel", "management", "startup", "recovery", "dead-letter"]
+orb_class: moon
 ---
 
 # event-driven

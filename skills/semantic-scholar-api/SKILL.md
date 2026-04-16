@@ -1,6 +1,8 @@
 ---
 name: semantic-scholar-api
 description: Semantic Scholar + OpenAlex citation graph APIs for walking paper-to-paper relationships, finding citers/references, author disambiguation, and discovering related work. Use when arxiv or keyword search is insufficient — e.g. "what papers cite this one", "who else works on X", "what's the precursor work behind this abstract". Both APIs are free; no key required for reasonable usage.
+keywords: ["semantic", "scholar", "api", "openalex", "apis", "use", "both", "work", "citation", "graph", "walking", "paper-to-paper", "relationships", "finding", "citers/references", "author", "disambiguation", "discovering"]
+orb_class: moon
 ---
 
 # semantic-scholar-api

@@ -1,6 +1,8 @@
 ---
 name: content
 description: Content strategy authority — editorial calendar, content briefs, topic clustering, AI-assisted writing workflows, UGC patterns, publishing pipelines, and brand voice guidelines across blog, social, and email formats
+keywords: ["content", "ai", "ugc", "strategy", "authority", "editorial", "calendar", "briefs", "topic", "clustering", "ai-assisted", "writing", "workflows", "patterns", "publishing", "pipelines"]
+orb_class: moon
 ---
 
 # content

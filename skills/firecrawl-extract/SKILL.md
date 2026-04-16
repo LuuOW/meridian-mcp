@@ -1,6 +1,8 @@
 ---
 name: firecrawl-extract
 description: Firecrawl extraction specialist — scrape known URLs into clean markdown, map sites, crawl documentation and blog surfaces, and normalize content capture for downstream reasoning or indexing
+keywords: ["firecrawl", "extract", "urls", "extraction", "specialist", "scrape", "known", "clean", "markdown", "map", "sites", "crawl", "documentation", "blog", "surfaces", "normalize"]
+orb_class: moon
 ---
 
 # firecrawl-extract

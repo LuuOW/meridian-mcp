@@ -1,6 +1,8 @@
 ---
 name: web-intelligence
 description: Web intelligence routing authority — choose Exa for discovery, Firecrawl for extraction and crawling, and Bright Data for dynamic or geo-sensitive collection; normalize outputs, costs, and fallback policy for agentic research workflows
+keywords: ["web", "intelligence", "exa", "firecrawl", "bright", "data", "routing", "authority", "choose", "discovery", "extraction", "crawling", "dynamic", "geo-sensitive", "collection"]
+orb_class: trojan
 ---
 
 # web-intelligence

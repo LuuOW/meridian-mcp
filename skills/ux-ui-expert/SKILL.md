@@ -1,6 +1,8 @@
 ---
 name: ux/ui expert
 description: Framework-agnostic frontend + UX/UI skill matrix covering Next.js App Router, Astro, design systems, mobile nav, accessibility, and dashboard patterns
+keywords: ["expert", "framework", "ux", "ui", "next", "app", "router", "astro", "framework-agnostic", "frontend", "ux/ui", "skill", "matrix", "covering", "design", "systems", "mobile", "nav", "accessibility"]
+orb_class: planet
 ---
 
 # ux/ui expert

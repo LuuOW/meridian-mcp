@@ -1,6 +1,8 @@
 ---
 name: Framer Motion
 description: Framer Motion animation library — setup, motion principles, staggered lists, exit transitions, shared layout, gesture feedback, accessibility
+keywords: ["framer", "motion", "animation", "library", "setup", "principles", "staggered", "lists", "exit", "transitions", "shared", "layout", "gesture", "feedback", "accessibility"]
+orb_class: trojan
 ---
 
 # Framer Motion Skill Guide

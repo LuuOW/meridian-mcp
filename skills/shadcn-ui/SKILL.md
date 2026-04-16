@@ -1,6 +1,8 @@
 ---
 name: shadcn/ui expert
 description: shadcn/ui composable component system — setup, token strategy, card patterns, form composition, real project examples from lead-gen dashboard
+keywords: ["shadcn", "shadcn/ui", "composable", "component", "system", "setup", "token", "strategy", "card", "patterns", "form", "composition", "real", "project", "examples", "lead-gen"]
+orb_class: trojan
 ---
 
 # shadcn/ui Expert Skill Guide

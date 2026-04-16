@@ -1,6 +1,8 @@
 ---
 name: docs-strategy
 description: Documentation architecture, information hierarchy, style guides, versioning strategy, and cross-team documentation governance for production software projects
+keywords: ["docs", "strategy", "documentation", "architecture", "information", "hierarchy", "guides", "versioning", "cross-team", "governance", "production", "software", "projects"]
+orb_class: moon
 ---
 
 # docs-strategy

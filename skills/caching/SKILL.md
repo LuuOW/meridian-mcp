@@ -1,6 +1,8 @@
 ---
 name: caching
 description: Redis patterns (pub/sub, queues, TTL), in-process caching, cache-aside strategy, invalidation, Python and Node clients
+keywords: ["caching", "redis", "ttl", "python", "node", "patterns", "pub/sub", "queues", "in-process", "cache-aside", "strategy", "invalidation", "clients"]
+orb_class: trojan
 ---
 
 # caching

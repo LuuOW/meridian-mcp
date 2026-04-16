@@ -1,6 +1,8 @@
 ---
 name: vector-store
 description: Vector store authority — Qdrant operations, collection management, embedding submission, filtered semantic search, index optimization, payload indexing, and multi-tenant isolation patterns
+keywords: ["vector", "store", "qdrant", "authority", "operations", "collection", "management", "embedding", "submission", "filtered", "semantic", "search", "index", "optimization", "payload"]
+orb_class: moon
 ---
 
 # vector-store

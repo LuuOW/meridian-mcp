@@ -1,6 +1,8 @@
 ---
 name: react dashboard cards
 description: Production-grade React dashboard card patterns — StatCard, KPI strip, domain progress cards, metric bars, badge system, skeleton states, glass-card CSS variables. Extracted from lead-gen and seo-geo-aeo dashboards.
+keywords: ["react", "dashboard", "cards", "production", "statcard", "kpi", "css", "extracted", "production-grade", "card", "patterns", "strip", "domain", "progress", "metric", "bars", "badge", "system"]
+orb_class: trojan
 ---
 
 # React Dashboard Cards Skill Guide

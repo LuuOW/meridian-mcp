@@ -1,6 +1,8 @@
 ---
 name: doc-templates
 description: Reusable documentation fragments and micro-patterns — ADR templates, runbook blocks, incident post-mortem skeletons, PR description stubs, and changelog entry formats
+keywords: ["doc", "templates", "reusable", "adr", "pr", "documentation", "fragments", "micro-patterns", "runbook", "blocks", "incident", "post-mortem", "skeletons", "description", "stubs", "changelog", "entry"]
+orb_class: comet
 ---
 
 # doc-templates

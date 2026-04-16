@@ -1,6 +1,8 @@
 ---
 name: transcript-ingestion
 description: Transcript ingestion authority — capture, normalize, and prioritize transcripts from YouTube videos, podcast pages, captions, show notes, and transcript-like page content for persona systems, RAG pipelines, and grounded synthesis
+keywords: ["transcript", "ingestion", "youtube", "rag", "authority", "capture", "normalize", "prioritize", "transcripts", "videos", "podcast", "pages", "captions", "show", "notes", "transcript-like"]
+orb_class: trojan
 ---
 
 # transcript-ingestion

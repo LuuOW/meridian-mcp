@@ -1,6 +1,8 @@
 ---
 name: firewall
 description: Production firewall management — UFW policy design, iptables/nftables rule authoring, stateful connection tracking, ingress/egress filtering, fail2ban integration, and firewall audit workflows for Linux servers
+keywords: ["firewall", "production", "ufw", "linux", "management", "policy", "design", "iptables/nftables", "rule", "authoring", "stateful", "connection", "tracking", "ingress/egress", "filtering", "fail2ban"]
+orb_class: trojan
 ---
 
 # firewall

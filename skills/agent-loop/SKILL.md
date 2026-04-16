@@ -1,6 +1,8 @@
 ---
 name: agent-loop
 description: Production Claude agent loop — Session/Harness/Registry/Tool abstraction, DRY_RUN safety guard, APScheduler integration, dead-letter error handling, tool registry, and observability hooks for autonomous agent systems
+keywords: ["agent", "loop", "production", "claude", "session", "harness", "registry", "tool", "apscheduler", "session/harness/registry/tool", "abstraction", "dry", "run", "safety", "guard", "integration", "dead-letter", "error", "handling"]
+orb_class: moon
 ---
 
 # agent-loop

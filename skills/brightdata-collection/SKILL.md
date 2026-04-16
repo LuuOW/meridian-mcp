@@ -1,6 +1,8 @@
 ---
 name: brightdata-collection
 description: Bright Data collection specialist — dynamic page retrieval, geo-targeted browsing, anti-bot resilient collection, SERP capture, and hard-target fallback for agent research pipelines
+keywords: ["brightdata", "collection", "bright", "data", "serp", "specialist", "dynamic", "page", "retrieval", "geo-targeted", "browsing", "anti-bot", "resilient", "capture", "hard-target", "fallback"]
+orb_class: trojan
 ---
 
 # brightdata-collection

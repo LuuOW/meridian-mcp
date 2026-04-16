@@ -1,6 +1,8 @@
 ---
 name: llm-integration
 description: Claude and OpenAI API patterns, prompt design, context management, streaming, tool use, cost control, multi-model routing
+keywords: ["llm", "integration", "claude", "openai", "api", "patterns", "prompt", "design", "context", "management", "streaming", "tool", "cost", "control", "multi-model", "routing"]
+orb_class: moon
 ---
 
 # llm-integration

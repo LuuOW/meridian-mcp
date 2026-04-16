@@ -1,6 +1,8 @@
 ---
 name: token-economics
 description: Model token usage as an energy budget — estimate workload cost, compare throughput per watt / per dollar, and choose routes, models, and architectures with the best signal-per-token ratio
+keywords: ["token", "economics", "model", "usage", "energy", "budget", "estimate", "workload", "cost", "compare", "throughput", "watt", "dollar", "choose", "routes", "models"]
+orb_class: trojan
 ---
 
 # token-economics
