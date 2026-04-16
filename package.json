@@ -1,7 +1,7 @@
 {
   "name": "meridian-skills-mcp",
   "version": "0.3.1",
-  "description": "Calibrated AI skill routing via orbital mechanics — an MCP server for Claude, Cursor, Windsurf",
+  "description": "Calibrated AI skill routing via orbital mechanics \u2014 an MCP server for Claude, Cursor, Windsurf",
   "type": "module",
   "bin": {
     "meridian-mcp": "./src/index.mjs"
@@ -13,7 +13,8 @@
     "example-skills",
     "scripts",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "site"
   ],
   "scripts": {
     "start": "node src/server.mjs",
@@ -26,6 +27,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@simplewebauthn/server": "^13.3.0",
     "@xenova/transformers": "^2.17.2",
     "dotenv": "^17.4.2",
     "ethers": "^6.16.0",

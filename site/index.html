@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Meridian — Documentation</title>
+<meta name="description" content="Install and use Meridian MCP — skill routing for AI agents.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Meridian Docs">
+<meta property="og:description" content="Install and use Meridian MCP.">
+<meta property="og:image" content="https://ask-meridian.uk/miniapp/screenshots/meta.png">
+
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="https://ask-meridian.uk" class="brand">◎ Meridian</a>
+  <div class="nav-links">
+    <a href="https://ask-meridian.uk/">Home</a>
+    <a href="#install" class="current">Docs</a>
+    <a href="https://ask-meridian.uk/galaxy/">Galaxy</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<div class="layout">
+
+<aside class="sidebar">
+  <div class="sidebar-section">
+    <div class="section-title">Getting Started</div>
+    <a href="#overview">Overview</a>
+    <a href="#install">Install</a>
+    <a href="#quickstart">Quickstart</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="section-title">API</div>
+    <a href="#api-mcp">MCP endpoint</a>
+    <a href="#api-auth">Authentication</a>
+    <a href="#api-tools">Tools</a>
+    <a href="#api-resources">Resources</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="section-title">Concepts</div>
+    <a href="#orbital-routing">Orbital routing</a>
+    <a href="#skill-authoring">Authoring skills</a>
+    <a href="#world-id">World ID</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="section-title">Billing</div>
+    <a href="#pricing">Plans</a>
+    <a href="#quotas">Quotas</a>
+    <a href="#cancel">Cancel</a>
+  </div>
+</aside>
+
+<main class="content">
+
+  <h1 id="overview">Meridian documentation</h1>
+  <p class="lead">Meridian is an MCP server that routes AI queries to the right expertise — deterministically, via an orbital-mechanics scoring model. 73+ curated skills, open-source client, hosted API.</p>
+
+  <h2 id="install">Install</h2>
+  <p>Two paths. Pick one.</p>
+
+  <h3>Hosted (paid, 30 seconds)</h3>
+  <ol>
+    <li>Get an API key at <a href="https://ask-meridian.uk/#pricing">ask-meridian.uk</a></li>
+    <li>Add Meridian to your MCP client:</li>
+  </ol>
+  <pre><code class="lang-bash">claude mcp add meridian https://api.ask-meridian.uk/mcp \
+  --transport http \
+  -H "Authorization: Bearer mrd_live_YOUR_KEY"</code></pre>
+  <p>Same JSON config works for Cursor, Windsurf, and any MCP client.</p>
+
+  <h3>Self-hosted (free, OSS)</h3>
+  <pre><code class="lang-bash">npm install -g meridian-skills-mcp
+claude mcp add meridian meridian-mcp</code></pre>
+  <p>The server looks at <code>/opt/skills/</code> by default. Override with <code>MERIDIAN_SKILLS_ROOT=/path/to/your/skills</code>.</p>
+
+  <h2 id="quickstart">Quickstart</h2>
+  <p>Once installed, your AI client can call any of four tools:</p>
+  <pre><code class="lang-javascript">// Inside Claude Code / Cursor / etc.
+// The client auto-discovers the tools. Just ask:
+
+"Use meridian to find the best skills for building a flashloan arb bot"
+
+// Claude calls meridian.route_task({ task: "...", limit: 5 })
+// and loads the top ranked skills as context.</code></pre>
+
+  <h2 id="api-mcp">MCP endpoint</h2>
+  <p>The HTTP transport speaks <a href="https://modelcontextprotocol.io/">MCP Streamable HTTP</a>:</p>
+  <pre><code class="lang-bash">curl -X POST https://api.ask-meridian.uk/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "Authorization: Bearer mrd_live_YOUR_KEY" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
+  <p>Returns SSE stream with the tool inventory. Full JSON-RPC over <code>POST /mcp</code>.</p>
+
+  <h2 id="api-auth">Authentication</h2>
+  <p>All MCP calls require <code>Authorization: Bearer mrd_live_...</code> header. Keys are:</p>
+  <ul>
+    <li>Provisioned automatically after successful Stripe checkout</li>
+    <li>Shown <strong>once</strong> on the success page (save it!)</li>
+    <li>Hashed with SHA-256 on our side — the raw key never leaves your memory after first display</li>
+    <li>Scoped per plan: Pro (10K calls/mo), Team (100K calls/mo)</li>
+  </ul>
+  <p>Response headers:</p>
+  <ul>
+    <li><code>X-Meridian-Calls-Remaining: 9823</code> — your remaining monthly quota</li>
+  </ul>
+
+  <h2 id="api-tools">Tools</h2>
+
+  <h3><code>route_task(task, limit=5)</code></h3>
+  <p>Rank skills by relevance to a task. Returns up to <code>limit</code> skills with slug, class, route_score, and why.</p>
+  <pre><code class="lang-json">{
+  "task": "build a flashloan arb bot",
+  "selected": [
+    {
+      "slug": "defi-protocols",
+      "class": "planet",
+      "route_score": 0.831,
+      "why": "broad anchor for on-chain capital movement"
+    },
+    { "slug": "solidity", "class": "moon", "route_score": 0.623, ... }
+  ]
+}</code></pre>
+
+  <h3><code>get_skill(slug)</code></h3>
+  <p>Fetch the full SKILL.md content for a specific skill.</p>
+
+  <h3><code>list_skills()</code></h3>
+  <p>Enumerate all available skills (slugs only).</p>
+
+  <h3><code>search_skills(query)</code></h3>
+  <p>Full-text search across names, descriptions, bodies. Returns hits with snippets.</p>
+
+  <h2 id="api-resources">Resources</h2>
+  <p>Each skill is also exposed as an MCP resource:</p>
+  <pre><code>meridian://skills/{slug}</code></pre>
+  <p>MCP clients can enumerate the full skill corpus as <code>text/markdown</code> resources.</p>
+
+  <h2 id="orbital-routing">Orbital routing (the algorithm)</h2>
+  <p>Each skill is classified into an orbital class based on its independence and overlap with other skills:</p>
+  <ul>
+    <li><strong>Planet</strong> — broad independent skill; anchors satellites</li>
+    <li><strong>Moon</strong> — specialist; useful through a parent domain</li>
+    <li><strong>Trojan</strong> — permanent L4/L5 companion; auto-injected with parent</li>
+    <li><strong>Comet</strong> — high-eccentricity dormant skill; burst-activates near perihelion</li>
+    <li><strong>Asteroid belt</strong> — fragmentary utility; no dedicated parent orbit</li>
+    <li><strong>Irregular satellite</strong> — niche or high-drag; bursty activation</li>
+  </ul>
+  <p>Routing scores use Roche limits, Lagrange-point analysis, Hill spheres, and tidal locking to compute <code>route_score</code> — a deterministic function, not a learned model. No embeddings, no hallucinations.</p>
+  <p>See the <a href="https://ask-meridian.uk/galaxy/">live orbital map</a> for an interactive visualization.</p>
+
+  <h2 id="skill-authoring">Authoring skills</h2>
+  <p>A skill is a directory with a <code>SKILL.md</code> file:</p>
+  <pre><code class="lang-markdown">---
+name: your-skill-name
+description: One-line description used by the router to score relevance.
+---
+
+# your-skill-name
+
+Body content — instructions, patterns, examples. Kept under 2000 words
+for best routing.</code></pre>
+  <p>Place under <code>$MERIDIAN_SKILLS_ROOT</code> and the server picks it up on next call.</p>
+
+  <h2 id="world-id">World ID verification</h2>
+  <p>The hosted Meridian Mini App in the World App gates access via World ID — one verified human = one session. Backend calls <a href="https://docs.world.org/">Worldcoin's Developer Portal API</a> to validate each proof.</p>
+  <p>Device verification: 10 queries/day free. Orb verification: unlimited.</p>
+
+  <h2 id="pricing">Plans</h2>
+  <table>
+    <thead><tr><th>Plan</th><th>Price</th><th>Quota</th><th>Transport</th></tr></thead>
+    <tbody>
+      <tr><td>Free (self-hosted)</td><td>$0</td><td>unlimited</td><td>stdio</td></tr>
+      <tr><td>Pro</td><td>$29/mo</td><td>10,000 calls/mo</td><td>HTTP + stdio</td></tr>
+      <tr><td>Team</td><td>$149/mo</td><td>100,000 calls/mo · 5 keys</td><td>HTTP + stdio</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="quotas">Quotas &amp; rate limits</h2>
+  <ul>
+    <li>Monthly call quota enforced per key</li>
+    <li>Calls-remaining returned in <code>X-Meridian-Calls-Remaining</code></li>
+    <li>Over-quota: HTTP 401 with error hint</li>
+    <li>Rate limit: fair-use, not currently hard-enforced per-second</li>
+  </ul>
+
+  <h2 id="cancel">Cancel or change plan</h2>
+  <p>Billing is handled by Stripe. Cancel anytime at your Stripe customer portal — no prorated refunds but your key works until period end. Contact <a href="mailto:hello@ask-meridian.uk">hello@ask-meridian.uk</a> for downgrades or enterprise terms.</p>
+
+  <footer class="doc-footer">
+    <p>Last updated 2026-04-15 · <a href="https://github.com/LuuOW/meridian-mcp">Contribute on GitHub</a> · <a href="mailto:hello@ask-meridian.uk">Contact</a></p>
+  </footer>
+
+</main>
+
+</div>
+</body>
+</html>
