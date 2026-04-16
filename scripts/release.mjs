@@ -92,7 +92,7 @@ console.log(`✓ CHANGELOG.md updated`)
 // ── Git commit + tag + push ────────────────────────────────────────────────
 const run = (cmd) => execSync(cmd, { cwd: REPO_ROOT, stdio: 'inherit' })
 
-run('git add package.json CHANGELOG.md skills/')
+run('git add package.json CHANGELOG.md skills/ site/')
 run(`git commit -m "v${next}: ${newSkills.length ? `add ${newSkills.length} skill(s)` : 'release'}\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"`)
 run(`git tag v${next}`)
 run('git push origin main --tags')
@@ -101,5 +101,14 @@ console.log(`✓ Pushed v${next} to GitHub`)
 // ── npm publish ────────────────────────────────────────────────────────────
 run('npm publish --access public')
 console.log(`✓ Published meridian-skills-mcp@${next} to npm`)
+
+// ── Deploy docs site ──────────────────────────────────────────────────────
+const { copyFileSync, readdirSync } = await import('node:fs')
+const SITE_SRC = join(REPO_ROOT, 'site')
+const SITE_DST = '/var/www/html/docs'
+for (const f of readdirSync(SITE_SRC)) {
+  copyFileSync(join(SITE_SRC, f), join(SITE_DST, f))
+}
+console.log(`✓ Deployed site/ → ${SITE_DST}`)
 
 console.log(`\n◎ Released v${next}`)
