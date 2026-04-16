@@ -1,6 +1,6 @@
 {
   "name": "meridian-skills-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Calibrated AI skill routing via orbital mechanics — an MCP server for Claude, Cursor, Windsurf",
   "type": "module",
   "bin": {
