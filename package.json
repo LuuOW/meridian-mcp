@@ -9,7 +9,9 @@
   "main": "./src/index.mjs",
   "files": [
     "src",
+    "skills",
     "example-skills",
+    "scripts",
     "README.md",
     "LICENSE"
   ],
