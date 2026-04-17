@@ -11,6 +11,7 @@ const SESSIONS_FILE = join(__dirname, '..', 'data', 'miniapp-sessions.json')
 // Accept both staging + production app_ids; the frontend indicates which to use.
 const WORLD_APP_ID_STAGING = process.env.WORLD_APP_ID_STAGING || process.env.WORLD_APP_ID || ''
 const WORLD_APP_ID_PROD    = process.env.WORLD_APP_ID_PROD    || ''
+const DAILY_FREE_QUOTA_GUEST  = 5
 const DAILY_FREE_QUOTA_DEVICE = 10
 const DAILY_FREE_QUOTA_ORB    = 500
 
@@ -35,7 +36,9 @@ export function summarizeQuota(session) {
   }
   return {
     used:      session.calls_today,
-    limit:     session.level === 'orb' ? DAILY_FREE_QUOTA_ORB : DAILY_FREE_QUOTA_DEVICE,
+    limit:     session.level === 'orb'   ? DAILY_FREE_QUOTA_ORB
+             : session.level === 'guest' ? DAILY_FREE_QUOTA_GUEST
+             : DAILY_FREE_QUOTA_DEVICE,
     unlimited: session.level === 'orb',
   }
 }
@@ -95,6 +98,25 @@ export function issueSession({ nullifier_hash, level }) {
     level,
     created_at: new Date().toISOString(),
     last_day:   today(),
+    calls_today: 0,
+  }
+  saveSessions(sessions)
+  return { token, session: sessions[token_h] }
+}
+
+/** Guest session — no World ID required, limited to 5 queries/day, no staking payouts. */
+export function issueGuestSession({ fingerprint }) {
+  const sessions = loadSessions()
+  const token    = randomBytes(24).toString('base64url')
+  const token_h  = createHash('sha256').update(token).digest('hex')
+  // Fingerprint lets us rate-limit per device without tracking identity
+  const fp_h = createHash('sha256').update(fingerprint || randomUUID()).digest('hex').slice(0, 16)
+  sessions[token_h] = {
+    session_id:  randomUUID(),
+    nullifier:   `guest:${fp_h}`,
+    level:       'guest',
+    created_at:  new Date().toISOString(),
+    last_day:    today(),
     calls_today: 0,
   }
   saveSessions(sessions)

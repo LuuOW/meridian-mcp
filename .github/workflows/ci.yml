@@ -20,4 +20,5 @@ jobs:
       - run: npm ci
       - run: node --test tests/
         env:
-          MERIDIAN_SKILL_ORBIT: /dev/null  # tests don't need the Python engine
+          MERIDIAN_SKILLS_ROOT: ${{ github.workspace }}/skills
+          MERIDIAN_SKILL_ORBIT: /dev/null
