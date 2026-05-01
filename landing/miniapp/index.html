@@ -50,9 +50,17 @@
             <option value="10">10</option>
           </select>
         </label>
+        <label class="toggle-label" title="Augment the static corpus with LLM-generated candidate skills (Workers AI)">
+          <input type="checkbox" id="dynamicToggle">
+          <span class="toggle-pill"><span class="toggle-dot"></span></span>
+          <span class="toggle-text">🪐 dynamic</span>
+        </label>
         <span class="char-count" id="charCount">0 / 800</span>
       </div>
-      <button id="askBtn" class="btn btn-primary">Route this task →</button>
+      <div class="primary-actions">
+        <button id="arBtn" class="btn-ghost ar-btn" type="button" title="Camera-based skill routing (object detection)">📷 AR</button>
+        <button id="askBtn" class="btn btn-primary">Route this task →</button>
+      </div>
     </div>
 
     <div class="examples">
@@ -62,6 +70,22 @@
       <button class="ex-chip" data-task="Write a SKILL.md authoring guide for new contributors">Author a SKILL.md</button>
       <button class="ex-chip" data-task="Run a difference-in-differences analysis on rollout impact">Causal analysis of a rollout</button>
     </div>
+  </section>
+
+  <section id="arSection" class="ar-section" hidden>
+    <div class="ar-stage">
+      <video id="arVideo" class="ar-video" playsinline muted autoplay></video>
+      <canvas id="arOverlay" class="ar-overlay" aria-label="Object detection overlay"></canvas>
+      <div class="ar-controls">
+        <span class="ar-status" id="arStatus">initializing…</span>
+        <button id="arCloseBtn" class="btn-ghost btn-sm">close ✕</button>
+      </div>
+      <div class="ar-detections" id="arDetections" hidden></div>
+    </div>
+    <p class="ar-foot">
+      Frames stay in your browser. Only the detected object class is sent to the router.
+      Powered by <code>tf.js + COCO-SSD</code> (80 classes).
+    </p>
   </section>
 
   <section id="resultsSection" class="results-section" hidden>
