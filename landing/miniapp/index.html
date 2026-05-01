@@ -12,7 +12,9 @@
 </head>
 <body>
 
-<nav class="nav">
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<nav class="nav" aria-label="Primary">
   <a href="/" class="brand">◎ Meridian</a>
   <div class="nav-links">
     <a href="/">Home</a>
@@ -22,7 +24,7 @@
   </div>
 </nav>
 
-<main class="mini-wrap">
+<main id="main" class="mini-wrap">
   <header class="mini-head">
     <span class="eyebrow">Live demo</span>
     <h1>Type a task. See which skills the router picks.</h1>
@@ -33,32 +35,35 @@
   </header>
 
   <div class="meta-bar">
-    <div class="quota-pill" id="quotaPill" data-loading>
-      <span class="quota-dot"></span>
+    <div class="quota-pill" id="quotaPill" role="status" aria-live="polite" aria-atomic="true" data-loading>
+      <span class="quota-dot" aria-hidden="true"></span>
       <span class="quota-text">checking quota…</span>
     </div>
-    <label class="model-pill">
+    <label class="model-pill" for="modelSelect">
       <span class="model-pill-label">Model</span>
-      <select id="modelSelect">
+      <select id="modelSelect" aria-label="Choose LLM provider for skill generation">
         <option value="workers-ai" selected>Workers AI · Llama-3.3-70B</option>
         <option value="groq">Groq · Llama-3.3-70B (faster)</option>
       </select>
     </label>
   </div>
 
-  <section class="ask-card">
+  <section class="ask-card" aria-labelledby="taskLabel">
+    <label for="taskInput" id="taskLabel" class="sr-only">Task description</label>
     <div class="input-frame">
       <textarea
         id="taskInput"
         class="task-input"
         placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
         rows="3"
-        maxlength="800"></textarea>
+        maxlength="800"
+        aria-describedby="taskHelp"></textarea>
     </div>
+    <p id="taskHelp" class="sr-only">Describe what you are trying to build. The router generates 5 candidate skills, then assigns each a celestial class.</p>
     <div class="ask-controls">
       <button id="askBtn" class="btn btn-primary">Find compatible skills →</button>
-      <button id="arBtn" class="ar-pill" type="button" aria-label="Scan a real-world object with the camera">
-        <span class="ar-pill-icon">📷</span>
+      <button id="arBtn" class="ar-pill" type="button" aria-label="Scan a real-world object with the camera (uses object detection)">
+        <span class="ar-pill-icon" aria-hidden="true">📷</span>
         <span class="ar-pill-label">Scan an object</span>
       </button>
     </div>
@@ -103,9 +108,9 @@
 
     <div class="results-header">
       <h2>Results</h2>
-      <div id="resultsMeta" class="results-meta"></div>
+      <div id="resultsMeta" class="results-meta" role="status" aria-live="polite"></div>
     </div>
-    <ol id="resultsList" class="results-list"></ol>
+    <ol id="resultsList" class="results-list" aria-live="polite" aria-busy="false"></ol>
   </section>
 
   <footer class="mini-foot">

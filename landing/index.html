@@ -16,14 +16,16 @@
 </head>
 <body>
 
-<nav class="nav">
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<nav class="nav" aria-label="Primary">
   <a href="/" class="brand">◎ Meridian</a>
 
-  <button id="burgerBtn" class="burger" type="button" aria-label="Open menu" aria-expanded="false">
-    <span></span><span></span><span></span>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
   </button>
 
-  <div id="navMenu" class="nav-menu">
+  <div id="navMenu" class="nav-menu" role="menu">
     <a href="/" class="current">Home</a>
     <a href="https://docs.ask-meridian.uk">Docs</a>
     <a href="/miniapp/">Try it</a>
@@ -33,7 +35,7 @@
   </div>
 </nav>
 
-<main class="hero-wrap">
+<main id="main" class="hero-wrap">
   <section class="hero">
     <span id="heroVersion" class="eyebrow" data-loading>MCP server · v1.0.0</span>
     <h1>Dynamic AI skill routing<br><span class="grad">via orbital mechanics.</span></h1>
@@ -52,22 +54,22 @@
 claude mcp add meridian meridian-mcp</code></pre>
   </section>
 
-  <section class="features">
-    <div class="feature">
-      <div class="feature-icon">◎</div>
+  <section class="features" aria-label="Key features">
+    <article class="feature">
+      <div class="feature-icon" aria-hidden="true">◎</div>
       <h3>LLM proposes, orbital judges</h3>
       <p>Llama-3.3-70B authors fresh skills for your task — opinionated SKILL.md bodies with use-it-for, workflow, heuristics, anti-patterns. The orbital engine then classifies each one deterministically.</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">▲</div>
+    </article>
+    <article class="feature">
+      <div class="feature-icon" aria-hidden="true">▲</div>
       <h3>Celestial classification</h3>
       <p>Each generated skill gets a class — <strong>planet</strong>, <strong>moon</strong>, <strong>trojan</strong>, <strong>asteroid</strong>, <strong>comet</strong>, or <strong>irregular</strong> — based on physics features derived from its content (mass, scope, cross-domain affinity).</p>
-    </div>
-    <div class="feature">
-      <div class="feature-icon">⌬</div>
+    </article>
+    <article class="feature">
+      <div class="feature-icon" aria-hidden="true">⌬</div>
       <h3>Open source core</h3>
       <p>The MCP client is a 5&nbsp;KB stdio shim under MIT. Same backend powers the <a href="/miniapp/">browser miniapp</a> and the <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm package</a>. One source of truth.</p>
-    </div>
+    </article>
   </section>
 
   <section class="how">
@@ -118,7 +120,7 @@ claude mcp add meridian meridian-mcp</code></pre>
           <li><code>X-Meridian-Calls-Remaining</code> header</li>
           <li>Cancel anytime via Stripe portal</li>
         </ul>
-        <button class="btn btn-primary btn-block" data-plan="pro" data-checkout>Subscribe — $29/mo</button>
+        <button class="btn btn-primary btn-block" data-plan="pro" data-checkout aria-label="Subscribe to Pro plan, twenty-nine US dollars per month">Subscribe — $29/mo</button>
       </div>
 
       <div class="plan">
@@ -130,7 +132,7 @@ claude mcp add meridian meridian-mcp</code></pre>
           <li>Per-key quota tracking</li>
           <li>Email support</li>
         </ul>
-        <button class="btn btn-ghost btn-block" data-plan="team" data-checkout>Subscribe — $149/mo</button>
+        <button class="btn btn-ghost btn-block" data-plan="team" data-checkout aria-label="Subscribe to Team plan, one hundred forty-nine US dollars per month">Subscribe — $149/mo</button>
       </div>
     </div>
 

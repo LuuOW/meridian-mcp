@@ -112,13 +112,15 @@ askBtn.addEventListener('click', async () => {
 
   routingInFlight = true
   askBtn.disabled = true
+  askBtn.setAttribute('aria-busy', 'true')
   askBtn.textContent = 'Generating skills…'
   resultsSection.hidden = false
+  resultsList.setAttribute('aria-busy', 'true')
   requestAnimationFrame(() => galaxy._resize())
   resultsList.innerHTML =
     '<li class="no-results">' +
     '<span class="loading-pulse">🪐 Llama-3.3-70B is authoring SKILL specs…</span><br>' +
-    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>This usually takes 40–50 s — 70B model writing proper SKILL.md bodies.</em></small>' +
+    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>Workers AI: 40–50 s. Groq: 5–10 s.</em></small>' +
     '</li>'
   resultsMeta.textContent = ''
   closePanel()
@@ -133,7 +135,9 @@ askBtn.addEventListener('click', async () => {
     if (arActive) unlockAR()
   } finally {
     askBtn.disabled = false
+    askBtn.removeAttribute('aria-busy')
     askBtn.textContent = 'Find compatible skills →'
+    resultsList.setAttribute('aria-busy', 'false')
     routingInFlight = false
     // If AR is open, surface the rescan affordance so the user can opt-in
     // to another query — never auto-queue.
