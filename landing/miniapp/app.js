@@ -4,6 +4,41 @@
 import { MiniGalaxy } from './mini-galaxy.js'
 import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
 
+// ── Burger menu (same UX as landing) ───────────────────────────────────
+;(function () {
+  const btn  = document.getElementById('burgerBtn')
+  const menu = document.getElementById('navMenu')
+  if (!btn || !menu) return
+  const toggle = (open) => {
+    const isOpen = open !== undefined ? open : !menu.classList.contains('open')
+    menu.classList.toggle('open', isOpen)
+    btn.classList.toggle('open', isOpen)
+    btn.setAttribute('aria-expanded', String(isOpen))
+    if (isOpen) {
+      const first = menu.querySelector('a')
+      if (first) setTimeout(() => first.focus(), 50)
+    } else { btn.focus() }
+  }
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle() })
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)))
+  document.addEventListener('click', e => {
+    if (!menu.classList.contains('open')) return
+    if (!menu.contains(e.target) && !btn.contains(e.target)) toggle(false)
+  })
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false) })
+})();
+
+// ── Server-driven version badge — fetched from /api/version ───────────
+fetch('/api/version', { cache: 'default' })
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if (!d?.npm) return
+    const v = d.npm
+    const navV = document.getElementById('versionBadge')
+    if (navV) { navV.textContent = `MCP v${v}`; navV.removeAttribute('data-loading') }
+  })
+  .catch(() => {})
+
 const $ = id => document.getElementById(id)
 const taskInput      = $('taskInput')
 const askBtn         = $('askBtn')
