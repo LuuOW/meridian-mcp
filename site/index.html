@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Meridian — Documentation</title>
-<meta name="description" content="Install and use Meridian MCP — skill routing for AI agents.">
+<meta name="description" content="Dynamic skill routing for AI agents — LLM-generated skills classified by an orbital engine.">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Meridian Docs">
-<meta property="og:description" content="Install and use Meridian MCP.">
-<meta property="og:image" content="https://ask-meridian.uk/miniapp/screenshots/meta.png">
+<meta property="og:description" content="Dynamic skill routing for AI agents — LLM-generated skills classified by an orbital engine.">
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
@@ -20,8 +19,9 @@
   <a href="https://ask-meridian.uk" class="brand">◎ Meridian</a>
   <div class="nav-links">
     <a href="https://ask-meridian.uk/">Home</a>
-    <a href="#install" class="current">Docs</a>
-    <a href="https://ask-meridian.uk/galaxy/">Galaxy</a>
+    <a href="#overview" class="current">Docs</a>
+    <a href="https://ask-meridian.uk/miniapp/">Try it</a>
+    <a href="https://galaxy.ask-meridian.uk">Galaxy</a>
     <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
   </div>
 </nav>
@@ -36,165 +36,294 @@
     <a href="#quickstart">Quickstart</a>
   </div>
   <div class="sidebar-section">
-    <div class="section-title">API</div>
-    <a href="#api-mcp">MCP endpoint</a>
-    <a href="#api-auth">Authentication</a>
-    <a href="#api-tools">Tools</a>
-    <a href="#api-resources">Resources</a>
+    <div class="section-title">Architecture</div>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#api">HTTP API</a>
+    <a href="#mcp-tool">MCP tool</a>
+    <a href="#response">Response shape</a>
   </div>
   <div class="sidebar-section">
     <div class="section-title">Concepts</div>
-    <a href="#orbital-routing">Orbital routing</a>
-    <a href="#skill-authoring">Authoring skills</a>
-    <a href="#world-id">World ID</a>
+    <a href="#celestial-classes">Celestial classes</a>
+    <a href="#physics">Physics signature</a>
+    <a href="#star-systems">Star systems</a>
   </div>
   <div class="sidebar-section">
-    <div class="section-title">Billing</div>
-    <a href="#pricing">Plans</a>
-    <a href="#quotas">Quotas</a>
-    <a href="#cancel">Cancel</a>
+    <div class="section-title">Operations</div>
+    <a href="#config">Configuration</a>
+    <a href="#latency">Latency &amp; quota</a>
+    <a href="#self-host">Self-hosting</a>
   </div>
 </aside>
 
 <main class="content">
 
   <h1 id="overview">Meridian documentation</h1>
-  <p class="lead">Meridian is an MCP server that routes AI queries to the right expertise — deterministically, via an orbital-mechanics scoring model. 73+ curated skills, open-source client, hosted API.</p>
+  <p class="lead">
+    Meridian routes tasks to relevant skills using a two-stage pipeline:
+    <strong>Llama-3.3-70B generates candidate skills</strong>, then an <strong>open-domain orbital classifier</strong>
+    assigns each one a celestial class (planet · moon · trojan · asteroid · comet · irregular) and ranks them
+    against the task. Same backend powers the
+    <a href="https://ask-meridian.uk/miniapp/">browser miniapp</a> and the npm-installable MCP.
+  </p>
 
   <h2 id="install">Install</h2>
-  <p>Two paths. Pick one.</p>
 
-  <h3>Hosted (paid, 30 seconds)</h3>
-  <ol>
-    <li>Get an API key at <a href="https://ask-meridian.uk/#pricing">ask-meridian.uk</a></li>
-    <li>Add Meridian to your MCP client:</li>
-  </ol>
-  <pre><code class="lang-bash">claude mcp add meridian https://api.ask-meridian.uk/mcp \
-  --transport http \
-  -H "Authorization: Bearer mrd_live_YOUR_KEY"</code></pre>
-  <p>Same JSON config works for Cursor, Windsurf, and any MCP client.</p>
-
-  <h3>Self-hosted (free, OSS)</h3>
+  <h3>1. MCP for Claude Code, Cursor, Windsurf, etc.</h3>
   <pre><code class="lang-bash">npm install -g meridian-skills-mcp
 claude mcp add meridian meridian-mcp</code></pre>
-  <p>The server looks at <code>/opt/skills/</code> by default. Override with <code>MERIDIAN_SKILLS_ROOT=/path/to/your/skills</code>.</p>
+  <p>
+    Same install works in Cursor, Windsurf, Goose, Continue, and any client that speaks stdio MCP.
+    The package is a <strong>~5 KB thin client</strong> that posts to the public router endpoint —
+    no local model, no Python, internet required.
+  </p>
+
+  <h3>2. Browser miniapp (no install)</h3>
+  <p>
+    Open <a href="https://ask-meridian.uk/miniapp/">ask-meridian.uk/miniapp</a>.
+    Type a task or hit the <code>📷 Scan an object</code> button to use real-time camera object-detection
+    as the input. Same backend, fancier UI.
+  </p>
+
+  <h3>3. Direct HTTP</h3>
+  <pre><code class="lang-bash">curl -X POST https://ask-meridian.uk/api/orbital-route \
+  -H "content-type: application/json" \
+  -d '{"task":"set up rate limiting on a public API","limit":5}'</code></pre>
+  <p>Public, no key required (today). See <a href="#latency">latency &amp; quota</a> for the realistic shape.</p>
 
   <h2 id="quickstart">Quickstart</h2>
-  <p>Once installed, your AI client can call any of four tools:</p>
-  <pre><code class="lang-javascript">// Inside Claude Code / Cursor / etc.
-// The client auto-discovers the tools. Just ask:
+  <p>Once the MCP is registered, your AI client auto-discovers the tool. Just ask:</p>
+  <pre><code class="lang-text">Use meridian to find skills for setting up a public API rate limiter.</code></pre>
+  <p>
+    The client calls <code>meridian.route_task({ task, limit })</code>, the backend generates 5 LLM
+    candidates, classifies them orbitally, and returns ranked skills with full markdown bodies — which
+    your client lifts straight into its context window.
+  </p>
 
-"Use meridian to find the best skills for building a flashloan arb bot"
+  <h2 id="pipeline">Pipeline</h2>
+  <pre><code>POST /api/orbital-route { task, limit }
+            │
+            ↓
+  Cloudflare Workers AI
+  Llama-3.3-70B-fp8-fast
+  → 5 candidate skills
+    {slug, description, keywords, body}
+            │
+            ↓
+  Open-domain orbital classifier (JS)
+            │
+   ─────────┴──────────
+   physics:   mass · scope · independence ·
+              cross_domain · fragmentation · drag · dep_ratio
+   class:     planet | moon | trojan | asteroid | comet | irregular
+   parent:    nearest sibling by Jaccard
+   system:    forge | signal | mind  (term-set affinity)
+   lagrange:  bridge potential between two strongest systems
+            │
+            ↓
+   route_score = (kw·10 + desc·5 + body·1)
+                × diversity · class_boost · versatility
+            │
+            ↓
+        ranked array</code></pre>
 
-// Claude calls meridian.route_task({ task: "...", limit: 5 })
-// and loads the top ranked skills as context.</code></pre>
+  <h2 id="api">HTTP API</h2>
 
-  <h2 id="api-mcp">MCP endpoint</h2>
-  <p>The HTTP transport speaks <a href="https://modelcontextprotocol.io/">MCP Streamable HTTP</a>:</p>
-  <pre><code class="lang-bash">curl -X POST https://api.ask-meridian.uk/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -H "Authorization: Bearer mrd_live_YOUR_KEY" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
-  <p>Returns SSE stream with the tool inventory. Full JSON-RPC over <code>POST /mcp</code>.</p>
+  <h3><code>POST /api/orbital-route</code></h3>
+  <p>The single canonical endpoint. Both miniapp and MCP call it.</p>
 
-  <h2 id="api-auth">Authentication</h2>
-  <p>All MCP calls require <code>Authorization: Bearer mrd_live_...</code> header. Keys are:</p>
-  <ul>
-    <li>Provisioned automatically after successful Stripe checkout</li>
-    <li>Shown <strong>once</strong> on the success page (save it!)</li>
-    <li>Hashed with SHA-256 on our side — the raw key never leaves your memory after first display</li>
-    <li>Scoped per plan: Pro (10K calls/mo), Team (100K calls/mo)</li>
-  </ul>
-  <p>Response headers:</p>
-  <ul>
-    <li><code>X-Meridian-Calls-Remaining: 9823</code> — your remaining monthly quota</li>
-  </ul>
-
-  <h2 id="api-tools">Tools</h2>
-
-  <h3><code>route_task(task, limit=5)</code></h3>
-  <p>Rank skills by relevance to a task. Returns up to <code>limit</code> skills with slug, class, route_score, and why.</p>
+  <p><strong>Request body</strong></p>
   <pre><code class="lang-json">{
-  "task": "build a flashloan arb bot",
-  "selected": [
-    {
-      "slug": "defi-protocols",
-      "class": "planet",
-      "route_score": 0.831,
-      "why": "broad anchor for on-chain capital movement"
-    },
-    { "slug": "solidity", "class": "moon", "route_score": 0.623, ... }
-  ]
+  "task": "string (≤ 800 chars, required)",
+  "limit": 5,            // 1-10 (default 5)
+  "candidates": 5        // 3-8 (default 5; max LLM-generated before slicing)
 }</code></pre>
 
-  <h3><code>get_skill(slug)</code></h3>
-  <p>Fetch the full SKILL.md content for a specific skill.</p>
+  <p><strong>Response (200)</strong></p>
+  <pre><code class="lang-json">{
+  "task": "...",
+  "note": "Fully dynamic: skills generated by ...",
+  "confidence": "strong | moderate | weak | none",
+  "top_score": 109.3,
+  "candidates_generated": 5,
+  "selected": [ /* see Response shape below */ ],
+  "timing": { "llm_ms": 38000, "classify_ms": 2, "total_ms": 38002 }
+}</code></pre>
 
-  <h3><code>list_skills()</code></h3>
-  <p>Enumerate all available skills (slugs only).</p>
-
-  <h3><code>search_skills(query)</code></h3>
-  <p>Full-text search across names, descriptions, bodies. Returns hits with snippets.</p>
-
-  <h2 id="api-resources">Resources</h2>
-  <p>Each skill is also exposed as an MCP resource:</p>
-  <pre><code>meridian://skills/{slug}</code></pre>
-  <p>MCP clients can enumerate the full skill corpus as <code>text/markdown</code> resources.</p>
-
-  <h2 id="orbital-routing">Orbital routing (the algorithm)</h2>
-  <p>Each skill is classified into an orbital class based on its independence and overlap with other skills:</p>
+  <p><strong>Errors</strong></p>
   <ul>
-    <li><strong>Planet</strong> — broad independent skill; anchors satellites</li>
-    <li><strong>Moon</strong> — specialist; useful through a parent domain</li>
-    <li><strong>Trojan</strong> — permanent L4/L5 companion; auto-injected with parent</li>
-    <li><strong>Comet</strong> — high-eccentricity dormant skill; burst-activates near perihelion</li>
-    <li><strong>Asteroid belt</strong> — fragmentary utility; no dedicated parent orbit</li>
-    <li><strong>Irregular satellite</strong> — niche or high-drag; bursty activation</li>
+    <li><code>400</code> — task missing / too long / invalid JSON.</li>
+    <li><code>502</code> — Workers AI failed. <code>{ "error": "LLM call failed: …" }</code>. Retry safe.</li>
+    <li><code>503</code> — AI binding not configured (only on a misconfigured deployment).</li>
   </ul>
-  <p>Routing scores use Roche limits, Lagrange-point analysis, Hill spheres, and tidal locking to compute <code>route_score</code> — a deterministic function, not a learned model. No embeddings, no hallucinations.</p>
-  <p>See the <a href="https://ask-meridian.uk/galaxy/">live orbital map</a> for an interactive visualization.</p>
 
-  <h2 id="skill-authoring">Authoring skills</h2>
-  <p>A skill is a directory with a <code>SKILL.md</code> file:</p>
-  <pre><code class="lang-markdown">---
-name: your-skill-name
-description: One-line description used by the router to score relevance.
----
+  <h2 id="mcp-tool">MCP tool</h2>
+  <p>v1.0.0 of <code>meridian-skills-mcp</code> exposes one tool:</p>
 
-# your-skill-name
+  <h3><code>route_task(task: string, limit?: integer)</code></h3>
+  <p>
+    Posts to <code>/api/orbital-route</code>, formats the response as agent-readable markdown,
+    returns it in a single text content block. Each generated skill ships with its full body so the
+    caller LLM can read it without an extra fetch.
+  </p>
 
-Body content — instructions, patterns, examples. Kept under 2000 words
-for best routing.</code></pre>
-  <p>Place under <code>$MERIDIAN_SKILLS_ROOT</code> and the server picks it up on next call.</p>
+  <p>
+    The earlier <code>get_skill</code>, <code>list_skills</code>, and <code>search_skills</code> tools
+    from the 0.3.x line were removed — they were a closed-domain abstraction that has no meaning
+    under dynamic LLM generation. <a href="#self-host">See self-hosting</a> if you want the curated
+    corpus path.
+  </p>
 
-  <h2 id="world-id">World ID verification</h2>
-  <p>The hosted Meridian Mini App in the World App gates access via World ID — one verified human = one session. Backend calls <a href="https://docs.world.org/">Worldcoin's Developer Portal API</a> to validate each proof.</p>
-  <p>Device verification: 10 queries/day free. Orb verification: unlimited.</p>
+  <h2 id="response">Response shape</h2>
+  <p>Each entry in <code>selected[]</code>:</p>
+  <pre><code class="lang-json">{
+  "slug":        "redis-token-bucket",
+  "name":        "redis-token-bucket",
+  "description": "Atomic Lua-driven token bucket in Redis for sub-millisecond rate limiting.",
+  "body":        "## Use It For\n- ...\n\n## Workflow\n1. ...\n",
+  "keywords":    ["redis", "lua", "token-bucket", "..."],
+  "route_score": 109.3,
 
-  <h2 id="pricing">Plans</h2>
+  "classification": {
+    "class":              "trojan",
+    "class_scores":       { "planet": 0.41, "moon": 0.07, "trojan": 0.62, "..." : 0 },
+    "physics": {
+      "mass":          0.58,
+      "scope":         0.71,
+      "independence":  0.34,
+      "cross_domain":  0.18,
+      "fragmentation": 0.12,
+      "drag":          0.21,
+      "dep_ratio":     0.64,
+      "lagrange_potential": 0.22,
+      "star_system":   "forge",
+      "star_affinity": { "forge": 0.78, "signal": 0.06, "mind": 0.04 }
+    },
+    "parent":             "api-rate-limiting",
+    "star_system":        "forge",
+    "lagrange_systems":   ["forge"],
+    "lagrange_potential": 0.22,
+    "decision_rule":      "Companion at L4/L5 of api-rate-limiting — ...",
+    "habitable_zone":     true,
+    "tidal_lock":         true
+  },
+
+  "breakdown": {
+    "kw_hits":        3,
+    "desc_hits":      2,
+    "body_hits":      11,
+    "diversity_mult": 1.36,
+    "class_mult":     1.20,
+    "lagrange_mult":  1.11,
+    "tokens":         ["rate", "limiting", "redis"]
+  },
+  "why": "3 keyword · 2 desc · 11 body · trojan×1.20 · ..."
+}</code></pre>
+
+  <h2 id="celestial-classes">Celestial classes</h2>
+  <p>Each generated skill is assigned exactly one class — argmax over six per-class scores:</p>
   <table>
-    <thead><tr><th>Plan</th><th>Price</th><th>Quota</th><th>Transport</th></tr></thead>
+    <thead><tr><th>Class</th><th>Decision rule</th><th>Score boost</th></tr></thead>
     <tbody>
-      <tr><td>Free (self-hosted)</td><td>$0</td><td>unlimited</td><td>stdio</td></tr>
-      <tr><td>Pro</td><td>$29/mo</td><td>10,000 calls/mo</td><td>HTTP + stdio</td></tr>
-      <tr><td>Team</td><td>$149/mo</td><td>100,000 calls/mo · 5 keys</td><td>HTTP + stdio</td></tr>
+      <tr><td><strong>Planet</strong></td>
+          <td>Domain anchor — high mass × scope × independence. Loads as a primary skill.</td>
+          <td>×1.30</td></tr>
+      <tr><td><strong>Trojan</strong></td>
+          <td>Companion at L4/L5 of a parent — high dep_ratio, low fragmentation. Co-activates permanently with its parent.</td>
+          <td>×1.20</td></tr>
+      <tr><td><strong>Irregular</strong></td>
+          <td>Cross-domain bridge — spans multiple star systems with high fragmentation.</td>
+          <td>×1.10</td></tr>
+      <tr><td><strong>Moon</strong></td>
+          <td>Sub-skill orbiting a parent — low independence, dep_ratio drives loading.</td>
+          <td>×1.05</td></tr>
+      <tr><td><strong>Asteroid</strong></td>
+          <td>Narrow-scope niche tool — low mass but independently useful.</td>
+          <td>×0.85</td></tr>
+      <tr><td><strong>Comet</strong></td>
+          <td>Specialised / occasional — high drag, high cross_domain, low dep_ratio. Triggers rarely.</td>
+          <td>×0.80</td></tr>
     </tbody>
   </table>
 
-  <h2 id="quotas">Quotas &amp; rate limits</h2>
+  <h2 id="physics">Physics signature</h2>
+  <p>Per-skill features derived from content alone (no curated lookup tables):</p>
   <ul>
-    <li>Monthly call quota enforced per key</li>
-    <li>Calls-remaining returned in <code>X-Meridian-Calls-Remaining</code></li>
-    <li>Over-quota: HTTP 401 with error hint</li>
-    <li>Rate limit: fair-use, not currently hard-enforced per-second</li>
+    <li><code>mass</code> — log(body_length) + keyword count, normalized.</li>
+    <li><code>scope</code> — keyword diversity + cross_domain contribution.</li>
+    <li><code>independence</code> — 1 − Jaccard with siblings, modulated by mass.</li>
+    <li><code>cross_domain</code> — Shannon entropy across forge / signal / mind term sets.</li>
+    <li><code>fragmentation</code> — keyword length stddev + cross_domain.</li>
+    <li><code>drag</code> — proportion of long / hyphenated specialised terms.</li>
+    <li><code>dep_ratio</code> — best Jaccard with another skill in the batch (parent indicator).</li>
+    <li><code>lagrange_potential</code> — geometric mean of two strongest system affinities.</li>
   </ul>
 
-  <h2 id="cancel">Cancel or change plan</h2>
-  <p>Billing is handled by Stripe. Cancel anytime at your Stripe customer portal — no prorated refunds but your key works until period end. Contact <a href="mailto:hello@ask-meridian.uk">hello@ask-meridian.uk</a> for downgrades or enterprise terms.</p>
+  <h2 id="star-systems">Star systems</h2>
+  <p>
+    Three system term sets (lifted verbatim from <code>skill_orbit.py</code>) determine which gravitational
+    well a skill orbits:
+  </p>
+  <ul>
+    <li><strong>Forge</strong> — devops/backend: <code>api · docker · deploy · network · backend · nginx · ssh · ci/cd · build · server · database · redis · cache · auth · test · kubernetes · tunnel · vpn · observability</code></li>
+    <li><strong>Signal</strong> — growth/marketing: <code>seo · serp · keyword · content · email · marketing · campaign · analytics · conversion · funnel · brand · publish · backlink · cohort · attribution · linkedin · podcast · persona</code></li>
+    <li><strong>Mind</strong> — AI/research: <code>llm · prompt · reasoning · agent · embedding · vector · rag · evaluation · orchestration · memory · knowledge · openai · anthropic · inference · fine-tune · transcript · synthesis</code></li>
+  </ul>
+  <p>
+    Skills with strong affinity in ≥ 2 systems get a <strong>versatility boost</strong> (1 + min(0.30, lagrange_potential × 0.5)) on the route score.
+  </p>
+
+  <h2 id="config">Configuration</h2>
+  <p>Environment variables for the MCP client:</p>
+  <table>
+    <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>MERIDIAN_API_URL</code></td>
+          <td><code>https://ask-meridian.uk/api/orbital-route</code></td>
+          <td>Override the backend (e.g. for a self-hosted Pages clone or a staging deployment).</td></tr>
+      <tr><td><code>MERIDIAN_API_KEY</code></td>
+          <td><em>(none)</em></td>
+          <td>Sent as <code>Authorization: Bearer …</code>. Currently unused server-side; reserved for future per-user gating.</td></tr>
+      <tr><td><code>MERIDIAN_TIMEOUT_MS</code></td>
+          <td><code>90000</code></td>
+          <td>Abort the fetch after this many ms. Increase if your client has a tool-call timeout shorter than 60 s.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="latency">Latency &amp; quota</h2>
+  <ul>
+    <li><strong>Per call</strong> — typical 30–50 s. Llama-3.3-70B does the bulk of the work; the JS classifier runs in &lt; 5 ms.</li>
+    <li><strong>Free tier</strong> — Workers AI gives ~10 000 neurons/day account-wide. Each call costs ~150–300 neurons. Real-world budget: ~30–60 calls/day shared across all clients before the LLM step starts erroring.</li>
+    <li><strong>Failure mode</strong> — when quota is exhausted the function returns <code>502 LLM call failed</code>. Retry after the daily reset.</li>
+    <li><strong>No silent fallback</strong> — there is no static-corpus fallback. The MCP and miniapp surface the error directly.</li>
+  </ul>
+
+  <h2 id="self-host">Self-hosting (closed-domain, offline)</h2>
+  <p>
+    The 1.0.0 release is a thin client that requires the public backend. If you need the older
+    <em>local model + curated corpus</em> path, pin to:
+  </p>
+  <pre><code class="lang-bash">npm install -g meridian-skills-mcp@0.3.2</code></pre>
+  <p>That ships:</p>
+  <ul>
+    <li>The <code>skill_orbit.py</code> Python orbital classifier.</li>
+    <li>An <code>@xenova/transformers</code> MiniLM-L6-v2 embedding pre-filter (~23 MB ONNX model, downloaded on first call).</li>
+    <li>An 88-skill curated corpus of <code>SKILL.md</code> files.</li>
+    <li>Four tools: <code>route_task</code>, <code>get_skill</code>, <code>list_skills</code>, <code>search_skills</code>.</li>
+  </ul>
+  <p>
+    Tradeoff: closed-domain (only the curated 88 skills classify properly), but no internet required and
+    routing is &lt; 3 s. The tradeoff <code>1.0.0</code> made was the opposite — open-domain (any task), but
+    HTTP only and 30 – 50 s per call.
+  </p>
 
   <footer class="doc-footer">
-    <p>Last updated 2026-04-15 · <a href="https://github.com/LuuOW/meridian-mcp">Contribute on GitHub</a> · <a href="mailto:hello@ask-meridian.uk">Contact</a></p>
+    <p>
+      Last updated 2026-05-01 ·
+      <a href="https://github.com/LuuOW/meridian-mcp">Source on GitHub</a> ·
+      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a> ·
+      <a href="https://ask-meridian.uk/miniapp/">Try the miniapp</a>
+    </p>
   </footer>
 
 </main>
