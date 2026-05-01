@@ -6,6 +6,7 @@ on:
     paths:
       - 'site/**'
       - 'landing/**'
+      - 'galaxy/**'
       - 'skills/**'
       - 'scripts/build-miniapp-index.mjs'
       - '.github/workflows/deploy-pages.yml'
@@ -21,6 +22,7 @@ jobs:
     outputs:
       docs: ${{ steps.filter.outputs.docs }}
       landing: ${{ steps.filter.outputs.landing }}
+      galaxy: ${{ steps.filter.outputs.galaxy }}
     steps:
       - uses: actions/checkout@v4
       - id: filter
@@ -33,6 +35,8 @@ jobs:
               - 'landing/**'
               - 'skills/**'
               - 'scripts/build-miniapp-index.mjs'
+            galaxy:
+              - 'galaxy/**'
 
   deploy-docs:
     needs: changes
@@ -65,3 +69,16 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: landing
           command: pages deploy . --project-name=meridian-landing --branch=main --commit-dirty=true
+
+  deploy-galaxy:
+    needs: changes
+    if: needs.changes.outputs.galaxy == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: galaxy
+          command: pages deploy . --project-name=meridian-galaxy --branch=main --commit-dirty=true
