@@ -29,6 +29,14 @@ export class MiniGalaxy {
     this._onResize = this._resize.bind(this)
     window.addEventListener('resize', this._onResize, { passive: true })
 
+    // The canvas may be inside a hidden section at construction time
+    // (display:none → getBoundingClientRect returns 0×0). Watch for the
+    // first non-zero size and re-resize then.
+    if (typeof ResizeObserver !== 'undefined') {
+      this._ro = new ResizeObserver(() => this._resize())
+      this._ro.observe(canvas)
+    }
+
     canvas.addEventListener('mousemove', e => this._onPointerMove(e))
     canvas.addEventListener('mouseleave', () => { this.hover = null; canvas.style.cursor = 'default' })
     canvas.addEventListener('click',     e => this._onPointerClick(e))
@@ -46,6 +54,7 @@ export class MiniGalaxy {
 
   destroy() {
     window.removeEventListener('resize', this._onResize)
+    if (this._ro) this._ro.disconnect()
     this._stopped = true
   }
 
@@ -86,6 +95,7 @@ export class MiniGalaxy {
 
   _resize() {
     const rect = this.canvas.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return   // hidden — defer
     this.w = rect.width
     this.h = rect.height
     this.canvas.width  = Math.round(rect.width  * this.dpr)

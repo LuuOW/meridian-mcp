@@ -77,6 +77,9 @@ askBtn.addEventListener('click', async () => {
   askBtn.disabled = true
   askBtn.textContent = 'Routing…'
   resultsSection.hidden = false
+  // The canvas was 0×0 while the section was hidden — kick a resize now
+  // that the layout has settled (covers browsers without ResizeObserver).
+  requestAnimationFrame(() => galaxy._resize())
   resultsList.innerHTML = '<li class="no-results">Scoring 88 skills…</li>'
   resultsMeta.textContent = ''
   skillDetail.hidden = true
