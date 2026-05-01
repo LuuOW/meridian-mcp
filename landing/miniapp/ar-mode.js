@@ -12,9 +12,17 @@ let _stream    = null
 let _model     = null
 let _stopped   = false
 let _scanFrame = null
+let _locked    = false   // when true, detection runs (boxes drawn) but no route calls fire
 
-const lastEmittedAt = new Map()       // class → timestamp of last emit
-const EMIT_COOLDOWN_MS = 3000          // don't re-emit same class within this window
+const lastEmittedAt = new Map()
+const EMIT_COOLDOWN_MS = 3000
+
+// Caller flips this after a route call completes. While locked, the
+// detection loop continues (overlay still updates, frames stay live)
+// but onDetectedClass is suppressed — no new queries spawn.
+export function lockAR()   { _locked = true;  lastEmittedAt.clear() }
+export function unlockAR() { _locked = false; lastEmittedAt.clear() }
+export function isLocked() { return _locked }
 
 export async function startAR({ stream, videoEl, overlayEl, statusEl, detsEl, onDetectedClass }) {
   _stopped = false
@@ -73,12 +81,19 @@ export async function startAR({ stream, videoEl, overlayEl, statusEl, detsEl, on
       const dets = await _model.detect(videoEl, 5, 0.55)
       drawOverlay(overlayEl, videoEl, dets)
       renderDetectionsList(detsEl, dets)
-      const now = Date.now()
-      for (const d of dets) {
-        const last = lastEmittedAt.get(d.class) || 0
-        if (now - last > EMIT_COOLDOWN_MS) {
-          lastEmittedAt.set(d.class, now)
-          try { onDetectedClass(d.class) } catch {}
+      if (!_locked) {
+        // Pick only the SINGLE highest-confidence detection per frame and
+        // emit it once per cooldown window. Lock immediately on emit so
+        // subsequent frames don't queue concurrent calls.
+        const top = dets.reduce((a, b) => (!a || b.score > a.score) ? b : a, null)
+        if (top) {
+          const now = Date.now()
+          const last = lastEmittedAt.get(top.class) || 0
+          if (now - last > EMIT_COOLDOWN_MS) {
+            lastEmittedAt.set(top.class, now)
+            _locked = true   // self-lock; caller calls unlockAR() to re-arm
+            try { onDetectedClass(top.class) } catch {}
+          }
         }
       }
     }
