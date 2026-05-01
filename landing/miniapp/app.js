@@ -85,8 +85,8 @@ askBtn.addEventListener('click', async () => {
   requestAnimationFrame(() => galaxy._resize())
   resultsList.innerHTML =
     '<li class="no-results">' +
-    '<span class="loading-pulse">🪐 LLM generating candidate skills…</span><br>' +
-    '<small>then the orbital engine classifies them into celestial objects (planet, moon, asteroid, trojan, comet, irregular). This usually takes 3–6 s.</small>' +
+    '<span class="loading-pulse">🪐 Llama-3.3-70B is authoring SKILL specs…</span><br>' +
+    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>This usually takes 25–45 s.</em></small>' +
     '</li>'
   resultsMeta.textContent = ''
   closePanel()
