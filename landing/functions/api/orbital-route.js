@@ -113,7 +113,12 @@ export async function onRequest({ request, env }) {
           type: 'object', required: ['skills'], additionalProperties: false,
           properties: {
             skills: {
-              type: 'array', minItems: 4, maxItems: 12,
+              type: 'array',
+              // Cap at the requested count exactly so the model can't
+              // overshoot and burn token budget. Floor at 3 so a request
+              // for 1 still yields useful adjacent skills.
+              minItems: Math.min(3, candidates),
+              maxItems: candidates,
               items: {
                 type: 'object',
                 required: ['slug', 'description', 'keywords', 'body'],
