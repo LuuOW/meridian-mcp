@@ -46,7 +46,7 @@ export async function onRequest({ request, env }) {
   if (task.length > 800) return jsonResponse({ error: 'task too long (max 800)' }, { status: 400 })
 
   // Static branch
-  const staticRanked = mode === 'dynamic-only' ? [] : scoreSkills(task, skillsIndex.skills)
+  const staticRanked = mode === 'dynamic-only' ? [] : scoreSkills(task, skillsIndex.skills, skillsIndex.idf)
   staticRanked.forEach(s => { s.source = 'static' })
 
   // Dynamic branch — call Workers AI
@@ -106,7 +106,7 @@ export async function onRequest({ request, env }) {
           keywords:    Array.isArray(g.keywords) ? g.keywords : [],
           body:        (g.description || '') + ' ' + (g.keywords || []).join(' '),
         }))
-        dynamicRanked = scoreSkills(task, synthetic)
+        dynamicRanked = scoreSkills(task, synthetic, skillsIndex.idf)
         dynamicRanked.forEach(s => { s.source = 'dynamic' })
       } catch (e) {
         dynamicError = String(e?.message || e)
