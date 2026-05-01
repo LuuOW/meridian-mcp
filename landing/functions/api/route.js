@@ -21,7 +21,7 @@ export async function onRequest(context) {
   if (!task)             return jsonResponse({ error: 'task required'           }, { status: 400 })
   if (task.length > 800) return jsonResponse({ error: 'task too long (max 800)' }, { status: 400 })
 
-  const ranked = scoreSkills(task, skillsIndex.skills).slice(0, limit)
+  const ranked = scoreSkills(task, skillsIndex.skills, skillsIndex.idf).slice(0, limit)
   const top    = ranked[0]?.route_score || 0
   const confidence =
     top >= 40 ? 'strong' :

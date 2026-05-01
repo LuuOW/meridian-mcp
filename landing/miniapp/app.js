@@ -13,14 +13,22 @@ const arBtn          = $('arBtn')
 const resultsSection = $('resultsSection')
 const resultsList    = $('resultsList')
 const resultsMeta    = $('resultsMeta')
-const skillDetail    = $('skillDetail')
-const skillTitle     = $('skillTitle')
-const skillBody      = $('skillBody')
-const closeSkill     = $('closeSkill')
 const miniGalaxyCanvas = $('miniGalaxyCanvas')
 const mode2dBtn        = $('mode2d')
 const mode3dBtn        = $('mode3d')
 const arSection        = $('arSection')
+
+// Side panel
+const panel       = $('skillPanel')
+const panelTitle  = $('skillPanelTitle')
+const panelClass  = $('skillPanelClass')
+const panelWhy    = $('skillPanelWhy')
+const panelContent= $('skillPanelContent')
+const panelClose  = $('skillPanelClose')
+const panelBack   = $('skillPanelBackdrop')
+
+// Stash latest results so the side panel has access to per-skill metadata
+let latestSelected = []
 
 const galaxy = new MiniGalaxy(miniGalaxyCanvas, {
   mode: '2d',
@@ -31,6 +39,7 @@ const galaxy = new MiniGalaxy(miniGalaxyCanvas, {
       item.style.boxShadow = '0 0 0 2px var(--neon-violet, #a78bfa), 0 0 24px rgba(167,139,250,0.45)'
       setTimeout(() => { item.style.boxShadow = '' }, 1200)
     }
+    openPanel(slug)
   },
 })
 
@@ -79,14 +88,12 @@ askBtn.addEventListener('click', async () => {
   }
 
   askBtn.disabled = true
-  askBtn.textContent = 'Routing…'
+  askBtn.textContent = dynamicToggle.checked ? 'Generating + scoring…' : 'Routing…'
   resultsSection.hidden = false
-  // The canvas was 0×0 while the section was hidden — kick a resize now
-  // that the layout has settled (covers browsers without ResizeObserver).
   requestAnimationFrame(() => galaxy._resize())
-  resultsList.innerHTML = '<li class="no-results">Scoring 88 skills…</li>'
+  resultsList.innerHTML = '<li class="no-results">Scoring corpus…</li>'
   resultsMeta.textContent = ''
-  skillDetail.hidden = true
+  closePanel()
 
   try {
     const data = await routeTask(task, parseInt(limitSelect.value, 10) || 5)
@@ -95,7 +102,7 @@ askBtn.addEventListener('click', async () => {
     resultsList.innerHTML = `<li class="no-results">Error: ${escapeHTML(err.message)}</li>`
   } finally {
     askBtn.disabled = false
-    askBtn.textContent = 'Route this task →'
+    askBtn.textContent = 'Find compatible skills →'
   }
 })
 
@@ -116,11 +123,12 @@ async function routeTask(task, limit) {
 }
 
 function renderResults(data) {
-  galaxy.setSkills(data.selected || [])
+  latestSelected = data.selected || []
+  galaxy.setSkills(latestSelected)
 
   let meta = `<span class="conf-${data.confidence}">${data.confidence}</span> · ` +
              `top score <strong>${data.top_score.toFixed(1)}</strong> · ` +
-             `${data.selected.length} result${data.selected.length === 1 ? '' : 's'}`
+             `${latestSelected.length} result${latestSelected.length === 1 ? '' : 's'}`
   if (typeof data.dynamic_count === 'number') {
     meta += ` · <span class="meta-dyn">${data.dynamic_count} dynamic</span> + ${data.static_count} static`
     if (data.ai_latency_ms) meta += ` · LLM ${data.ai_latency_ms} ms`
@@ -128,74 +136,145 @@ function renderResults(data) {
   }
   resultsMeta.innerHTML = meta
 
-  if (!data.selected.length) {
+  if (!latestSelected.length) {
     resultsList.innerHTML = '<li class="no-results">No skills matched. Try different wording or one of the examples.</li>'
     return
   }
 
-  resultsList.innerHTML = data.selected.map(s => `
+  resultsList.innerHTML = latestSelected.map(s => {
+    const cls = s.classification?.class || (s.source === 'dynamic' ? 'dynamic' : '')
+    return `
     <li class="result-item ${s.source === 'dynamic' ? 'is-dynamic' : ''}" data-slug="${escapeHTML(s.slug)}" data-source="${escapeHTML(s.source || 'static')}">
       <div class="result-head">
         <span class="result-slug">${escapeHTML(s.slug)}</span>
+        ${cls ? `<span class="result-class" data-class="${escapeHTML(cls)}">${escapeHTML(cls)}</span>` : ''}
         ${s.source === 'dynamic' ? '<span class="result-tag">🪐 LLM</span>' : ''}
         <span class="result-score">${s.route_score.toFixed(1)}</span>
       </div>
       <p class="result-desc">${escapeHTML(s.description || '')}</p>
       <div class="result-why">${escapeHTML(s.why || '')}</div>
-    </li>
-  `).join('')
+    </li>`
+  }).join('')
 
   resultsList.querySelectorAll('.result-item').forEach(el => {
-    el.addEventListener('click', () => loadSkill(el.dataset.slug, el.dataset.source))
+    el.addEventListener('click', () => openPanel(el.dataset.slug))
   })
 }
 
-async function loadSkill(slug, source) {
-  skillDetail.hidden = false
-  skillTitle.textContent = slug
-  skillBody.innerHTML = '<p style="color:var(--text-muted)">Loading…</p>'
-  skillDetail.scrollIntoView({ behavior: 'smooth', block: 'start' })
+// SIDE PANEL --------------------------------------------------------------
+function openPanel(slug) {
+  const skill = latestSelected.find(s => s.slug === slug)
+  if (!skill) return
 
-  if (source === 'dynamic') {
-    // No SKILL.md exists for LLM-generated skills — render description from the result row.
-    const item = resultsList.querySelector(`[data-slug="${CSS.escape(slug)}"]`)
-    const desc = item?.querySelector('.result-desc')?.textContent || ''
-    skillBody.innerHTML =
-      '<p style="color:#a78bfa;font-family:var(--font-mono);font-size:11.5px;margin-bottom:14px">' +
-      '🪐 Generated by Llama-3.1-8b — no SKILL.md exists for this candidate.</p>' +
-      `<p>${escapeHTML(desc)}</p>` +
-      '<p style="color:var(--text-muted);font-size:13px;margin-top:14px">' +
-      'In a real deployment, an authoring step would convert promising LLM candidates into committed SKILL.md files.</p>'
-    return
-  }
+  panelTitle.textContent = skill.slug
 
-  try {
-    const res  = await fetch(`/api/skill/${encodeURIComponent(slug)}`)
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
-    skillBody.innerHTML = renderMarkdown(data.body || '')
-  } catch (err) {
-    skillBody.innerHTML = `<p style="color:#f87171">Failed to load: ${escapeHTML(err.message)}</p>`
+  const cls = skill.classification?.class || (skill.source === 'dynamic' ? 'dynamic' : '')
+  panelClass.textContent = cls || ''
+  panelClass.dataset.class = cls
+  panelClass.style.display = cls ? 'inline-flex' : 'none'
+
+  panelWhy.innerHTML  = renderWhy(skill)
+  panelContent.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading skill…</p>'
+
+  panel.hidden = false
+  // tick to allow display change to apply before transition
+  requestAnimationFrame(() => panel.setAttribute('aria-hidden', 'false'))
+  document.body.style.overflow = 'hidden'
+
+  // Load the description / body
+  if (skill.source === 'dynamic') {
+    panelContent.innerHTML = renderDynamicSkillBody(skill)
+  } else {
+    fetch(`/api/skill/${encodeURIComponent(skill.slug)}`)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then(data => { panelContent.innerHTML = renderMarkdown(data.body || skill.description || '') })
+      .catch(e => { panelContent.innerHTML = `<p style="color:#f87171">Failed to load: ${escapeHTML(e.message)}</p>` })
   }
 }
 
-closeSkill.addEventListener('click', () => { skillDetail.hidden = true })
+function closePanel() {
+  panel.setAttribute('aria-hidden', 'true')
+  document.body.style.overflow = ''
+  setTimeout(() => { panel.hidden = true }, 320)
+}
+panelClose.addEventListener('click', closePanel)
+panelBack.addEventListener('click',  closePanel)
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel() })
 
-// AR mode wiring -----------------------------------------------------------
+function renderWhy(skill) {
+  const b   = skill.breakdown || {}
+  const cls = skill.classification || {}
+
+  // Score breakdown bars normalised against the largest contributing component
+  const kw   = b.kw_idf   || 0
+  const desc = b.desc_idf || 0
+  const body = b.body_idf || 0
+  const max  = Math.max(kw, desc, body, 1)
+
+  const bar = (label, val) => `
+    <span class="label">${escapeHTML(label)}</span>
+    <span class="bar"><span class="bar-fill" style="width:${(val / max * 100).toFixed(0)}%"></span></span>
+    <span class="val">${val.toFixed(1)}</span>`
+
+  const tokens = (b.tokens || []).map(t => `<span class="tok">${escapeHTML(t)}</span>`).join('')
+
+  const pills = []
+  if (cls.parent)              pills.push(`<span class="meta-pill">parent <em>${escapeHTML(cls.parent)}</em></span>`)
+  if (cls.star_system)         pills.push(`<span class="meta-pill">system <em>${escapeHTML(cls.star_system)}</em></span>`)
+  if (cls.lagrange_systems?.length > 1)
+    pills.push(`<span class="meta-pill">bridges <em>${cls.lagrange_systems.map(escapeHTML).join(' ↔ ')}</em></span>`)
+  if (cls.lagrange_potential)
+    pills.push(`<span class="meta-pill">L-potential <em>${cls.lagrange_potential.toFixed(2)}</em></span>`)
+  if (cls.tidal_lock)          pills.push(`<span class="meta-pill" title="Always co-loads with parent">tidal-locked</span>`)
+  if (cls.habitable_zone)      pills.push(`<span class="meta-pill" title="Stable activation profile">habitable-zone</span>`)
+  if (b.class && b.class_mult > 1) pills.push(`<span class="meta-pill">class boost <em>×${b.class_mult.toFixed(2)}</em></span>`)
+  if (b.lagrange_mult > 1.01)  pills.push(`<span class="meta-pill">versatility <em>×${b.lagrange_mult.toFixed(2)}</em></span>`)
+  if (b.diversity_mult > 1.01) pills.push(`<span class="meta-pill">diversity <em>×${b.diversity_mult.toFixed(2)}</em></span>`)
+
+  const decisionRule = cls.decision_rule
+    ? `<div class="decision-rule"><strong>Why this class:</strong> ${escapeHTML(cls.decision_rule)}</div>`
+    : (skill.source === 'dynamic'
+        ? `<div class="decision-rule"><strong>Generated:</strong> Llama-3.1-8b proposed this skill given the task. The lexical scorer ranked it on equal footing with the static corpus.</div>`
+        : '')
+
+  return `
+    <h4>Why score = ${skill.route_score.toFixed(2)}</h4>
+    <div class="score-breakdown">
+      ${bar('keywords (×10)',   kw)}
+      ${bar('description (×5)', desc)}
+      ${bar('body (×0.3)',      body)}
+    </div>
+    ${tokens ? `<div class="token-hits">${tokens}</div>` : ''}
+    ${pills.length ? `<div class="classification-meta">${pills.join('')}</div>` : ''}
+    ${decisionRule}
+  `
+}
+
+function renderDynamicSkillBody(skill) {
+  return (
+    `<p style="color:#a78bfa;font-family:var(--font-mono);font-size:11.5px;margin-bottom:14px">` +
+    `🪐 Generated by Llama-3.1-8b — no SKILL.md exists for this candidate.</p>` +
+    `<p>${escapeHTML(skill.description || '')}</p>` +
+    (skill.classification?.scores ? '' : '') +
+    `<p style="color:var(--text-muted);font-size:13px;margin-top:14px">` +
+    `In a real deployment, an authoring step would convert promising LLM candidates into committed SKILL.md files.</p>`
+  )
+}
+
+// AR mode wiring ----------------------------------------------------------
 let arActive = false
 arBtn.addEventListener('click', async () => {
   if (arActive) {
     stopAR()
     arSection.hidden = true
     arActive = false
-    arBtn.textContent = '📷 AR'
     arBtn.classList.remove('active')
     return
   }
   arSection.hidden = false
   arActive = true
-  arBtn.textContent = '✕ stop AR'
   arBtn.classList.add('active')
+  arSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
   try {
     await startAR({
       videoEl:    $('arVideo'),
@@ -203,7 +282,6 @@ arBtn.addEventListener('click', async () => {
       statusEl:   $('arStatus'),
       detsEl:     $('arDetections'),
       onDetectedClass: (className) => {
-        // Pre-fill the input + auto-route the detected object class.
         taskInput.value = `What skills would help me interact with a ${className}?`
         updateCharCount()
         askBtn.click()
@@ -215,6 +293,7 @@ arBtn.addEventListener('click', async () => {
 })
 $('arCloseBtn').addEventListener('click', () => { arBtn.click() })
 
+// MARKDOWN ---------------------------------------------------------------
 function renderMarkdown(md) {
   const codeBlocks = []
   md = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
