@@ -12,6 +12,31 @@ const arBtn          = $('arBtn')
 // Defaults — controls were removed from the UI; routing is always
 // fully dynamic: LLM generates the corpus, orbital engine classifies it.
 const ROUTE_LIMIT = 5
+
+const modelSelect = document.getElementById('modelSelect')
+const quotaPill   = document.getElementById('quotaPill')
+
+async function refreshQuota() {
+  try {
+    const r = await fetch('/api/quota')
+    const d = await r.json()
+    if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+    const txt = quotaPill.querySelector('.quota-text')
+    const dot = quotaPill.querySelector('.quota-dot')
+    if (d.plan === 'free') {
+      txt.textContent = `Free · ${d.calls_today}/${d.daily_limit} today`
+    } else {
+      txt.textContent = `${d.plan[0].toUpperCase() + d.plan.slice(1)} · ${d.remaining}/${d.monthly_limit} this month`
+    }
+    quotaPill.removeAttribute('data-loading')
+    const pct = d.pct_used ?? 0
+    dot.style.background = pct >= 90 ? '#f87171' : pct >= 60 ? '#fbbf24' : '#10b981'
+  } catch {
+    quotaPill.querySelector('.quota-text').textContent = 'quota: offline'
+    quotaPill.removeAttribute('data-loading')
+  }
+}
+refreshQuota()
 const resultsSection = $('resultsSection')
 const resultsList    = $('resultsList')
 const resultsMeta    = $('resultsMeta')
@@ -117,14 +142,15 @@ askBtn.addEventListener('click', async () => {
 })
 
 async function routeTask(task, limit) {
+  const provider = modelSelect?.value || 'workers-ai'
   const res = await fetch('/api/orbital-route', {
     method:  'POST',
     headers: { 'content-type': 'application/json' },
-    // No candidates override — let the function default (5) apply for ~30s latency.
-    body:    JSON.stringify({ task, limit }),
+    body:    JSON.stringify({ task, limit, provider }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+  refreshQuota()       // sync the badge after a call lands
   return data
 }
 
