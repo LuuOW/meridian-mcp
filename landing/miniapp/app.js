@@ -250,8 +250,17 @@ function renderDynamicSkillBody(skill) {
 }
 
 // AR mode wiring ----------------------------------------------------------
+// Safari is strict: getUserMedia must be called synchronously in the same
+// task as the click — no awaits between. Otherwise the user-gesture token
+// is lost and the permission prompt is silently denied. So we kick the
+// stream request immediately, then pass the in-flight Promise to startAR.
 let arActive = false
-arBtn.addEventListener('click', async () => {
+
+function isMediaSupported() {
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+}
+
+arBtn.addEventListener('click', () => {
   if (arActive) {
     stopAR()
     arSection.hidden = true
@@ -259,25 +268,47 @@ arBtn.addEventListener('click', async () => {
     arBtn.classList.remove('active')
     return
   }
+
+  if (!isMediaSupported()) {
+    arSection.hidden = false
+    $('arStatus').textContent =
+      'Camera API not available — needs HTTPS + a modern browser. iOS in-app browsers (Instagram/X) often block this; open in Safari/Chrome directly.'
+    return
+  }
+
+  // *** Safari: call getUserMedia HERE, synchronously, before any await ***
+  let streamPromise
+  try {
+    streamPromise = navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    })
+  } catch (e) {
+    arSection.hidden = false
+    $('arStatus').textContent = 'AR failed (sync): ' + (e.message || e)
+    return
+  }
+
   arSection.hidden = false
   arActive = true
   arBtn.classList.add('active')
   arSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  try {
-    await startAR({
-      videoEl:    $('arVideo'),
-      overlayEl:  $('arOverlay'),
-      statusEl:   $('arStatus'),
-      detsEl:     $('arDetections'),
-      onDetectedClass: (className) => {
-        taskInput.value = `What skills would help me interact with a ${className}?`
-        updateCharCount()
-        askBtn.click()
-      },
-    })
-  } catch (e) {
+
+  startAR({
+    stream:     streamPromise,
+    videoEl:    $('arVideo'),
+    overlayEl:  $('arOverlay'),
+    statusEl:   $('arStatus'),
+    detsEl:     $('arDetections'),
+    onDetectedClass: (className) => {
+      taskInput.value = `What skills would help me interact with a ${className}?`
+      askBtn.click()
+    },
+  }).catch(e => {
     $('arStatus').textContent = 'AR failed: ' + (e.message || e)
-  }
+    arActive = false
+    arBtn.classList.remove('active')
+  })
 })
 $('arCloseBtn').addEventListener('click', () => { arBtn.click() })
 
