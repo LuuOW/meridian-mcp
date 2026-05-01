@@ -139,64 +139,10 @@
 }
 
 .ask-controls {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 14px; gap: 12px; flex-wrap: wrap;
+  display: flex; align-items: stretch;
+  margin-top: 14px;
 }
-.control-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.limit-label {
-  font-size: 13px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 8px;
-}
-.limit-label select {
-  background: var(--bg-code, #0f1220);
-  border: 1px solid var(--border, rgba(148,163,184,0.14));
-  color: var(--text);
-  border-radius: 8px;
-  padding: 6px 10px; font-size: 13px;
-  font-family: var(--font-mono);
-  min-height: 36px;       /* touch target */
-}
-.char-count { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint, #5d6778); }
-.char-count.warn { color: #f59e0b; }
-
-/* DYNAMIC TOGGLE ---------------------------------------------------------- */
-.toggle-label {
-  display: inline-flex; align-items: center; gap: 8px;
-  cursor: pointer; user-select: none;
-  font-size: 12.5px; color: var(--text-muted);
-  padding: 4px 8px; border-radius: 999px;
-  transition: background 0.2s;
-}
-.toggle-label:hover { background: rgba(167, 139, 250, 0.06); }
-.toggle-label input { position: absolute; opacity: 0; pointer-events: none; }
-.toggle-pill {
-  display: inline-block; position: relative;
-  width: 32px; height: 18px;
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-.toggle-dot {
-  position: absolute; top: 1px; left: 1px;
-  width: 14px; height: 14px;
-  background: #cbd5e1;
-  border-radius: 50%;
-  transition: transform 0.2s, background 0.2s;
-}
-.toggle-label input:checked ~ .toggle-pill {
-  background: linear-gradient(180deg, rgba(167, 139, 250, 0.85), rgba(139, 92, 246, 0.95));
-  border-color: rgba(167, 139, 250, 0.6);
-  box-shadow: 0 0 12px rgba(167, 139, 250, 0.4);
-}
-.toggle-label input:checked ~ .toggle-pill .toggle-dot {
-  transform: translateX(14px);
-  background: #0a0d14;
-}
-.toggle-label input:checked ~ .toggle-text { color: var(--neon-violet, #a78bfa); }
-
-.primary-actions {
-  display: inline-flex; gap: 8px; align-items: center;
-}
+.ask-controls .btn-primary { flex: 1; }
 .ar-btn {
   padding: 8px 14px; font-size: 13px;
   border-radius: 10px; min-height: 44px;
