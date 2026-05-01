@@ -86,7 +86,7 @@ askBtn.addEventListener('click', async () => {
   resultsList.innerHTML =
     '<li class="no-results">' +
     '<span class="loading-pulse">🪐 Llama-3.3-70B is authoring SKILL specs…</span><br>' +
-    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>This usually takes 25–45 s.</em></small>' +
+    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>This usually takes ~30 s.</em></small>' +
     '</li>'
   resultsMeta.textContent = ''
   closePanel()
@@ -106,7 +106,8 @@ async function routeTask(task, limit) {
   const res = await fetch('/api/orbital-route', {
     method:  'POST',
     headers: { 'content-type': 'application/json' },
-    body:    JSON.stringify({ task, limit, candidates: 12 }),
+    // No candidates override — let the function default (5) apply for ~30s latency.
+    body:    JSON.stringify({ task, limit }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
