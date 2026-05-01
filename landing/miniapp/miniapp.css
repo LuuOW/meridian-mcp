@@ -773,10 +773,20 @@
 .skill-panel-class[data-class="irregular"] { background: rgba(192, 132, 252, 0.16); color: #d8b4fe; border: 1px solid rgba(192, 132, 252, 0.35); }
 .skill-panel-class[data-class="dynamic"]   { background: rgba(167, 139, 250, 0.18); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.45); }
 
+/* New: single scroll container — header is pinned, everything below
+   (why + content) scrolls together. */
+.skill-panel-scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167,139,250,0.25) transparent;
+}
+.skill-panel-scroll::-webkit-scrollbar { width: 6px; }
+.skill-panel-scroll::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.25); border-radius: 3px; }
+
 .skill-panel-why {
   padding: 16px 22px;
   border-bottom: 1px solid var(--border, rgba(148,163,184,0.14));
-  flex-shrink: 0;
 }
 .skill-panel-why h4 {
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em;
@@ -791,15 +801,22 @@
 }
 .score-breakdown .label { color: var(--text-muted); }
 .score-breakdown .bar {
+  /* span by default is inline → height/width on children won't apply.
+     Force block so the inner .bar-fill can size itself in % of this. */
+  display: block;
   height: 6px;
   background: rgba(148,163,184,0.12);
   border-radius: 999px;
   overflow: hidden;
+  position: relative;
 }
 .score-breakdown .bar-fill {
+  display: block;
   height: 100%;
+  min-width: 1px;       /* still show a hairline when score is 0 */
   background: linear-gradient(90deg, var(--neon-violet), var(--neon-cyan));
   border-radius: 999px;
+  transition: width 0.4s ease;
 }
 .score-breakdown .val { color: var(--text); text-align: right; min-width: 38px; }
 .decision-rule {
@@ -837,15 +854,11 @@
 
 .skill-panel-content {
   padding: 16px 22px 24px;
-  overflow-y: auto;
-  flex: 1;
   font-size: clamp(13px, 2.4vw, 14px);
   line-height: 1.7;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(167,139,250,0.25) transparent;
+  /* Scrolling is owned by the .skill-panel-scroll wrapper now —
+     no overflow on this section so why+body scroll as one. */
 }
-.skill-panel-content::-webkit-scrollbar { width: 6px; }
-.skill-panel-content::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.25); border-radius: 3px; }
 .skill-panel-content h1, .skill-panel-content h2 { font-size: 16px; margin: 18px 0 8px; letter-spacing: -0.01em; }
 .skill-panel-content h3 { font-size: 14px; margin: 14px 0 6px; }
 .skill-panel-content p { margin: 0 0 10px; }
