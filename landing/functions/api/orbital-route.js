@@ -16,28 +16,29 @@ import { orbitalClassify, jsonResponse, corsHeaders } from './_orbital.js'
 
 const MODEL = '@cf/meta/llama-3.1-8b-instruct'
 
-const SYSTEM_PROMPT = `You are an AI agent skill curator for a celestial-mechanics-style skill router. Given a user task, generate plausible "skills" (knowledge units an AI agent could load) covering the task and its adjacent territory.
+const SYSTEM_PROMPT = `You are an AI agent skill author for a celestial-mechanics-style skill router. Given a user task, write polished, opinionated SKILL specifications — the kind a senior practitioner would commit into a curated corpus.
+
+Each skill is a unit of expertise an AI agent can load. The body must be RICH and SPECIFIC, not generic. Match the depth of a mature open-source skill: concrete techniques, named tools, decision rules, and anti-patterns. Aim for 600–1200 chars of prose per body — the orbital classifier needs real signal to derive accurate physics scores (mass, scope, cross_domain, etc.).
 
 Respond ONLY with a JSON object of this exact shape:
 {
   "skills": [
     {
       "slug":        "kebab-case-slug",
-      "description": "One concise sentence (≤25 words) describing the skill's coverage and when to load it.",
-      "keywords":    ["kw1", "kw2", "..."],
-      "body":        "1-2 paragraph description of the techniques, tools, and gotchas. ~200-400 chars."
+      "description": "One sentence (≤30 words) — when to load this skill and what it covers, in concrete terms.",
+      "keywords":    ["kw1", "kw2", ...],
+      "body":        "Polished markdown skill body. Must include sections: '## Use It For' (3-6 bullets of concrete situations), '## Workflow' (numbered steps with concrete actions), '## Heuristics' (3-6 short rules of thumb), '## Anti-Patterns' (3-5 things to avoid). Be opinionated. Name specific tools, libraries, file paths, regex patterns, command-line flags. No hedging."
     }
   ]
 }
 
-Rules:
-- Slug must be lowercase, kebab-case, alphanumeric + hyphens only.
-- 8–12 keywords per skill: nouns/verbs that would appear in matching tasks.
-- Skills must be DIVERSE — cover the task itself, its prerequisites, common variants,
-  and adjacent specialties. Avoid near-duplicates.
-- Aim for a mix: some broad (e.g. domain anchors), some narrow (specific tools),
-  some cross-domain (bridging skills).
-- The body is short prose — no markdown, no lists, no fences.`
+Author guidelines:
+- Slug: lowercase, kebab-case, alphanumeric + hyphens only.
+- 10–14 keywords per skill: real terms that would appear in matching tasks (tool names, technique names, domain nouns and verbs). Mix common + specialised.
+- 8 distinct skills covering: the core task, its prerequisites, 1–2 common variants, the most-used adjacent specialty, an anti-pattern / failure-mode skill, and a cross-domain bridge skill (one that touches another star system).
+- Bodies must be PROPER markdown with real ## headings. No prose dumps. No platitudes. Treat the reader as an expert.
+- Avoid near-duplicates. Each skill should defend its own slot.
+- No prefatory text outside the JSON object. No \`\`\`fences.`
 
 export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() })
@@ -49,7 +50,7 @@ export async function onRequest({ request, env }) {
 
   const task       = (body.task || '').toString().trim()
   const limit      = Math.max(1, Math.min(20, parseInt(body.limit, 10) || 5))
-  const candidates = Math.max(4, Math.min(16, parseInt(body.candidates, 10) || 12))
+  const candidates = Math.max(4, Math.min(12, parseInt(body.candidates, 10) || 8))
 
   if (!task)             return jsonResponse({ error: 'task required'           }, { status: 400 })
   if (task.length > 800) return jsonResponse({ error: 'task too long (max 800)' }, { status: 400 })
@@ -73,7 +74,7 @@ export async function onRequest({ request, env }) {
           type: 'object', required: ['skills'], additionalProperties: false,
           properties: {
             skills: {
-              type: 'array', minItems: 4, maxItems: 16,
+              type: 'array', minItems: 4, maxItems: 12,
               items: {
                 type: 'object',
                 required: ['slug', 'description', 'keywords', 'body'],
@@ -89,8 +90,8 @@ export async function onRequest({ request, env }) {
           },
         },
       },
-      max_tokens:  2400,
-      temperature: 0.6,
+      max_tokens:  6000,
+      temperature: 0.5,
     })
     aiLatencyMs = Date.now() - t0
   } catch (e) {
