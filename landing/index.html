@@ -192,7 +192,7 @@ claude mcp add meridian meridian-mcp</code></pre>
 </footer>
 
 <script>
-// Burger menu
+// Burger menu — universal dropdown panel (every screen size).
 (function () {
   const btn = document.getElementById('burgerBtn')
   const menu = document.getElementById('navMenu')
@@ -202,10 +202,21 @@ claude mcp add meridian meridian-mcp</code></pre>
     menu.classList.toggle('open', isOpen)
     btn.classList.toggle('open', isOpen)
     btn.setAttribute('aria-expanded', String(isOpen))
-    document.body.style.overflow = isOpen && window.innerWidth <= 720 ? 'hidden' : ''
+    if (isOpen) {
+      // Move focus into the menu for keyboard users
+      const firstLink = menu.querySelector('a')
+      if (firstLink) setTimeout(() => firstLink.focus(), 50)
+    } else {
+      btn.focus()
+    }
   }
-  btn.addEventListener('click', () => toggle())
+  btn.addEventListener('click', e => { e.stopPropagation(); toggle() })
   menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)))
+  // Click outside the panel closes it
+  document.addEventListener('click', e => {
+    if (!menu.classList.contains('open')) return
+    if (!menu.contains(e.target) && !btn.contains(e.target)) toggle(false)
+  })
   document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false) })
 })();
 
