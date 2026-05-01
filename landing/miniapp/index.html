@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Meridian — Try the router</title>
+<meta name="description" content="Type a task. See which skills the router picks and why.">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/miniapp/miniapp.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="brand">◎ Meridian</a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="https://docs.ask-meridian.uk">Docs</a>
+    <a href="/miniapp/" class="current">Try it</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main class="mini-wrap">
+  <header class="mini-head">
+    <span class="eyebrow">Live demo</span>
+    <h1>Type a task. See which skills the router picks.</h1>
+    <p class="lead">
+      Describe what you're trying to do. The router scores all 88 skills and returns the most relevant ones,
+      with a brief <em>why</em>.
+    </p>
+  </header>
+
+  <section class="ask-card">
+    <textarea
+      id="taskInput"
+      class="task-input"
+      placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
+      rows="3"
+      maxlength="800"></textarea>
+    <div class="ask-controls">
+      <div class="control-row">
+        <label class="limit-label">Top
+          <select id="limitSelect">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="7">7</option>
+            <option value="10">10</option>
+          </select>
+        </label>
+        <span class="char-count" id="charCount">0 / 800</span>
+      </div>
+      <button id="askBtn" class="btn btn-primary">Route this task →</button>
+    </div>
+
+    <div class="examples">
+      <span class="examples-label">Try:</span>
+      <button class="ex-chip" data-task="Set up rate limiting on a public API endpoint with Redis">Rate limit a public API</button>
+      <button class="ex-chip" data-task="Stake a position on a prediction market on World Chain using ethers.js">DeFi staking on World Chain</button>
+      <button class="ex-chip" data-task="Write a SKILL.md authoring guide for new contributors">Author a SKILL.md</button>
+      <button class="ex-chip" data-task="Run a difference-in-differences analysis on rollout impact">Causal analysis of a rollout</button>
+    </div>
+  </section>
+
+  <section id="resultsSection" class="results-section" hidden>
+    <div class="results-header">
+      <h2>Results</h2>
+      <div id="resultsMeta" class="results-meta"></div>
+    </div>
+    <ol id="resultsList" class="results-list"></ol>
+  </section>
+
+  <section id="skillDetail" class="skill-detail" hidden>
+    <div class="skill-detail-header">
+      <h3 id="skillTitle"></h3>
+      <button id="closeSkill" class="btn-ghost btn-sm">close ✕</button>
+    </div>
+    <div id="skillBody" class="skill-body"></div>
+  </section>
+
+  <footer class="mini-foot">
+    <p>
+      <strong>About this demo:</strong> the router here is a <em>simplified lexical scorer</em> running on Cloudflare's edge —
+      not the full orbital algorithm. The production router (used by the
+      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm package</a> and
+      <a href="https://docs.ask-meridian.uk">MCP server</a>) adds semantic embeddings and physics-based ranking that needs
+      Python and a transformer model.
+    </p>
+  </footer>
+</main>
+
+<script src="/miniapp/app.js" defer></script>
+</body>
+</html>
