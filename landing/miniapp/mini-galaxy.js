@@ -103,6 +103,17 @@ export class MiniGalaxy {
     })
   }
 
+  _makeStars(n) {
+    return Array.from({ length: n }, () => ({
+      x:   Math.random(),
+      y:   Math.random(),
+      r:   0.4 + Math.random() * 1.4,
+      tw:  Math.random() * Math.PI * 2,
+      hue: Math.random() < 0.18 ? 'cyan'
+         : (Math.random() < 0.4  ? 'violet' : 'white'),
+    }))
+  }
+
   // ── INPUT ────────────────────────────────────────────────────────────────
   _bindInput(canvas) {
     canvas.addEventListener('mousemove', e => {
