@@ -65,8 +65,32 @@ export async function onRequest({ request, env }) {
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user',   content: `Task: ${task}` },
           ],
-          response_format: { type: 'json_object' },
-          max_tokens: 800,
+          response_format: {
+            type:        'json_schema',
+            json_schema: {
+              type:                 'object',
+              required:             ['skills'],
+              additionalProperties: false,
+              properties: {
+                skills: {
+                  type:     'array',
+                  minItems: 1,
+                  maxItems: 12,
+                  items: {
+                    type:                 'object',
+                    required:             ['slug', 'description', 'keywords'],
+                    additionalProperties: false,
+                    properties: {
+                      slug:        { type: 'string' },
+                      description: { type: 'string' },
+                      keywords:    { type: 'array', items: { type: 'string' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          max_tokens:  800,
           temperature: 0.6,
         })
         aiLatencyMs = Date.now() - t0
