@@ -14,7 +14,7 @@
 
 import { orbitalClassify, jsonResponse, corsHeaders } from './_orbital.js'
 
-const MODEL = '@cf/meta/llama-3.1-8b-instruct'
+const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
 const SYSTEM_PROMPT = `You are an AI agent skill author for a celestial-mechanics-style skill router. Given a user task, write polished, opinionated SKILL specifications — the kind a senior practitioner would commit into a curated corpus.
 
@@ -39,6 +39,43 @@ Author guidelines:
 - Bodies must be PROPER markdown with real ## headings. No prose dumps. No platitudes. Treat the reader as an expert.
 - Avoid near-duplicates. Each skill should defend its own slot.
 - No prefatory text outside the JSON object. No \`\`\`fences.`
+
+const EXAMPLE_SKILL = {
+  slug: 'persona-research',
+  description: 'Build a source base for a person-specific profile, partner agent, or high-fidelity voice model from public material — find, score, and de-noise authored sources.',
+  keywords: [
+    'persona', 'voice-model', 'biography', 'identity', 'transcript', 'public-figure',
+    'authored-text', 'source-quality', 'youtube-watch-page', 'newsletter', 'podcast',
+    'self-authored', 'identity-collision', 'preferred-domains',
+  ],
+  body: `## Use It For
+
+- Finding the right person across ambiguous search results
+- Expanding from an official site into high-signal internal pages
+- Ranking public sources by usefulness for persona modeling
+- Separating self-authored material from reviews, testimonials, commentary
+
+## Workflow
+
+1. Start with seeded facts — official site, known YouTube/channel URLs, LinkedIn/X/Instagram/newsletter/podcast URLs, domain keywords, exclude keywords.
+2. Discover candidates — search the person name alone; with domain terms; the official domain for bio/about/newsletter/podcast; YouTube *watch* pages, not just channel pages.
+3. Score & keep in this priority order: official bio/about → self-authored newsletters/articles → episode pages with transcript potential → self-authored landing pages → secondary profiles (LinkedIn).
+4. De-prioritise: wrong-person matches, generic channel pages, widget-heavy social embeds, testimonials, pages dominated by chrome.
+
+## Heuristics
+
+- Prefer first-person language over third-party praise.
+- Prefer concrete claims, methods, beliefs, tradeoffs.
+- Prefer episode pages and transcripts over thumbnails or playlists.
+- Prefer stable identity pages for biography claims.
+
+## Anti-Patterns
+
+- Treating testimonials as evidence of identity or worldview.
+- Accepting a name match without an official-domain or self-authored anchor.
+- Ingesting auto-generated podcast summaries as "voice".
+- Mixing two same-named people into one source set.`,
+}
 
 export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() })
@@ -66,7 +103,9 @@ export async function onRequest({ request, env }) {
     raw = await env.AI.run(MODEL, {
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user',   content: `Task: ${task}\n\nGenerate ${candidates} skills.` },
+        { role: 'user',   content: `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.` },
+        { role: 'assistant', content: JSON.stringify({ skills: [EXAMPLE_SKILL] }) },
+        { role: 'user',   content: `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the persona-research example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}` },
       ],
       response_format: {
         type: 'json_schema',
