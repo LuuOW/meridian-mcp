@@ -1,12 +1,15 @@
 // /miniapp interactive demo
-// Calls /api/route on Pages Functions; renders ranked skills.
+// Calls /api/route (or /api/dynamic-route when "🪐 dynamic" is on).
 import { MiniGalaxy } from './mini-galaxy.js'
+import { startAR, stopAR } from './ar-mode.js'
 
 const $ = id => document.getElementById(id)
 const taskInput      = $('taskInput')
 const limitSelect    = $('limitSelect')
 const askBtn         = $('askBtn')
 const charCount      = $('charCount')
+const dynamicToggle  = $('dynamicToggle')
+const arBtn          = $('arBtn')
 const resultsSection = $('resultsSection')
 const resultsList    = $('resultsList')
 const resultsMeta    = $('resultsMeta')
@@ -17,6 +20,7 @@ const closeSkill     = $('closeSkill')
 const miniGalaxyCanvas = $('miniGalaxyCanvas')
 const mode2dBtn        = $('mode2d')
 const mode3dBtn        = $('mode3d')
+const arSection        = $('arSection')
 
 const galaxy = new MiniGalaxy(miniGalaxyCanvas, {
   mode: '2d',
@@ -85,14 +89,7 @@ askBtn.addEventListener('click', async () => {
   skillDetail.hidden = true
 
   try {
-    const res = await fetch('/api/route', {
-      method:  'POST',
-      headers: { 'content-type': 'application/json' },
-      body:    JSON.stringify({ task, limit: parseInt(limitSelect.value, 10) || 5 }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
-
+    const data = await routeTask(task, parseInt(limitSelect.value, 10) || 5)
     renderResults(data)
   } catch (err) {
     resultsList.innerHTML = `<li class="no-results">Error: ${escapeHTML(err.message)}</li>`
@@ -102,13 +99,34 @@ askBtn.addEventListener('click', async () => {
   }
 })
 
+async function routeTask(task, limit) {
+  const useDynamic = dynamicToggle.checked
+  const url  = useDynamic ? '/api/dynamic-route' : '/api/route'
+  const body = useDynamic
+    ? { task, limit, mode: 'hybrid' }
+    : { task, limit }
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: { 'content-type': 'application/json' },
+    body:    JSON.stringify(body),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+  return data
+}
+
 function renderResults(data) {
   galaxy.setSkills(data.selected || [])
 
-  resultsMeta.innerHTML =
-    `<span class="conf-${data.confidence}">${data.confidence}</span> · ` +
-    `top score <strong>${data.top_score.toFixed(1)}</strong> · ` +
-    `${data.selected.length} result${data.selected.length === 1 ? '' : 's'}`
+  let meta = `<span class="conf-${data.confidence}">${data.confidence}</span> · ` +
+             `top score <strong>${data.top_score.toFixed(1)}</strong> · ` +
+             `${data.selected.length} result${data.selected.length === 1 ? '' : 's'}`
+  if (typeof data.dynamic_count === 'number') {
+    meta += ` · <span class="meta-dyn">${data.dynamic_count} dynamic</span> + ${data.static_count} static`
+    if (data.ai_latency_ms) meta += ` · LLM ${data.ai_latency_ms} ms`
+    if (data.dynamic_error) meta += ` · <span style="color:#f87171" title="${escapeHTML(data.dynamic_error)}">⚠ LLM fallback</span>`
+  }
+  resultsMeta.innerHTML = meta
 
   if (!data.selected.length) {
     resultsList.innerHTML = '<li class="no-results">No skills matched. Try different wording or one of the examples.</li>'
@@ -116,9 +134,10 @@ function renderResults(data) {
   }
 
   resultsList.innerHTML = data.selected.map(s => `
-    <li class="result-item" data-slug="${escapeHTML(s.slug)}">
+    <li class="result-item ${s.source === 'dynamic' ? 'is-dynamic' : ''}" data-slug="${escapeHTML(s.slug)}" data-source="${escapeHTML(s.source || 'static')}">
       <div class="result-head">
         <span class="result-slug">${escapeHTML(s.slug)}</span>
+        ${s.source === 'dynamic' ? '<span class="result-tag">🪐 LLM</span>' : ''}
         <span class="result-score">${s.route_score.toFixed(1)}</span>
       </div>
       <p class="result-desc">${escapeHTML(s.description || '')}</p>
@@ -127,15 +146,28 @@ function renderResults(data) {
   `).join('')
 
   resultsList.querySelectorAll('.result-item').forEach(el => {
-    el.addEventListener('click', () => loadSkill(el.dataset.slug))
+    el.addEventListener('click', () => loadSkill(el.dataset.slug, el.dataset.source))
   })
 }
 
-async function loadSkill(slug) {
+async function loadSkill(slug, source) {
   skillDetail.hidden = false
   skillTitle.textContent = slug
   skillBody.innerHTML = '<p style="color:var(--text-muted)">Loading…</p>'
   skillDetail.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  if (source === 'dynamic') {
+    // No SKILL.md exists for LLM-generated skills — render description from the result row.
+    const item = resultsList.querySelector(`[data-slug="${CSS.escape(slug)}"]`)
+    const desc = item?.querySelector('.result-desc')?.textContent || ''
+    skillBody.innerHTML =
+      '<p style="color:#a78bfa;font-family:var(--font-mono);font-size:11.5px;margin-bottom:14px">' +
+      '🪐 Generated by Llama-3.1-8b — no SKILL.md exists for this candidate.</p>' +
+      `<p>${escapeHTML(desc)}</p>` +
+      '<p style="color:var(--text-muted);font-size:13px;margin-top:14px">' +
+      'In a real deployment, an authoring step would convert promising LLM candidates into committed SKILL.md files.</p>'
+    return
+  }
 
   try {
     const res  = await fetch(`/api/skill/${encodeURIComponent(slug)}`)
@@ -148,6 +180,40 @@ async function loadSkill(slug) {
 }
 
 closeSkill.addEventListener('click', () => { skillDetail.hidden = true })
+
+// AR mode wiring -----------------------------------------------------------
+let arActive = false
+arBtn.addEventListener('click', async () => {
+  if (arActive) {
+    stopAR()
+    arSection.hidden = true
+    arActive = false
+    arBtn.textContent = '📷 AR'
+    arBtn.classList.remove('active')
+    return
+  }
+  arSection.hidden = false
+  arActive = true
+  arBtn.textContent = '✕ stop AR'
+  arBtn.classList.add('active')
+  try {
+    await startAR({
+      videoEl:    $('arVideo'),
+      overlayEl:  $('arOverlay'),
+      statusEl:   $('arStatus'),
+      detsEl:     $('arDetections'),
+      onDetectedClass: (className) => {
+        // Pre-fill the input + auto-route the detected object class.
+        taskInput.value = `What skills would help me interact with a ${className}?`
+        updateCharCount()
+        askBtn.click()
+      },
+    })
+  } catch (e) {
+    $('arStatus').textContent = 'AR failed: ' + (e.message || e)
+  }
+})
+$('arCloseBtn').addEventListener('click', () => { arBtn.click() })
 
 function renderMarkdown(md) {
   const codeBlocks = []

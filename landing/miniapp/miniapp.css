@@ -153,6 +153,144 @@
 .char-count { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint, #5d6778); }
 .char-count.warn { color: #f59e0b; }
 
+/* DYNAMIC TOGGLE ---------------------------------------------------------- */
+.toggle-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+  font-size: 12.5px; color: var(--text-muted);
+  padding: 4px 8px; border-radius: 999px;
+  transition: background 0.2s;
+}
+.toggle-label:hover { background: rgba(167, 139, 250, 0.06); }
+.toggle-label input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle-pill {
+  display: inline-block; position: relative;
+  width: 32px; height: 18px;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.toggle-dot {
+  position: absolute; top: 1px; left: 1px;
+  width: 14px; height: 14px;
+  background: #cbd5e1;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle-label input:checked ~ .toggle-pill {
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.85), rgba(139, 92, 246, 0.95));
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.4);
+}
+.toggle-label input:checked ~ .toggle-pill .toggle-dot {
+  transform: translateX(14px);
+  background: #0a0d14;
+}
+.toggle-label input:checked ~ .toggle-text { color: var(--neon-violet, #a78bfa); }
+
+.primary-actions {
+  display: inline-flex; gap: 8px; align-items: center;
+}
+.ar-btn {
+  padding: 8px 14px; font-size: 13px;
+  border-radius: 10px; min-height: 44px;
+}
+.ar-btn.active {
+  border-color: #f87171; color: #f87171;
+  box-shadow: 0 0 16px rgba(248, 113, 113, 0.35);
+}
+
+.result-tag {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.06em;
+  background: rgba(167, 139, 250, 0.16);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  color: var(--neon-violet, #a78bfa);
+  padding: 1px 6px; border-radius: 999px;
+  margin-left: 6px;
+}
+.is-dynamic { border-left: 3px solid var(--neon-violet, #a78bfa); }
+.meta-dyn { color: var(--neon-violet, #a78bfa); }
+
+/* AR SECTION -------------------------------------------------------------- */
+.ar-section { margin-bottom: 22px; }
+.ar-stage {
+  position: relative;
+  background: #06080f;
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 0 28px rgba(167, 139, 250, 0.18);
+  aspect-ratio: 4 / 3;
+}
+.ar-video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  background: #000;
+  display: block;
+}
+.ar-overlay {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.ar-controls {
+  position: absolute;
+  top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px;
+  background: rgba(10, 13, 20, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+.ar-status {
+  font-family: var(--font-mono); font-size: 11px;
+  color: rgba(167, 139, 250, 0.9);
+}
+.ar-detections {
+  position: absolute;
+  bottom: 10px; left: 10px; right: 10px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 8px 10px;
+  background: rgba(10, 13, 20, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+}
+.ar-det-pill {
+  font-family: var(--font-mono); font-size: 11px;
+  background: rgba(167, 139, 250, 0.15);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  color: #ddd6fe;
+  padding: 3px 8px; border-radius: 999px;
+}
+.ar-det-pill em {
+  color: var(--neon-violet, #a78bfa);
+  font-style: normal; margin-left: 4px;
+}
+.ar-foot {
+  margin-top: 10px;
+  font-size: 12px; color: var(--text-muted);
+  padding: 8px 12px;
+  background: rgba(10, 13, 20, 0.4);
+  border: 1px dashed rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+}
+.ar-foot code {
+  background: rgba(148,163,184,0.12); padding: 1px 5px; border-radius: 4px;
+  font-size: 11px; color: #ddd6fe;
+}
+
+@media (max-width: 520px) {
+  .ar-stage { aspect-ratio: 3 / 4; }
+  .toggle-label { padding: 6px 8px; }
+  .primary-actions { flex-direction: column; align-items: stretch; width: 100%; }
+  .ar-btn { width: 100%; }
+  .ask-controls .btn-primary { width: 100%; }
+}
+
 /* PRIMARY BUTTON ----------------------------------------------------------- */
 .btn-primary {
   position: relative;
