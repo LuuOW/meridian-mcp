@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Meridian — Calibrated AI skill routing</title>
-<meta name="description" content="An MCP server that picks the right expertise for every AI query. Deterministic scoring. 73 curated skills.">
+<meta name="description" content="Dynamic AI skill routing — Llama-3.3-70B writes skills, an open-domain orbital engine classifies them into celestial classes (planet, moon, trojan, asteroid, comet, irregular).">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Meridian — Calibrated AI skill routing">
-<meta property="og:description" content="An MCP server that picks the right expertise for every AI query.">
+<meta property="og:title" content="Meridian — Dynamic AI skill routing">
+<meta property="og:description" content="Llama-3.3-70B authors skills, an orbital engine classifies them. MCP for Claude Code, Cursor, Windsurf.">
 <meta property="og:url" content="https://ask-meridian.uk">
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -18,48 +18,55 @@
 
 <nav class="nav">
   <a href="/" class="brand">◎ Meridian</a>
-  <div class="nav-links">
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu">
     <a href="/" class="current">Home</a>
     <a href="https://docs.ask-meridian.uk">Docs</a>
     <a href="/miniapp/">Try it</a>
     <a href="#pricing">Pricing</a>
     <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+    <span id="versionBadge" class="nav-version" data-loading>MCP v1.0.0</span>
   </div>
 </nav>
 
 <main class="hero-wrap">
   <section class="hero">
-    <span class="eyebrow">MCP server · v0.3.2</span>
-    <h1>Calibrated AI skill routing<br><span class="grad">via orbital mechanics.</span></h1>
+    <span id="heroVersion" class="eyebrow" data-loading>MCP server · v1.0.0</span>
+    <h1>Dynamic AI skill routing<br><span class="grad">via orbital mechanics.</span></h1>
     <p class="lead">
-      Give an AI agent the right expertise for every task. Meridian ranks 73&nbsp;curated skills by a deterministic
-      physics-inspired scorer — no black box, no guessing. Works with Claude Code, Cursor, Windsurf, or any MCP client.
+      Llama-3.3-70B writes a fresh set of skills for every task. An open-domain orbital engine derives a physics
+      signature for each one — mass, scope, cross-domain affinity, Lagrange potential — and classifies it into a celestial
+      class (planet, moon, trojan, asteroid, comet, irregular). You get back a deterministically ranked list with a
+      decision rule per skill. Works with Claude Code, Cursor, Windsurf, or any MCP client.
     </p>
     <div class="cta-row">
       <a href="/miniapp/" class="btn btn-primary">Try it live →</a>
       <a href="https://docs.ask-meridian.uk#install" class="btn btn-ghost">Install in 30 seconds</a>
     </div>
 
-    <pre class="hero-snippet"><code>claude mcp add meridian https://api.ask-meridian.uk/mcp \
-  --transport http \
-  -H "Authorization: Bearer mrd_live_YOUR_KEY"</code></pre>
+    <pre class="hero-snippet"><code>npm install -g meridian-skills-mcp
+claude mcp add meridian meridian-mcp</code></pre>
   </section>
 
   <section class="features">
     <div class="feature">
       <div class="feature-icon">◎</div>
-      <h3>Deterministic ranking</h3>
-      <p>A physics-inspired scorer — Roche limits, Lagrange points, Hill spheres — produces the same answer every time. No probabilistic drift.</p>
+      <h3>LLM proposes, orbital judges</h3>
+      <p>Llama-3.3-70B authors fresh skills for your task — opinionated SKILL.md bodies with use-it-for, workflow, heuristics, anti-patterns. The orbital engine then classifies each one deterministically.</p>
     </div>
     <div class="feature">
       <div class="feature-icon">▲</div>
-      <h3>73 curated skills</h3>
-      <p>From <code>tailwind-css</code> to <code>causal-inference</code> to <code>zero-knowledge-proofs</code>. Or bring your own corpus and route over it.</p>
+      <h3>Celestial classification</h3>
+      <p>Each generated skill gets a class — <strong>planet</strong>, <strong>moon</strong>, <strong>trojan</strong>, <strong>asteroid</strong>, <strong>comet</strong>, or <strong>irregular</strong> — based on physics features derived from its content (mass, scope, cross-domain affinity).</p>
     </div>
     <div class="feature">
       <div class="feature-icon">⌬</div>
       <h3>Open source core</h3>
-      <p>Self-host the stdio server for free under MIT. The hosted API adds quota management, billing, and zero-setup onboarding.</p>
+      <p>The MCP client is a 5&nbsp;KB stdio shim under MIT. Same backend powers the <a href="/miniapp/">browser miniapp</a> and the <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm package</a>. One source of truth.</p>
     </div>
   </section>
 
@@ -68,18 +75,18 @@
     <div class="how-grid">
       <div class="step">
         <span class="step-num">1</span>
-        <h4>Embedding pre-filter</h4>
-        <p>An MiniLM encoder ranks all 73 skills by semantic similarity to your task and keeps the top 40.</p>
+        <h4>LLM authoring</h4>
+        <p>Llama-3.3-70B (Workers AI) writes 5 candidate skills for your task — full markdown bodies, ~600&nbsp;chars each, with named tools and decision rules.</p>
       </div>
       <div class="step">
         <span class="step-num">2</span>
-        <h4>Orbital scoring</h4>
-        <p>Each candidate is scored against the task's profile using orbital-mechanics analogues — gravity wells, resonance, slingshot boosts.</p>
+        <h4>Physics signature</h4>
+        <p>For each skill we derive <code>mass</code>, <code>scope</code>, <code>independence</code>, <code>cross_domain</code>, <code>fragmentation</code>, <code>drag</code>, and <code>dep_ratio</code> — from content alone.</p>
       </div>
       <div class="step">
         <span class="step-num">3</span>
-        <h4>Ranked output</h4>
-        <p>You get back a ranked list with <code>route_score</code>, <code>class</code>, and a human-readable <code>why</code> string per skill.</p>
+        <h4>Class + score</h4>
+        <p>Argmax over six per-class scores assigns the celestial class. Final ranking = lexical relevance × class boost × Lagrange versatility.</p>
       </div>
     </div>
   </section>
@@ -130,7 +137,7 @@
     <p class="pricing-note">
       Billing handled by Stripe — no card data ever touches our infrastructure.
       Your API key is shown once on checkout success, stored hashed (SHA-256) on our side.
-      Lost it? <a href="mailto:hello@ask-meridian.uk?subject=Meridian%20key%20rotation">Email us</a> for rotation.
+      Lost it? <a href="mailto:lucas.kempe@icloud.com?subject=Meridian%20key%20rotation">Email us</a> for rotation.
     </p>
   </section>
 
@@ -176,11 +183,43 @@
       <a href="https://docs.ask-meridian.uk">Documentation</a>
       <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
       <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a>
-      <a href="mailto:hello@ask-meridian.uk">Contact</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
     </div>
     <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
   </div>
 </footer>
+
+<script>
+// Burger menu
+(function () {
+  const btn = document.getElementById('burgerBtn')
+  const menu = document.getElementById('navMenu')
+  if (!btn || !menu) return
+  const toggle = (open) => {
+    const isOpen = open !== undefined ? open : !menu.classList.contains('open')
+    menu.classList.toggle('open', isOpen)
+    btn.classList.toggle('open', isOpen)
+    btn.setAttribute('aria-expanded', String(isOpen))
+    document.body.style.overflow = isOpen && window.innerWidth <= 720 ? 'hidden' : ''
+  }
+  btn.addEventListener('click', () => toggle())
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)))
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false) })
+})();
+
+// Dynamic version badge — fetched from /api/version (npm registry, 1h cache)
+fetch('/api/version', { cache: 'default' })
+  .then(r => r.ok ? r.json() : null)
+  .then(d => {
+    if (!d?.npm) return
+    const v = d.npm
+    const heroV = document.getElementById('heroVersion')
+    const navV  = document.getElementById('versionBadge')
+    if (heroV) { heroV.textContent = `MCP server · v${v}`; heroV.removeAttribute('data-loading') }
+    if (navV)  { navV.textContent  = `MCP v${v}`;          navV.removeAttribute('data-loading') }
+  })
+  .catch(() => {})
+</script>
 
 </body>
 </html>

@@ -954,3 +954,70 @@
   animation: pulseRed 1.6s ease-in-out infinite;
 }
 .ar-pill.active::before { opacity: 0; }
+
+/* ── META BAR (quota + model selector, above the ask card) ─────────────── */
+.meta-bar {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin: 0 0 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.quota-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(167, 139, 250, 0.06);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text-muted);
+}
+.quota-pill .quota-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px currentColor;
+}
+.quota-pill[data-loading] .quota-dot {
+  background: var(--text-faint, #5d6778);
+  animation: navPulse 1.4s ease-in-out infinite;
+}
+
+.model-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 8px 5px 14px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  font-family: var(--font-mono); font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.model-pill:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.18);
+}
+.model-pill-label {
+  text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--text-faint, #5d6778);
+  font-size: 10px;
+}
+.model-pill select {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: inherit; font-size: 12px;
+  outline: none; cursor: pointer;
+  padding: 4px 6px;
+}
+.model-pill select option {
+  background: var(--bg-code);
+  color: var(--text);
+}
+
+@media (max-width: 520px) {
+  .meta-bar { flex-direction: column; align-items: stretch; }
+  .quota-pill, .model-pill { justify-content: center; }
+}

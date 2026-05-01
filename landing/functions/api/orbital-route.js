@@ -115,26 +115,78 @@ export async function onRequest({ request, env }) {
   const task       = (body.task || '').toString().trim()
   const limit      = Math.max(1, Math.min(20, parseInt(body.limit, 10) || 5))
   const candidates = Math.max(3, Math.min(8, parseInt(body.candidates, 10) || 5))
+  const provider   = ['workers-ai', 'groq'].includes(body.provider) ? body.provider : 'workers-ai'
 
   if (!task)             return jsonResponse({ error: 'task required'           }, { status: 400 })
   if (task.length > 800) return jsonResponse({ error: 'task too long (max 800)' }, { status: 400 })
 
-  if (!env.AI) {
+  if (provider === 'workers-ai' && !env.AI) {
     return jsonResponse({ error: 'AI binding not configured on this deployment' }, { status: 503 })
+  }
+  if (provider === 'groq' && !env.GROQ_API_KEY) {
+    return jsonResponse({ error: 'Groq not configured — bind GROQ_API_KEY' }, { status: 503 })
+  }
+
+  // ── Phase 0: cache lookup. Same task in the last 24 h → cached response.
+  // Saves ~30s + ~200 neurons per repeat. Keyed by SHA-256 of the normalised
+  // task text. Anonymous calls share the cache; per-user quotas still apply
+  // when a key is presented (we only skip the LLM, not the auth gate).
+  const cacheKey = await sha256(`${task.toLowerCase().replace(/\s+/g, ' ').trim()}::${limit}::${candidates}`)
+  if (env.MERIDIAN_KEYS) {
+    const cached = await env.MERIDIAN_KEYS.get(`route:${cacheKey}`, 'json')
+    if (cached) {
+      cached.cache_hit  = true
+      cached.cache_age_s = Math.floor((Date.now() - cached._cached_at) / 1000)
+      delete cached._cached_at
+      // Still attach quota info if the user is paid
+      if (authResult?.ok) {
+        cached.quota = {
+          plan: authResult.record.plan,
+          remaining: authResult.calls_remaining,
+          monthly_limit: authResult.record.monthly_limit,
+        }
+      }
+      return jsonResponse(cached, { headers: authResult?.ok ? {
+        'x-meridian-plan':            authResult.record.plan,
+        'x-meridian-calls-remaining': String(authResult.calls_remaining),
+        'x-meridian-cache':           'hit',
+      } : { 'x-meridian-cache': 'hit' }})
+    }
   }
 
   // ── Phase 1: LLM generation
   let raw, aiLatencyMs = null
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'user',   content: `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.` },
+    { role: 'assistant', content: JSON.stringify({ skills: [EXAMPLE_SKILL] }) },
+    { role: 'user',   content: `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the persona-research example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}` },
+  ]
   try {
     const t0 = Date.now()
-    raw = await env.AI.run(MODEL, {
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user',   content: `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.` },
-        { role: 'assistant', content: JSON.stringify({ skills: [EXAMPLE_SKILL] }) },
-        { role: 'user',   content: `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the persona-research example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}` },
-      ],
-      response_format: {
+    if (provider === 'groq') {
+      // Groq OpenAI-compatible /chat/completions — Llama-3.3-70B at ~300 tok/s
+      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          authorization:  `Bearer ${env.GROQ_API_KEY}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model:        'llama-3.3-70b-versatile',
+          messages,
+          response_format: { type: 'json_object' },
+          temperature:  0.5,
+          max_tokens:   3200,
+        }),
+      })
+      const groqData = await groqRes.json()
+      if (!groqRes.ok) throw new Error(groqData.error?.message || `Groq HTTP ${groqRes.status}`)
+      raw = { response: groqData.choices?.[0]?.message?.content || '' }
+    } else {
+      raw = await env.AI.run(MODEL, {
+        messages,
+        response_format: {
         type: 'json_schema',
         json_schema: {
           type: 'object', required: ['skills'], additionalProperties: false,
@@ -166,9 +218,10 @@ export async function onRequest({ request, env }) {
       max_tokens:  3200,
       temperature: 0.5,
     })
+    }   // end workers-ai branch
     aiLatencyMs = Date.now() - t0
   } catch (e) {
-    return jsonResponse({ error: 'LLM call failed: ' + (e?.message || e) }, { status: 502 })
+    return jsonResponse({ error: `LLM call failed (${provider}): ` + (e?.message || e) }, { status: 502 })
   }
 
   // ── Phase 2: parse + sanitize
@@ -203,9 +256,12 @@ export async function onRequest({ request, env }) {
     headers['x-meridian-monthly-limit']   = String(authResult.record.monthly_limit)
   }
 
-  return jsonResponse({
+  const modelLabel = provider === 'groq' ? 'llama-3.3-70b-versatile (Groq)' : `${MODEL.split('/').pop()} (Workers AI)`
+  const responsePayload = {
     task,
-    note: `Fully dynamic: skills generated by ${MODEL.split('/').pop()}, classified by the open-domain orbital engine (planet / moon / asteroid / trojan / comet / irregular).`,
+    provider,
+    model: modelLabel,
+    note: `Fully dynamic: skills generated by ${modelLabel}, classified by the open-domain orbital engine (planet / moon / asteroid / trojan / comet / irregular).`,
     confidence,
     top_score:        top,
     candidates_generated: generated.length,
@@ -215,12 +271,27 @@ export async function onRequest({ request, env }) {
       classify_ms:   classifyMs,
       total_ms:      aiLatencyMs + classifyMs,
     },
+    cache_hit: false,
     quota: authResult?.ok ? {
       plan:          authResult.record.plan,
       remaining:     authResult.calls_remaining,
       monthly_limit: authResult.record.monthly_limit,
     } : null,
-  }, { headers })
+  }
+
+  // Stash in cache (24 h TTL). Strip request-specific quota — re-attached on hit.
+  if (env.MERIDIAN_KEYS) {
+    const toCache = { ...responsePayload, _cached_at: Date.now() }
+    delete toCache.quota
+    await env.MERIDIAN_KEYS.put(`route:${cacheKey}`, JSON.stringify(toCache), { expirationTtl: 86400 })
+  }
+
+  return jsonResponse(responsePayload, { headers })
+}
+
+async function sha256(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 function parseGenerated(out) {
