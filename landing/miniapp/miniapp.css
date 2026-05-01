@@ -257,6 +257,82 @@
   outline: none;
 }
 
+/* MINI GALAXY ------------------------------------------------------------- */
+.mini-galaxy-frame {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  box-shadow:
+    0 0 22px rgba(167, 139, 250, 0.12),
+    inset 0 0 28px rgba(56, 189, 248, 0.05);
+  background: #06080f;
+  aspect-ratio: 21 / 9;
+}
+.mini-galaxy-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.mini-galaxy-controls {
+  position: absolute;
+  top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px;
+  background: rgba(10, 13, 20, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+.mini-galaxy-label {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-faint, #5d6778);
+  text-transform: uppercase; letter-spacing: 0.2em;
+}
+.mode-toggle {
+  display: inline-flex;
+  background: rgba(15, 18, 32, 0.85);
+  border-radius: 999px; padding: 2px;
+}
+.mode-btn {
+  background: transparent; border: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 10px; border-radius: 999px;
+  transition: all 0.2s;
+}
+.mode-btn:hover { color: var(--text); }
+.mode-btn.active {
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.85), rgba(139, 92, 246, 0.95));
+  color: #0a0d14;
+  box-shadow:
+    0 0 0 1px rgba(167, 139, 250, 0.6),
+    0 0 12px rgba(167, 139, 250, 0.45);
+}
+.mini-galaxy-fullink {
+  position: absolute;
+  bottom: 10px; right: 12px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: rgba(167, 139, 250, 0.75);
+  text-decoration: none;
+  padding: 3px 9px;
+  background: rgba(10, 13, 20, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+.mini-galaxy-fullink:hover {
+  color: var(--neon-violet, #a78bfa);
+  border-color: rgba(167, 139, 250, 0.4);
+  text-decoration: none;
+}
+
+@media (max-width: 520px) {
+  .mini-galaxy-frame { aspect-ratio: 5 / 3; }
+  .mini-galaxy-fullink { font-size: 10px; padding: 3px 8px; }
+}
+
 /* RESULTS ----------------------------------------------------------------- */
 .results-section { margin-top: 12px; }
 .results-header {
