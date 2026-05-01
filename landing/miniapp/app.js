@@ -5,11 +5,12 @@ import { startAR, stopAR } from './ar-mode.js'
 
 const $ = id => document.getElementById(id)
 const taskInput      = $('taskInput')
-const limitSelect    = $('limitSelect')
 const askBtn         = $('askBtn')
-const charCount      = $('charCount')
-const dynamicToggle  = $('dynamicToggle')
 const arBtn          = $('arBtn')
+
+// Defaults — controls were removed from the UI; routing is always dynamic+5.
+const ROUTE_LIMIT = 5
+const USE_DYNAMIC = true
 const resultsSection = $('resultsSection')
 const resultsList    = $('resultsList')
 const resultsMeta    = $('resultsMeta')
@@ -56,19 +57,9 @@ mode3dBtn.addEventListener('click', () => setMode('3d'))
 const escapeHTML = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
 
-function updateCharCount() {
-  const n = taskInput.value.length
-  charCount.textContent = `${n} / 800`
-  charCount.classList.toggle('warn', n > 700)
-}
-
-taskInput.addEventListener('input', updateCharCount)
-updateCharCount()
-
 document.querySelectorAll('.ex-chip').forEach(chip => {
   chip.addEventListener('click', () => {
     taskInput.value = chip.dataset.task
-    updateCharCount()
     taskInput.focus()
   })
 })
@@ -88,7 +79,7 @@ askBtn.addEventListener('click', async () => {
   }
 
   askBtn.disabled = true
-  askBtn.textContent = dynamicToggle.checked ? 'Generating + scoring…' : 'Routing…'
+  askBtn.textContent = 'Generating + scoring…'
   resultsSection.hidden = false
   requestAnimationFrame(() => galaxy._resize())
   resultsList.innerHTML = '<li class="no-results">Scoring corpus…</li>'
@@ -96,7 +87,7 @@ askBtn.addEventListener('click', async () => {
   closePanel()
 
   try {
-    const data = await routeTask(task, parseInt(limitSelect.value, 10) || 5)
+    const data = await routeTask(task, ROUTE_LIMIT)
     renderResults(data)
   } catch (err) {
     resultsList.innerHTML = `<li class="no-results">Error: ${escapeHTML(err.message)}</li>`
@@ -107,11 +98,8 @@ askBtn.addEventListener('click', async () => {
 })
 
 async function routeTask(task, limit) {
-  const useDynamic = dynamicToggle.checked
-  const url  = useDynamic ? '/api/dynamic-route' : '/api/route'
-  const body = useDynamic
-    ? { task, limit, mode: 'hybrid' }
-    : { task, limit }
+  const url  = USE_DYNAMIC ? '/api/dynamic-route' : '/api/route'
+  const body = USE_DYNAMIC ? { task, limit, mode: 'hybrid' } : { task, limit }
   const res = await fetch(url, {
     method:  'POST',
     headers: { 'content-type': 'application/json' },
