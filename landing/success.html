@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d14">
+<title>Meridian — Welcome to Pro</title>
+<meta name="description" content="Your Meridian API key — copy it, save it, this is the only time you'll see it.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .success-wrap {
+    max-width: 640px; margin: 64px auto; padding: 0 24px;
+  }
+  .success-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px;
+    backdrop-filter: blur(8px);
+  }
+  .success-card h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: -0.02em; }
+  .success-card .lead { margin: 0 0 22px; }
+  .key-box {
+    background: var(--bg-code); border: 1px solid rgba(167,139,250,0.5);
+    border-radius: 10px; padding: 14px;
+    font-family: var(--font-mono); font-size: 13px; color: #ddd6fe;
+    word-break: break-all; line-height: 1.55;
+    box-shadow: 0 0 24px rgba(167,139,250,0.15) inset;
+    margin: 12px 0;
+  }
+  .copy-btn {
+    background: linear-gradient(180deg, #a78bfa, #8b5cf6);
+    color: #0a0d14; border: none; border-radius: 8px;
+    padding: 10px 18px; font-family: inherit; font-weight: 600;
+    cursor: pointer; font-size: 14px;
+  }
+  .copy-btn.copied { background: #10b981; color: #0a0d14; }
+  .warning {
+    background: rgba(248, 113, 113, 0.10);
+    border: 1px solid rgba(248, 113, 113, 0.40);
+    border-radius: 8px; padding: 12px 14px;
+    color: #fca5a5; font-size: 13.5px;
+    margin-top: 18px;
+  }
+  .warning strong { color: #fecaca; }
+  .next-steps { margin-top: 28px; }
+  .next-steps h2 { font-size: 18px; margin: 0 0 12px; }
+  .next-steps pre {
+    background: var(--bg-code); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.65; overflow-x: auto;
+  }
+  .err { color: #fca5a5; }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(167,139,250,0.3);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="brand">◎ Meridian</a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="https://docs.ask-meridian.uk">Docs</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main class="success-wrap">
+  <div class="success-card">
+    <h1>🎉 You're on the <span id="plan">Pro</span> plan</h1>
+    <p class="lead">Your API key — <strong>copy it now, this is the only time it'll be shown.</strong></p>
+
+    <div id="loading"><span class="spinner"></span>Provisioning your key…</div>
+    <div id="ready" hidden>
+      <div class="key-box" id="keyBox"></div>
+      <button id="copyBtn" class="copy-btn">Copy key</button>
+
+      <div class="warning">
+        <strong>⚠ This page only works once.</strong>
+        Stripe verified your subscription. Your key is hashed server-side; we
+        cannot show it again. If you lose it, contact <a href="mailto:hello@ask-meridian.uk">hello@ask-meridian.uk</a> to rotate.
+      </div>
+
+      <div class="next-steps">
+        <h2>Use it with the MCP</h2>
+        <pre><code>npm install -g meridian-skills-mcp
+MERIDIAN_API_KEY=&lt;your-key&gt; claude mcp add meridian meridian-mcp</code></pre>
+
+        <h2 style="margin-top:18px">Or via curl</h2>
+        <pre><code>curl -X POST https://ask-meridian.uk/api/orbital-route \
+  -H "Authorization: Bearer &lt;your-key&gt;" \
+  -H "content-type: application/json" \
+  -d '{"task":"set up rate limiting on a public API"}'</code></pre>
+
+        <p style="margin-top:18px">Manage your subscription at the <a href="#" id="portalLink">billing portal</a>.</p>
+      </div>
+    </div>
+
+    <div id="errorBox" class="err" hidden></div>
+  </div>
+</main>
+
+<script>
+const params  = new URLSearchParams(location.search)
+const sid     = params.get('session_id')
+const $       = id => document.getElementById(id)
+const loading = $('loading')
+const ready   = $('ready')
+const errBox  = $('errorBox')
+let savedKey  = null
+
+if (!sid) {
+  loading.hidden = true
+  errBox.hidden  = false
+  errBox.textContent = 'Missing session_id in URL. Did you arrive from a real Stripe checkout?'
+} else {
+  claim(sid)
+}
+
+async function claim(sid, attempt = 0) {
+  try {
+    const r = await fetch('/api/stripe/claim', {
+      method:  'POST',
+      headers: { 'content-type': 'application/json' },
+      body:    JSON.stringify({ session_id: sid }),
+    })
+    const data = await r.json()
+    if (r.status === 202 && attempt < 12) {
+      // Webhook hasn't arrived yet — retry
+      setTimeout(() => claim(sid, attempt + 1), 2500)
+      return
+    }
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
+    savedKey = data.api_key
+    $('plan').textContent  = data.plan === 'team' ? 'Team' : 'Pro'
+    $('keyBox').textContent = data.api_key
+    loading.hidden = true
+    ready.hidden   = false
+    $('copyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(savedKey)
+      const b = $('copyBtn')
+      b.textContent = '✓ Copied'
+      b.classList.add('copied')
+      setTimeout(() => { b.textContent = 'Copy key'; b.classList.remove('copied') }, 1500)
+    })
+    $('portalLink').addEventListener('click', async (e) => {
+      e.preventDefault()
+      const r = await fetch('/api/stripe/portal', {
+        method:  'POST',
+        headers: { 'content-type': 'application/json' },
+        body:    JSON.stringify({ api_key: savedKey }),
+      })
+      const d = await r.json()
+      if (d.url) location.href = d.url
+      else alert(d.error || 'failed')
+    })
+  } catch (e) {
+    loading.hidden = true
+    errBox.hidden  = false
+    errBox.textContent = 'Failed to retrieve key: ' + e.message
+  }
+}
+</script>
+
+</body>
+</html>

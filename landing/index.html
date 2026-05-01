@@ -86,19 +86,19 @@
 
   <section class="pricing" id="pricing">
     <h2>Pricing</h2>
-    <p class="lead">Self-host free. Hosted plans for teams that want zero setup and quota management.</p>
+    <p class="lead">Free tier always available. Paid plans lift the per-IP cap and give you a personal monthly budget.</p>
 
     <div class="plans">
       <div class="plan">
-        <div class="plan-name">Free / Self-hosted</div>
+        <div class="plan-name">Free</div>
         <div class="plan-price">$0<span>/mo</span></div>
         <ul class="plan-features">
-          <li>Run locally via <code>npm i -g meridian-skills-mcp</code></li>
-          <li>Bring your own skill corpus</li>
-          <li>Unlimited tool calls</li>
-          <li>MIT licensed</li>
+          <li>5 calls / day per IP (best-effort)</li>
+          <li>Same router, same models</li>
+          <li>No API key required</li>
+          <li>MIT-licensed npm client</li>
         </ul>
-        <a href="https://docs.ask-meridian.uk#install" class="btn btn-ghost btn-block">Install locally</a>
+        <a href="https://docs.ask-meridian.uk#install" class="btn btn-ghost btn-block">Install the MCP</a>
       </div>
 
       <div class="plan plan-featured">
@@ -107,11 +107,11 @@
         <div class="plan-price">$29<span>/mo</span></div>
         <ul class="plan-features">
           <li>10,000 tool calls / month</li>
-          <li>Hosted at <code>api.ask-meridian.uk</code></li>
-          <li>73-skill curated corpus included</li>
-          <li>Email support</li>
+          <li>Personal API key, hashed server-side</li>
+          <li><code>X-Meridian-Calls-Remaining</code> header</li>
+          <li>Cancel anytime via Stripe portal</li>
         </ul>
-        <a href="#waitlist" class="btn btn-primary btn-block">Join waitlist</a>
+        <button class="btn btn-primary btn-block" data-plan="pro" data-checkout>Subscribe — $29/mo</button>
       </div>
 
       <div class="plan">
@@ -119,19 +119,45 @@
         <div class="plan-price">$149<span>/mo</span></div>
         <ul class="plan-features">
           <li>100,000 tool calls / month</li>
-          <li>5 API keys, per-key quotas</li>
-          <li>Custom skill uploads</li>
-          <li>Priority support</li>
+          <li>5× the Pro budget</li>
+          <li>Per-key quota tracking</li>
+          <li>Email support</li>
         </ul>
-        <a href="#waitlist" class="btn btn-ghost btn-block">Join waitlist</a>
+        <button class="btn btn-ghost btn-block" data-plan="team" data-checkout>Subscribe — $149/mo</button>
       </div>
     </div>
 
     <p class="pricing-note">
-      Hosted billing is launching soon. <a href="mailto:hello@ask-meridian.uk?subject=Meridian%20waitlist">Email hello@ask-meridian.uk</a>
-      to join the waitlist or ask about an enterprise plan.
+      Billing handled by Stripe — no card data ever touches our infrastructure.
+      Your API key is shown once on checkout success, stored hashed (SHA-256) on our side.
+      Lost it? <a href="mailto:hello@ask-meridian.uk?subject=Meridian%20key%20rotation">Email us</a> for rotation.
     </p>
   </section>
+
+  <script>
+  document.querySelectorAll('[data-checkout]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const plan = btn.dataset.plan
+      const orig = btn.textContent
+      btn.disabled = true
+      btn.textContent = 'Redirecting to Stripe…'
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method:  'POST',
+          headers: { 'content-type': 'application/json' },
+          body:    JSON.stringify({ plan }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+        location.href = data.url
+      } catch (e) {
+        alert('Checkout failed: ' + e.message)
+        btn.disabled = false
+        btn.textContent = orig
+      }
+    })
+  })
+  </script>
 
   <section class="cta-final">
     <h2>Stop guessing which prompt template fits.</h2>
