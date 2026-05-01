@@ -1,5 +1,6 @@
 // /miniapp interactive demo
 // Calls /api/route on Pages Functions; renders ranked skills.
+import { MiniGalaxy } from './mini-galaxy.js'
 
 const $ = id => document.getElementById(id)
 const taskInput      = $('taskInput')
@@ -13,6 +14,31 @@ const skillDetail    = $('skillDetail')
 const skillTitle     = $('skillTitle')
 const skillBody      = $('skillBody')
 const closeSkill     = $('closeSkill')
+const miniGalaxyCanvas = $('miniGalaxyCanvas')
+const mode2dBtn        = $('mode2d')
+const mode3dBtn        = $('mode3d')
+
+const galaxy = new MiniGalaxy(miniGalaxyCanvas, {
+  mode: '2d',
+  onPlanetClick: slug => {
+    const item = resultsList.querySelector(`[data-slug="${CSS.escape(slug)}"]`)
+    if (item) {
+      item.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      item.style.boxShadow = '0 0 0 2px var(--neon-violet, #a78bfa), 0 0 24px rgba(167,139,250,0.45)'
+      setTimeout(() => { item.style.boxShadow = '' }, 1200)
+    }
+  },
+})
+
+function setMode(m) {
+  galaxy.setMode(m)
+  mode2dBtn.classList.toggle('active', m === '2d')
+  mode3dBtn.classList.toggle('active', m === '3d')
+  mode2dBtn.setAttribute('aria-selected', m === '2d')
+  mode3dBtn.setAttribute('aria-selected', m === '3d')
+}
+mode2dBtn.addEventListener('click', () => setMode('2d'))
+mode3dBtn.addEventListener('click', () => setMode('3d'))
 
 const escapeHTML = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
@@ -74,6 +100,8 @@ askBtn.addEventListener('click', async () => {
 })
 
 function renderResults(data) {
+  galaxy.setSkills(data.selected || [])
+
   resultsMeta.innerHTML =
     `<span class="conf-${data.confidence}">${data.confidence}</span> · ` +
     `top score <strong>${data.top_score.toFixed(1)}</strong> · ` +

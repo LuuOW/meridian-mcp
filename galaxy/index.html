@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meridian Galaxy — Skill Orbital Map</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; color:#eef2ff; font-family:'Courier New',monospace; overflow:hidden; }
+#canvas { display:block; }
+#ui { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; }
+
+/* ── Header ── */
+#header {
+  position:absolute; top:14px; left:50%; transform:translateX(-50%);
+  text-align:center; pointer-events:none;
+}
+#header h1 { font-size:13px; letter-spacing:5px; text-transform:uppercase; color:#c8d8ff; opacity:0.85; }
+#header .subtitle { font-size:9px; color:#6a78a8; margin-top:2px; letter-spacing:2px; }
+
+/* ── Toolbar (top-left) ── */
+#toolbar {
+  position:absolute; top:12px; left:14px;
+  pointer-events:all; display:flex; flex-direction:column; gap:8px;
+}
+.sys-row { display:flex; gap:6px; }
+.sys-btn {
+  padding:4px 10px; font-size:9px; letter-spacing:1px; text-transform:uppercase;
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+  color:#8a96c4; cursor:pointer; font-family:inherit; transition:all 0.15s;
+}
+.sys-btn:hover { background:rgba(255,255,255,0.12); color:#dde8ff; }
+.sys-btn.active { border-color:rgba(160,180,255,0.6); color:#dde8ff; background:rgba(100,130,255,0.14); }
+
+/* ── Search bar ── */
+#search-wrap {
+  display:flex; align-items:center; gap:0;
+  background:rgba(8,10,28,0.88); border:1px solid rgba(100,120,220,0.3);
+  width:200px;
+}
+#search-icon { padding:0 7px; color:#556; font-size:11px; pointer-events:none; }
+#search-input {
+  flex:1; background:transparent; border:none; outline:none;
+  color:#ccd8ff; font-family:'Courier New',monospace; font-size:10px;
+  padding:5px 4px 5px 0; letter-spacing:0.5px;
+}
+#search-input::placeholder { color:#3a4468; }
+#search-clear {
+  padding:0 8px; color:#445; cursor:pointer; font-size:12px;
+  display:none; background:none; border:none; color:#556;
+}
+#search-clear:hover { color:#aab; }
+#search-results {
+  position:absolute; top:100%; left:0; right:0; margin-top:2px;
+  background:rgba(5,7,22,0.96); border:1px solid rgba(80,100,200,0.3);
+  max-height:180px; overflow-y:auto; display:none;
+}
+#search-results .sr-item {
+  padding:5px 10px; font-size:10px; cursor:pointer; color:#8a9acc;
+  border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.1s;
+  display:flex; align-items:center; gap:8px;
+}
+#search-results .sr-item:hover { background:rgba(100,130,255,0.12); color:#ccd8ff; }
+#search-results .sr-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+#search-results .sr-class { font-size:8px; color:#445; margin-left:auto; }
+
+/* ── Stats (top-right) ── */
+#stats {
+  position:absolute; top:14px; right:14px;
+  font-size:9px; color:#6a78a8; line-height:1.9; text-align:right; pointer-events:none;
+}
+
+/* ── Info panel (bottom-right) ── */
+#info-panel {
+  position:absolute; bottom:18px; right:14px;
+  background:rgba(4,5,18,0.92); border:1px solid rgba(100,120,220,0.22);
+  padding:14px 18px; min-width:250px; max-width:320px;
+  pointer-events:none; opacity:0; transition:opacity 0.2s;
+  font-size:10.5px; line-height:1.75;
+}
+#info-panel.visible { opacity:1; }
+#info-panel .ip-name { font-size:15px; font-weight:bold; color:#dde8ff; margin-bottom:5px; letter-spacing:1px; }
+#info-panel .ip-badge {
+  display:inline-block; padding:2px 8px; border-radius:2px;
+  font-size:8px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;
+  border:1px solid transparent;
+}
+#info-panel .ip-row { display:flex; justify-content:space-between; color:#5a6490; }
+#info-panel .ip-row span:last-child { color:#9aa8d8; }
+#info-panel .ip-section { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); }
+#info-panel .ip-moons { font-size:9px; color:#5a6490; margin-top:6px; }
+#info-panel .ip-moons span { color:#8899cc; cursor:default; }
+#info-panel .ip-lagrange { margin-top:6px; font-size:9px; }
+#info-panel .ip-hint { margin-top:8px; font-size:8.5px; color:#334; font-style:italic; }
+
+/* ── Focus bar ── */
+#focus-bar {
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  background:rgba(4,5,18,0.88); border:1px solid rgba(100,120,220,0.3);
+  padding:5px 14px; font-size:10px; color:#8a9acc; display:none;
+  pointer-events:all; align-items:center; gap:10px;
+}
+#focus-bar.visible { display:flex; }
+#focus-bar .fb-name { color:#ccd8ff; font-weight:bold; letter-spacing:1px; }
+#focus-bar .fb-close {
+  cursor:pointer; color:#445; font-size:14px; line-height:1;
+  background:none; border:none; color:#6a78a8; transition:color 0.1s;
+}
+#focus-bar .fb-close:hover { color:#ccd8ff; }
+
+/* ── Legend ── */
+#legend {
+  position:absolute; bottom:18px; left:14px;
+  font-size:9px; line-height:2; color:#5a6490; pointer-events:none;
+}
+#legend .leg-row { display:flex; align-items:center; gap:7px; }
+#legend .leg-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+#legend .leg-ring {
+  width:12px; height:6px; border-radius:50%; border:1px solid currentColor;
+  display:inline-block; flex-shrink:0;
+}
+
+/* ── Controls hint ── */
+#controls {
+  position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+  font-size:8px; color:#2a3050; letter-spacing:1px; pointer-events:none;
+}
+
+/* ── Tooltip ── */
+#tooltip {
+  position:absolute; pointer-events:none;
+  background:rgba(4,5,18,0.92); border:1px solid rgba(100,120,220,0.28);
+  padding:4px 9px; font-size:9px; color:#9aa8d8; white-space:nowrap;
+  opacity:0; transition:opacity 0.08s; letter-spacing:0.5px;
+}
+
+/* Scrollbar styling */
+#search-results::-webkit-scrollbar { width:4px; }
+#search-results::-webkit-scrollbar-track { background:transparent; }
+#search-results::-webkit-scrollbar-thumb { background:#2a3060; border-radius:2px; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="ui">
+
+  <div id="header">
+    <h1>★ Meridian Galaxy</h1>
+    <div class="subtitle" id="subtitle-count">— skill orbital map —</div>
+  </div>
+
+  <!-- Focus mode bar -->
+  <div id="focus-bar">
+    <span>Focus:</span>
+    <span class="fb-name" id="fb-name">—</span>
+    <button class="fb-close" id="fb-close" title="Exit focus">✕</button>
+  </div>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <div class="sys-row">
+      <button class="sys-btn active" data-sys="all">All</button>
+      <button class="sys-btn" data-sys="forge" style="border-color:rgba(100,160,255,0.35);color:#88aaff">⬡ Forge</button>
+      <button class="sys-btn" data-sys="signal" style="border-color:rgba(255,200,80,0.35);color:#ffcc66">◎ Signal</button>
+      <button class="sys-btn" data-sys="mind" style="border-color:rgba(190,100,255,0.35);color:#cc88ff">✦ Mind</button>
+    </div>
+    <div style="position:relative;">
+      <div id="search-wrap">
+        <span id="search-icon">⌕</span>
+        <input id="search-input" type="text" placeholder="search skills…" autocomplete="off" spellcheck="false">
+        <button id="search-clear">✕</button>
+      </div>
+      <div id="search-results"></div>
+    </div>
+  </div>
+
+  <div id="stats"></div>
+
+  <!-- Info panel -->
+  <div id="info-panel">
+    <div class="ip-name" id="ip-name">—</div>
+    <div class="ip-badge" id="ip-badge">—</div>
+    <div class="ip-row"><span>System</span><span id="ip-system">—</span></div>
+    <div class="ip-row"><span>Parent</span><span id="ip-parent">—</span></div>
+    <div class="ip-section">
+      <div class="ip-row"><span>Mass</span><span id="ip-mass">—</span></div>
+      <div class="ip-row"><span>Luminance (L)</span><span id="ip-luminance">—</span></div>
+      <div class="ip-row"><span>Albedo (α)</span><span id="ip-albedo">—</span></div>
+      <div class="ip-row"><span>Eccentricity</span><span id="ip-ecc">—</span></div>
+    </div>
+    <div class="ip-moons" id="ip-moons"></div>
+    <div class="ip-lagrange" id="ip-lagrange"></div>
+    <div class="ip-hint" id="ip-hint"></div>
+  </div>
+
+  <!-- Legend -->
+  <div id="legend">
+    <div class="leg-row"><span class="leg-dot" style="background:#88aaff;box-shadow:0 0 5px #88aaff"></span> Planet</div>
+    <div class="leg-row"><span class="leg-dot" style="background:#4466bb;border:1px solid #7799ee"></span> Moon</div>
+    <div class="leg-row"><span class="leg-dot" style="background:#3355aa;border:1px dashed #6688cc"></span> Trojan</div>
+    <div class="leg-row"><span class="leg-dot" style="background:#2244aa;border-radius:2px"></span> Comet</div>
+    <div class="leg-row"><span class="leg-dot" style="background:#1a3366;border:1px solid #334"></span> Belt / Irregular</div>
+  </div>
+
+  <div id="tooltip"></div>
+  <div id="controls">scroll to zoom · drag to orbit · click planet to focus · esc to reset</div>
+</div>
+
+<script>
+let SKILLS_DATA = [];
+
+// ── Color palette ─────────────────────────────────────────────────────────────
+const SYS_COL = {
+  forge:  { star:'#88aaff', halo:'#3366ff', text:'#88aaff', ring:'rgba(136,170,255,0.55)' },
+  signal: { star:'#ffcc66', halo:'#ffaa22', text:'#ffcc66', ring:'rgba(255,204,102,0.55)' },
+  mind:   { star:'#cc88ff', halo:'#9922ff', text:'#cc88ff', ring:'rgba(204,136,255,0.55)' },
+};
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+let W, H, cx, cy, dpr = 1;
+
+function resize() {
+  dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width  = Math.floor(W * dpr);
+  canvas.height = Math.floor(H * dpr);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── Camera ────────────────────────────────────────────────────────────────────
+let camYaw = 0.22, camPitch = 0.12, camDist = 300;
+let camTargX = 0, camTargY = 0, camTargZ = 0;  // smooth target (lerped)
+let camGoalX = 0, camGoalY = 0, camGoalZ = 0;  // desired target
+
+let dragStart = null, wasDrag = false, lastYaw = camYaw, lastPitch = camPitch;
+
+canvas.addEventListener('mousedown', e => {
+  dragStart = {x:e.clientX, y:e.clientY};
+  wasDrag = false; lastYaw = camYaw; lastPitch = camPitch;
+});
+window.addEventListener('mousemove', e => {
+  if (dragStart) {
+    const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+    if (Math.hypot(dx,dy) > 3) wasDrag = true;
+    camYaw   = lastYaw   + dx * 0.005;
+    camPitch = Math.max(-1.1, Math.min(1.1, lastPitch + dy * 0.005));
+  }
+  checkHover(e.clientX, e.clientY);
+});
+window.addEventListener('mouseup', e => {
+  if (!wasDrag) handleClick(e.clientX, e.clientY);
+  dragStart = null;
+});
+window.addEventListener('wheel', e => {
+  // Scale scroll speed proportionally at high zoom-out distances
+  const scrollSpeed = camDist > 600 ? 0.9 : 0.42;
+  camDist = Math.max(60, Math.min(1800, camDist + e.deltaY * scrollSpeed));
+  e.preventDefault();
+}, {passive:false});
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') exitFocus();
+});
+
+function project(x, y, z) {
+  const rx = x - camTargX, ry = y - camTargY, rz = z - camTargZ;
+  const sy = Math.sin(camYaw), cy2 = Math.cos(camYaw);
+  const x1 =  rx * cy2 + rz * sy;
+  const z1 = -rx * sy  + rz * cy2;
+  const sp = Math.sin(camPitch), cp = Math.cos(camPitch);
+  const y1 =  ry * cp  - z1 * sp;
+  const z2 =  ry * sp  + z1 * cp;
+  const fov = 1000;
+  const sc  = fov / (fov + z2 + camDist * 0.5);
+  return { sx: cx + x1 * sc, sy: cy + y1 * sc, scale: sc, z: z2 };
+}
+
+// ── Galaxy layout ─────────────────────────────────────────────────────────────
+const STAR_POS = {
+  forge:  {x:-210, y: 12, z:   0},
+  signal: {x: 200, y:-18, z:  55},
+  mind:   {x:  25, y:-52, z:-185},
+};
+
+const skillMap = {};
+SKILLS_DATA.forEach(s => { skillMap[s.slug] = s; });
+
+function seededRand(slug, n) {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = (Math.imul(31, h) + slug.charCodeAt(i)) >>> 0;
+  return ((Math.imul(h ^ (n * 2654435761), 1597334677) >>> 0) / 4294967296);
+}
+
+const orbits = {};
+function buildOrbits() {
+  SKILLS_DATA.forEach(skill => {
+    const c  = skill.class;
+    const r0 = seededRand(skill.slug, 1);
+    const r1 = seededRand(skill.slug, 2);
+    const r2 = seededRand(skill.slug, 3);
+    const ecc = skill.scores?.eccentricity ?? 0.3;
+    let radius, speed, inclination, phase;
+    if      (c === 'planet')             { radius = 75+r0*52;  speed = 0.13+r1*0.07; inclination = (r2-.5)*.22; phase = r0*Math.PI*2; }
+    else if (c === 'moon')               { radius = 28+r0*26;  speed = 0.34+r1*0.18; inclination = (r2-.5)*.44; phase = r0*Math.PI*2; }
+    else if (c === 'trojan')             { radius = 0;          speed = 0;            inclination = (r2-.5)*.2;  phase = r0*Math.PI*2; }
+    else if (c === 'comet')              { radius = 130+r0*60; speed = 0.05+r1*0.04; inclination = (r2-.5)*1.0;  phase = r0*Math.PI*2; }
+    else if (c === 'asteroid_belt')      { radius = 155+r0*28; speed = 0.20+r1*0.06; inclination = (r2-.5)*.2;  phase = r0*Math.PI*2; }
+    else                                 { radius = 138+r0*44; speed = 0.08+r1*0.08; inclination = (r2-.5)*1.3;  phase = r0*Math.PI*2; }
+    orbits[skill.slug] = {
+      radius, speed, inclination, phase, ecc,
+      semiMajor: radius*(1+ecc*.8), semiMinor: radius,
+    };
+  });
+}
+buildOrbits();
+
+function resolveAnchor(skill, seen = new Set()) {
+  if (!skill || seen.has(skill.slug)) return null;
+  seen.add(skill.slug);
+  if (skill.class === 'planet') return skill;
+  if (!skill.parent) return null;
+  return resolveAnchor(skillMap[skill.parent], seen);
+}
+
+function skillPos(skill, t) {
+  const o   = orbits[skill.slug];
+  const c   = skill.class;
+  const sys = STAR_POS[skill.star_system] || STAR_POS.forge;
+  const angle = o.phase + t * o.speed;
+
+  if (c === 'planet' || c === 'comet' || c === 'asteroid_belt' || c === 'irregular_satellite') {
+    const ox = o.semiMajor * Math.cos(angle);
+    const oz = o.semiMinor * Math.sin(angle);
+    return { x: sys.x + ox, y: sys.y + oz*Math.sin(o.inclination), z: sys.z + oz*Math.cos(o.inclination) };
+  }
+  if (c === 'moon') {
+    const anchor = resolveAnchor(skill);
+    const base   = anchor ? skillPos(anchor, t) : sys;
+    const ox = o.semiMajor * Math.cos(angle);
+    const oz = o.semiMinor * Math.sin(angle);
+    return { x: base.x + ox, y: base.y + oz*Math.sin(o.inclination), z: base.z + oz*Math.cos(o.inclination) };
+  }
+  if (c === 'trojan') {
+    const anchor = resolveAnchor(skill);
+    if (!anchor || !orbits[anchor.slug]) return sys;
+    const ppos      = skillPos(anchor, t);
+    const po        = orbits[anchor.slug];
+    const pAngle    = po.phase + t * po.speed;
+    const r0        = seededRand(skill.slug, 10);
+    const offset    = r0 > .5 ? Math.PI/3 : -Math.PI/3;
+    const ta        = pAngle + offset;
+    const tr        = po.semiMajor * 0.72;
+    return { x: sys.x + tr*Math.cos(ta), y: sys.y + tr*Math.sin(ta)*.12, z: sys.z + tr*Math.sin(ta) };
+  }
+  return sys;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let filterSystem = 'all';
+let focusSlug    = null;   // planet slug currently focused
+let pinnedSlug   = null;
+let hoverSlug    = null;
+let searchQuery  = '';
+let time         = 0;
+let lastFramePos = {};     // slug → {sx,sy,pos3d}
+
+function getMoons(planetSlug) {
+  return SKILLS_DATA.filter(s => {
+    const anchor = resolveAnchor(s);
+    return anchor && anchor.slug === planetSlug && s.slug !== planetSlug;
+  });
+}
+
+function isInFocus(skill) {
+  if (!focusSlug) return true;
+  if (skill.slug === focusSlug) return true;
+  const anchor = resolveAnchor(skill);
+  return anchor && anchor.slug === focusSlug;
+}
+
+function focusOn(slug) {
+  focusSlug = slug;
+  pinnedSlug = slug;
+  const s = skillMap[slug];
+  document.getElementById('focus-bar').classList.add('visible');
+  document.getElementById('fb-name').textContent = slug;
+  if (s) document.getElementById('fb-name').style.color = SYS_COL[s.star_system]?.text || '#ccd8ff';
+  updateInfoPanel(slug);
+}
+
+function exitFocus() {
+  focusSlug  = null;
+  pinnedSlug = null;
+  camGoalX = camGoalY = camGoalZ = 0;
+  document.getElementById('focus-bar').classList.remove('visible');
+  updateInfoPanel(null);
+}
+
+document.getElementById('fb-close').addEventListener('click', exitFocus);
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const searchInput   = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+const searchClear   = document.getElementById('search-clear');
+
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value.trim().toLowerCase();
+  searchClear.style.display = searchQuery ? 'block' : 'none';
+  renderSearchResults();
+});
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { searchInput.value=''; searchQuery=''; searchClear.style.display='none'; closeSearch(); }
+  if (e.key === 'Enter') {
+    const first = searchResults.querySelector('.sr-item');
+    if (first) first.click();
+  }
+  if (e.key === 'ArrowDown') {
+    const items = searchResults.querySelectorAll('.sr-item');
+    if (items.length) { items[0].focus(); e.preventDefault(); }
+  }
+});
+searchInput.addEventListener('focus', () => { renderSearchResults(); });
+document.addEventListener('click', e => {
+  if (!e.target.closest('#search-wrap') && !e.target.closest('#search-results')) closeSearch();
+});
+searchClear.addEventListener('click', () => {
+  searchInput.value=''; searchQuery=''; searchClear.style.display='none'; closeSearch();
+});
+
+// Make search-wrap pointer-events work
+document.getElementById('search-wrap').style.pointerEvents = 'all';
+searchResults.style.pointerEvents = 'all';
+
+function renderSearchResults() {
+  const sc_map = { forge:'#88aaff', signal:'#ffcc66', mind:'#cc88ff' };
+  const q = searchQuery;
+  let matches;
+  if (!q) {
+    // Show all planets as suggestions when no query
+    matches = SKILLS_DATA.filter(s => s.class === 'planet').slice(0, 8);
+  } else {
+    matches = SKILLS_DATA.filter(s =>
+      s.slug.includes(q) || (s.display_name||'').toLowerCase().includes(q)
+    ).slice(0, 10);
+  }
+  if (!matches.length) { closeSearch(); return; }
+
+  function highlight(text) {
+    if (!q) return text;
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx < 0) return text;
+    return text.slice(0,idx) + '<mark style="background:#3a5090;color:#fff;border-radius:1px">' + text.slice(idx, idx+q.length) + '</mark>' + text.slice(idx+q.length);
+  }
+
+  searchResults.innerHTML = (q ? '' : '<div style="padding:3px 10px 4px;font-size:8px;color:#3a4468;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.04)">PLANETS</div>') +
+    matches.map(s => {
+      const col = sc_map[s.star_system] || '#88aaff';
+      const label = highlight(s.display_name || s.slug);
+      return '<div class="sr-item" data-slug="' + s.slug + '" tabindex="0">'
+        + '<span class="sr-dot" style="background:' + col + ';box-shadow:0 0 4px ' + col + (s.class==='planet'?';width:9px;height:9px':'') + '"></span>'
+        + '<span>' + label + '</span>'
+        + '<span class="sr-class" style="color:' + col + '44">' + s.star_system + ' · ' + s.class.replace(/_/g,' ') + '</span>'
+        + '</div>';
+    }).join('');
+
+  searchResults.style.display = 'block';
+  searchResults.querySelectorAll('.sr-item').forEach(el => {
+    el.addEventListener('click', () => selectResult(el.dataset.slug));
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') selectResult(el.dataset.slug);
+      if (e.key === 'ArrowDown') { const n = el.nextElementSibling; if (n) n.focus(); e.preventDefault(); }
+      if (e.key === 'ArrowUp') { const p2 = el.previousElementSibling; p2 ? p2.focus() : searchInput.focus(); e.preventDefault(); }
+      if (e.key === 'Escape') { closeSearch(); searchInput.focus(); }
+    });
+  });
+}
+
+function selectResult(slug) {
+  const s = skillMap[slug];
+  if (!s) return;
+  closeSearch();
+  searchInput.value = ''; searchQuery = ''; searchClear.style.display = 'none';
+  pinnedSlug = slug;
+  if (s.class === 'planet') focusOn(slug);
+  else { focusSlug = null; document.getElementById('focus-bar').classList.remove('visible'); }
+  updateInfoPanel(slug);
+  // Fly camera to it
+  const pos3d = lastFramePos[slug]?.pos3d;
+  if (pos3d) { camGoalX = pos3d.x; camGoalY = pos3d.y; camGoalZ = pos3d.z; }
+}
+
+function closeSearch() { searchResults.style.display='none'; }
+
+// ── Hit test & interaction ────────────────────────────────────────────────────
+function checkHover(mx, my) {
+  let best = null, bd = 24;
+  for (const [slug, pos] of Object.entries(lastFramePos)) {
+    const d = Math.hypot(mx - pos.sx, my - pos.sy);
+    if (d < bd) { bd = d; best = slug; }
+  }
+  hoverSlug = best;
+  const tt = document.getElementById('tooltip');
+  if (best && best !== pinnedSlug) {
+    tt.style.left = (mx+14)+'px'; tt.style.top = (my-8)+'px';
+    tt.textContent = skillMap[best]?.display_name || best;
+    tt.style.opacity = '1';
+  } else { tt.style.opacity = '0'; }
+  if (!pinnedSlug) updateInfoPanel(best);
+}
+
+function handleClick(mx, my) {
+  // Check if click is on UI elements
+  if (document.elementFromPoint(mx, my) !== canvas) return;
+  let best = null, bd = 28;
+  for (const [slug, pos] of Object.entries(lastFramePos)) {
+    const d = Math.hypot(mx - pos.sx, my - pos.sy);
+    if (d < bd) { bd = d; best = slug; }
+  }
+  if (!best) { exitFocus(); return; }
+  const s = skillMap[best];
+  if (!s) return;
+
+  // Center camera on clicked skill
+  const pos3d = lastFramePos[best]?.pos3d;
+  if (pos3d) { camGoalX = pos3d.x; camGoalY = pos3d.y; camGoalZ = pos3d.z; }
+
+  if (s.class === 'planet') {
+    if (focusSlug === best) { exitFocus(); }
+    else { focusOn(best); }
+  } else {
+    // Moon/trojan/etc: pin and center but no full focus mode
+    if (pinnedSlug === best) { pinnedSlug = null; updateInfoPanel(hoverSlug); }
+    else { pinnedSlug = best; updateInfoPanel(best); }
+  }
+}
+
+// ── Info panel ────────────────────────────────────────────────────────────────
+function updateInfoPanel(slug) {
+  const panel = document.getElementById('info-panel');
+  if (!slug) { panel.classList.remove('visible'); return; }
+  const s = skillMap[slug];
+  if (!s) { panel.classList.remove('visible'); return; }
+  panel.classList.add('visible');
+  const sc = SYS_COL[s.star_system] || SYS_COL.forge;
+  document.getElementById('ip-name').textContent = s.display_name || s.slug;
+  document.getElementById('ip-name').style.color = sc.star;
+  const badge = document.getElementById('ip-badge');
+  badge.textContent = s.class.replace(/_/g,' ');
+  badge.style.background = sc.star + '22';
+  badge.style.borderColor = sc.star + '55';
+  badge.style.color = sc.text;
+  document.getElementById('ip-system').textContent = s.star_system.toUpperCase();
+  document.getElementById('ip-system').style.color = sc.text;
+  document.getElementById('ip-parent').textContent = s.parent || '—';
+  document.getElementById('ip-mass').textContent      = (s.scores?.mass ?? 0).toFixed(3);
+  document.getElementById('ip-luminance').textContent = (s.scores?.luminance ?? 0).toFixed(3);
+  document.getElementById('ip-albedo').textContent    = (s.scores?.albedo ?? 0).toFixed(3);
+  document.getElementById('ip-ecc').textContent       = (s.scores?.eccentricity ?? 0).toFixed(3);
+
+  // Moons list (for planets)
+  const moonsEl = document.getElementById('ip-moons');
+  moonsEl.innerHTML = '';
+  if (s.class === 'planet') {
+    const moons = getMoons(slug);
+    if (moons.length) {
+      const prefix = document.createTextNode('Moons: ');
+      moonsEl.appendChild(prefix);
+      moons.forEach((m, i) => {
+        if (i > 0) moonsEl.appendChild(document.createTextNode(', '));
+        const sp = document.createElement('span');
+        sp.textContent = m.slug;
+        sp.style.cssText = 'cursor:pointer;color:' + sc.star + 'aa';
+        sp.dataset.moonslug = m.slug;
+        sp.classList.add('moon-link');
+        moonsEl.appendChild(sp);
+      });
+    }
+  }
+
+  const lag = document.getElementById('ip-lagrange');
+  if (s.lagrange_systems && s.lagrange_systems.length > 1) {
+    lag.innerHTML = '<span style="color:' + sc.text + '88">⇌ bridge: ' + s.lagrange_systems.join(' ↔ ') + ' (L=' + (s.lagrange_potential||0).toFixed(2) + ')</span>';
+  } else lag.textContent = '';
+
+  const hint = document.getElementById('ip-hint');
+  hint.textContent = s.class === 'planet'
+    ? 'click again to exit focus · moons shown in focus mode'
+    : s.parent ? 'orbits: ' + s.parent : '';
+}
+
+document.getElementById('ip-moons').addEventListener('click', e => {
+  const el = e.target.closest('.moon-link');
+  if (el) document.dispatchEvent(new CustomEvent('focusmoon', {detail: el.dataset.moonslug}));
+});
+
+document.addEventListener('focusmoon', e => {
+  const slug = e.detail;
+  pinnedSlug = slug;
+  updateInfoPanel(slug);
+  const pos3d = lastFramePos[slug]?.pos3d;
+  if (pos3d) { camGoalX = pos3d.x; camGoalY = pos3d.y; camGoalZ = pos3d.z; }
+});
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const cnt = {planet:0,moon:0,trojan:0,comet:0,asteroid_belt:0,irregular_satellite:0};
+  SKILLS_DATA.forEach(s => { if (cnt[s.class]!==undefined) cnt[s.class]++; });
+  const sys = {forge:0,signal:0,mind:0};
+  SKILLS_DATA.forEach(s => { if (sys[s.star_system]!==undefined) sys[s.star_system]++; });
+  document.getElementById('stats').innerHTML =
+    SKILLS_DATA.length + ' skills<br>' +
+    cnt.planet + ' planets · ' + cnt.moon + ' moons<br>' +
+    cnt.trojan + ' trojans · ' + cnt.comet + ' comets<br>' +
+    '<span style="color:#88aaff">Forge&nbsp;' + sys.forge + '</span> · ' +
+    '<span style="color:#ffcc66">Signal&nbsp;' + sys.signal + '</span> · ' +
+    '<span style="color:#cc88ff">Mind&nbsp;' + sys.mind + '</span>';
+  document.getElementById('subtitle-count').textContent =
+    '— ' + SKILLS_DATA.length + ' skills · 3 star systems —';
+}
+updateStats();
+
+// ── System filter ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.sys-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterSystem = btn.dataset.sys;
+    exitFocus();
+    document.querySelectorAll('.sys-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ── Background stars ──────────────────────────────────────────────────────────
+const bgStars = Array.from({length:380}, (_,i) => ({
+  x: seededRand('bg',i*3)*4000-2000,
+  y: seededRand('bg',i*3+1)*4000-2000,
+  z: seededRand('bg',i*3+2)*4000-2000,
+  r: seededRand('bg',i*3+7)*1.6+0.4,
+  a: seededRand('bg',i*3+9)*0.5+0.15,
+}));
+
+// ── Draw helpers ──────────────────────────────────────────────────────────────
+function drawStar(px, py, r, col, halo, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const g = ctx.createRadialGradient(px,py,0, px,py,r*9);
+  g.addColorStop(0,   halo+'cc');
+  g.addColorStop(0.25,halo+'55');
+  g.addColorStop(1,   halo+'00');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(px,py,r*9,0,Math.PI*2); ctx.fill();
+  // Cross spikes
+  ctx.strokeStyle = col+'44'; ctx.lineWidth = Math.max(0.8, r*.1);
+  ctx.beginPath();
+  ctx.moveTo(px-r*2.6,py); ctx.lineTo(px+r*2.6,py);
+  ctx.moveTo(px,py-r*2.6); ctx.lineTo(px,py+r*2.6);
+  ctx.stroke();
+  // Core
+  const c2 = ctx.createRadialGradient(px,py,0, px,py,r);
+  c2.addColorStop(0,'#ffffff'); c2.addColorStop(0.5,col); c2.addColorStop(1,col+'66');
+  ctx.fillStyle = c2;
+  ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawOrbit(cx2, cy2, rx, ry, col, alpha, dashed) {
+  if (rx < 1 || ry < 1) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 0.7;
+  if (dashed) ctx.setLineDash([4,8]);
+  ctx.beginPath(); ctx.ellipse(cx2,cy2,rx,ry,0,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+function drawPlanet(px, py, r, col, label, isHover, isPinned, isFocused, alpha) {
+  if (!isFinite(px)||!isFinite(py)||r<=0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Outer glow — use shadowBlur (safe, no gradient)
+  ctx.shadowColor = col;
+  ctx.shadowBlur  = isHover||isPinned||isFocused ? 40 : 22;
+  ctx.fillStyle   = col;
+  ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur  = 0;
+
+  // Bright core spot (highlight)
+  ctx.globalAlpha = alpha * 0.55;
+  ctx.fillStyle   = '#ffffff';
+  ctx.beginPath(); ctx.arc(px - r*0.28, py - r*0.28, r*0.35, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = alpha;
+
+  // Planet ring (Saturn-style) — always use arc, not ellipse, as fallback
+  ctx.strokeStyle = col;
+  ctx.globalAlpha = alpha * (isHover||isPinned||isFocused ? 0.85 : 0.55);
+  ctx.lineWidth   = Math.max(1.5, r * 0.2);
+  ctx.beginPath();
+  // Draw an ellipse-like ring using bezier curves (avoids ctx.ellipse browser compat issues)
+  const rx = r * 1.9, ry = r * 0.38;
+  ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = alpha;
+
+  // Outline
+  ctx.strokeStyle = isHover||isPinned||isFocused ? '#ffffffcc' : col+'99';
+  ctx.lineWidth   = 1.2;
+  ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
+
+  // Label — always visible for planets
+  ctx.shadowBlur  = 7; ctx.shadowColor = '#000020';
+  ctx.fillStyle   = isHover||isPinned||isFocused ? '#ffffff' : col;
+  ctx.globalAlpha = alpha * (isHover||isPinned||isFocused ? 1.0 : 0.90);
+  ctx.font        = (isPinned||isFocused ? 'bold ' : '') + Math.max(10,Math.min(13,r+3)) + 'px Courier New';
+  ctx.textAlign   = 'left';
+  ctx.fillText(label, px + r*1.95 + 5, py + 4);
+  ctx.restore();
+}
+
+function drawMoon(px, py, r, col, label, isHover, isPinned, showLabel, alpha) {
+  if (!isFinite(px)||!isFinite(py)||r<=0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Moons are visually distinct: smaller glow, grey-tinted body
+  ctx.shadowColor = col;
+  ctx.shadowBlur  = isHover||isPinned ? 16 : 6;
+
+  // Body — flat grey-ish fill with system color tint
+  ctx.fillStyle = col + 'cc';
+  ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Dark terminator half (paint a half-arc darker to create moon look)
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.42;
+  ctx.fillStyle = '#00001a';
+  ctx.beginPath();
+  ctx.arc(px, py, r, Math.PI*0.55, Math.PI*1.45);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Small highlight dot
+  ctx.globalAlpha = alpha * 0.5;
+  ctx.fillStyle = '#cce0ff';
+  ctx.beginPath(); ctx.arc(px-r*.3, py-r*.3, r*.28, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = alpha;
+
+  // Rim — dashed to visually distinguish from planets
+  ctx.strokeStyle = isHover||isPinned ? '#ffffffaa' : col + '66';
+  ctx.lineWidth   = isHover||isPinned ? 1.2 : 0.7;
+  ctx.setLineDash(isHover||isPinned ? [] : [2,3]);
+  ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (showLabel || isHover || isPinned) {
+    ctx.shadowBlur = 5; ctx.shadowColor = '#000020';
+    ctx.fillStyle  = isHover||isPinned ? '#ffffff' : col + 'cc';
+    ctx.font       = (isPinned?'bold ':'') + Math.max(8,Math.min(10,r+2)) + 'px Courier New';
+    ctx.textAlign  = 'left';
+    ctx.fillText(label, px+r+5, py+3);
+  }
+  ctx.restore();
+}
+
+function drawSmallBody(px, py, r, col, label, isHover, isPinned, alpha, dashed) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.shadowColor = col; ctx.shadowBlur = isHover||isPinned ? 14 : 5;
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = dashed ? col+'88' : col+'55';
+  ctx.lineWidth = 0.5;
+  if (dashed) ctx.setLineDash([2,3]);
+  ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.stroke();
+  if (isHover||isPinned) {
+    ctx.fillStyle = '#ffffff'; ctx.font = '9px Courier New'; ctx.textAlign = 'left';
+    ctx.shadowBlur = 5; ctx.shadowColor = '#000018';
+    ctx.fillText(label, px+r+4, py+3);
+  }
+  ctx.restore();
+}
+
+function drawLagrangeLine(ax,ay,bx,by,col,alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha; ctx.strokeStyle = col; ctx.lineWidth = 0.5;
+  ctx.setLineDash([3,10]);
+  ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+  ctx.restore();
+}
+
+// ── Render loop ───────────────────────────────────────────────────────────────
+let lastTime = 0;
+
+function showError(msg) {
+  let el = document.getElementById('_err');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_err';
+    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(30,0,0,0.95);color:#ff8888;padding:20px 24px;font-family:monospace;font-size:11px;z-index:9999;max-width:85vw;white-space:pre-wrap;border:1px solid #ff4444;line-height:1.6';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+}
+window.addEventListener('error', e => showError('JS Error: ' + e.message + '\\n' + e.filename + ':' + e.lineno));
+
+function render(ts) {
+  try { _render(ts); } catch(err) { showError('Render crash: ' + err.message + '\\n' + (err.stack||'')); }
+}
+function _render(ts) {
+  const dt = Math.min((ts-lastTime)/1000, 0.05);
+  lastTime = ts;
+  time += dt * 0.20;
+
+  // Lerp camera target toward goal
+  const lf = 1 - Math.pow(0.04, dt);
+  camTargX += (camGoalX - camTargX) * lf;
+  camTargY += (camGoalY - camTargY) * lf;
+  camTargZ += (camGoalZ - camTargZ) * lf;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background nebula
+  const bg = ctx.createRadialGradient(cx,cy,0, cx,cy,Math.max(W,H)*.85);
+  bg.addColorStop(0,'#030414');
+  bg.addColorStop(0.6,'#020310');
+  bg.addColorStop(1,'#000008');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+  // ── CANVAS ALIVE TEST (after background, so it stays visible) ──
+  ctx.save();
+  ctx.fillStyle = '#00ff88';
+  ctx.beginPath(); ctx.arc(24, H-24, 6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.font = '9px monospace';
+  ctx.fillText('t=' + time.toFixed(1) + ' n=' + SKILLS_DATA.length, 34, H-20);
+  ctx.restore();
+
+  // Faint nebula patches
+  [
+    {x:cx*.7,y:cy*.8,r:W*.35,col:'#1a2060',a:0.06},
+    {x:cx*1.3,y:cy*1.2,r:W*.3,col:'#401060',a:0.05},
+    {x:cx*1.0,y:cy*.6,r:W*.25,col:'#103040',a:0.04},
+  ].forEach(n => {
+    const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+    g.addColorStop(0,n.col); g.addColorStop(1,n.col+'00');
+    ctx.save(); ctx.globalAlpha=n.a; ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill(); ctx.restore();
+  });
+
+  // Background stars
+  bgStars.forEach(s => {
+    const p = project(s.x,s.y,s.z);
+    if (p.scale <= 0) return;
+    ctx.save(); ctx.globalAlpha = s.a * Math.min(1, p.scale*1.5);
+    // Slight twinkle
+    const twinkle = 0.7 + 0.3 * Math.sin(time*2.3 + s.x*0.01);
+    ctx.fillStyle = '#aac0ff';
+    ctx.beginPath(); ctx.arc(p.sx, p.sy, s.r*p.scale*twinkle, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  // Determine which skills are visible
+  const visibleSlugs = new Set();
+  SKILLS_DATA.forEach(s => {
+    if (filterSystem !== 'all' && s.star_system !== filterSystem) return;
+    if (!isInFocus(s)) return;
+    visibleSlugs.add(s.slug);
+  });
+
+  // Compute positions
+  const toRender = [];
+  lastFramePos = {};
+  SKILLS_DATA.forEach(skill => {
+    const pos3d = skillPos(skill, time);
+    const p = project(pos3d.x, pos3d.y, pos3d.z);
+    if (p.scale <= 0) return;
+    lastFramePos[skill.slug] = { sx: p.sx, sy: p.sy, pos3d };
+    toRender.push({ skill, p, pos3d, visible: visibleSlugs.has(skill.slug) });
+  });
+  toRender.sort((a,b) => b.p.z - a.p.z);
+
+  // ── Star systems ──────────────────────────────────────────────────────────
+  const starProj = {};
+  for (const [sysSlug, sysPos] of Object.entries(STAR_POS)) {
+    if (filterSystem !== 'all' && filterSystem !== sysSlug) continue;
+    const p = project(sysPos.x, sysPos.y, sysPos.z);
+    starProj[sysSlug] = p;
+    const sc = SYS_COL[sysSlug];
+    const pulse = 1 + 0.07*Math.sin(time*1.4 + sysSlug.length);
+    const alpha = focusSlug ? 0.35 : 1;
+    drawStar(p.sx, p.sy, Math.max(16, 15*p.scale*pulse), sc.star, sc.halo, alpha);
+    ctx.save(); ctx.globalAlpha = focusSlug ? 0.25 : 0.8;
+    ctx.fillStyle = sc.text; ctx.font = '11px Courier New'; ctx.textAlign = 'center';
+    ctx.fillText(sysSlug.toUpperCase(), p.sx, p.sy - 18*p.scale - 8);
+    ctx.restore();
+  }
+
+  // ── Orbit rings for focused planet and its moons ──────────────────────────
+  if (focusSlug) {
+    const planet = skillMap[focusSlug];
+    const ppos3 = skillPos(planet, time);
+    const pp    = project(ppos3.x, ppos3.y, ppos3.z);
+    const sc    = SYS_COL[planet.star_system];
+    const sys   = STAR_POS[planet.star_system];
+    const sp    = project(sys.x, sys.y, sys.z);
+    const o     = orbits[focusSlug];
+    // Planet orbit around star (faint)
+    drawOrbit(sp.sx, sp.sy, o.semiMajor*pp.scale, o.semiMinor*pp.scale*Math.abs(Math.cos(o.inclination)), sc.star, 0.22, false);
+    // Moon orbit rings around planet
+    getMoons(focusSlug).forEach(moon => {
+      const mo = orbits[moon.slug];
+      if (!mo) return;
+      const mx2 = mo.semiMajor * pp.scale;
+      const my2 = mo.semiMinor * pp.scale * Math.abs(Math.cos(mo.inclination));
+      drawOrbit(pp.sx, pp.sy, mx2, my2, sc.star, 0.45, true);
+    });
+  } else {
+    // Planet orbit rings (faint, for all systems)
+    toRender.forEach(({skill, p}) => {
+      if (skill.class !== 'planet') return;
+      if (!visibleSlugs.has(skill.slug)) return;
+      const sc  = SYS_COL[skill.star_system];
+      const sys = STAR_POS[skill.star_system];
+      const sp  = project(sys.x, sys.y, sys.z);
+      const o   = orbits[skill.slug];
+      drawOrbit(sp.sx, sp.sy, o.semiMajor*p.scale, o.semiMinor*p.scale*Math.abs(Math.cos(o.inclination)), sc.star, 0.14, false);
+    });
+  }
+
+  // ── Lagrange bridges ──────────────────────────────────────────────────────
+  if (!focusSlug) {
+    SKILLS_DATA.forEach(skill => {
+      if (!skill.lagrange_systems || skill.lagrange_systems.length < 2) return;
+      if (filterSystem !== 'all') return;
+      if (skill.lagrange_potential < 0.50) return;
+      const posA = lastFramePos[skill.slug];
+      if (!posA) return;
+      const isActive = skill.slug === hoverSlug || skill.slug === pinnedSlug;
+      if (!isActive && skill.lagrange_potential < 0.58) return;
+      skill.lagrange_systems.forEach(sysSlug => {
+        const sp = starProj[sysSlug];
+        if (!sp) return;
+        drawLagrangeLine(posA.sx, posA.sy, sp.sx, sp.sy, SYS_COL[sysSlug].star, isActive ? 0.3 : 0.07);
+      });
+    });
+  }
+
+  // ── Skill dots ────────────────────────────────────────────────────────────
+  // Search highlight
+  const hasSearch = searchQuery.length > 0;
+
+  toRender.forEach(({skill, p, visible}) => {
+    const sc = SYS_COL[skill.star_system];
+    const isHover  = skill.slug === hoverSlug;
+    const isPinned = skill.slug === pinnedSlug;
+    const isFocused = skill.slug === focusSlug;
+    const matchesSearch = hasSearch && (skill.slug.includes(searchQuery) || (skill.display_name||'').toLowerCase().includes(searchQuery));
+
+    let alpha = 1.0;
+    if (!visible)     alpha = 0.06;
+    if (hasSearch)    alpha = matchesSearch ? 1.0 : 0.08;
+    if (isHover || isPinned) alpha = 1.0;
+
+    const label = skill.display_name || skill.slug;
+
+    if (skill.class === 'planet') {
+      const r = Math.max(10, 11 * p.scale);
+      drawPlanet(p.sx, p.sy, r, sc.star, label, isHover, isPinned, isFocused, alpha);
+    } else if (skill.class === 'moon') {
+      const r = Math.max(5, 6 * p.scale);
+      // Desaturated color to distinguish from planet
+      const moonCol = sc.star + 'bb';
+      const showLabel = isFocused || (focusSlug && isInFocus(skill)) || isPinned;
+      drawMoon(p.sx, p.sy, r, moonCol, label, isHover, isPinned, showLabel, alpha);
+    } else if (skill.class === 'trojan') {
+      const r = Math.max(4.5, 5.5 * p.scale);
+      drawSmallBody(p.sx, p.sy, r, sc.star+'99', label, isHover, isPinned, alpha, true);
+    } else if (skill.class === 'comet') {
+      const r = Math.max(4, 5 * p.scale);
+      // Comet tail
+      if (alpha > 0.1) {
+        const angle = Math.atan2(p.sy-cy, p.sx-cx) + Math.PI;
+        ctx.save(); ctx.globalAlpha = alpha*0.3;
+        const tg = ctx.createLinearGradient(p.sx,p.sy, p.sx+Math.cos(angle)*r*6, p.sy+Math.sin(angle)*r*6);
+        tg.addColorStop(0, sc.star+'88'); tg.addColorStop(1, sc.star+'00');
+        ctx.strokeStyle = tg; ctx.lineWidth = r*.6;
+        ctx.beginPath(); ctx.moveTo(p.sx,p.sy); ctx.lineTo(p.sx+Math.cos(angle)*r*6, p.sy+Math.sin(angle)*r*6); ctx.stroke();
+        ctx.restore();
+      }
+      drawSmallBody(p.sx, p.sy, r, sc.star+'88', label, isHover, isPinned, alpha, false);
+    } else {
+      const r = Math.max(3.5, 4.5 * p.scale);
+      drawSmallBody(p.sx, p.sy, r, sc.star+'55', label, isHover, isPinned, alpha, false);
+    }
+  });
+
+  // ── Search result highlight ring ──────────────────────────────────────────
+  if (hasSearch) {
+    SKILLS_DATA.forEach(skill => {
+      const match = skill.slug.includes(searchQuery) || (skill.display_name||'').toLowerCase().includes(searchQuery);
+      if (!match) return;
+      const pos = lastFramePos[skill.slug];
+      if (!pos) return;
+      ctx.save();
+      ctx.globalAlpha = 0.6 + 0.4*Math.sin(time*4);
+      ctx.strokeStyle = SYS_COL[skill.star_system].star;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(pos.sx, pos.sy, 18, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  requestAnimationFrame(render);
+}
+
+// ── Load skill data via fetch (relative path — works under /galaxy/ subpath) ─
+fetch('./skills_data.json')
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
+    SKILLS_DATA = data;
+    data.forEach(s => { skillMap[s.slug] = s; });
+    buildOrbits();
+    updateStats();
+  })
+  .catch(e => showError('Failed to load skills: ' + e.message));
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
