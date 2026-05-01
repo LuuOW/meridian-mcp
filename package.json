@@ -1,38 +1,26 @@
 {
   "name": "meridian-skills-mcp",
-  "version": "0.3.2",
-  "description": "Calibrated AI skill routing via orbital mechanics \u2014 an MCP server for Claude, Cursor, Windsurf",
+  "version": "1.0.0",
+  "description": "Stdio MCP for the Meridian orbital skill router — dynamic LLM-generated skills classified into celestial classes (planet/moon/trojan/asteroid/comet/irregular).",
   "type": "module",
   "bin": {
-    "meridian-mcp": "./src/index.mjs"
+    "meridian-mcp": "./mcp/index.mjs"
   },
-  "main": "./src/index.mjs",
+  "main": "./mcp/index.mjs",
   "files": [
-    "src",
-    "skills",
-    "example-skills",
-    "scripts",
+    "mcp",
     "README.md",
-    "LICENSE",
-    "site"
+    "LICENSE"
   ],
   "scripts": {
-    "start": "node src/server.mjs",
-    "stdio": "node src/index.mjs",
-    "setup:stripe": "node src/setup-stripe.mjs",
-    "test": "node --test tests/"
+    "stdio": "node mcp/index.mjs",
+    "test":  "node --test tests/"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@simplewebauthn/server": "^13.3.0",
-    "@xenova/transformers": "^2.17.2",
-    "dotenv": "^17.4.2",
-    "ethers": "^6.16.0",
-    "express": "^5.0.0",
-    "stripe": "^22.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "keywords": [
     "mcp",
@@ -41,18 +29,20 @@
     "agents",
     "skills",
     "routing",
+    "orbital",
     "claude",
-    "cursor"
+    "cursor",
+    "windsurf"
   ],
   "author": "Meridian <hello@ask-meridian.uk>",
   "license": "MIT",
   "homepage": "https://ask-meridian.uk",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ask-meridian/meridian-mcp.git"
+    "url": "git+https://github.com/LuuOW/meridian-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/ask-meridian/meridian-mcp/issues"
+    "url": "https://github.com/LuuOW/meridian-mcp/issues"
   },
   "mcpName": "io.github.LuuOW/meridian-skills"
 }
