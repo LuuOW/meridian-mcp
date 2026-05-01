@@ -56,8 +56,12 @@ jobs:
         with: { node-version: '20' }
       - name: Build miniapp skill index
         run: node scripts/build-miniapp-index.mjs
+      # Run wrangler from inside landing/ so it discovers landing/functions/
+      # at the project root (not nested). Without this, functions don't
+      # bundle and /api/* routes fall through to static asset serving.
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy landing --project-name=meridian-landing --branch=main --commit-dirty=true
+          workingDirectory: landing
+          command: pages deploy . --project-name=meridian-landing --branch=main --commit-dirty=true
