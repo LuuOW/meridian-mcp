@@ -6,6 +6,8 @@ on:
     paths:
       - 'site/**'
       - 'landing/**'
+      - 'skills/**'
+      - 'scripts/build-miniapp-index.mjs'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
@@ -29,6 +31,8 @@ jobs:
               - 'site/**'
             landing:
               - 'landing/**'
+              - 'skills/**'
+              - 'scripts/build-miniapp-index.mjs'
 
   deploy-docs:
     needs: changes
@@ -48,6 +52,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Build miniapp skill index
+        run: node scripts/build-miniapp-index.mjs
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
