@@ -65,6 +65,18 @@
   </section>
 
   <section id="resultsSection" class="results-section" hidden>
+    <div class="mini-galaxy-frame">
+      <canvas id="miniGalaxyCanvas" class="mini-galaxy-canvas" aria-label="Visualization of routed skills as orbiting planets"></canvas>
+      <div class="mini-galaxy-controls">
+        <span class="mini-galaxy-label">view</span>
+        <div class="mode-toggle" role="tablist" aria-label="2D / 3D view">
+          <button id="mode2d" class="mode-btn active" role="tab" aria-selected="true">2D</button>
+          <button id="mode3d" class="mode-btn" role="tab" aria-selected="false">3D</button>
+        </div>
+      </div>
+      <a class="mini-galaxy-fullink" href="https://galaxy.ask-meridian.uk" target="_blank" rel="noopener">full galaxy ↗</a>
+    </div>
+
     <div class="results-header">
       <h2>Results</h2>
       <div id="resultsMeta" class="results-meta"></div>
@@ -91,6 +103,6 @@
   </footer>
 </main>
 
-<script src="/miniapp/app.js" defer></script>
+<script type="module" src="/miniapp/app.js"></script>
 </body>
 </html>
