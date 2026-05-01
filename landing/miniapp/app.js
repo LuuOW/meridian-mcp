@@ -2,7 +2,7 @@
 // Calls /api/orbital-route — fully dynamic: LLM generates skills,
 // open-domain orbital classifier assigns celestial classes.
 import { MiniGalaxy } from './mini-galaxy.js'
-import { startAR, stopAR } from './ar-mode.js'
+import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
 
 const $ = id => document.getElementById(id)
 const taskInput      = $('taskInput')
@@ -31,6 +31,11 @@ const panelBack   = $('skillPanelBackdrop')
 
 // Stash latest results so the side panel has access to per-skill metadata
 let latestSelected = []
+
+// Single-flight guard for routing — prevents AR from queueing concurrent calls
+// (each is ~45s and burns Workers AI neurons). Only ONE route call may be
+// in flight at a time across the whole app.
+let routingInFlight = false
 
 const galaxy = new MiniGalaxy(miniGalaxyCanvas, {
   mode: '2d',
@@ -73,12 +78,14 @@ taskInput.addEventListener('keydown', e => {
 })
 
 askBtn.addEventListener('click', async () => {
+  if (routingInFlight) return  // already running — ignore further clicks
   const task = taskInput.value.trim()
   if (!task) {
     taskInput.focus()
     return
   }
 
+  routingInFlight = true
   askBtn.disabled = true
   askBtn.textContent = 'Generating skills…'
   resultsSection.hidden = false
@@ -96,9 +103,16 @@ askBtn.addEventListener('click', async () => {
     renderResults(data)
   } catch (err) {
     resultsList.innerHTML = `<li class="no-results">Error: ${escapeHTML(err.message)}</li>`
+    // On error, immediately re-arm AR so user can try again without
+    // having to click rescan. Successful runs require an explicit click.
+    if (arActive) unlockAR()
   } finally {
     askBtn.disabled = false
     askBtn.textContent = 'Find compatible skills →'
+    routingInFlight = false
+    // If AR is open, surface the rescan affordance so the user can opt-in
+    // to another query — never auto-queue.
+    showRescanButton()
   }
 })
 
@@ -283,6 +297,7 @@ arBtn.addEventListener('click', () => {
     arSection.hidden = true
     arActive = false
     arBtn.classList.remove('active')
+    document.getElementById('arRescanBtn')?.remove()
     return
   }
 
@@ -318,6 +333,11 @@ arBtn.addEventListener('click', () => {
     statusEl:   $('arStatus'),
     detsEl:     $('arDetections'),
     onDetectedClass: (className) => {
+      // ar-mode self-locks on emit. We won't get another callback until
+      // unlockAR() is called — either by the user clicking "scan again"
+      // or by the routing call finishing in error.
+      if (routingInFlight) return  // belt-and-suspenders
+      $('arStatus').textContent = `🎯 detected: ${className} — generating skills…`
       taskInput.value = `What skills would help me interact with a ${className}?`
       askBtn.click()
     },
@@ -328,6 +348,25 @@ arBtn.addEventListener('click', () => {
   })
 })
 $('arCloseBtn').addEventListener('click', () => { arBtn.click() })
+
+// "Scan another object" — visible only when AR is running AND it's
+// currently locked (i.e. has fired one route call and is waiting).
+function showRescanButton() {
+  if (!arActive) return
+  let btn = $('arRescanBtn')
+  if (!btn) {
+    btn = document.createElement('button')
+    btn.id = 'arRescanBtn'
+    btn.className = 'btn-ghost ar-rescan-btn'
+    btn.textContent = '🔄 scan another object'
+    btn.addEventListener('click', () => {
+      unlockAR()
+      btn.remove()
+      $('arStatus').textContent = 'scanning…'
+    })
+    arSection.appendChild(btn)
+  }
+}
 
 // MARKDOWN ---------------------------------------------------------------
 function renderMarkdown(md) {

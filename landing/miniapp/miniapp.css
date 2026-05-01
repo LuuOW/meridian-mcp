@@ -966,3 +966,25 @@
   border: 1px solid rgba(167, 139, 250, 0.22);
   border-radius: 999px;
 }
+
+/* AR rescan button — appears under the camera pane after a route call
+   completes. Explicit re-arm only; never auto-fires another query. */
+.ar-rescan-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  font-family: var(--font-mono); font-size: 13px;
+  font-weight: 600;
+  background: rgba(167, 139, 250, 0.10);
+  border: 1px dashed rgba(167, 139, 250, 0.5);
+  color: var(--neon-violet);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ar-rescan-btn:hover {
+  background: rgba(167, 139, 250, 0.18);
+  border-style: solid;
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.25);
+}
