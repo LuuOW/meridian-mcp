@@ -1,0 +1,301 @@
+// Open-domain orbital classifier — JS port of the celestial-mechanics
+// classification rules used by skill_orbit.py, generalised to handle
+// arbitrary LLM-generated skills (no curated skill_weights table needed).
+//
+// Pipeline:
+//   1. From raw skill content (description, keywords, body), derive a
+//      physics signature: mass, scope, independence, cross_domain,
+//      fragmentation, drag, dep_ratio (vs. its siblings in the set).
+//   2. Compute per-class scores (planet/moon/trojan/asteroid/comet/irregular).
+//   3. Assign class = argmax. Auto-generate a decision_rule explaining why.
+//   4. Star system membership inferred from keyword overlap with
+//      forge / signal / mind term sets (taken verbatim from skill_orbit.py).
+//   5. Lagrange potential: if a skill has comparable affinity to >=2 systems.
+//   6. Route against task: lexical+IDF × class boost × lagrange boost.
+
+// ── Star systems (lifted from skill_orbit.py _SYSTEM_TERMS) ───────────────
+const SYSTEM_TERMS = {
+  forge: new Set([
+    'api','docker','deploy','network','infra','backend','devops',
+    'container','nginx','ssl','firewall','ssh','ci/cd','build',
+    'server','database','redis','cache','auth','test','lint',
+    'kubernetes','tunnel','vpn','observability','monitoring',
+  ]),
+  signal: new Set([
+    'seo','serp','keyword','content','email','outbound','lead',
+    'marketing','campaign','analytics','conversion','funnel','utm',
+    'audience','brand','editorial','publish','traffic','rank',
+    'backlink','cohort','attribution','crm','sequence','growth',
+    'linkedin','newsletter','social','youtube','podcast','profile',
+    'persona','reputation',
+  ]),
+  mind: new Set([
+    'llm','prompt','reasoning','agent','embedding','vector',
+    'rag','chain-of-thought','evaluation','orchestration','memory',
+    'knowledge','claude','openai','gpt','anthropic','inference',
+    'fine-tune','judge','self-consistency','transcript','captions',
+    'voice','synthesis','model','tokenization','training','dataset',
+  ]),
+}
+
+const CLASS_BOOST = {
+  planet: 1.30, trojan: 1.20, irregular: 1.10,
+  moon: 1.05, asteroid: 0.85, comet: 0.80,
+}
+
+const STOP = new Set([
+  'the','and','for','with','that','this','from','have','your','about',
+  'into','what','when','where','which','their','there','these','those',
+  'will','would','should','could','been','being','need','want','get',
+  'set','use','using','make','made','like','also','some','any','all',
+  'one','two','out','off','its',"it's",'you',"you're",'our',
+])
+
+function tokenize(s) {
+  return (s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length >= 3 && !STOP.has(t))
+}
+function uniq(arr) { return [...new Set(arr)] }
+function clamp(v, lo = 0, hi = 1) { return v < lo ? lo : v > hi ? hi : v }
+
+// ── PHASE 1: derive physics signature for one skill ──────────────────────
+function physicsOf(skill, sibTokens) {
+  const desc  = (skill.description || '').toLowerCase()
+  const body  = (skill.body || '').toLowerCase()
+  const text  = `${desc} ${body}`
+  const kws   = (skill.keywords || []).map(k => String(k).toLowerCase())
+  const kwSet = new Set(kws)
+  const tokens = uniq(tokenize(`${desc} ${body} ${kws.join(' ')}`))
+
+  // mass: information density. Long bodies + many distinct keywords → heavier.
+  // Normalised by saturation so a 10kB body doesn't outshine a 2kB one too much.
+  const bodyLen = body.length
+  const massRaw = (Math.log10(Math.max(50, bodyLen)) - 1.7) * 0.35 + Math.min(0.4, kws.length / 15)
+  const mass = clamp(massRaw)
+
+  // System affinity per star system
+  const sysAffinity = {}
+  let totalAffinity = 0
+  for (const [sys, terms] of Object.entries(SYSTEM_TERMS)) {
+    let hits = 0
+    for (const t of tokens) if (terms.has(t)) hits++
+    sysAffinity[sys] = clamp(hits / 6)   // 6 hits → full affinity
+    totalAffinity += sysAffinity[sys]
+  }
+
+  // Dominant system + cross_domain (entropy-ish across systems)
+  const dominant = Object.entries(sysAffinity).reduce((a, b) => a[1] > b[1] ? a : b)[0]
+  const sysVec   = Object.values(sysAffinity)
+  const sysSum   = sysVec.reduce((s, v) => s + v, 0) || 1
+  const sysProbs = sysVec.map(v => v / sysSum)
+  // Normalised Shannon entropy → 0=single system, 1=perfectly split across all 3
+  const H = -sysProbs.filter(p => p > 0).reduce((s, p) => s + p * Math.log(p), 0)
+  const cross_domain = clamp(H / Math.log(3))
+
+  // Lagrange potential: skills with strong affinity in ≥2 systems
+  const top2 = sysVec.slice().sort((a, b) => b - a)
+  const lagrange_potential = clamp(Math.min(top2[0], top2[1]) * 1.4)
+
+  // scope: keyword count + diversity
+  const scope = clamp(0.25 + Math.min(0.5, kws.length / 14) + cross_domain * 0.25)
+
+  // dep_ratio: similarity to other skills in the same batch (token Jaccard)
+  // High dep_ratio means this skill leans on context provided by others.
+  let bestSim = 0
+  for (const sib of sibTokens) {
+    if (sib.skill === skill) continue
+    const inter = sib.toks.reduce((n, t) => n + (tokens.includes(t) ? 1 : 0), 0)
+    const union = new Set([...tokens, ...sib.toks]).size
+    const j = union ? inter / union : 0
+    if (j > bestSim) bestSim = j
+  }
+  const dep_ratio = clamp(bestSim * 1.5)   // amplify because Jaccard tops out low
+
+  // independence: inverse of dep_ratio, modulated by mass (heavy ⇒ independent)
+  const independence = clamp(1 - dep_ratio * 0.7 + mass * 0.2)
+
+  // fragmentation: how scattered the keyword length distribution is
+  const lens = kws.map(k => k.length)
+  const meanL = lens.reduce((s, x) => s + x, 0) / Math.max(1, lens.length)
+  const sdL   = Math.sqrt(lens.reduce((s, x) => s + (x - meanL) ** 2, 0) / Math.max(1, lens.length))
+  const fragmentation = clamp(sdL / 8 + cross_domain * 0.4)
+
+  // drag: presence of specialized / heavy terminology (long words, hyphens)
+  const longWords = kws.filter(k => k.includes('-') || k.length >= 12).length
+  const drag = clamp(longWords / Math.max(2, kws.length) * 0.7 + cross_domain * 0.2)
+
+  return {
+    mass, scope, independence, cross_domain,
+    fragmentation, drag, dep_ratio,
+    lagrange_potential,
+    star_system: dominant,
+    star_affinity: sysAffinity,
+  }
+}
+
+// ── PHASE 2: classify into celestial class ───────────────────────────────
+function classOf(p, hasParentInSet) {
+  // Per-class scores — mirror skill_orbit.py's class semantics
+  const planet_score   = p.mass * p.scope * p.independence
+  const moon_score     = (1 - p.independence) * (hasParentInSet ? 1 : 0.4) * (1 - p.mass)
+  const trojan_score   = p.dep_ratio * (hasParentInSet ? 1 : 0.5) * (1 - p.fragmentation)
+  const asteroid_score = (1 - p.mass) * p.scope * p.independence
+  const comet_score    = p.drag * p.cross_domain * (1 - p.dep_ratio)
+  const irregular_score= p.cross_domain * p.fragmentation * 0.85
+
+  const candidates = {
+    planet: planet_score, moon: moon_score, trojan: trojan_score,
+    asteroid: asteroid_score, comet: comet_score, irregular: irregular_score,
+  }
+  let cls = 'asteroid', best = -1
+  for (const [k, v] of Object.entries(candidates)) {
+    if (v > best) { best = v; cls = k }
+  }
+  return { cls, scores: candidates }
+}
+
+function decisionRule(cls, p, parent, systems) {
+  const sys = p.star_system
+  const cdSystems = systems.filter(s => p.star_affinity[s] >= 0.25)
+  switch (cls) {
+    case 'planet':
+      return `Domain anchor in the ${sys} system — high mass (${p.mass.toFixed(2)}) × scope (${p.scope.toFixed(2)}) × independence (${p.independence.toFixed(2)}). Loads as a primary skill.`
+    case 'moon':
+      return `Sub-skill orbiting ${parent ? parent + ' ' : 'a parent skill'}— low independence (${p.independence.toFixed(2)}). Auto-loads alongside its parent.`
+    case 'trojan':
+      return `Companion at L4/L5 of ${parent ? parent + ' ' : 'a parent skill'}— high dep_ratio (${p.dep_ratio.toFixed(2)}), low fragmentation. Co-activates permanently.`
+    case 'asteroid':
+      return `Narrow-scope niche tool — low mass (${p.mass.toFixed(2)}) but independently useful. Loaded only when explicitly relevant.`
+    case 'comet':
+      return `Occasional / specialized skill — high drag (${p.drag.toFixed(2)}) × cross_domain (${p.cross_domain.toFixed(2)}). Triggers on rare task profiles.`
+    case 'irregular':
+      return `Cross-domain bridge — spans ${cdSystems.join(' ↔ ') || 'multiple systems'}. High fragmentation, useful for hybrid tasks.`
+  }
+  return ''
+}
+
+// ── PHASE 3: full classify+route ─────────────────────────────────────────
+export function orbitalClassify(skills, task) {
+  // Pre-tokenize each skill once (used both for physics + routing)
+  const enriched = skills.map(s => ({
+    skill: s,
+    toks: uniq([
+      ...tokenize(s.description),
+      ...tokenize(s.body),
+      ...(s.keywords || []).flatMap(k => tokenize(k)),
+    ]),
+  }))
+
+  // Two passes: physics needs sibling tokens, classification needs physics
+  const physics = enriched.map(({ skill }) => physicsOf(skill, enriched))
+
+  // Find a parent for each skill: most token-similar OTHER skill
+  const parents = enriched.map(({ skill, toks }, i) => {
+    let best = null, bestSim = 0
+    for (let j = 0; j < enriched.length; j++) {
+      if (j === i) continue
+      const sib  = enriched[j]
+      const inter = sib.toks.reduce((n, t) => n + (toks.includes(t) ? 1 : 0), 0)
+      const union = new Set([...toks, ...sib.toks]).size
+      const j2 = union ? inter / union : 0
+      if (j2 > bestSim) { bestSim = j2; best = sib.skill.slug }
+    }
+    return bestSim > 0.18 ? best : null
+  })
+
+  // Score routing relevance against task
+  const taskTokens = uniq(tokenize(task))
+
+  const classified = enriched.map(({ skill, toks }, i) => {
+    const p = physics[i]
+    const parent = parents[i]
+    const { cls, scores } = classOf(p, !!parent)
+
+    // Token-overlap routing score (no IDF — small fluid corpus)
+    let hits = [], desc_hits = 0, body_hits = 0, kw_hits = 0
+    const kwTokens = new Set((skill.keywords || []).flatMap(k => tokenize(k)))
+    const descTokens = new Set(tokenize(skill.description))
+    const body = (skill.body || '').toLowerCase()
+    for (const t of taskTokens) {
+      const k = kwTokens.has(t),  d = descTokens.has(t),  b = body.includes(t)
+      if (k) kw_hits++
+      if (d) desc_hits++
+      if (b) body_hits = Math.min(20, body_hits + Math.min(3, body.split(t).length - 1))
+      if (k || d || b) hits.push(t)
+    }
+
+    const tokenScore = kw_hits * 10 + desc_hits * 5 + body_hits
+    const diversity  = 1 + Math.max(0, hits.length - 1) * 0.12
+    const classBoost = CLASS_BOOST[cls] || 1
+    const versatility= 1 + Math.min(0.30, p.lagrange_potential * 0.5)
+    const route_score = Number((tokenScore * diversity * classBoost * versatility).toFixed(3))
+
+    const systems = Object.keys(SYSTEM_TERMS)
+    const lagrange_systems = systems.filter(s => p.star_affinity[s] >= 0.25)
+
+    return {
+      slug:        skill.slug,
+      name:        skill.slug,
+      description: skill.description,
+      body:        skill.body || '',
+      keywords:    skill.keywords || [],
+      route_score,
+      classification: {
+        class:              cls,
+        class_scores:       scores,
+        physics:            p,
+        parent,
+        star_system:        p.star_system,
+        lagrange_systems,
+        lagrange_potential: p.lagrange_potential,
+        decision_rule:      decisionRule(cls, p, parent, systems),
+        habitable_zone:     p.mass >= 0.4 && p.mass <= 0.85,
+        tidal_lock:         cls === 'trojan' || (cls === 'moon' && p.dep_ratio > 0.55),
+      },
+      breakdown: {
+        kw_hits, desc_hits, body_hits,
+        diversity_mult: Number(diversity.toFixed(2)),
+        class_mult:     Number(classBoost.toFixed(2)),
+        lagrange_mult:  Number(versatility.toFixed(2)),
+        tokens:         hits,
+      },
+      hits: { keywords: kw_hits, description: desc_hits, body: body_hits, tokens: hits },
+      why: explainRoute({ kw_hits, desc_hits, body_hits, cls, classBoost, versatility, hits, parent }),
+    }
+  })
+
+  classified.sort((a, b) => b.route_score - a.route_score)
+  return classified
+}
+
+function explainRoute({ kw_hits, desc_hits, body_hits, cls, classBoost, versatility, hits, parent }) {
+  const parts = []
+  if (kw_hits)   parts.push(`${kw_hits} keyword`)
+  if (desc_hits) parts.push(`${desc_hits} desc`)
+  if (body_hits) parts.push(`${body_hits} body`)
+  let line = parts.join(' · ')
+  line += ` · ${cls}×${classBoost.toFixed(2)}`
+  if (versatility > 1.01) line += ` · L×${versatility.toFixed(2)}`
+  if (parent) line += ` · parent=${parent}`
+  if (hits.length) line += ` · "${hits.slice(0, 5).join(', ')}"`
+  return line
+}
+
+export function corsHeaders(origin = '*') {
+  return {
+    'access-control-allow-origin':  origin,
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'access-control-allow-headers': 'content-type',
+    'access-control-max-age':       '86400',
+  }
+}
+
+export function jsonResponse(data, init = {}) {
+  return new Response(JSON.stringify(data), {
+    status:  init.status || 200,
+    headers: { 'content-type': 'application/json; charset=utf-8', ...corsHeaders(), ...(init.headers || {}) },
+  })
+}

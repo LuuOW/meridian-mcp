@@ -8,9 +8,9 @@ const taskInput      = $('taskInput')
 const askBtn         = $('askBtn')
 const arBtn          = $('arBtn')
 
-// Defaults — controls were removed from the UI; routing is always dynamic+5.
+// Defaults — controls were removed from the UI; routing is always
+// fully dynamic: LLM generates the corpus, orbital engine classifies it.
 const ROUTE_LIMIT = 5
-const USE_DYNAMIC = true
 const resultsSection = $('resultsSection')
 const resultsList    = $('resultsList')
 const resultsMeta    = $('resultsMeta')
@@ -79,10 +79,14 @@ askBtn.addEventListener('click', async () => {
   }
 
   askBtn.disabled = true
-  askBtn.textContent = 'Generating + scoring…'
+  askBtn.textContent = 'Generating skills…'
   resultsSection.hidden = false
   requestAnimationFrame(() => galaxy._resize())
-  resultsList.innerHTML = '<li class="no-results">Scoring corpus…</li>'
+  resultsList.innerHTML =
+    '<li class="no-results">' +
+    '<span class="loading-pulse">🪐 LLM generating candidate skills…</span><br>' +
+    '<small>then the orbital engine classifies them into celestial objects (planet, moon, asteroid, trojan, comet, irregular). This usually takes 3–6 s.</small>' +
+    '</li>'
   resultsMeta.textContent = ''
   closePanel()
 
@@ -98,12 +102,10 @@ askBtn.addEventListener('click', async () => {
 })
 
 async function routeTask(task, limit) {
-  const url  = USE_DYNAMIC ? '/api/dynamic-route' : '/api/route'
-  const body = USE_DYNAMIC ? { task, limit, mode: 'hybrid' } : { task, limit }
-  const res = await fetch(url, {
+  const res = await fetch('/api/orbital-route', {
     method:  'POST',
     headers: { 'content-type': 'application/json' },
-    body:    JSON.stringify(body),
+    body:    JSON.stringify({ task, limit, candidates: 12 }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
@@ -115,12 +117,10 @@ function renderResults(data) {
   galaxy.setSkills(latestSelected)
 
   let meta = `<span class="conf-${data.confidence}">${data.confidence}</span> · ` +
-             `top score <strong>${data.top_score.toFixed(1)}</strong> · ` +
-             `${latestSelected.length} result${latestSelected.length === 1 ? '' : 's'}`
-  if (typeof data.dynamic_count === 'number') {
-    meta += ` · <span class="meta-dyn">${data.dynamic_count} dynamic</span> + ${data.static_count} static`
-    if (data.ai_latency_ms) meta += ` · LLM ${data.ai_latency_ms} ms`
-    if (data.dynamic_error) meta += ` · <span style="color:#f87171" title="${escapeHTML(data.dynamic_error)}">⚠ LLM fallback</span>`
+             `top <strong>${data.top_score.toFixed(1)}</strong> · ` +
+             `${latestSelected.length}/${data.candidates_generated || latestSelected.length} skills`
+  if (data.timing) {
+    meta += ` · LLM ${data.timing.llm_ms} ms + classify ${data.timing.classify_ms} ms`
   }
   resultsMeta.innerHTML = meta
 
@@ -169,15 +169,8 @@ function openPanel(slug) {
   requestAnimationFrame(() => panel.setAttribute('aria-hidden', 'false'))
   document.body.style.overflow = 'hidden'
 
-  // Load the description / body
-  if (skill.source === 'dynamic') {
-    panelContent.innerHTML = renderDynamicSkillBody(skill)
-  } else {
-    fetch(`/api/skill/${encodeURIComponent(skill.slug)}`)
-      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then(data => { panelContent.innerHTML = renderMarkdown(data.body || skill.description || '') })
-      .catch(e => { panelContent.innerHTML = `<p style="color:#f87171">Failed to load: ${escapeHTML(e.message)}</p>` })
-  }
+  // Body — for fully-dynamic skills, render the LLM-generated content directly
+  panelContent.innerHTML = renderDynamicSkillBody(skill)
 }
 
 function closePanel() {
@@ -192,17 +185,23 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel()
 function renderWhy(skill) {
   const b   = skill.breakdown || {}
   const cls = skill.classification || {}
+  const phys = cls.physics || {}
 
-  // Score breakdown bars normalised against the largest contributing component
-  const kw   = b.kw_idf   || 0
-  const desc = b.desc_idf || 0
-  const body = b.body_idf || 0
+  // Token-hit bars (open-domain — no IDF, so we use raw weighted hits)
+  const kw   = (b.kw_hits   || 0) * 10
+  const desc = (b.desc_hits || 0) * 5
+  const body = (b.body_hits || 0) * 1
   const max  = Math.max(kw, desc, body, 1)
 
   const bar = (label, val) => `
     <span class="label">${escapeHTML(label)}</span>
     <span class="bar"><span class="bar-fill" style="width:${(val / max * 100).toFixed(0)}%"></span></span>
-    <span class="val">${val.toFixed(1)}</span>`
+    <span class="val">${val.toFixed(0)}</span>`
+
+  const physBar = (label, val) => `
+    <span class="label">${escapeHTML(label)}</span>
+    <span class="bar"><span class="bar-fill phys" style="width:${(val * 100).toFixed(0)}%"></span></span>
+    <span class="val">${val.toFixed(2)}</span>`
 
   const tokens = (b.tokens || []).map(t => `<span class="tok">${escapeHTML(t)}</span>`).join('')
 
@@ -215,37 +214,51 @@ function renderWhy(skill) {
     pills.push(`<span class="meta-pill">L-potential <em>${cls.lagrange_potential.toFixed(2)}</em></span>`)
   if (cls.tidal_lock)          pills.push(`<span class="meta-pill" title="Always co-loads with parent">tidal-locked</span>`)
   if (cls.habitable_zone)      pills.push(`<span class="meta-pill" title="Stable activation profile">habitable-zone</span>`)
-  if (b.class && b.class_mult > 1) pills.push(`<span class="meta-pill">class boost <em>×${b.class_mult.toFixed(2)}</em></span>`)
+  if (b.class_mult > 1.01)     pills.push(`<span class="meta-pill">class boost <em>×${b.class_mult.toFixed(2)}</em></span>`)
   if (b.lagrange_mult > 1.01)  pills.push(`<span class="meta-pill">versatility <em>×${b.lagrange_mult.toFixed(2)}</em></span>`)
   if (b.diversity_mult > 1.01) pills.push(`<span class="meta-pill">diversity <em>×${b.diversity_mult.toFixed(2)}</em></span>`)
 
   const decisionRule = cls.decision_rule
     ? `<div class="decision-rule"><strong>Why this class:</strong> ${escapeHTML(cls.decision_rule)}</div>`
-    : (skill.source === 'dynamic'
-        ? `<div class="decision-rule"><strong>Generated:</strong> Llama-3.1-8b proposed this skill given the task. The lexical scorer ranked it on equal footing with the static corpus.</div>`
-        : '')
+    : ''
 
   return `
     <h4>Why score = ${skill.route_score.toFixed(2)}</h4>
     <div class="score-breakdown">
       ${bar('keywords (×10)',   kw)}
       ${bar('description (×5)', desc)}
-      ${bar('body (×0.3)',      body)}
+      ${bar('body (×1)',        body)}
     </div>
     ${tokens ? `<div class="token-hits">${tokens}</div>` : ''}
+
+    ${Object.keys(phys).length ? `
+      <h4 style="margin-top:18px">Physics signature</h4>
+      <div class="score-breakdown">
+        ${physBar('mass',          phys.mass         ?? 0)}
+        ${physBar('scope',         phys.scope        ?? 0)}
+        ${physBar('independence',  phys.independence ?? 0)}
+        ${physBar('cross_domain',  phys.cross_domain ?? 0)}
+        ${physBar('fragmentation', phys.fragmentation?? 0)}
+        ${physBar('drag',          phys.drag         ?? 0)}
+      </div>
+    ` : ''}
+
     ${pills.length ? `<div class="classification-meta">${pills.join('')}</div>` : ''}
     ${decisionRule}
   `
 }
 
 function renderDynamicSkillBody(skill) {
+  const kws = (skill.keywords || []).map(k => `<code>${escapeHTML(k)}</code>`).join(' ')
+  const body = skill.body
+    ? `<div class="dyn-body">${renderMarkdown(skill.body)}</div>`
+    : `<p>${escapeHTML(skill.description || '')}</p>`
   return (
-    `<p style="color:#a78bfa;font-family:var(--font-mono);font-size:11.5px;margin-bottom:14px">` +
-    `🪐 Generated by Llama-3.1-8b — no SKILL.md exists for this candidate.</p>` +
-    `<p>${escapeHTML(skill.description || '')}</p>` +
-    (skill.classification?.scores ? '' : '') +
-    `<p style="color:var(--text-muted);font-size:13px;margin-top:14px">` +
-    `In a real deployment, an authoring step would convert promising LLM candidates into committed SKILL.md files.</p>`
+    `<p style="color:#a78bfa;font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;margin-bottom:14px">` +
+    `🪐 Generated by Llama-3.1-8b · classified by the open-domain orbital engine</p>` +
+    `<p style="font-size:14px;margin-bottom:16px"><strong>Description.</strong> ${escapeHTML(skill.description || '')}</p>` +
+    body +
+    (kws ? `<p style="margin-top:14px;line-height:2"><strong style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-faint)">Keywords:</strong> ${kws}</p>` : '')
   )
 }
 

@@ -888,3 +888,21 @@
 .result-class[data-class="comet"]     { background: rgba(244, 114, 182, 0.12); color: #f9a8d4; }
 .result-class[data-class="irregular"] { background: rgba(192, 132, 252, 0.14); color: #d8b4fe; }
 .result-class[data-class="dynamic"]   { background: rgba(167, 139, 250, 0.16); color: #a78bfa; }
+
+/* Open-domain orbital classifier styles */
+.score-breakdown .bar-fill.phys {
+  background: linear-gradient(90deg, var(--neon-mint), var(--neon-cyan));
+}
+.loading-pulse {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--neon-violet), var(--neon-cyan), var(--neon-mint), var(--neon-violet));
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: loadingShift 2.5s linear infinite;
+  font-size: 14px; font-weight: 600;
+}
+@keyframes loadingShift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
