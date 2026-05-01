@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d14">
 <title>Meridian — Try the router</title>
 <meta name="description" content="Type a task. See which skills the router picks and why.">
 <link rel="stylesheet" href="/style.css">
@@ -31,12 +32,14 @@
   </header>
 
   <section class="ask-card">
-    <textarea
-      id="taskInput"
-      class="task-input"
-      placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
-      rows="3"
-      maxlength="800"></textarea>
+    <div class="input-frame">
+      <textarea
+        id="taskInput"
+        class="task-input"
+        placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
+        rows="3"
+        maxlength="800"></textarea>
+    </div>
     <div class="ask-controls">
       <div class="control-row">
         <label class="limit-label">Top
