@@ -117,6 +117,12 @@
 
 .task-input {
   position: relative; z-index: 1;
+  /* display: block + vertical-align: top kills the inline-baseline gap
+     that was showing up as extra padding below the textarea — that
+     gap was the source of the "ring is thicker on the bottom" issue. */
+  display: block;
+  vertical-align: top;
+  box-sizing: border-box;
   width: 100%;
   background: var(--bg-code, #0f1220);
   border: none;
@@ -125,8 +131,8 @@
   font-family: var(--font-body);
   font-size: clamp(14px, 2.4vw, 15px); line-height: 1.55;
   padding: 14px 16px;
-  resize: vertical;
-  min-height: 78px;
+  resize: none;        /* was 'vertical' — handle was making the bottom corner look heavier */
+  min-height: 96px;    /* slightly taller default since users can't drag */
   outline: none;
   transition: box-shadow 0.3s ease;
 }
@@ -139,10 +145,15 @@
 }
 
 .ask-controls {
-  display: flex; align-items: stretch;
+  display: flex; align-items: stretch; gap: 10px;
   margin-top: 14px;
 }
-.ask-controls .btn-primary { flex: 1; }
+.ask-controls .btn-primary { flex: 1; min-width: 0; }
+.ask-controls .ar-pill     { flex: 0 0 auto; }
+@media (max-width: 520px) {
+  .ask-controls { flex-direction: column; }
+  .ask-controls .ar-pill { width: 100%; }
+}
 .ar-btn {
   padding: 8px 14px; font-size: 13px;
   border-radius: 10px; min-height: 44px;
@@ -604,116 +615,6 @@
   .btn-primary:disabled { animation: none; }
   .result-item:hover { transform: none; transition: none; }
 }
-
-/* MEGA AR BUTTON (above textbox) ----------------------------------------- */
-.ar-megabtn {
-  position: relative;
-  display: flex; align-items: center; gap: clamp(10px, 3vw, 16px);
-  width: 100%;
-  min-height: 64px;
-  background: linear-gradient(
-    135deg,
-    rgba(167, 139, 250, 0.16),
-    rgba(56, 189, 248, 0.10) 50%,
-    rgba(16, 185, 129, 0.10)
-  );
-  border: 1px solid rgba(167, 139, 250, 0.35);
-  border-radius: 16px;
-  padding: clamp(12px, 3vw, 18px) clamp(14px, 3vw, 22px);
-  margin-bottom: 16px;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  color: var(--text);
-  isolation: isolate;
-  box-shadow:
-    0 0 0 1px rgba(167, 139, 250, 0.15),
-    0 0 24px rgba(167, 139, 250, 0.18),
-    inset 0 0 28px rgba(56, 189, 248, 0.06);
-  transition: transform 0.2s, box-shadow 0.25s, border-color 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.ar-megabtn::before {
-  content: '';
-  position: absolute; inset: -1px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from var(--neon-angle),
-    var(--neon-violet) 0%,
-    var(--neon-cyan) 30%,
-    var(--neon-mint) 55%,
-    var(--neon-pink) 75%,
-    var(--neon-violet) 100%
-  );
-  opacity: 0.35;
-  filter: blur(10px);
-  z-index: -1;
-  animation: neonRotate 7s linear infinite;
-  /* Critical: don't intercept touch on mobile Chrome — the halo isn't
-     interactive and shouldn't swallow the click on the underlying button. */
-  pointer-events: none;
-}
-.ar-megabtn-icon, .ar-megabtn-text, .ar-megabtn-arrow { pointer-events: none; }
-.ar-megabtn:hover {
-  transform: translateY(-1px);
-  border-color: var(--neon-violet);
-  box-shadow:
-    0 0 0 1px rgba(167, 139, 250, 0.35),
-    0 0 36px rgba(167, 139, 250, 0.32),
-    inset 0 0 32px rgba(56, 189, 248, 0.10);
-}
-.ar-megabtn:hover::before { opacity: 0.55; animation-duration: 4s; }
-.ar-megabtn:active { transform: translateY(0); }
-.ar-megabtn-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: clamp(40px, 9vw, 48px); height: clamp(40px, 9vw, 48px);
-  border-radius: 12px;
-  background: rgba(10, 13, 20, 0.65);
-  border: 1px solid rgba(167, 139, 250, 0.4);
-  font-size: clamp(18px, 4vw, 22px);
-  flex-shrink: 0;
-}
-.ar-megabtn-text {
-  display: flex; flex-direction: column; gap: 2px;
-  flex: 1 1 auto; min-width: 0;
-  overflow: hidden;
-}
-.ar-megabtn-text strong {
-  font-size: clamp(13px, 3.4vw, 16px);
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.01em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ar-megabtn-text small {
-  font-size: clamp(11px, 2.6vw, 12.5px);
-  color: var(--text-muted);
-  font-weight: 400;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ar-megabtn-arrow {
-  font-family: var(--font-mono);
-  color: var(--neon-violet);
-  font-size: clamp(15px, 3.4vw, 18px);
-  flex-shrink: 0;
-}
-.ar-megabtn.active {
-  background: linear-gradient(135deg, rgba(248, 113, 113, 0.16), rgba(252, 165, 165, 0.10));
-  border-color: rgba(248, 113, 113, 0.5);
-  animation: pulseRed 1.6s ease-in-out infinite;
-}
-@keyframes pulseRed {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.4), 0 0 24px rgba(248, 113, 113, 0.18); }
-  50%      { box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.7), 0 0 40px rgba(248, 113, 113, 0.4);  }
-}
-.ar-megabtn.active .ar-megabtn-icon { border-color: rgba(248, 113, 113, 0.6); }
-.ar-megabtn.active .ar-megabtn-text strong::after {
-  content: ' (running — tap to stop)';
-  color: rgba(248, 113, 113, 0.85); font-weight: 400; font-size: 12px;
-}
-
 /* SIDE PANEL FOR SKILL DETAILS ------------------------------------------- */
 .skill-panel {
   position: fixed; inset: 0;
@@ -1001,3 +902,55 @@
   border-style: solid;
   box-shadow: 0 0 18px rgba(167, 139, 250, 0.25);
 }
+
+/* AR pill — compact secondary action, sits inline with the primary
+   "Find compatible skills →" button. Replaced the giant ar-megabtn. */
+.ar-pill {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 16px;
+  min-height: 44px;
+  border-radius: 12px;
+  background: rgba(167, 139, 250, 0.06);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  color: var(--neon-violet);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  isolation: isolate;
+  transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.ar-pill::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--neon-angle),
+    var(--neon-violet), var(--neon-cyan), var(--neon-mint),
+    var(--neon-pink), var(--neon-violet)
+  );
+  opacity: 0.18;
+  filter: blur(6px);
+  z-index: -1;
+  animation: neonRotate 9s linear infinite;
+  pointer-events: none;
+}
+.ar-pill:hover {
+  transform: translateY(-1px);
+  background: rgba(167, 139, 250, 0.12);
+  border-color: var(--neon-violet);
+  box-shadow: 0 0 16px rgba(167, 139, 250, 0.25);
+}
+.ar-pill:hover::before { opacity: 0.45; animation-duration: 5s; }
+.ar-pill-icon  { font-size: 18px; line-height: 1; }
+.ar-pill-label { line-height: 1; }
+
+.ar-pill.active {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fca5a5;
+  animation: pulseRed 1.6s ease-in-out infinite;
+}
+.ar-pill.active::before { opacity: 0; }
