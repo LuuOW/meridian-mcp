@@ -478,3 +478,178 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
     --border:    rgba(148,163,184,0.35);
   }
 }
+
+/* ── NEON RING SYSTEM (universal, not just on hover) ─────────────────── */
+@property --neon-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes neonRotate { to { --neon-angle: 360deg; } }
+@keyframes neonPulse  { 50% { opacity: 0.4; transform: scale(0.7); } }
+
+/* HERO eyebrow (the version pill) — soft halo + always-on rotating ring */
+.eyebrow {
+  position: relative;
+  isolation: isolate;
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.18);
+}
+.eyebrow::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--neon-angle),
+    rgba(167,139,250,0.7), rgba(56,189,248,0.6), rgba(16,185,129,0.5),
+    rgba(167,139,250,0.7));
+  opacity: 0.35;
+  filter: blur(6px);
+  z-index: -1;
+  animation: neonRotate 12s linear infinite;
+  pointer-events: none;
+}
+
+/* HERO snippet (the install code block) — animated neon border ring */
+.hero-snippet {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(167,139,250,0.35) !important;
+}
+.hero-snippet::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--neon-angle),
+    transparent 0%, rgba(167,139,250,0.6) 25%, rgba(56,189,248,0.5) 50%,
+    rgba(16,185,129,0.5) 65%, transparent 80%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.55;
+  animation: neonRotate 10s linear infinite;
+  pointer-events: none;
+}
+
+/* PRIMARY button — always-on rotating conic halo */
+.btn-primary {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px rgba(167,139,250,0.45),
+    0 0 18px rgba(167,139,250,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.btn-primary::before {
+  content: '';
+  position: absolute; inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--neon-angle),
+    var(--neon-violet, #a78bfa), var(--neon-cyan, #38bdf8),
+    var(--neon-mint, #10b981), #f472b6, var(--neon-violet, #a78bfa));
+  opacity: 0.35;
+  filter: blur(8px);
+  z-index: -1;
+  animation: neonRotate 6s linear infinite;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.btn-primary:hover::before { opacity: 0.65; animation-duration: 4s; }
+
+/* FEATURED plan card (Pro) — always-on conic ring border */
+.plan-featured {
+  position: relative;
+  isolation: isolate;
+}
+.plan-featured::before {
+  content: '';
+  position: absolute; inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--neon-angle),
+    rgba(167,139,250,0.85), rgba(56,189,248,0.65), rgba(16,185,129,0.55),
+    rgba(244,114,182,0.65), rgba(167,139,250,0.85));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.85;
+  animation: neonRotate 9s linear infinite;
+  pointer-events: none;
+}
+
+/* FEATURE + STEP cards — subtle resting glow that intensifies on hover */
+.feature, .step {
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.05);
+}
+.feature::before, .step::before {
+  /* Override the earlier hover-only opacity:0 — start at 0.18 resting. */
+  opacity: 0.18 !important;
+  animation: neonRotate 14s linear infinite;
+}
+.feature:hover::before, .step:hover::before { opacity: 0.55 !important; animation-duration: 6s; }
+
+/* FEATURE icon — gets its own halo so the glyph reads against the card */
+.feature-icon {
+  position: relative;
+  display: inline-block;
+  font-size: 28px;
+  color: var(--accent);
+  text-shadow:
+    0 0 12px rgba(167, 139, 250, 0.6),
+    0 0 22px rgba(167, 139, 250, 0.3);
+  margin-bottom: 12px;
+}
+
+/* PLAN price — gradient text */
+.plan-price {
+  background: linear-gradient(180deg, #ddd6fe, #a78bfa 70%, #8b5cf6);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 24px rgba(167, 139, 250, 0.18);
+}
+.plan-price span {
+  -webkit-text-fill-color: var(--text-faint);
+  background: none;
+}
+
+/* SECTION headings — subtle violet underline */
+.how h2, .pricing h2, .cta-final h2 {
+  position: relative;
+  display: inline-block;
+}
+.how h2::after, .pricing h2::after, .cta-final h2::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: -10px;
+  transform: translateX(-50%);
+  width: 60px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.5);
+}
+
+/* CTA-final — moody violet wash + soft outer glow on the section itself */
+.cta-final {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(167,139,250,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(56,189,248,0.10) 0%, transparent 50%);
+}
+
+/* BURGER button — pulse a subtle violet glow when closed (drawing attention) */
+.burger {
+  box-shadow: 0 0 0 0 rgba(167, 139, 250, 0);
+  animation: navPulse 4s ease-in-out infinite;
+}
+.burger.open { animation: none; }
+
+/* GHOST button — keep the existing hover halo but also resting hint */
+.btn-ghost {
+  box-shadow: inset 0 0 18px rgba(167, 139, 250, 0.04);
+}
+
+/* GRAD text — animated background-position so the gradient slowly shifts */
+@keyframes gradShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.grad {
+  background-size: 200% 100%;
+  animation: gradShift 8s ease-in-out infinite;
+}
