@@ -87,7 +87,7 @@ export async function onRequest({ request, env }) {
 
   const task       = (body.task || '').toString().trim()
   const limit      = Math.max(1, Math.min(20, parseInt(body.limit, 10) || 5))
-  const candidates = Math.max(3, Math.min(8, parseInt(body.candidates, 10) || 6))
+  const candidates = Math.max(3, Math.min(8, parseInt(body.candidates, 10) || 5))
 
   if (!task)             return jsonResponse({ error: 'task required'           }, { status: 400 })
   if (task.length > 800) return jsonResponse({ error: 'task too long (max 800)' }, { status: 400 })
@@ -129,7 +129,7 @@ export async function onRequest({ request, env }) {
           },
         },
       },
-      max_tokens:  4500,
+      max_tokens:  3200,
       temperature: 0.5,
     })
     aiLatencyMs = Date.now() - t0
