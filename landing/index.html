@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Meridian — Calibrated AI skill routing</title>
+<meta name="description" content="An MCP server that picks the right expertise for every AI query. Deterministic scoring. 73 curated skills.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Meridian — Calibrated AI skill routing">
+<meta property="og:description" content="An MCP server that picks the right expertise for every AI query.">
+<meta property="og:url" content="https://ask-meridian.uk">
+
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="brand">◎ Meridian</a>
+  <div class="nav-links">
+    <a href="/" class="current">Home</a>
+    <a href="https://docs.ask-meridian.uk">Docs</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main class="hero-wrap">
+  <section class="hero">
+    <span class="eyebrow">MCP server · v0.3.1</span>
+    <h1>Calibrated AI skill routing<br><span class="grad">via orbital mechanics.</span></h1>
+    <p class="lead">
+      Give an AI agent the right expertise for every task. Meridian ranks 73&nbsp;curated skills by a deterministic
+      physics-inspired scorer — no black box, no guessing. Works with Claude Code, Cursor, Windsurf, or any MCP client.
+    </p>
+    <div class="cta-row">
+      <a href="https://docs.ask-meridian.uk#install" class="btn btn-primary">Install in 30 seconds</a>
+      <a href="https://github.com/LuuOW/meridian-mcp" class="btn btn-ghost">View source →</a>
+    </div>
+
+    <pre class="hero-snippet"><code>claude mcp add meridian https://api.ask-meridian.uk/mcp \
+  --transport http \
+  -H "Authorization: Bearer mrd_live_YOUR_KEY"</code></pre>
+  </section>
+
+  <section class="features">
+    <div class="feature">
+      <div class="feature-icon">◎</div>
+      <h3>Deterministic ranking</h3>
+      <p>A physics-inspired scorer — Roche limits, Lagrange points, Hill spheres — produces the same answer every time. No probabilistic drift.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">▲</div>
+      <h3>73 curated skills</h3>
+      <p>From <code>tailwind-css</code> to <code>causal-inference</code> to <code>zero-knowledge-proofs</code>. Or bring your own corpus and route over it.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">⌬</div>
+      <h3>Open source core</h3>
+      <p>Self-host the stdio server for free under MIT. The hosted API adds quota management, billing, and zero-setup onboarding.</p>
+    </div>
+  </section>
+
+  <section class="how">
+    <h2>How it works</h2>
+    <div class="how-grid">
+      <div class="step">
+        <span class="step-num">1</span>
+        <h4>Embedding pre-filter</h4>
+        <p>An MiniLM encoder ranks all 73 skills by semantic similarity to your task and keeps the top 40.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <h4>Orbital scoring</h4>
+        <p>Each candidate is scored against the task's profile using orbital-mechanics analogues — gravity wells, resonance, slingshot boosts.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <h4>Ranked output</h4>
+        <p>You get back a ranked list with <code>route_score</code>, <code>class</code>, and a human-readable <code>why</code> string per skill.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing">
+    <h2>Pricing</h2>
+    <p class="lead">Self-host free. Hosted plans for teams that want zero setup and quota management.</p>
+
+    <div class="plans">
+      <div class="plan">
+        <div class="plan-name">Free / Self-hosted</div>
+        <div class="plan-price">$0<span>/mo</span></div>
+        <ul class="plan-features">
+          <li>Run locally via <code>npm i -g meridian-skills-mcp</code></li>
+          <li>Bring your own skill corpus</li>
+          <li>Unlimited tool calls</li>
+          <li>MIT licensed</li>
+        </ul>
+        <a href="https://docs.ask-meridian.uk#install" class="btn btn-ghost btn-block">Install locally</a>
+      </div>
+
+      <div class="plan plan-featured">
+        <div class="plan-tag">Most popular</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">$29<span>/mo</span></div>
+        <ul class="plan-features">
+          <li>10,000 tool calls / month</li>
+          <li>Hosted at <code>api.ask-meridian.uk</code></li>
+          <li>73-skill curated corpus included</li>
+          <li>Email support</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-primary btn-block">Join waitlist</a>
+      </div>
+
+      <div class="plan">
+        <div class="plan-name">Team</div>
+        <div class="plan-price">$149<span>/mo</span></div>
+        <ul class="plan-features">
+          <li>100,000 tool calls / month</li>
+          <li>5 API keys, per-key quotas</li>
+          <li>Custom skill uploads</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-ghost btn-block">Join waitlist</a>
+      </div>
+    </div>
+
+    <p class="pricing-note">
+      Hosted billing is launching soon. <a href="mailto:hello@ask-meridian.uk?subject=Meridian%20waitlist">Email hello@ask-meridian.uk</a>
+      to join the waitlist or ask about an enterprise plan.
+    </p>
+  </section>
+
+  <section class="cta-final">
+    <h2>Stop guessing which prompt template fits.</h2>
+    <p class="lead">Let the router pick the right expert.</p>
+    <div class="cta-row">
+      <a href="https://docs.ask-meridian.uk" class="btn btn-primary">Read the docs</a>
+      <a href="https://github.com/LuuOW/meridian-mcp" class="btn btn-ghost">Star on GitHub</a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="https://docs.ask-meridian.uk">Documentation</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a>
+      <a href="mailto:hello@ask-meridian.uk">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+</body>
+</html>
