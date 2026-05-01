@@ -27,10 +27,24 @@
     <span class="eyebrow">Live demo</span>
     <h1>Type a task. See which skills the router picks.</h1>
     <p class="lead">
-      Describe what you're trying to do — or scan a real-world object.
-      The router scores 88 curated skills (plus LLM-generated candidates) and ranks the most compatible ones.
+      Describe what you're trying to do — or scan a real-world object. An LLM authors fresh
+      skills for your task and the orbital engine classifies each into a celestial class.
     </p>
   </header>
+
+  <div class="meta-bar">
+    <div class="quota-pill" id="quotaPill" data-loading>
+      <span class="quota-dot"></span>
+      <span class="quota-text">checking quota…</span>
+    </div>
+    <label class="model-pill">
+      <span class="model-pill-label">Model</span>
+      <select id="modelSelect">
+        <option value="workers-ai" selected>Workers AI · Llama-3.3-70B</option>
+        <option value="groq">Groq · Llama-3.3-70B (faster)</option>
+      </select>
+    </label>
+  </div>
 
   <section class="ask-card">
     <div class="input-frame">

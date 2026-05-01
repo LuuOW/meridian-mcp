@@ -233,3 +233,131 @@ pre code { background: none; padding: 0; color: inherit; }
   .nav-links { gap: 18px; font-size: 13px; }
   .footer-inner { flex-direction: column; text-align: center; }
 }
+
+/* ── BURGER MENU ─────────────────────────────────────────────────────────── */
+.burger {
+  display: none;            /* shown on mobile */
+  position: relative;
+  width: 36px; height: 36px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  isolation: isolate;
+}
+.burger span {
+  position: absolute;
+  left: 8px; right: 8px; height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+  transition: transform 0.25s ease, opacity 0.2s ease, top 0.25s ease, bottom 0.25s ease;
+}
+.burger span:nth-child(1) { top: 11px; }
+.burger span:nth-child(2) { top: 17px; }
+.burger span:nth-child(3) { top: 23px; }
+.burger.open span:nth-child(1) { top: 17px; transform: rotate(45deg);  }
+.burger.open span:nth-child(2) { opacity: 0; }
+.burger.open span:nth-child(3) { top: 17px; transform: rotate(-45deg); }
+.burger:hover { border-color: var(--accent); }
+
+.nav-version {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid rgba(167,139,250,0.35);
+  border-radius: 999px;
+  color: var(--accent);
+  background: rgba(167,139,250,0.06);
+  white-space: nowrap;
+}
+.nav-version[data-loading]::before {
+  content: ''; display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--accent); border-radius: 50%;
+  margin-right: 6px;
+  animation: navPulse 1.4s ease-in-out infinite;
+}
+@keyframes navPulse { 50% { opacity: 0.3; transform: scale(0.7); } }
+
+.nav-menu {
+  display: flex; align-items: center; gap: 22px;
+  font-size: 14px;
+}
+.nav-menu a { color: var(--text-muted); }
+.nav-menu a:hover, .nav-menu .current { color: var(--text); text-decoration: none; }
+
+@media (max-width: 720px) {
+  .burger { display: inline-block; }
+  .nav-menu {
+    position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
+    flex-direction: column; align-items: stretch;
+    gap: 0;
+    background: rgba(10, 13, 20, 0.95);
+    backdrop-filter: blur(14px);
+    padding: 24px;
+    transform: translateY(-110%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-bottom: 1px solid rgba(167, 139, 250, 0.25);
+    z-index: 9;
+  }
+  .nav-menu.open { transform: translateY(0); }
+  .nav-menu a {
+    padding: 14px 6px;
+    font-size: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-version {
+    margin-top: 18px; align-self: flex-start;
+    font-size: 12px;
+  }
+}
+
+/* ── NEON HOVER ON FEATURE + HOW-IT-WORKS CARDS ──────────────────────── */
+.feature, .step {
+  position: relative;
+  isolation: isolate;
+  transition: transform 0.2s ease, border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.feature::before, .step::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    rgba(167,139,250,0.55), rgba(56,189,248,0.45), rgba(16,185,129,0.45),
+    rgba(244,114,182,0.45), rgba(167,139,250,0.55)
+  );
+  opacity: 0;
+  filter: blur(10px);
+  z-index: -1;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.feature:hover, .step:hover {
+  transform: translateY(-2px);
+  border-color: rgba(167,139,250,0.55);
+  background: rgba(20, 24, 38, 0.78);
+  box-shadow:
+    0 0 0 1px rgba(167,139,250,0.35),
+    0 0 28px rgba(167,139,250,0.20);
+}
+.feature:hover::before, .step:hover::before { opacity: 0.45; }
+
+/* ── CTA BUTTONS — neon hover for ghost variant ──────────────────── */
+.btn-ghost { isolation: isolate; transition: all 0.2s ease; position: relative; }
+.btn-ghost::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg,
+    rgba(167,139,250,0.6), rgba(56,189,248,0.5), rgba(167,139,250,0.6));
+  opacity: 0;
+  filter: blur(8px);
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.btn-ghost:hover::before { opacity: 0.45; }
