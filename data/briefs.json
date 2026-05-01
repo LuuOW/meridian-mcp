@@ -1,0 +1,133 @@
+{
+  "generated_at": "2026-04-18T10:00:04.897061Z",
+  "config_used": {
+    "categories": [
+      "quant-ph",
+      "physics.optics",
+      "gr-qc",
+      "astro-ph"
+    ],
+    "keywords": [
+      "quantum",
+      "qubit",
+      "entanglement",
+      "coherence",
+      "superposition",
+      "wavefunction",
+      "hamiltonian",
+      "operator",
+      "decoherence",
+      "optics",
+      "optical",
+      "photon",
+      "laser",
+      "nonlinear",
+      "interferometry",
+      "cavity",
+      "resonator",
+      "plasmonic",
+      "gravitational",
+      "spacetime",
+      "curvature",
+      "black hole"
+    ],
+    "top_n": 3,
+    "frequency_hz_range": null,
+    "energy_gev_range": null
+  },
+  "categories": {
+    "gr-qc": [
+      {
+        "id": "2604.09976v2",
+        "title": "Probing geometrically perturbed strange stars with minimal decoupling using millisecond pulsar timing observations",
+        "summary": "We construct a gravitationally decoupled anisotropic strange star model using the minimal geometric deformation approach with a MIT bag equation of state and an additional source sector controlled by a deformation parameter $\u03b2$ and a radial perturbation scale $\u03a8$ through $g(r)=\\sin(\u03a8r^{2})$. The resulting Einstein system is consistently split into seed and $\u03b8$-sectors and matched to an exterior Schwarzschild geometry. The model is constrained by high-mass pulsars: PSR J0740+6620 $(2.08\\pm0.07\\,M_\\odot)$, PSR J1810+1744 $(2.13\\pm0.04\\,M_\\odot)$, PSR J1959+2048 $(2.18\\pm0.09\\,M_\\odot)$, and PSR J2215+5135 $(2.28^{+0.10}_{-0.09}\\,M_\\odot)$. It reproduces these objects with predicted radii $R \\approx 11.3$--$12.9$ km. The maximum mass reaches $M_{\\max} \\approx 2.28\\,M_\\odot$ for $\u03b2= 3\\times 10^{-3}$ and $\u03a8\\approx 0.03\\,\\text{km}^{-2}$, while for $\u03b2= 10^{-3}$ the configuration yields $M_{\\max} \\approx 2.12\\,M_\\odot$ with $R \\approx 12.2$ km. The central density lies in $\u03c1_c \\approx (2.4$--$3.1)\\times 10^{-4}\\,\\text{km}^{-2}$, decreasing smoothly to $\u03c1_s \\approx 2.0\\times 10^{-4}\\,\\text{km}^{-2}$. The anisotropy increases from zero at the center to $\u0394\\approx (0.25$--$0.45)\\times 10^{-4}\\,\\text{km}^{-2}$ near the surface, generating additional outward support that enhances compactness by $\\sim 15\\%$. The compactness parameter spans $C \\approx 0.17$--$0.22$, safely below the Buchdahl limit, while the surface redshift reaches $z_s \\approx 0.25$--$0.38$. The condition $dM/d\u03c1_c > 0$ is satisfied throughout, confirming dynamical stability. Overall, $\u03b2$ enhances the maximum mass by up to $\\sim 15\\%$, while $\u03a8$ introduces controlled oscillatory structure without violating observational constraints, producing stable ultra-compact stars consistent with current pulsar data.",
+        "authors": [
+          "K. N. Singh",
+          "S. K. Maurya",
+          "A. Errehymy",
+          "A. Altaibayeva",
+          "J. Rayimbaev",
+          "M. Matyoqubov"
+        ],
+        "category": "gr-qc",
+        "primary_cat": "gr-qc",
+        "published": "2026-04-11T01:21:34Z",
+        "updated": "2026-04-16T15:07:20Z",
+        "pdf_url": "https://arxiv.org/pdf/2604.09976v2",
+        "abs_url": "https://arxiv.org/abs/2604.09976v2",
+        "keyword_hits": [
+          "gravitational"
+        ],
+        "extracted": {
+          "sample_energies": [],
+          "sample_frequencies": []
+        },
+        "complexity_score": 48.6,
+        "selection_score": 58.32,
+        "brief": "**TL;DR** \u2014 The model predicts a maximum strange star mass of approximately 2.28 M\u2299 for a deformation parameter \u03b2 = 3\u00d710^{-3}, aligning with high-mass pulsar observations.\n\n**Core idea** \u2014 This paper explores strange stars, exotic compact objects made of quark matter, under gravitational decoupling with geometric perturbations. By tweaking the star\u2019s internal structure using a deformation parameter and a radial perturbation scale, the model matches observed masses of millisecond pulsars while testing stability and compactness. It offers a way to understand how internal anisotropy and perturbations affect the star\u2019s ability to support extreme masses.\n\n**Key equations**\n- $$\\rho = \\rho^{\\text{seed}} + \\beta \\theta^0_0$$\n  - Here, \u03c1 is the total energy density, \u03c1^{\\text{seed}} is the density from the seed sector (MIT bag model), \u03b2 is the decoupling parameter, and \u03b8^0_0 is the additional source term. This equation splits the density into base and perturbed components, crucial for modeling anisotropy.\n- $$p_r = p_r^{\\text{seed}} + \\beta \\theta^1_1$$\n  - In this, p_r is the radial pressure, p_r^{\\text{seed}} is the seed sector pressure, and \u03b8^1_1 is the radial component of the additional source. It captures how decoupling modifies pressure to support higher masses.\n- $$g(r) = \\sin(\\Psi r^2)$$\n  - Here, g(r) is the geometric perturbation function, \u03a8 is the radial perturbation scale (in km^{-2}), and r is the radial coordinate. This introduces oscillatory behavior in the metric, key to testing structural stability under perturbations.\n\n**Why it matters** \u2014 This work bridges theoretical strange star models with real pulsar data, showing how small geometric tweaks can push maximum masses up by 15%, fitting observations of ultra-heavy pulsars like PSR J2215+5135. It raises questions about the limits of quark matter under extreme conditions and whether such perturbations are detectable in gravitational wave signals. The model\u2019s stability under high compactness also suggests strange stars as viable candidates for future observational tests.",
+        "brief_ms": 8830
+      }
+    ],
+    "quant-ph": [
+      {
+        "id": "2604.15298v1",
+        "title": "Super-Constant Weight Dicke States in Constant Depth Without Fanout",
+        "summary": "An $n$-qubit Dicke state of weight $k$, is the uniform superposition over all $n$-bit strings of Hamming weight $k$. Dicke states are an entanglement resource with important practical applications in the NISQ era and, for instance, play a central role in Decoded Quantum Interferometry (DQI). Furthermore, any symmetric state can be expressed as a superposition of Dicke states.\n  First, we give explicit constant-depth circuits that prepare $n$-qubit Dicke states for all $k \\leq \\text{polylog}(n)$, using only multi-qubit Toffoli gates and single-qubit unitaries. This gives the first $\\text{QAC}^0$ construction of super-constant weight Dicke states. Previous constant-depth constructions for any super-constant $k$ required the FANOUT$_n$ gate, while $\\text{QAC}^0$ is only known to implement FANOUT$_k$ for $k$ up to $\\text{polylog}(n)$. Moreover, we show that any weight-$k$ Dicke state can be constructed with access to FANOUT$_{\\min(k,n-k)}$, rather than FANOUT$_n$. Combined with recent hardness results, this yields a tight characterization: for $k \\leq n/2$, weight-$k$ Dicke states can be prepared in $\\text{QAC}^0$ if and only if FANOUT$_k \\in \\text{QAC}^0$.\n  We further extend our techniques to show that, in fact, \\emph{any} superposition of $n$-qubit Dicke states of weight at most $k$ can be prepared in $\\text{QAC}^0$ with access to FANOUT$_k$. Taking $k = n$, we obtain the first $O(1)$-depth unitary construction for arbitrary symmetric states. In particular, any symmetric state can be prepared in constant depth on quantum hardware architectures that support FANOUT$_n$, such as trapped ions with native global entangling operations.",
+        "authors": [
+          "Lucas Gretta",
+          "Meghal Gupta",
+          "Malvika Raj Joshi"
+        ],
+        "category": "quant-ph",
+        "primary_cat": "quant-ph",
+        "published": "2026-04-16T17:57:08Z",
+        "updated": "2026-04-16T17:57:08Z",
+        "pdf_url": "https://arxiv.org/pdf/2604.15298v1",
+        "abs_url": "https://arxiv.org/abs/2604.15298v1",
+        "keyword_hits": [
+          "quantum",
+          "qubit",
+          "entanglement",
+          "superposition",
+          "interferometry"
+        ],
+        "extracted": {
+          "sample_energies": [],
+          "sample_frequencies": []
+        },
+        "complexity_score": 35.8,
+        "selection_score": 57.28,
+        "brief": "**TL;DR** \u2014 This paper presents the first constant-depth quantum circuit construction for super-constant weight Dicke states with weight up to polylog(n) without requiring full fanout gates.\n\n**Core idea** \u2014 Dicke states, which are uniform superpositions of quantum states with a fixed number of excitations, are vital for quantum technologies like interferometry and serve as building blocks for symmetric quantum states. This work develops a method to prepare these states using constant-depth circuits, a significant constraint in quantum computing, without needing powerful fanout operations across all qubits. It also extends to preparing any superposition of Dicke states and arbitrary symmetric states under specific hardware conditions.\n\n**Key equations**\n- $$ |D_{n,k}\\rangle = \\frac{1}{\\sqrt{\\binom{n}{k}}} \\sum_{x \\in \\{0,1\\}^n, |x|=k} |x\\rangle $$\n  - Here, $|D_{n,k}\\rangle$ represents the n-qubit Dicke state of weight k, a uniform superposition over all n-bit strings with exactly k ones; this defines the target state central to the paper\u2019s quantum resource applications.\n- $$ \\text{FANOUT}_{\\min(k,n-k)} $$\n  - This denotes the fanout gate limited to the smaller of k or n-k qubits, a key innovation reducing hardware demands; the paper proves it suffices for constructing weight-k Dicke states, unlike prior reliance on full n-qubit fanout.\n- $$ \\text{QAC}^0 \\text{ with FANOUT}_k $$\n  - This specifies the quantum circuit class of constant depth with access to fanout limited to k qubits; it\u2019s the computational framework enabling the paper\u2019s efficient preparation of Dicke states for k up to polylog(n).\n\n**Why it matters** \u2014 This breakthrough lowers the resource barrier for implementing complex quantum states on near-term quantum devices, particularly in architectures like trapped ions with native global operations. It opens pathways for practical quantum interferometry and symmetric state synthesis in constant depth. Remaining challenges include extending these techniques beyond polylog(n) weights without additional hardware assumptions.",
+        "brief_ms": 8492
+      },
+      {
+        "id": "2604.14055v1",
+        "title": "Two-Indexed Schatten Quasi-Norms with Applications to Quantum Information Theory",
+        "summary": "We define 2-indexed $(q,p)$-Schatten quasi-norms for any $q,p > 0$ on operators on a tensor product of Hilbert spaces, naturally extending the norms defined by Pisier's theory of operator-valued Schatten spaces. We establish several desirable properties of these quasi-norms, such as relational consistency and the behavior on block diagonal operators, assuming that $|\\frac{1}{q} - \\frac{1}{p}| \\leq 1$. In fact, we show that this condition is essentially necessary for natural properties to hold. Furthermore, for linear maps between spaces of such quasi-norms, we introduce completely bounded quasi-norms and co-quasi-norms. We prove that the $q \\to p$ completely bounded co-quasi-norm is super-multiplicative for tensor products of quantum channels for $q \\geq p>0$, extending an influential result of [Devetak, Junge, King, Ruskai, 2006]. Our proofs rely on elementary matrix analysis and operator convexity tools and do not require operator space theory. On the applications side, we demonstrate that these quasi-norms can be used to express relevant quantum information measures such as R\u00e9nyi conditional entropies for $\u03b1\\geq \\frac{1}{2}$ or the Sandwiched R\u00e9nyi Umlaut information for $\u03b1< 1$. Our multiplicativity results imply a tensorizing notion of reverse hypercontractivity, additivity of the completely bounded minimum output R\u00e9nyi-$\u03b1$-entropy for $\u03b1\\geq\\frac{1}{2}$ extending another important result of [Devetak, Junge, King, Ruskai, 2006], and additivity of the maximum output R\u00e9nyi-$\u03b1$ entropy for $\u03b1\\geq \\frac{1}{2}$.",
+        "authors": [
+          "Jan Kochanowski",
+          "Omar Fawzi",
+          "Cambyse Rouz\u00e9"
+        ],
+        "category": "quant-ph",
+        "primary_cat": "quant-ph",
+        "published": "2026-04-15T16:35:46Z",
+        "updated": "2026-04-15T16:35:46Z",
+        "pdf_url": "https://arxiv.org/pdf/2604.14055v1",
+        "abs_url": "https://arxiv.org/abs/2604.14055v1",
+        "keyword_hits": [
+          "quantum",
+          "operator"
+        ],
+        "extracted": {
+          "sample_energies": [],
+          "sample_frequencies": []
+        },
+        "complexity_score": 28.9,
+        "selection_score": 46.24,
+        "brief": "**TL;DR** \u2014 The 2-indexed $(q,p)$-Schatten quasi-norms exhibit super-multiplicativity for tensor products of quantum channels when $q \\geq p > 0$, extending key results in quantum information theory.\n\n**Core idea** \u2014 This paper introduces a new class of mathematical tools called 2-indexed $(q,p)$-Schatten quasi-norms, defined for operators on tensor products of Hilbert spaces. These quasi-norms generalize existing norms in operator theory and are particularly useful in quantum information science for quantifying properties of quantum systems. The work also explores their behavior under specific conditions and applies them to compute important quantum measures like R\u00e9nyi entropies.\n\n**Key equations**\n- $$\\|A\\|_{q,p} = \\left( \\text{Tr}_2 \\left[ \\left( \\text{Tr}_1 |A|^q \\right)^{p/q} \\right] \\right)^{1/p}$$\n  - Here, $A$ is an operator on a tensor product space, $\\text{Tr}_1$ and $\\text{Tr}_2$ are partial traces over the respective subsystems, $q$ and $p$ are positive parameters. This defines the 2-indexed $(q,p)$-Schatten quasi-norm, central to capturing operator magnitude in a two-index framework.\n- $$\\|\\Phi\\|_{q \\to p}^{\\text{cb,co}} \\geq \\|\\Phi_1 \\otimes \\Phi_2\\|_{q \\to p}^{\\text{cb,co}}$$\n  - $\\Phi$, $\\Phi_1$, and $\\Phi_2$ are linear maps (quantum channels), and $\\|\\cdot\\|_{q \\to p}^{\\text{cb,co}}$ denotes the completely bounded co-quasi-norm from $q$ to $p$. This inequality establishes super-multiplicativity for tensor products, a critical property for applications in quantum channel theory.\n- $$S_\\alpha(A|B) = \\frac{1}{1-\\alpha} \\log \\text{Tr} \\left[ \\left( A^{-\\frac{1}{2}} B A^{-\\frac{1}{2}} \\right)^\\alpha \\right]$$\n  - $S_\\alpha(A|B)$ is the R\u00e9nyi conditional entropy for $\\alpha \\geq \\frac{1}{2}$, with $A$ and $B$ as positive operators. This equation links the quasi-norms to quantum information measures, showcasing their practical utility.\n\n**Why it matters** \u2014 These quasi-norms provide a robust framework for analyzing quantum channels and entropies, enabling new insights into reverse hypercontractivity and additivity of entropy measures for $\\alpha \\geq \\frac{1}{2}$. They open avenues for deeper exploration of quantum information processing, though the necessity of the condition $|\\frac{1}{q} - \\frac{1}{p}| \\leq 1$ suggests limitations in broader contexts. Future work could address relaxing this constraint or extending applications to other quantum measures.",
+        "brief_ms": 9606
+      }
+    ]
+  }
+}

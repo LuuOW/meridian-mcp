@@ -1,0 +1,123 @@
+{
+  "date": "2026-04-18",
+  "generated": "2026-04-18T10:00:28.246775+00:00",
+  "paper_count": 3,
+  "papers": [
+    {
+      "arxiv_id": "2604.15298v1",
+      "title": "Super-Constant Weight Dicke States in Constant Depth Without Fanout",
+      "authors": [
+        "Lucas Gretta",
+        "Meghal Gupta",
+        "Malvika Raj Joshi"
+      ],
+      "category": "quant-ph",
+      "published": "2026-04-16T17:57:08Z",
+      "abs_url": "https://arxiv.org/abs/2604.15298v1",
+      "pdf_url": "https://arxiv.org/pdf/2604.15298v1",
+      "brief": "**TL;DR** — This paper presents the first constant-depth quantum circuit construction for super-constant weight Dicke states with weight up to polylog(n) without requiring full fanout gates.\n\n**Core idea** — Dicke states, which are uniform superpositions of quantum states with a fixed number of excitations, are vital for quantum technologies like interferometry and serve as building blocks for symmetric quantum states. This work develops a method to prepare these states using constant-depth circuits, a significant constraint in quantum computing, without needing powerful fanout operations across all qubits. It also extends to preparing any superposition of Dicke states and arbitrary symmetric states under specific hardware conditions.\n\n**Key equations**\n- $$ |D_{n,k}\\rangle = \\frac{1}{\\sqrt{\\binom{n}{k}}} \\sum_{x \\in \\{0,1\\}^n, |x|=k} |x\\rangle $$\n  - Here, $|D_{n,k}\\rangle$ represents the n-qubit Dicke state of weight k, a uniform superposition over all n-bit strings with exactly k ones; this defines the target state central to the paper’s quantum resource applications.\n- $$ \\text{FANOUT}_{\\min(k,n-k)} $$\n  - This denotes the fanout gate limited to the smaller of k or n-k qubits, a key innovation reducing hardware demands; the paper proves it suffices for constructing weight-k Dicke states, unlike prior reliance on full n-qubit fanout.\n- $$ \\text{QAC}^0 \\text{ with FANOUT}_k $$\n  - This specifies the quantum circuit class of constant depth with access to fanout limited to k qubits; it’s the computational framework enabling the paper’s efficient preparation of Dicke states for k up to polylog(n).\n\n**Why it matters** — This breakthrough lowers the resource barrier for implementing complex quantum states on near-term quantum devices, particularly in architectures like trapped ions with native global operations. It opens pathways for practical quantum interferometry and symmetric state synthesis in constant depth. Remaining challenges include extending these techniques beyond polylog(n) weights without additional hardware assumptions.",
+      "brief_snippet": "TL;DR** — This paper presents the first constant-depth quantum circuit construction for super-constant weight Dicke states with weight up to polylog(n) without requiring full fanout gates.\n\n**Core idea** — Dicke states, …",
+      "keyword_hits": [
+        "quantum",
+        "qubit",
+        "entanglement",
+        "superposition",
+        "interferometry"
+      ],
+      "orbital": {
+        "class": "planet",
+        "route_score": 0.546,
+        "planet_score": 0.597,
+        "roche_disrupted": false,
+        "payout_multiplier": 1.5,
+        "star_system": "quantum",
+        "scores": {
+          "mass": 0.539,
+          "scope": 0.5,
+          "independence": 0.614,
+          "activation_frequency": 0.62,
+          "drag": 0.364,
+          "eccentricity": 0.394,
+          "overlap_risk": 0.107,
+          "fragmentation": 0.37
+        }
+      }
+    },
+    {
+      "arxiv_id": "2604.14055v1",
+      "title": "Two-Indexed Schatten Quasi-Norms with Applications to Quantum Information Theory",
+      "authors": [
+        "Jan Kochanowski",
+        "Omar Fawzi",
+        "Cambyse Rouzé"
+      ],
+      "category": "quant-ph",
+      "published": "2026-04-15T16:35:46Z",
+      "abs_url": "https://arxiv.org/abs/2604.14055v1",
+      "pdf_url": "https://arxiv.org/pdf/2604.14055v1",
+      "brief": "**TL;DR** — The 2-indexed $(q,p)$-Schatten quasi-norms exhibit super-multiplicativity for tensor products of quantum channels when $q \\geq p > 0$, extending key results in quantum information theory.\n\n**Core idea** — This paper introduces a new class of mathematical tools called 2-indexed $(q,p)$-Schatten quasi-norms, defined for operators on tensor products of Hilbert spaces. These quasi-norms generalize existing norms in operator theory and are particularly useful in quantum information science for quantifying properties of quantum systems. The work also explores their behavior under specific conditions and applies them to compute important quantum measures like Rényi entropies.\n\n**Key equations**\n- $$\\|A\\|_{q,p} = \\left( \\text{Tr}_2 \\left[ \\left( \\text{Tr}_1 |A|^q \\right)^{p/q} \\right] \\right)^{1/p}$$\n  - Here, $A$ is an operator on a tensor product space, $\\text{Tr}_1$ and $\\text{Tr}_2$ are partial traces over the respective subsystems, $q$ and $p$ are positive parameters. This defines the 2-indexed $(q,p)$-Schatten quasi-norm, central to capturing operator magnitude in a two-index framework.\n- $$\\|\\Phi\\|_{q \\to p}^{\\text{cb,co}} \\geq \\|\\Phi_1 \\otimes \\Phi_2\\|_{q \\to p}^{\\text{cb,co}}$$\n  - $\\Phi$, $\\Phi_1$, and $\\Phi_2$ are linear maps (quantum channels), and $\\|\\cdot\\|_{q \\to p}^{\\text{cb,co}}$ denotes the completely bounded co-quasi-norm from $q$ to $p$. This inequality establishes super-multiplicativity for tensor products, a critical property for applications in quantum channel theory.\n- $$S_\\alpha(A|B) = \\frac{1}{1-\\alpha} \\log \\text{Tr} \\left[ \\left( A^{-\\frac{1}{2}} B A^{-\\frac{1}{2}} \\right)^\\alpha \\right]$$\n  - $S_\\alpha(A|B)$ is the Rényi conditional entropy for $\\alpha \\geq \\frac{1}{2}$, with $A$ and $B$ as positive operators. This equation links the quasi-norms to quantum information measures, showcasing their practical utility.\n\n**Why it matters** — These quasi-norms provide a robust framework for analyzing quantum channels and entropies, enabling new insights into reverse hypercontractivity and additivity of entropy measures for $\\alpha \\geq \\frac{1}{2}$. They open avenues for deeper exploration of quantum information processing, though the necessity of the condition $|\\frac{1}{q} - \\frac{1}{p}| \\leq 1$ suggests limitations in broader contexts. Future work could address relaxing this constraint or extending applications to other quantum measures.",
+      "brief_snippet": "TL;DR** — The 2-indexed $(q,p)$-Schatten quasi-norms exhibit super-multiplicativity for tensor products of quantum channels when $q \\geq p > 0$, extending key results in quantum information theory.\n\n**Core idea** — This …",
+      "keyword_hits": [
+        "quantum",
+        "operator"
+      ],
+      "orbital": {
+        "class": "moon",
+        "route_score": 0.469,
+        "planet_score": 0.552,
+        "roche_disrupted": false,
+        "payout_multiplier": 2.0,
+        "star_system": "quantum",
+        "scores": {
+          "mass": 0.52,
+          "scope": 0.473,
+          "independence": 0.554,
+          "activation_frequency": 0.54,
+          "drag": 0.356,
+          "eccentricity": 0.433,
+          "overlap_risk": 0.257,
+          "fragmentation": 0.37
+        }
+      }
+    },
+    {
+      "arxiv_id": "2604.09976v2",
+      "title": "Probing geometrically perturbed strange stars with minimal decoupling using millisecond pulsar timing observations",
+      "authors": [
+        "K. N. Singh",
+        "S. K. Maurya",
+        "A. Errehymy",
+        "A. Altaibayeva",
+        "J. Rayimbaev",
+        "M. Matyoqubov"
+      ],
+      "category": "gr-qc",
+      "published": "2026-04-11T01:21:34Z",
+      "abs_url": "https://arxiv.org/abs/2604.09976v2",
+      "pdf_url": "https://arxiv.org/pdf/2604.09976v2",
+      "brief": "**TL;DR** — The model predicts a maximum strange star mass of approximately 2.28 M⊙ for a deformation parameter β = 3×10^{-3}, aligning with high-mass pulsar observations.\n\n**Core idea** — This paper explores strange stars, exotic compact objects made of quark matter, under gravitational decoupling with geometric perturbations. By tweaking the star’s internal structure using a deformation parameter and a radial perturbation scale, the model matches observed masses of millisecond pulsars while testing stability and compactness. It offers a way to understand how internal anisotropy and perturbations affect the star’s ability to support extreme masses.\n\n**Key equations**\n- $$\\rho = \\rho^{\\text{seed}} + \\beta \\theta^0_0$$\n  - Here, ρ is the total energy density, ρ^{\\text{seed}} is the density from the seed sector (MIT bag model), β is the decoupling parameter, and θ^0_0 is the additional source term. This equation splits the density into base and perturbed components, crucial for modeling anisotropy.\n- $$p_r = p_r^{\\text{seed}} + \\beta \\theta^1_1$$\n  - In this, p_r is the radial pressure, p_r^{\\text{seed}} is the seed sector pressure, and θ^1_1 is the radial component of the additional source. It captures how decoupling modifies pressure to support higher masses.\n- $$g(r) = \\sin(\\Psi r^2)$$\n  - Here, g(r) is the geometric perturbation function, Ψ is the radial perturbation scale (in km^{-2}), and r is the radial coordinate. This introduces oscillatory behavior in the metric, key to testing structural stability under perturbations.\n\n**Why it matters** — This work bridges theoretical strange star models with real pulsar data, showing how small geometric tweaks can push maximum masses up by 15%, fitting observations of ultra-heavy pulsars like PSR J2215+5135. It raises questions about the limits of quark matter under extreme conditions and whether such perturbations are detectable in gravitational wave signals. The model’s stability under high compactness also suggests strange stars as viable candidates for future observational tests.",
+      "brief_snippet": "TL;DR** — The model predicts a maximum strange star mass of approximately 2.28 M⊙ for a deformation parameter β = 3×10^{-3}, aligning with high-mass pulsar observations.\n\n**Core idea** — This paper explores strange stars…",
+      "keyword_hits": [
+        "gravitational"
+      ],
+      "orbital": {
+        "class": "moon",
+        "route_score": 0.418,
+        "planet_score": 0.532,
+        "roche_disrupted": false,
+        "payout_multiplier": 2.0,
+        "star_system": "gravity",
+        "scores": {
+          "mass": 0.566,
+          "scope": 0.447,
+          "independence": 0.518,
+          "activation_frequency": 0.46,
+          "drag": 0.378,
+          "eccentricity": 0.555,
+          "overlap_risk": 0.315,
+          "fragmentation": 0.374
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "2026-04-16": {
+    "positions": [
+      {
+        "stake_id": "e751d075-6edc-4736-8a9b-0c3503586ffb",
+        "reference": "43ae91e29eb94865807f17b6f46f52f2",
+        "stake_date": "2026-04-16",
+        "session_hash": "222d7c37c4c71e81e880eb066ccf614bb0bf29c631a264ac1b80af434a92363f",
+        "arxiv_id": "2604.14150v1",
+        "title": "Thermodynamic signatures of non-Hermiticity in Dirac materials via quantum capacitance",
+        "paper_class": "planet",
+        "payout_multiplier": 1.5,
+        "amount_wld": 0.1,
+        "status": "pending",
+        "placed_at": "2026-04-16T14:38:24.065Z",
+        "confirmed_at": null,
+        "transaction_id": null,
+        "wallet_address": null,
+        "settled_at": null,
+        "payout_wld": null
+      }
+    ],
+    "settles_at": "2026-05-16",
+    "settlement": null
+  }
+}

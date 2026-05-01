@@ -1,3 +1,4 @@
+# --- repo-original ---
 node_modules/
 data/keys.json
 data/pending.json
@@ -9,3 +10,31 @@ data/prices.json
 coverage/
 dist/
 build/
+
+# --- secret-hardening additions ---
+.env.*
+!.env.example
+*.env
+dashboard.env
+*.key
+*.pem
+secrets/
+*-secret.json
+*-secrets.json
+passkeys.json
+subscriptions.json
+credentials*.json
+data/miniapp-sessions.json
+.jwt_secret
+.*_secret
+.*_token
+.session_secret
+*.secret
+
+# --- editor / os ---
+.vscode/
+.idea/
+*.swp
+
+# --- ggshield ---
+.cache_ggshield

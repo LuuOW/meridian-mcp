@@ -602,7 +602,7 @@ app.delete('/mcp', auth, (_req, res) => res.status(405).json({ error: 'DELETE no
 
 // ── Secrets vault API ─────────────────────────────────────────────────────
 const SECRETS_TOKEN = process.env.SECRETS_TOKEN || ''
-const VAULT_PATH    = '/opt/meridian-arb-bot/.env'
+const VAULT_PATH    = '/opt/meridian-vault/.env'
 
 function authVault(req, res) {
   const tok = (req.headers.authorization || '').replace('Bearer ', '').trim()
@@ -810,6 +810,8 @@ import { execFile } from 'node:child_process'
       await runPy('pipeline.py')
       await runPy('paper_orbit.py')
       console.log('[papers] ✓ daily_papers.json refreshed')
+      await runPy('synthesize_skill.py')
+      console.log('[papers] ✓ daily skill synthesized')
     } catch (e) {
       console.error('[papers] pipeline failed:', e.message)
     } finally {

@@ -1,0 +1,520 @@
+{
+  "generated_at": "2026-04-16T16:27:33.563Z",
+  "corpus_size": 88,
+  "summary": {
+    "promotion_candidates": 12,
+    "collision_risk": 8,
+    "demotion_candidates": 3,
+    "high_drag_skills": 31,
+    "decaying_skills": 1,
+    "accretion_clusters": 0,
+    "missing_keywords": 1,
+    "thin_content_skills": 0
+  },
+  "promotions": [
+    {
+      "slug": "event-driven",
+      "planet_score": 0.48,
+      "mass": 0.634,
+      "independence": 0.61,
+      "sim_promoted": true
+    },
+    {
+      "slug": "api-reference",
+      "planet_score": 0.479,
+      "mass": 0.56,
+      "independence": 0.64,
+      "sim_promoted": true
+    },
+    {
+      "slug": "content",
+      "planet_score": 0.472,
+      "mass": 0.61,
+      "independence": 0.6,
+      "sim_promoted": true
+    },
+    {
+      "slug": "docs-strategy",
+      "planet_score": 0.468,
+      "mass": 0.648,
+      "independence": 0.64,
+      "sim_promoted": true
+    },
+    {
+      "slug": "llm-integration",
+      "planet_score": 0.463,
+      "mass": 0.546,
+      "independence": 0.603,
+      "sim_promoted": true
+    },
+    {
+      "slug": "webhook",
+      "planet_score": 0.459,
+      "mass": 0.584,
+      "independence": 0.59,
+      "sim_promoted": true
+    },
+    {
+      "slug": "react-native",
+      "planet_score": 0.457,
+      "mass": 0.51,
+      "independence": 0.53,
+      "sim_promoted": false
+    },
+    {
+      "slug": "agent-loop",
+      "planet_score": 0.455,
+      "mass": 0.552,
+      "independence": 0.59,
+      "sim_promoted": true
+    },
+    {
+      "slug": "multi-agent-collab",
+      "planet_score": 0.455,
+      "mass": 0.66,
+      "independence": 0.522,
+      "sim_promoted": false
+    },
+    {
+      "slug": "astro-expert",
+      "planet_score": 0.449,
+      "mass": 0.478,
+      "independence": 0.59,
+      "sim_promoted": false
+    },
+    {
+      "slug": "reasoning",
+      "planet_score": 0.441,
+      "mass": 0.578,
+      "independence": 0.55,
+      "sim_promoted": false
+    },
+    {
+      "slug": "vector-store",
+      "planet_score": 0.441,
+      "mass": 0.514,
+      "independence": 0.59,
+      "sim_promoted": true
+    }
+  ],
+  "sim_promotions": [
+    {
+      "slug": "event-driven",
+      "detail": "moon -> planet (score=0.656 >= escape_vel=0.587, parent_mass=0.831)"
+    },
+    {
+      "slug": "api-reference",
+      "detail": "moon -> planet (score=0.673 >= escape_vel=0.568, parent_mass=0.781)"
+    },
+    {
+      "slug": "content",
+      "detail": "moon -> planet (score=0.667 >= escape_vel=0.550, parent_mass=0.648)"
+    },
+    {
+      "slug": "docs-strategy",
+      "detail": "moon -> planet (score=0.654 >= escape_vel=0.563, parent_mass=0.705)"
+    },
+    {
+      "slug": "llm-integration",
+      "detail": "moon -> planet (score=0.663 >= escape_vel=0.584, parent_mass=0.896)"
+    },
+    {
+      "slug": "webhook",
+      "detail": "moon -> planet (score=0.659 >= escape_vel=0.584, parent_mass=0.896)"
+    },
+    {
+      "slug": "agent-loop",
+      "detail": "moon -> planet (score=0.655 >= escape_vel=0.557, parent_mass=0.711)"
+    },
+    {
+      "slug": "dns",
+      "detail": "moon -> planet (score=0.638 >= escape_vel=0.577, parent_mass=0.846)"
+    },
+    {
+      "slug": "vector-store",
+      "detail": "moon -> planet (score=0.641 >= escape_vel=0.564, parent_mass=0.761)"
+    }
+  ],
+  "collisions": [
+    {
+      "slug": "astro-expert",
+      "class": "moon",
+      "overlap_risk": 0.46,
+      "parent": "ux-ui-expert"
+    },
+    {
+      "slug": "css-spacing-layout",
+      "class": "asteroid_belt",
+      "overlap_risk": 0.46,
+      "parent": null
+    },
+    {
+      "slug": "nextjs-dashboard",
+      "class": "moon",
+      "overlap_risk": 0.46,
+      "parent": "ux-ui-expert"
+    },
+    {
+      "slug": "shadcn-ui",
+      "class": "trojan",
+      "overlap_risk": 0.46,
+      "parent": "ux-ui-expert"
+    },
+    {
+      "slug": "tailwind-css",
+      "class": "moon",
+      "overlap_risk": 0.46,
+      "parent": "ux-ui-expert"
+    },
+    {
+      "slug": "framer-motion",
+      "class": "trojan",
+      "overlap_risk": 0.38,
+      "parent": "ux-ui-expert"
+    },
+    {
+      "slug": "react-dashboard-cards",
+      "class": "trojan",
+      "overlap_risk": 0.38,
+      "parent": "nextjs-dashboard"
+    },
+    {
+      "slug": "seo",
+      "class": "trojan",
+      "overlap_risk": 0.352,
+      "parent": "content"
+    }
+  ],
+  "collision_clusters": [
+    {
+      "parent": "llm-integration",
+      "slugs": [
+        "agent-loop",
+        "knowledge",
+        "multi-llm-routing",
+        "partner-skill-compiler",
+        "reasoning",
+        "uncertainty-quantification"
+      ]
+    },
+    {
+      "parent": "content",
+      "slugs": [
+        "analytics",
+        "arxiv-taxonomy",
+        "brightdata-collection",
+        "database",
+        "defi-protocols",
+        "docs-strategy",
+        "edward-sturm",
+        "outbound",
+        "persona-research",
+        "scientific-writing-voice",
+        "seo",
+        "web-intelligence"
+      ]
+    },
+    {
+      "parent": "github",
+      "slugs": [
+        "api-reference",
+        "doc-templates",
+        "solidity"
+      ]
+    },
+    {
+      "parent": "ux-ui-expert",
+      "slugs": [
+        "astro-expert",
+        "framer-motion",
+        "nextjs-dashboard",
+        "shadcn-ui",
+        "state-management",
+        "tailwind-css"
+      ]
+    },
+    {
+      "parent": "api",
+      "slugs": [
+        "auth",
+        "background-tasks",
+        "caching",
+        "curl-recipes",
+        "env-management",
+        "event-driven",
+        "firecrawl-extract",
+        "llm-integration",
+        "schema-authority",
+        "unit-test",
+        "webhook"
+      ]
+    },
+    {
+      "parent": "docker",
+      "slugs": [
+        "browser-stealth",
+        "ci-cd",
+        "container-security",
+        "docker-compose",
+        "docker-registry",
+        "kubernetes",
+        "react-native"
+      ]
+    },
+    {
+      "parent": "knowledge",
+      "slugs": [
+        "content",
+        "exa-search",
+        "latex",
+        "ml-training",
+        "physics-units-si",
+        "semantic-scholar-api",
+        "transcript-ingestion"
+      ]
+    },
+    {
+      "parent": "network",
+      "slugs": [
+        "dns",
+        "firewall",
+        "ip-blocklist",
+        "port-scanner",
+        "rate-limiting",
+        "vpn-access-control",
+        "wireguard"
+      ]
+    },
+    {
+      "parent": "devops",
+      "slugs": [
+        "multi-agent-collab",
+        "observability",
+        "ssh-hardening",
+        "ssl-tls"
+      ]
+    }
+  ],
+  "demotions": [
+    {
+      "slug": "tailwind-css",
+      "asteroid_belt_score": 0.493,
+      "fragmentation": 0.52,
+      "overlap_risk": 0.46
+    },
+    {
+      "slug": "astro-expert",
+      "asteroid_belt_score": 0.467,
+      "fragmentation": 0.42,
+      "overlap_risk": 0.46
+    },
+    {
+      "slug": "react-native",
+      "asteroid_belt_score": 0.42,
+      "fragmentation": 0.372,
+      "overlap_risk": 0.308
+    }
+  ],
+  "high_drag": [
+    {
+      "slug": "orchestration",
+      "class": "moon",
+      "drag": 0.68,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "internal-docs-operator",
+      "class": "irregular_satellite",
+      "drag": 0.63,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "container-security",
+      "class": "moon",
+      "drag": 0.6,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "docker",
+      "class": "planet",
+      "drag": 0.6,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "multi-agent-collab",
+      "class": "moon",
+      "drag": 0.6,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "network",
+      "class": "planet",
+      "drag": 0.6,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "wireguard",
+      "class": "irregular_satellite",
+      "drag": 0.6,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "docs-update",
+      "class": "planet",
+      "drag": 0.58,
+      "suggestion": "reduce setup cost — split into smaller focused skill or add explicit trigger keywords"
+    },
+    {
+      "slug": "doc-templates",
+      "class": "comet",
+      "drag": 0.48,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "docs-strategy",
+      "class": "moon",
+      "drag": 0.48,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "github",
+      "class": "planet",
+      "drag": 0.48,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "schema-authority",
+      "class": "trojan",
+      "drag": 0.48,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "token-awareness",
+      "class": "planet",
+      "drag": 0.48,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "vpn-access-control",
+      "class": "irregular_satellite",
+      "drag": 0.48,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "auth",
+      "class": "trojan",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "background-tasks",
+      "class": "trojan",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "browser-stealth",
+      "class": "moon",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "ci-cd",
+      "class": "comet",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "database",
+      "class": "comet",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "docker-compose",
+      "class": "moon",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "docker-registry",
+      "class": "comet",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "edward-sturm",
+      "class": "moon",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "firewall",
+      "class": "trojan",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "ip-blocklist",
+      "class": "trojan",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "kubernetes",
+      "class": "comet",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "observability",
+      "class": "moon",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "port-scanner",
+      "class": "trojan",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "rate-limiting",
+      "class": "trojan",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "solidity",
+      "class": "moon",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "ssh-hardening",
+      "class": "comet",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    },
+    {
+      "slug": "token-economics",
+      "class": "trojan",
+      "drag": 0.4,
+      "suggestion": "acceptable but worth watching"
+    }
+  ],
+  "decaying": [
+    {
+      "slug": "css-spacing-layout",
+      "staleness": 0.242,
+      "health": 0.845,
+      "trust": 1,
+      "action": "monitor"
+    }
+  ],
+  "accretion": [],
+  "missing_keywords": [
+    "edward-sturm"
+  ],
+  "thin_content": []
+}
