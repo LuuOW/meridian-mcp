@@ -16,11 +16,18 @@
 
 <nav class="nav" aria-label="Primary">
   <a href="/" class="brand">◎ Meridian</a>
-  <div class="nav-links">
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu" role="menu">
     <a href="/">Home</a>
     <a href="https://docs.ask-meridian.uk">Docs</a>
     <a href="/miniapp/" class="current">Try it</a>
+    <a href="/#pricing">Pricing</a>
     <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+    <span id="versionBadge" class="nav-version" data-loading>MCP v1.0.0</span>
   </div>
 </nav>
 
