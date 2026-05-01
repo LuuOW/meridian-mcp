@@ -608,8 +608,9 @@
 /* MEGA AR BUTTON (above textbox) ----------------------------------------- */
 .ar-megabtn {
   position: relative;
-  display: flex; align-items: center; gap: 16px;
+  display: flex; align-items: center; gap: clamp(10px, 3vw, 16px);
   width: 100%;
+  min-height: 64px;
   background: linear-gradient(
     135deg,
     rgba(167, 139, 250, 0.16),
@@ -618,7 +619,7 @@
   );
   border: 1px solid rgba(167, 139, 250, 0.35);
   border-radius: 16px;
-  padding: 18px clamp(16px, 3vw, 22px);
+  padding: clamp(12px, 3vw, 18px) clamp(14px, 3vw, 22px);
   margin-bottom: 16px;
   cursor: pointer;
   text-align: left;
@@ -630,6 +631,9 @@
     0 0 24px rgba(167, 139, 250, 0.18),
     inset 0 0 28px rgba(56, 189, 248, 0.06);
   transition: transform 0.2s, box-shadow 0.25s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .ar-megabtn::before {
   content: '';
@@ -647,7 +651,11 @@
   filter: blur(10px);
   z-index: -1;
   animation: neonRotate 7s linear infinite;
+  /* Critical: don't intercept touch on mobile Chrome — the halo isn't
+     interactive and shouldn't swallow the click on the underlying button. */
+  pointer-events: none;
 }
+.ar-megabtn-icon, .ar-megabtn-text, .ar-megabtn-arrow { pointer-events: none; }
 .ar-megabtn:hover {
   transform: translateY(-1px);
   border-color: var(--neon-violet);
@@ -660,29 +668,35 @@
 .ar-megabtn:active { transform: translateY(0); }
 .ar-megabtn-icon {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 48px; height: 48px;
+  width: clamp(40px, 9vw, 48px); height: clamp(40px, 9vw, 48px);
   border-radius: 12px;
   background: rgba(10, 13, 20, 0.65);
   border: 1px solid rgba(167, 139, 250, 0.4);
-  font-size: 22px;
+  font-size: clamp(18px, 4vw, 22px);
   flex-shrink: 0;
 }
-.ar-megabtn-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.ar-megabtn-text {
+  display: flex; flex-direction: column; gap: 2px;
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden;
+}
 .ar-megabtn-text strong {
-  font-size: clamp(14px, 2.6vw, 16px);
+  font-size: clamp(13px, 3.4vw, 16px);
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ar-megabtn-text small {
-  font-size: clamp(11.5px, 2vw, 12.5px);
+  font-size: clamp(11px, 2.6vw, 12.5px);
   color: var(--text-muted);
   font-weight: 400;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ar-megabtn-arrow {
   font-family: var(--font-mono);
   color: var(--neon-violet);
-  font-size: 18px;
+  font-size: clamp(15px, 3.4vw, 18px);
   flex-shrink: 0;
 }
 .ar-megabtn.active {

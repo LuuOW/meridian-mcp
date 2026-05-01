@@ -16,21 +16,28 @@ let _scanFrame = null
 const lastEmittedAt = new Map()       // class → timestamp of last emit
 const EMIT_COOLDOWN_MS = 3000          // don't re-emit same class within this window
 
-export async function startAR({ videoEl, overlayEl, statusEl, detsEl, onDetectedClass }) {
+export async function startAR({ stream, videoEl, overlayEl, statusEl, detsEl, onDetectedClass }) {
   _stopped = false
   statusEl.textContent = 'requesting camera…'
 
-  // 1. Camera permission + stream
+  // 1. Camera stream — caller passed an in-flight getUserMedia Promise
+  //    (started synchronously in the click handler so Safari doesn't drop
+  //    the user-gesture). If that promise rejects, surface a clean error.
   try {
-    _stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false,
-    })
+    _stream = await stream
   } catch (e) {
-    throw new Error(e.name === 'NotAllowedError' ? 'camera permission denied' : `camera failed: ${e.message}`)
+    const name = e?.name || ''
+    let msg
+    if      (name === 'NotAllowedError')   msg = 'camera permission denied (check Settings → Safari → Camera, or browser site settings)'
+    else if (name === 'NotFoundError')     msg = 'no camera found on this device'
+    else if (name === 'NotReadableError')  msg = 'camera is busy in another app'
+    else if (name === 'OverconstrainedError') msg = 'no camera matches the requested constraints'
+    else                                   msg = `camera failed: ${e?.message || name || 'unknown'}`
+    throw new Error(msg)
   }
   videoEl.srcObject = _stream
-  await videoEl.play().catch(() => {})
+  // iOS Safari needs an explicit play() with the stream attached.
+  try { await videoEl.play() } catch {}
 
   // Match overlay canvas to displayed video dimensions
   const fitOverlay = () => {
