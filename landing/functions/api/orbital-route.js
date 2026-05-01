@@ -40,41 +40,36 @@ Author guidelines:
 - Avoid near-duplicates. Each skill should defend its own slot.
 - No prefatory text outside the JSON object. No \`\`\`fences.`
 
+// Compact 1-shot — short enough not to dominate prompt-token cost, dense
+// enough that the model can imitate the structure (named sections,
+// imperative tone, concrete tools).
 const EXAMPLE_SKILL = {
   slug: 'persona-research',
-  description: 'Build a source base for a person-specific profile, partner agent, or high-fidelity voice model from public material — find, score, and de-noise authored sources.',
-  keywords: [
-    'persona', 'voice-model', 'biography', 'identity', 'transcript', 'public-figure',
-    'authored-text', 'source-quality', 'youtube-watch-page', 'newsletter', 'podcast',
-    'self-authored', 'identity-collision', 'preferred-domains',
-  ],
+  description: 'Build a source base for a person-specific voice model from public material — find, score, and de-noise authored sources.',
+  keywords: ['persona', 'voice-model', 'biography', 'identity', 'transcript', 'youtube-watch-page', 'newsletter', 'podcast', 'self-authored', 'identity-collision'],
   body: `## Use It For
 
 - Finding the right person across ambiguous search results
-- Expanding from an official site into high-signal internal pages
 - Ranking public sources by usefulness for persona modeling
-- Separating self-authored material from reviews, testimonials, commentary
+- Separating self-authored material from reviews and commentary
 
 ## Workflow
 
-1. Start with seeded facts — official site, known YouTube/channel URLs, LinkedIn/X/Instagram/newsletter/podcast URLs, domain keywords, exclude keywords.
-2. Discover candidates — search the person name alone; with domain terms; the official domain for bio/about/newsletter/podcast; YouTube *watch* pages, not just channel pages.
-3. Score & keep in this priority order: official bio/about → self-authored newsletters/articles → episode pages with transcript potential → self-authored landing pages → secondary profiles (LinkedIn).
-4. De-prioritise: wrong-person matches, generic channel pages, widget-heavy social embeds, testimonials, pages dominated by chrome.
+1. Seed: official site, YouTube channel, LinkedIn, newsletter URL.
+2. Discover: search name alone, with domain terms, the official domain for bio/podcast, YouTube *watch* pages.
+3. Score: official bio → self-authored newsletter → episode pages with transcripts → secondary profiles.
+4. De-prioritise: wrong-person matches, widget-heavy embeds, testimonials.
 
 ## Heuristics
 
 - Prefer first-person language over third-party praise.
-- Prefer concrete claims, methods, beliefs, tradeoffs.
-- Prefer episode pages and transcripts over thumbnails or playlists.
-- Prefer stable identity pages for biography claims.
+- Prefer episode pages over playlists.
+- Require an official-domain or self-authored anchor before accepting a cluster.
 
 ## Anti-Patterns
 
-- Treating testimonials as evidence of identity or worldview.
-- Accepting a name match without an official-domain or self-authored anchor.
-- Ingesting auto-generated podcast summaries as "voice".
-- Mixing two same-named people into one source set.`,
+- Treating testimonials as identity evidence.
+- Mixing same-named people into one source set.`,
 }
 
 export async function onRequest({ request, env }) {
@@ -117,8 +112,10 @@ export async function onRequest({ request, env }) {
               // Cap at the requested count exactly so the model can't
               // overshoot and burn token budget. Floor at 3 so a request
               // for 1 still yields useful adjacent skills.
-              minItems: Math.min(3, candidates),
-              maxItems: candidates,
+              // Static bounds — Workers AI prefilters the schema and a
+              // dynamic per-request shape was correlating with timeouts.
+              minItems: 3,
+              maxItems: 8,
               items: {
                 type: 'object',
                 required: ['slug', 'description', 'keywords', 'body'],
