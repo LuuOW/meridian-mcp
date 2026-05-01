@@ -86,7 +86,7 @@ askBtn.addEventListener('click', async () => {
   resultsList.innerHTML =
     '<li class="no-results">' +
     '<span class="loading-pulse">🪐 Llama-3.3-70B is authoring SKILL specs…</span><br>' +
-    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>This usually takes ~30 s.</em></small>' +
+    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>This usually takes 40–50 s — 70B model writing proper SKILL.md bodies.</em></small>' +
     '</li>'
   resultsMeta.textContent = ''
   closePanel()
