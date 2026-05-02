@@ -354,6 +354,18 @@
   font-size: 12px;
   color: var(--neon-cyan, #38bdf8);
 }
+.lab-model-badge {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(167, 139, 250, 0.18);
+  color: #c4b5fd;
+  margin-left: 8px;
+}
+.lab-model-badge[hidden] { display: none; }
 .lab-answer {
   font-size: 15.5px;
   line-height: 1.7;
