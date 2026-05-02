@@ -1,35 +1,45 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.LuuOW/meridian-skills",
-  "description": "Calibrated AI skill routing via orbital mechanics \u2014 picks the right expertise for every query.",
+  "description": "Routes AI tasks to dynamic LLM-generated skills via an orbital classifier.",
   "repository": {
     "url": "https://github.com/LuuOW/meridian-mcp",
     "source": "github"
   },
-  "version": "0.1.1",
+  "version": "1.0.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "meridian-skills-mcp",
-      "version": "0.1.1",
+      "version": "1.0.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "MERIDIAN_SKILLS_ROOT",
-          "description": "Directory containing your skill corpus (folders with SKILL.md files). Defaults to /opt/skills.",
+          "name": "MERIDIAN_API_URL",
+          "description": "Override the backend router URL.",
           "isRequired": false,
+          "default": "https://ask-meridian.uk/api/orbital-route",
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "MERIDIAN_API_KEY",
+          "description": "Optional bearer token for future rate-limit gating.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "MERIDIAN_TIMEOUT_MS",
+          "description": "Abort the fetch after this many ms.",
+          "isRequired": false,
+          "default": "90000",
           "format": "string",
           "isSecret": false
         }
       ]
-    }
-  ],
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://ask-meridian.uk/api/mcp"
     }
   ]
 }
