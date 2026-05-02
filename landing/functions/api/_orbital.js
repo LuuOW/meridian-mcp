@@ -60,6 +60,13 @@ function tokenize(s) {
 }
 function uniq(arr) { return [...new Set(arr)] }
 function clamp(v, lo = 0, hi = 1) { return v < lo ? lo : v > hi ? hi : v }
+function r3(x) { return Math.round(x * 1000) / 1000 }
+// djb2 hash — deterministic, fast, 32-bit
+function hashStr(s) {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0
+  return Math.abs(h)
+}
 
 // ── PHASE 1: derive physics signature for one skill ──────────────────────
 function physicsOf(skill, sibTokens) {
@@ -127,12 +134,48 @@ function physicsOf(skill, sibTokens) {
   const longWords = kws.filter(k => k.includes('-') || k.length >= 12).length
   const drag = clamp(longWords / Math.max(2, kws.length) * 0.7 + cross_domain * 0.2)
 
+  // ── Orbital dynamics — derived from the base 8-vector ───────────────────
+  // Semi-major axis (AU-like, [1, 7]): heavy & versatile skills sit closer in.
+  const semi_major_axis = r3(1 + (1 - mass) * 4 + lagrange_potential * 2)
+  // Eccentricity ([0, 0.95]): mismatch between depth and breadth → elongated orbit.
+  const eccentricity    = r3(clamp(Math.abs(mass - scope) * 0.85 + drag * 0.3, 0, 0.95))
+  // Inclination (radians, [0, π/2]): cross-domain skills sit off the ecliptic.
+  const inclination     = r3(cross_domain * (Math.PI / 2))
+  // Kepler's third law — T² = a³, so T = a^(3/2). Period in arbitrary years.
+  const orbital_period  = r3(Math.pow(semi_major_axis, 1.5))
+  // Closest / farthest approach to the central star.
+  const perihelion      = r3(semi_major_axis * (1 - eccentricity))
+  const aphelion        = r3(semi_major_axis * (1 + eccentricity))
+  // Mean anomaly (radians, [0, 2π]): "where on its orbit" — deterministic from slug.
+  const slugHash        = hashStr(skill.slug || '')
+  const mean_anomaly    = r3(((slugHash % 1000) / 1000) * 2 * Math.PI)
+
+  // ── Optical properties ──────────────────────────────────────────────────
+  // Wavelength (nm, visible 380–750): heavy/dense → red, scattered/cross-domain → violet.
+  const wavelength      = Math.round(Math.max(380, Math.min(750,
+    380 + mass * 370 - drag * 100 - cross_domain * 50)))
+  // Polarization ([0, 1]): coherence — inverse of fragmentation.
+  const polarization    = r3(clamp(1 - fragmentation, 0, 1))
+  // Amplitude ([0, 1]): intrinsic intensity = information density.
+  const amplitude       = r3(mass)
+  // Phase (radians, [0, 2π]): deterministic temporal offset from slug + body head.
+  const phaseHash       = hashStr(`${skill.slug || ''}|${(body || '').slice(0, 64)}`)
+  const phase           = r3(((phaseHash % 1000) / 1000) * 2 * Math.PI)
+
   return {
     mass, scope, independence, cross_domain,
     fragmentation, drag, dep_ratio,
     lagrange_potential,
     star_system: dominant,
     star_affinity: sysAffinity,
+    orbital: {
+      semi_major_axis, eccentricity, inclination,
+      orbital_period, perihelion, aphelion,
+      mean_anomaly,
+    },
+    optical: {
+      wavelength, polarization, amplitude, phase,
+    },
   }
 }
 
