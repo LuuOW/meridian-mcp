@@ -87,12 +87,16 @@
     <div class="lab-stage">
       <video id="video" class="lab-video" playsinline muted autoplay></video>
       <canvas id="snapCanvas" class="lab-snap" hidden></canvas>
+      <canvas id="arGalaxy" class="lab-ar-galaxy" hidden aria-label="Routed skills as orbiting planets over the camera scene"></canvas>
       <div class="lab-stage-controls">
         <button id="snapBtn" class="lab-icon-btn" type="button" aria-label="Capture current frame">
           <span aria-hidden="true">📸</span>
         </button>
         <button id="flipBtn" class="lab-icon-btn" type="button" aria-label="Flip camera">
           <span aria-hidden="true">🔄</span>
+        </button>
+        <button id="galaxyBtn" class="lab-icon-btn" type="button" aria-label="Toggle galaxy overlay" hidden>
+          <span aria-hidden="true">🪐</span>
         </button>
       </div>
       <div id="frozenBadge" class="lab-frozen-badge" hidden>frame frozen — release to resume</div>

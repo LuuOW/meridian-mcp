@@ -26,6 +26,8 @@ import {
   env,
 } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5'
 
+import { MiniGalaxy } from '/miniapp/mini-galaxy.js'
+
 // Force network fetches to HF (don't try local /models/...)
 env.allowLocalModels = false
 env.useBrowserCache  = true
@@ -50,6 +52,7 @@ let lastAnswer        = ''
 let modelKey          = 'smolvlm'
 let currentFacingMode = 'environment'
 let frozenFrameURL    = null
+let arGalaxy          = null   // MiniGalaxy in AR mode, lazy-init on first route
 
 // ── Burger menu ───────────────────────────────────────────────────────────
 ;(function () {
@@ -371,6 +374,9 @@ $('routeBtn').addEventListener('click', async () => {
     const data = await r.json()
     if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
 
+    // Hand the routed skills to the AR galaxy overlay and reveal it
+    showArGalaxy(data.selected || [])
+
     // Open the main miniapp in a new tab with the task pre-filled? Or render inline?
     // Inline is simpler — show the top 5 here.
     const html = data.selected.map(s => `
@@ -398,6 +404,47 @@ $('routeBtn').addEventListener('click', async () => {
     $('routeBtn').disabled = false
     $('routeBtn').textContent = orig
   }
+})
+
+// ── AR galaxy overlay (faked-3D over the camera) ──────────────────────────
+function ensureArGalaxy() {
+  if (arGalaxy) return arGalaxy
+  arGalaxy = new MiniGalaxy($('arGalaxy'), {
+    mode:   '3d',
+    arMode: true,
+    onPlanetClick: (p) => {
+      // Scroll the matching list item into view + flash it
+      const els = document.querySelectorAll('.lab-route-result strong')
+      for (const el of els) {
+        if (el.textContent === p.slug) {
+          el.closest('.lab-route-result').scrollIntoView({ behavior: 'smooth', block: 'center' })
+          el.closest('.lab-route-result').animate(
+            [{ background: 'rgba(167,139,250,0.3)' }, { background: 'transparent' }],
+            { duration: 1200 })
+          break
+        }
+      }
+    },
+  })
+  return arGalaxy
+}
+
+function showArGalaxy(skills) {
+  if (!skills?.length) return
+  const g = ensureArGalaxy()
+  g.setSkills(skills)
+  $('arGalaxy').hidden = false
+  $('galaxyBtn').hidden = false
+  $('galaxyBtn').classList.add('active')
+  document.querySelector('.lab-stage').classList.add('galaxy-on')
+}
+
+$('galaxyBtn').addEventListener('click', () => {
+  const stage = document.querySelector('.lab-stage')
+  const on = !stage.classList.contains('galaxy-on')
+  stage.classList.toggle('galaxy-on', on)
+  $('arGalaxy').hidden = !on
+  $('galaxyBtn').classList.toggle('active', on)
 })
 
 // ── utils ─────────────────────────────────────────────────────────────────
