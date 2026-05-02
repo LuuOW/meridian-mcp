@@ -27,7 +27,8 @@ import {
   env,
 } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5'
 
-import { MiniGalaxy } from '/miniapp/mini-galaxy.js'
+import { MiniGalaxy }        from '/miniapp/mini-galaxy.js'
+import { renderPhysicsPanel } from '/miniapp/physics-panel.js'
 
 // Force network fetches to HF (don't try local /models/...)
 env.allowLocalModels = false
@@ -534,6 +535,7 @@ function openSkillPanel(slug) {
   $('labSkillScore').textContent  = `score ${score}`
   $('labSkillDesc').textContent   = s.description || ''
   $('labSkillRule').textContent   = rule
+  $('labSkillPhysics').innerHTML  = renderPhysicsPanel(s)
   $('labSkillKeywords').innerHTML = kw.map(k => `<span class="lab-skill-keyword">${escapeHTML(k)}</span>`).join('')
   $('labSkillOpen').href = `/miniapp/?task=${encodeURIComponent(s.description || s.slug)}`
 

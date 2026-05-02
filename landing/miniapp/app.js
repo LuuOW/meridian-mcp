@@ -3,6 +3,7 @@
 // open-domain orbital classifier assigns celestial classes.
 import { MiniGalaxy } from './mini-galaxy.js'
 import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
+import { renderPhysicsPanel } from './physics-panel.js'
 
 // ── Burger menu (same UX as landing) ───────────────────────────────────
 ;(function () {
@@ -268,29 +269,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel()
 function renderWhy(skill) {
   const b   = skill.breakdown || {}
   const cls = skill.classification || {}
-  const phys = cls.physics || {}
-
-  const physBar = (label, val) => `
-    <span class="label">${escapeHTML(label)}</span>
-    <span class="bar"><span class="bar-fill phys" style="width:${(val * 100).toFixed(0)}%"></span></span>
-    <span class="val">${val.toFixed(2)}</span>`
-
-  // Wavelength (nm) → CSS rgb. Standard CIE-style approximation.
-  const nmToRGB = (nm) => {
-    let r = 0, g = 0, b = 0
-    if      (nm >= 380 && nm < 440) { r = -(nm - 440) / 60; g = 0; b = 1 }
-    else if (nm < 490)              { r = 0; g = (nm - 440) / 50; b = 1 }
-    else if (nm < 510)              { r = 0; g = 1; b = -(nm - 510) / 20 }
-    else if (nm < 580)              { r = (nm - 510) / 70; g = 1; b = 0 }
-    else if (nm < 645)              { r = 1; g = -(nm - 645) / 65; b = 0 }
-    else if (nm <= 750)             { r = 1; g = 0; b = 0 }
-    return `rgb(${(r*255)|0},${(g*255)|0},${(b*255)|0})`
-  }
-  // Bar normaliser for non-[0,1] orbital values
-  const orbitalBar = (label, val, max, unit, decimals = 2) => `
-    <span class="label">${escapeHTML(label)}</span>
-    <span class="bar"><span class="bar-fill phys" style="width:${(Math.min(val, max) / max * 100).toFixed(0)}%"></span></span>
-    <span class="val">${val.toFixed(decimals)}${unit ? ' ' + unit : ''}</span>`
 
   const pills = []
   if (cls.parent)              pills.push(`<span class="meta-pill">parent <em>${escapeHTML(cls.parent)}</em></span>`)
@@ -310,31 +288,7 @@ function renderWhy(skill) {
     : ''
 
   return `
-    ${phys.orbital ? `
-      <h4>Orbital dynamics</h4>
-      <div class="score-breakdown">
-        ${orbitalBar('semi_major_axis', phys.orbital.semi_major_axis, 7,         'AU', 2)}
-        ${orbitalBar('eccentricity',    phys.orbital.eccentricity,    1,         '',   3)}
-        ${orbitalBar('inclination',     phys.orbital.inclination,     Math.PI/2, 'rad', 3)}
-        ${orbitalBar('orbital_period',  phys.orbital.orbital_period,  18,        'yr', 2)}
-        ${orbitalBar('perihelion',      phys.orbital.perihelion,      7,         'AU', 2)}
-        ${orbitalBar('aphelion',        phys.orbital.aphelion,        14,        'AU', 2)}
-        ${orbitalBar('mean_anomaly',    phys.orbital.mean_anomaly,    2*Math.PI, 'rad', 3)}
-      </div>
-    ` : ''}
-
-    ${phys.optical ? `
-      <h4 style="margin-top:18px">Optical properties</h4>
-      <div class="score-breakdown">
-        <span class="label">wavelength</span>
-        <span class="bar"><span class="bar-fill phys" style="width:${((phys.optical.wavelength - 380) / (750 - 380) * 100).toFixed(0)}%"></span></span>
-        <span class="val"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:4px;background:${nmToRGB(phys.optical.wavelength)};box-shadow:0 0 6px ${nmToRGB(phys.optical.wavelength)}"></span>${phys.optical.wavelength} nm</span>
-        ${physBar('polarization',  phys.optical.polarization  ?? 0)}
-        ${physBar('amplitude',     phys.optical.amplitude     ?? 0)}
-        ${orbitalBar('phase',      phys.optical.phase ?? 0,   2*Math.PI, 'rad', 3)}
-      </div>
-    ` : ''}
-
+    ${renderPhysicsPanel(skill)}
     ${pills.length ? `<div class="classification-meta">${pills.join('')}</div>` : ''}
     ${decisionRule}
   `
