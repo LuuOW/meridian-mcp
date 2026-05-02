@@ -355,18 +355,4 @@ function explainRoute({ kw_hits, desc_hits, body_hits, cls, classBoost, versatil
   return line
 }
 
-export function corsHeaders(origin = '*') {
-  return {
-    'access-control-allow-origin':  origin,
-    'access-control-allow-methods': 'GET, POST, OPTIONS',
-    'access-control-allow-headers': 'content-type',
-    'access-control-max-age':       '86400',
-  }
-}
-
-export function jsonResponse(data, init = {}) {
-  return new Response(JSON.stringify(data), {
-    status:  init.status || 200,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...corsHeaders(), ...(init.headers || {}) },
-  })
-}
+export { corsHeaders, jsonResponse } from './_http.js'
