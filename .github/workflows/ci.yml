@@ -18,7 +18,10 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
-      - run: node --test tests/
+      # Node 22 changed `--test <path>` to require() it as a module instead of
+      # treating it as a directory glob. Pass test files explicitly so this
+      # works on both Node 20 and 22.
+      - run: node --test tests/*.test.mjs
         env:
           MERIDIAN_SKILLS_ROOT: ${{ github.workspace }}/skills
           MERIDIAN_SKILL_ORBIT: /dev/null
