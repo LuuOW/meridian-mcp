@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d14">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Vision Lab — Meridian</title>
+<meta name="description" content="In-browser vision-language model — Moondream2 running on WebGPU, no server.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/miniapp/miniapp.css">
+<link rel="stylesheet" href="/miniapp/vision-lab/lab.css">
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <a href="https://docs.ask-meridian.uk">Docs</a>
+    <a href="/miniapp/">Try it</a>
+    <a href="/miniapp/vision-lab/" class="current">Vision Lab</a>
+    <a href="/#pricing">Pricing</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main id="main" class="lab-wrap">
+  <header class="lab-head">
+    <span class="eyebrow">🔭 Experimental</span>
+    <h1>Vision Lab</h1>
+    <p class="lead">
+      Point your camera, ask a question. A 1.6 GB vision-language model
+      (<strong>Moondream2</strong>, with SmolVLM-500M fallback) runs entirely on your device via WebGPU.
+      Frames never leave the browser.
+    </p>
+  </header>
+
+  <!-- ── GATE: capability check + setup CTA ─────────────────────────── -->
+  <section id="gate" class="lab-gate" aria-labelledby="gateHeading">
+    <h2 id="gateHeading">One-time setup</h2>
+    <ul class="lab-gate-bullets">
+      <li>Downloads the model from HuggingFace's CDN — happens <strong>once</strong>.</li>
+      <li>Cached in your browser's persistent storage (Origin Private File System).</li>
+      <li>Subsequent visits load in ~3 seconds with no network.</li>
+      <li>Frames are processed on-device. The model's <em>text answer</em> is the only thing that leaves your browser (only when you press "Find compatible skills").</li>
+    </ul>
+
+    <div class="capability-check" id="capabilityCheck" aria-live="polite">
+      <div class="cap-line cap-pending">Checking your browser…</div>
+    </div>
+
+    <div class="model-pick">
+      <label class="model-pill" for="modelChoice">
+        <span class="model-pill-label">Model</span>
+        <select id="modelChoice">
+          <option value="moondream">Moondream2 — 1.6 GB · conversational, slower</option>
+          <option value="smolvlm" selected>SmolVLM-500M — 500 MB · faster, recommended for first cut</option>
+        </select>
+      </label>
+    </div>
+
+    <button id="startBtn" class="btn btn-primary lab-start-btn">Start setup →</button>
+    <p class="lab-gate-foot">
+      Bandwidth tip: the download is large. On cellular it'll eat your data plan; prefer Wi-Fi.
+    </p>
+  </section>
+
+  <!-- ── LOADING: progress bars ─────────────────────────────────────── -->
+  <section id="loading" class="lab-loading" hidden aria-live="polite">
+    <h2>Loading model…</h2>
+    <div class="lab-progress-wrap">
+      <progress id="progressBar" class="lab-progress" max="100" value="0"></progress>
+      <p id="progressText" class="lab-progress-text">Connecting to HuggingFace CDN…</p>
+      <p id="progressDetail" class="lab-progress-detail"></p>
+    </div>
+    <p class="lab-loading-tip">First load takes 1–3 minutes. Future visits skip this entirely.</p>
+  </section>
+
+  <!-- ── LAB: live UI ────────────────────────────────────────────────── -->
+  <section id="lab" class="lab-active" hidden>
+    <div class="lab-stage">
+      <video id="video" class="lab-video" playsinline muted autoplay></video>
+      <canvas id="snapCanvas" class="lab-snap" hidden></canvas>
+      <div class="lab-stage-controls">
+        <button id="snapBtn" class="lab-icon-btn" type="button" aria-label="Capture current frame">
+          <span aria-hidden="true">📸</span>
+        </button>
+        <button id="flipBtn" class="lab-icon-btn" type="button" aria-label="Flip camera">
+          <span aria-hidden="true">🔄</span>
+        </button>
+      </div>
+      <div id="frozenBadge" class="lab-frozen-badge" hidden>frame frozen — release to resume</div>
+    </div>
+
+    <div class="lab-presets" role="group" aria-label="Preset prompts">
+      <button class="lab-preset" data-prompt="Describe this image in one sentence.">Describe</button>
+      <button class="lab-preset" data-prompt="What text is visible? Transcribe it verbatim.">Read text</button>
+      <button class="lab-preset" data-prompt="What activity is happening here?">Activity?</button>
+      <button class="lab-preset" data-prompt="List the objects visible. Format as a comma-separated list.">List objects</button>
+      <button class="lab-preset" data-prompt="What context is this — work, home, outdoor, public space?">Context</button>
+      <button class="lab-preset" data-prompt="If I'm trying to interact with what's in this image, what skills would I need?">Skill hint</button>
+    </div>
+
+    <form id="askForm" class="lab-ask">
+      <label for="customPrompt" class="sr-only">Your question</label>
+      <input id="customPrompt" type="text" placeholder="Or type your own question…" maxlength="200" autocomplete="off">
+      <button id="askBtn" type="submit" class="btn btn-primary">Ask the model →</button>
+    </form>
+
+    <section id="answerSection" class="lab-answer-section" hidden aria-live="polite">
+      <header class="lab-answer-head">
+        <h3>Answer</h3>
+        <span id="latencyBadge" class="lab-latency"></span>
+      </header>
+      <div id="answer" class="lab-answer"></div>
+      <div class="lab-answer-actions">
+        <button id="routeBtn" class="btn-ghost lab-route-btn">Find compatible skills for this →</button>
+        <button id="askAgainBtn" class="btn-ghost lab-ghost-btn" hidden>Ask again</button>
+      </div>
+    </section>
+
+    <details class="lab-meta">
+      <summary>Diagnostics</summary>
+      <pre id="diag"></pre>
+    </details>
+  </section>
+
+  <footer class="lab-foot">
+    <p>
+      Powered by <code>@huggingface/transformers</code> + WebGPU.
+      <a href="https://github.com/LuuOW/meridian-mcp">Source</a>.
+    </p>
+  </footer>
+</main>
+
+<script type="module" src="/miniapp/vision-lab/lab.js"></script>
+</body>
+</html>
