@@ -76,9 +76,17 @@ try {
 }
 
 const MODELS = {
+  smolvlm: {
+    id:    'HuggingFaceTB/SmolVLM-500M-Instruct',
+    label: 'SmolVLM-500M',
+    family: 'smolvlm',     // chat-template inference path
+    dtype:  'q4',
+    expected_size_mb: 500,
+  },
   moondream: {
     id:    'Xenova/moondream2',
     label: 'Moondream2',
+    family: 'moondream',   // manual <image>×N + standalone tokenizer path
     // All-q4: keeps peak WebGPU memory under ~1.5 GB so Safari on 16 GB
     // unified-memory Macs doesn't kill the tab during inference.
     dtype: { embed_tokens: 'q4', vision_encoder: 'q4', decoder_model_merged: 'q4' },
@@ -95,7 +103,7 @@ let model             = null
 let stream            = null
 let conversation      = []          // [{ role, content }]
 let lastAnswer        = ''
-let modelKey          = 'moondream'
+let modelKey          = 'smolvlm'
 let currentFacingMode = 'environment'
 let frozenFrameURL    = null
 let arGalaxy          = null   // MiniGalaxy in AR mode, lazy-init on first route
@@ -212,7 +220,7 @@ $('modelChoice').addEventListener('change', e => { modelKey = e.target.value })
 
 async function startSetup() {
   modelKey = $('modelChoice').value
-  if (!MODELS[modelKey]) modelKey = 'moondream'
+  if (!MODELS[modelKey]) modelKey = 'smolvlm'
   $('gate').hidden = true
   $('loading').hidden = false
 
@@ -275,10 +283,14 @@ async function loadModel(key) {
     }
   }
 
-  // Moondream's AutoProcessor is image-only (no tokenizer attached), so
-  // we load the tokenizer separately and format the prompt manually in ask().
-  tokenizer = await AutoTokenizer.from_pretrained(m.id, { progress_callback })
+  // SmolVLM's processor includes its own tokenizer (used by apply_chat_template).
+  // Moondream's processor is image-only, so we load the tokenizer separately.
   processor = await AutoProcessor.from_pretrained(m.id, { progress_callback })
+  if (m.family === 'moondream') {
+    tokenizer = await AutoTokenizer.from_pretrained(m.id, { progress_callback })
+  } else {
+    tokenizer = null
+  }
   model     = await AutoModelForImageTextToText.from_pretrained(m.id, {
     device: 'webgpu',
     dtype:  m.dtype,
@@ -366,19 +378,33 @@ async function ask(prompt) {
 
   const t0 = performance.now()
   try {
-    const image = await RawImage.fromURL(imgURL)
+    const image  = await RawImage.fromURL(imgURL)
+    const family = MODELS[modelKey].family
 
-    // Moondream2's prompt format. The model's vision encoder emits 729 features
-    // (SigLIP 378×378 / 14px patches, 27×27 grid). The Llava-style merger in
-    // transformers.js does a 1:1 replace, so we need 729 <image> placeholders
-    // in input_ids — not the single one the README example shows.
-    const NUM_IMAGE_TOKENS = 729
-    const promptText = `${'<image>'.repeat(NUM_IMAGE_TOKENS)}\n\nQuestion: ${prompt}\n\nAnswer:`
-    const text_inputs   = tokenizer(promptText)
-    const visual_inputs = await processor(image)
+    let inputs, decoder, promptLen
+    if (family === 'moondream') {
+      // Moondream's vision encoder emits 729 features (SigLIP 378×378 / 14 px
+      // patches → 27×27). The Llava-style merger in transformers.js does a 1:1
+      // replace, so input_ids must carry 729 <image> placeholders.
+      const NUM_IMAGE_TOKENS = 729
+      const promptText  = `${'<image>'.repeat(NUM_IMAGE_TOKENS)}\n\nQuestion: ${prompt}\n\nAnswer:`
+      const text_inputs   = tokenizer(promptText)
+      const visual_inputs = await processor(image)
+      inputs    = { ...text_inputs, ...visual_inputs }
+      decoder   = tokenizer
+      promptLen = text_inputs.input_ids.dims.at(-1)
+    } else {
+      // SmolVLM: chat template via processor.apply_chat_template (its own tokenizer)
+      const messages = [
+        { role: 'user', content: [{ type: 'image' }, { type: 'text', text: prompt }] },
+      ]
+      const text = processor.apply_chat_template(messages, { add_generation_prompt: true })
+      inputs    = await processor(text, [image], { return_tensors: 'pt' })
+      decoder   = processor
+      promptLen = inputs.input_ids.dims.at(-1)
+    }
 
-    // Streaming token output via TextStreamer (uses our standalone tokenizer)
-    const streamer = new TextStreamer(tokenizer, {
+    const streamer = new TextStreamer(decoder.tokenizer || decoder, {
       skip_prompt: true,
       skip_special_tokens: true,
       callback_function: (chunk) => {
@@ -387,17 +413,16 @@ async function ask(prompt) {
     })
 
     const generated_ids = await model.generate({
-      ...text_inputs,
-      ...visual_inputs,
+      ...inputs,
       max_new_tokens: 160,
       do_sample:      false,
       streamer,
     })
 
-    // If streaming didn't fire, decode the full generation as a fallback.
+    // Fallback decode if streaming didn't fire
     if (!$('answer').textContent.trim()) {
-      const newTokens = generated_ids.slice(null, [text_inputs.input_ids.dims.at(-1), null])
-      const decoded   = tokenizer.batch_decode(newTokens, { skip_special_tokens: true })
+      const newTokens = generated_ids.slice(null, [promptLen, null])
+      const decoded   = decoder.batch_decode(newTokens, { skip_special_tokens: true })
       $('answer').textContent = (decoded[0] || '').trim()
     }
 
