@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0d14">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Vision Lab — Meridian</title>
-<meta name="description" content="In-browser vision-language model — SmolVLM-500M on WebGPU, no server.">
+<meta name="description" content="In-browser vision-language model — Moondream2 on WebGPU, no server.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/miniapp/miniapp.css">
@@ -36,8 +36,8 @@
     <span class="eyebrow">🔭 Experimental</span>
     <h1>Vision Lab</h1>
     <p class="lead">
-      Point your camera, ask a question. A 500 MB vision-language model
-      (<strong>SmolVLM-500M</strong>) runs entirely on your device via WebGPU.
+      Point your camera, ask a question. A 1.6 GB vision-language model
+      (<strong>Moondream2</strong>, with SmolVLM-500M fallback) runs entirely on your device via WebGPU.
       Frames never leave the browser.
     </p>
   </header>
@@ -60,7 +60,8 @@
       <label class="model-pill" for="modelChoice">
         <span class="model-pill-label">Model</span>
         <select id="modelChoice">
-          <option value="smolvlm" selected>SmolVLM-500M — 500 MB · WebGPU</option>
+          <option value="moondream">Moondream2 — 1.6 GB · conversational, slower</option>
+          <option value="smolvlm" selected>SmolVLM-500M — 500 MB · faster, recommended for first cut</option>
         </select>
       </label>
     </div>
