@@ -69,7 +69,7 @@ function hashStr(s) {
 }
 
 // ── PHASE 1: derive physics signature for one skill ──────────────────────
-function physicsOf(skill, sibTokens) {
+export function physicsOf(skill, sibTokens) {
   const desc  = (skill.description || '').toLowerCase()
   const body  = (skill.body || '').toLowerCase()
   const text  = `${desc} ${body}`
@@ -78,7 +78,10 @@ function physicsOf(skill, sibTokens) {
   const tokens = uniq(tokenize(`${desc} ${body} ${kws.join(' ')}`))
 
   // mass: information density. Long bodies + many distinct keywords → heavier.
-  // Normalised by saturation so a 10kB body doesn't outshine a 2kB one too much.
+  // Calibrated for the LLM-batch use case (5 fresh skills with ~500–1500 char
+  // bodies). Note: when run on the curated SKILL.md corpus (~5–15kB bodies)
+  // mass saturates at 1.0 for nearly every entry — that audit case is not the
+  // classifier's intended distribution.
   const bodyLen = body.length
   const massRaw = (Math.log10(Math.max(50, bodyLen)) - 1.7) * 0.35 + Math.min(0.4, kws.length / 15)
   const mass = clamp(massRaw)
@@ -109,17 +112,30 @@ function physicsOf(skill, sibTokens) {
   // scope: keyword count + diversity
   const scope = clamp(0.25 + Math.min(0.5, kws.length / 14) + cross_domain * 0.25)
 
-  // dep_ratio: similarity to other skills in the same batch (token Jaccard)
-  // High dep_ratio means this skill leans on context provided by others.
-  let bestSim = 0
+  // dep_ratio: similarity to other skills in the same batch.
+  // We take the max of (a) full-text token Jaccard and (b) keyword-set Jaccard.
+  // Keyword Jaccard is a much stronger relatedness signal — siblings sharing
+  // 3+ keywords are clearly related even if their bodies use different prose.
+  let bestTokSim = 0, bestKwSim = 0
   for (const sib of sibTokens) {
     if (sib.skill === skill) continue
     const inter = sib.toks.reduce((n, t) => n + (tokens.includes(t) ? 1 : 0), 0)
     const union = new Set([...tokens, ...sib.toks]).size
     const j = union ? inter / union : 0
-    if (j > bestSim) bestSim = j
+    if (j > bestTokSim) bestTokSim = j
+
+    const sibKws = new Set((sib.skill.keywords || []).map(k => String(k).toLowerCase()))
+    if (sibKws.size && kwSet.size) {
+      let ki = 0
+      for (const k of kwSet) if (sibKws.has(k)) ki++
+      const ku = new Set([...kwSet, ...sibKws]).size
+      const kj = ku ? ki / ku : 0
+      if (kj > bestKwSim) bestKwSim = kj
+    }
   }
-  const dep_ratio = clamp(bestSim * 1.5)   // amplify because Jaccard tops out low
+  // Amplify because Jaccard tops out low. Keyword Jaccard gets a stronger
+  // multiplier since it's the cleaner signal.
+  const dep_ratio = clamp(Math.max(bestTokSim * 1.5, bestKwSim * 2.2))
 
   // independence: inverse of dep_ratio, modulated by mass (heavy ⇒ independent)
   const independence = clamp(1 - dep_ratio * 0.7 + mass * 0.2)
@@ -185,12 +201,19 @@ function physicsOf(skill, sibTokens) {
 }
 
 // ── PHASE 2: classify into celestial class ───────────────────────────────
-function classOf(p, hasParentInSet) {
-  // Per-class scores — mirror skill_orbit.py's class semantics
+export { CLASS_BOOST, SYSTEM_TERMS }
+export function classOf(p, hasParentInSet) {
+  // Per-class scores. Earlier versions used `(1-mass)` and `(1-independence)`
+  // directly, which made asteroid/moon symmetric to planet around m=0.5/i=0.5
+  // and produced bimodal classification on mid-mass skills. Switched to
+  // hinge functions so asteroid only wins for *genuinely* light skills (m<0.4)
+  // and moon only wins for *genuinely* dependent skills (indep<0.5).
   const planet_score   = p.mass * p.scope * p.independence
-  const moon_score     = (1 - p.independence) * (hasParentInSet ? 1 : 0.4) * (1 - p.mass)
+  const moon_score     = Math.max(0, 0.5 - p.independence) * 2
+                         * (hasParentInSet ? 1 : 0.4)
+                         * (1 - 0.5 * p.mass)
   const trojan_score   = p.dep_ratio * (hasParentInSet ? 1 : 0.5) * (1 - p.fragmentation)
-  const asteroid_score = (1 - p.mass) * p.scope * p.independence
+  const asteroid_score = Math.max(0, 0.4 - p.mass) * 2.5 * p.scope * p.independence
   const comet_score    = p.drag * p.cross_domain * (1 - p.dep_ratio)
   const irregular_score= p.cross_domain * p.fragmentation * 0.85
 
