@@ -29,6 +29,7 @@ import {
 
 import { MiniGalaxy }        from '/miniapp/mini-galaxy.js'
 import { renderPhysicsPanel } from '/miniapp/physics-panel.js'
+import { initBurgerNav }      from '/nav.js'
 
 // Force network fetches to HF (don't try local /models/...)
 env.allowLocalModels = false
@@ -111,24 +112,7 @@ let arGalaxy          = null   // MiniGalaxy in AR mode, lazy-init on first rout
 let lastSelected      = []     // last route response, for in-stage panel lookup
 
 // ── Burger menu ───────────────────────────────────────────────────────────
-;(function () {
-  const btn  = document.getElementById('burgerBtn')
-  const menu = document.getElementById('navMenu')
-  if (!btn || !menu) return
-  const toggle = (open) => {
-    const isOpen = open !== undefined ? open : !menu.classList.contains('open')
-    menu.classList.toggle('open', isOpen)
-    btn.classList.toggle('open', isOpen)
-    btn.setAttribute('aria-expanded', String(isOpen))
-  }
-  btn.addEventListener('click', e => { e.stopPropagation(); toggle() })
-  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)))
-  document.addEventListener('click', e => {
-    if (!menu.classList.contains('open')) return
-    if (!menu.contains(e.target) && !btn.contains(e.target)) toggle(false)
-  })
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false) })
-})();
+initBurgerNav()
 
 // ── Capability check ──────────────────────────────────────────────────────
 checkCapabilities()
