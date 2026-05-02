@@ -37,7 +37,7 @@
     <h1>Vision Lab</h1>
     <p class="lead">
       Point your camera, ask a question. A 1.6 GB vision-language model
-      (<strong>Moondream2</strong>, with SmolVLM-500M fallback) runs entirely on your device via WebGPU.
+      (<strong>Moondream2</strong>) runs entirely on your device via WebGPU.
       Frames never leave the browser.
     </p>
   </header>
@@ -60,8 +60,7 @@
       <label class="model-pill" for="modelChoice">
         <span class="model-pill-label">Model</span>
         <select id="modelChoice">
-          <option value="moondream">Moondream2 — 1.6 GB · conversational, slower</option>
-          <option value="smolvlm" selected>SmolVLM-500M — 500 MB · faster, recommended for first cut</option>
+          <option value="moondream" selected>Moondream2 — 1.6 GB · conversational</option>
         </select>
       </label>
     </div>
