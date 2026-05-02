@@ -98,14 +98,17 @@ export async function onRequest({ request, env }) {
   } else if (env.MERIDIAN_KEYS) {
     // Anonymous — soft per-IP per-day cap so the free tier is best-effort fair.
     const ip  = request.headers.get('cf-connecting-ip') || 'unknown'
-    const dkey = `free:${ip}:${new Date().toISOString().slice(0, 10)}`
-    const cur  = parseInt(await env.MERIDIAN_KEYS.get(dkey), 10) || 0
-    if (cur >= FREE_TIER_DAILY_PER_IP) {
-      return jsonResponse({
-        error: `free tier exhausted (${FREE_TIER_DAILY_PER_IP} calls/day per IP). Upgrade to Pro for 10k/month — see ask-meridian.uk/#pricing`,
-      }, { status: 429 })
+    const ownerSet = new Set((env.OWNER_IPS || '').split(',').map(s => s.trim()).filter(Boolean))
+    if (!ownerSet.has(ip)) {
+      const dkey = `free:${ip}:${new Date().toISOString().slice(0, 10)}`
+      const cur  = parseInt(await env.MERIDIAN_KEYS.get(dkey), 10) || 0
+      if (cur >= FREE_TIER_DAILY_PER_IP) {
+        return jsonResponse({
+          error: `free tier exhausted (${FREE_TIER_DAILY_PER_IP} calls/day per IP). Upgrade to Pro for 10k/month — see ask-meridian.uk/#pricing`,
+        }, { status: 429 })
+      }
+      await env.MERIDIAN_KEYS.put(dkey, String(cur + 1), { expirationTtl: 90000 })
     }
-    await env.MERIDIAN_KEYS.put(dkey, String(cur + 1), { expirationTtl: 90000 })
   }
 
   let body
