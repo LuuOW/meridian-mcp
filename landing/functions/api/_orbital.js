@@ -13,37 +13,13 @@
 //   5. Lagrange potential: if a skill has comparable affinity to >=2 systems.
 //   6. Route against task: lexical+IDF × class boost × lagrange boost.
 
-// ── Star systems (lifted from skill_orbit.py _SYSTEM_TERMS) ───────────────
-const SYSTEM_TERMS = {
-  forge: new Set([
-    'api','docker','deploy','network','infra','backend','devops',
-    'container','nginx','ssl','firewall','ssh','ci/cd','build',
-    'server','database','redis','cache','auth','test','lint',
-    'kubernetes','tunnel','vpn','observability','monitoring',
-  ]),
-  signal: new Set([
-    'seo','serp','keyword','content','email','outbound','lead',
-    'marketing','campaign','analytics','conversion','funnel','utm',
-    'audience','brand','editorial','publish','traffic','rank',
-    'backlink','cohort','attribution','crm','sequence','growth',
-    'linkedin','newsletter','social','youtube','podcast','profile',
-    'persona','reputation',
-  ]),
-  mind: new Set([
-    'llm','prompt','reasoning','agent','embedding','vector',
-    'rag','chain-of-thought','evaluation','orchestration','memory',
-    'knowledge','claude','openai','gpt','anthropic','inference',
-    'fine-tune','judge','self-consistency','transcript','captions',
-    'voice','synthesis','model','tokenization','training','dataset',
-  ]),
-}
+import { tokenize, uniq } from './_tokenize.js'
+import { SYSTEM_TERMS }   from './_systems.js'
 
 const CLASS_BOOST = {
   planet: 1.30, trojan: 1.20, irregular: 1.10,
   moon: 1.05, asteroid: 0.85, comet: 0.80,
 }
-
-import { tokenize, uniq } from './_tokenize.js'
 
 function clamp(v, lo = 0, hi = 1) { return v < lo ? lo : v > hi ? hi : v }
 function r3(x) { return Math.round(x * 1000) / 1000 }
