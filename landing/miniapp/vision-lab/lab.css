@@ -155,6 +155,100 @@
 /* Dim the camera ~30% while the galaxy is up so planets read clearly */
 .lab-stage.galaxy-on .lab-video { opacity: 0.55; transition: opacity 220ms ease; }
 .lab-stage .lab-video { transition: opacity 220ms ease; }
+
+/* In-stage skill panel — slides in from the right when a planet is tapped */
+.lab-skill-panel {
+  position: absolute;
+  top: 12px; right: 12px; bottom: 12px;
+  width: clamp(240px, 50%, 360px);
+  background: rgba(8, 11, 20, 0.92);
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px 18px 18px;
+  overflow-y: auto;
+  z-index: 4;
+  transform: translateX(110%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 240ms cubic-bezier(.2,.9,.3,1.1), opacity 220ms ease;
+  box-shadow: 0 0 32px rgba(167, 139, 250, 0.28);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.lab-skill-panel.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (max-width: 520px) {
+  .lab-skill-panel { left: 12px; width: auto; }
+}
+
+.lab-skill-close {
+  position: absolute; top: 8px; right: 8px;
+  width: 28px; height: 28px; border-radius: 999px;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: var(--text); cursor: pointer;
+  font-size: 14px; line-height: 1;
+}
+.lab-skill-close:hover { background: rgba(167, 139, 250, 0.25); border-color: var(--accent); }
+
+.lab-skill-header h4 {
+  margin: 4px 32px 8px 0;
+  font-family: var(--font-mono);
+  font-size: 14px; word-break: break-word;
+  color: var(--text);
+}
+.lab-skill-tags {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 10px;
+}
+.lab-skill-class, .lab-skill-system, .lab-skill-score {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+  background: rgba(167, 139, 250, 0.18);
+  color: #c4b5fd;
+}
+.lab-skill-system { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
+.lab-skill-score  { background: rgba(251, 191, 36, 0.16); color: #fcd34d; }
+
+.lab-skill-desc {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+}
+.lab-skill-rule {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--text-muted);
+  border-left: 2px solid rgba(167, 139, 250, 0.6);
+  padding: 4px 0 4px 10px;
+  margin-bottom: 12px;
+}
+.lab-skill-rule:empty { display: none; }
+
+.lab-skill-keywords { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+.lab-skill-keywords:empty { display: none; }
+.lab-skill-keyword {
+  font-family: var(--font-mono); font-size: 10.5px;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-muted);
+  padding: 2px 7px; border-radius: 4px;
+}
+
+.lab-skill-open {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--neon-violet, #a78bfa);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(167, 139, 250, 0.5);
+}
+.lab-skill-open:hover { color: #ddd6fe; border-bottom-color: #ddd6fe; }
 .lab-stage-controls {
   position: absolute; top: 12px; right: 12px;
   display: flex; gap: 8px;

@@ -59,6 +59,7 @@ let modelKey          = 'smolvlm'
 let currentFacingMode = 'environment'
 let frozenFrameURL    = null
 let arGalaxy          = null   // MiniGalaxy in AR mode, lazy-init on first route
+let lastSelected      = []     // last route response, for in-stage panel lookup
 
 // ── Burger menu ───────────────────────────────────────────────────────────
 ;(function () {
@@ -426,25 +427,14 @@ function ensureArGalaxy() {
   arGalaxy = new MiniGalaxy($('arGalaxy'), {
     mode:   '3d',
     arMode: true,
-    onPlanetClick: (p) => {
-      // Scroll the matching list item into view + flash it
-      const els = document.querySelectorAll('.lab-route-result strong')
-      for (const el of els) {
-        if (el.textContent === p.slug) {
-          el.closest('.lab-route-result').scrollIntoView({ behavior: 'smooth', block: 'center' })
-          el.closest('.lab-route-result').animate(
-            [{ background: 'rgba(167,139,250,0.3)' }, { background: 'transparent' }],
-            { duration: 1200 })
-          break
-        }
-      }
-    },
+    onPlanetClick: (p) => openSkillPanel(p.slug),
   })
   return arGalaxy
 }
 
 function showArGalaxy(skills) {
   if (!skills?.length) return
+  lastSelected = skills
   const g = ensureArGalaxy()
   g.setSkills(skills)
   $('arGalaxy').hidden = false
@@ -452,6 +442,40 @@ function showArGalaxy(skills) {
   $('galaxyBtn').classList.add('active')
   document.querySelector('.lab-stage').classList.add('galaxy-on')
 }
+
+function openSkillPanel(slug) {
+  const s = lastSelected.find(x => x.slug === slug)
+  if (!s) return
+  const cls = s.classification?.class || ''
+  const sys = s.classification?.star_system || ''
+  const score = (s.route_score || 0).toFixed(1)
+  const rule = s.classification?.decision_rule || ''
+  const kw = Array.isArray(s.keywords) ? s.keywords.slice(0, 8) : []
+
+  $('labSkillTitle').textContent  = s.slug
+  $('labSkillClass').textContent  = cls
+  $('labSkillClass').dataset.class = cls
+  $('labSkillSystem').textContent = sys
+  $('labSkillSystem').style.display = sys ? '' : 'none'
+  $('labSkillScore').textContent  = `score ${score}`
+  $('labSkillDesc').textContent   = s.description || ''
+  $('labSkillRule').textContent   = rule
+  $('labSkillKeywords').innerHTML = kw.map(k => `<span class="lab-skill-keyword">${escapeHTML(k)}</span>`).join('')
+  $('labSkillOpen').href = `/miniapp/?task=${encodeURIComponent(s.description || s.slug)}`
+
+  const panel = $('labSkillPanel')
+  panel.classList.add('open')
+  panel.setAttribute('aria-hidden', 'false')
+}
+
+function closeSkillPanel() {
+  const panel = $('labSkillPanel')
+  panel.classList.remove('open')
+  panel.setAttribute('aria-hidden', 'true')
+}
+
+$('labSkillClose').addEventListener('click', closeSkillPanel)
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSkillPanel() })
 
 $('galaxyBtn').addEventListener('click', () => {
   const stage = document.querySelector('.lab-stage')
