@@ -197,5 +197,22 @@ initBurgerNav()
 loadVersionBadge('heroVersion', 'versionBadge')
 </script>
 
+<!-- Calendly badge widget -->
+<link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
+<script>
+  window.addEventListener('load', () => {
+    if (window.Calendly) {
+      Calendly.initBadgeWidget({
+        url: 'https://calendly.com/lucas-kempe/45min',
+        text: 'Schedule time with me',
+        color: '#0069ff',
+        textColor: '#ffffff',
+        branding: true,
+      })
+    }
+  })
+</script>
+
 </body>
 </html>
