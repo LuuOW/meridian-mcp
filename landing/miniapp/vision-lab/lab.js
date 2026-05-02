@@ -307,9 +307,12 @@ async function ask(prompt) {
   try {
     const image = await RawImage.fromURL(imgURL)
 
-    // Build messages — keep prior turns for multi-turn
+    // Each ask is treated as an independent turn — the user is usually asking
+    // about the *current* frame, not building on prior conversation, and
+    // SmolVLM's chat template chokes if assistant message `content` is a
+    // string rather than a parts-array. Multi-turn can come back later with
+    // properly-shaped historical messages.
     const messages = [
-      ...conversation,
       { role: 'user', content: [{ type: 'image' }, { type: 'text', text: prompt }] },
     ]
 
@@ -342,11 +345,7 @@ async function ask(prompt) {
     }
 
     lastAnswer = $('answer').textContent.trim()
-    conversation.push({ role: 'user', content: [{ type: 'image' }, { type: 'text', text: prompt }] })
-    conversation.push({ role: 'assistant', content: lastAnswer })
-
-    // Cap conversation length to last 4 turns to avoid context bloat
-    if (conversation.length > 8) conversation = conversation.slice(-8)
+    // (multi-turn history disabled for Phase 1 — see comment above)
 
     const ms = Math.round(performance.now() - t0)
     $('latencyBadge').textContent = `${(ms / 1000).toFixed(1)}s`
