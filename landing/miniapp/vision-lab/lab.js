@@ -274,11 +274,13 @@ $('askAgainBtn').addEventListener('click', () => {
 
 async function ask(prompt) {
   if (!processor || !model) return
-  // Capture a frame if not already frozen
+  // Capture a frame if not already frozen. Draw to an offscreen canvas so the
+  // visible <canvas id="snapCanvas"> stays untouched (and hidden) — otherwise
+  // the asked frame would paint over the live video and look "stuck".
   let imgURL = frozenFrameURL
   if (!imgURL) {
     const v = $('video')
-    const c = $('snapCanvas')
+    const c = document.createElement('canvas')
     c.width  = v.videoWidth || 640
     c.height = v.videoHeight || 480
     c.getContext('2d').drawImage(v, 0, 0, c.width, c.height)
