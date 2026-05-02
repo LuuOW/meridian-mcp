@@ -1,0 +1,9 @@
+# JS / CSS / HTML — revalidate on every load so changes propagate without
+# requiring users to clear browser data. ETag-based 304 keeps it cheap.
+/*
+  Cache-Control: no-cache, must-revalidate
+
+# Long-cache the favicons + brand assets — they rarely change, and when
+# they do we can rename or hash. Safe to cache for a day.
+/favicon.svg
+  Cache-Control: public, max-age=86400, must-revalidate
