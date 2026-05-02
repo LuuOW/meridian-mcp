@@ -20,7 +20,7 @@
 // canonical SmolVLM/Moondream pattern from the HF docs.
 import {
   AutoProcessor,
-  AutoModelForVision2Seq,
+  AutoModelForImageTextToText,
   RawImage,
   TextStreamer,
   env,
@@ -34,7 +34,7 @@ env.useBrowserCache  = true
 
 const MODELS = {
   moondream: {
-    id:    'onnx-community/moondream2',
+    id:    'Xenova/moondream2',
     label: 'Moondream2',
     dtype: { embed_tokens: 'fp16', vision_encoder: 'fp16', decoder_model_merged: 'q4' },
     expected_size_mb: 1600,
@@ -224,11 +224,12 @@ async function loadModel(key) {
     }
   }
 
-  // Direct class loading is the supported path for VLMs in transformers.js.
-  // The pipeline() abstraction predates VLMs and doesn't have a unified entry
-  // for them — `image-to-text` works for caption-only models, not chat VLMs.
+  // AutoModelForImageTextToText is the v3.7+ entry that covers both
+  // SmolVLM (model_type: smolvlm) and Moondream (model_type: moondream1).
+  // AutoModelForVision2Seq does NOT route moondream1 — using it caused
+  // a silent fallback to SmolVLM whenever Moondream was selected.
   processor = await AutoProcessor.from_pretrained(m.id, { progress_callback })
-  model     = await AutoModelForVision2Seq.from_pretrained(m.id, {
+  model     = await AutoModelForImageTextToText.from_pretrained(m.id, {
     device: 'webgpu',
     dtype:  m.dtype,
     progress_callback,
@@ -308,6 +309,8 @@ async function ask(prompt) {
   $('answerSection').hidden = false
   $('answer').textContent   = ''
   $('latencyBadge').textContent = '⏳ thinking…'
+  $('modelBadge').textContent   = MODELS[modelKey].label
+  $('modelBadge').hidden        = false
   $('askBtn').disabled = true
   $('routeBtn').hidden = true
 
