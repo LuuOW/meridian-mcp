@@ -20,6 +20,7 @@
 // canonical SmolVLM/Moondream pattern from the HF docs.
 import {
   AutoProcessor,
+  AutoTokenizer,
   AutoModelForImageTextToText,
   RawImage,
   TextStreamer,
@@ -45,6 +46,7 @@ const $ = id => document.getElementById(id)
 
 // ── State ─────────────────────────────────────────────────────────────────
 let processor         = null
+let tokenizer         = null
 let model             = null
 let stream            = null
 let conversation      = []          // [{ role, content }]
@@ -210,10 +212,9 @@ async function loadModel(key) {
     }
   }
 
-  // AutoModelForImageTextToText is the v3.7+ entry that covers both
-  // SmolVLM (model_type: smolvlm) and Moondream (model_type: moondream1).
-  // AutoModelForVision2Seq does NOT route moondream1 — using it caused
-  // a silent fallback to SmolVLM whenever Moondream was selected.
+  // Moondream's AutoProcessor is image-only (no tokenizer attached), so
+  // we load the tokenizer separately and format the prompt manually in ask().
+  tokenizer = await AutoTokenizer.from_pretrained(m.id, { progress_callback })
   processor = await AutoProcessor.from_pretrained(m.id, { progress_callback })
   model     = await AutoModelForImageTextToText.from_pretrained(m.id, {
     device: 'webgpu',
@@ -304,21 +305,14 @@ async function ask(prompt) {
   try {
     const image = await RawImage.fromURL(imgURL)
 
-    // Each ask is treated as an independent turn — the user is usually asking
-    // about the *current* frame, not building on prior conversation, and
-    // SmolVLM's chat template chokes if assistant message `content` is a
-    // string rather than a parts-array. Multi-turn can come back later with
-    // properly-shaped historical messages.
-    const messages = [
-      { role: 'user', content: [{ type: 'image' }, { type: 'text', text: prompt }] },
-    ]
+    // Moondream2's prompt format (per the model card):
+    //   <image>\n\nQuestion: {q}\n\nAnswer:
+    const promptText = `<image>\n\nQuestion: ${prompt}\n\nAnswer:`
+    const text_inputs   = tokenizer(promptText)
+    const visual_inputs = await processor(image)
 
-    // Tokenize via the processor's chat template
-    const text = processor.apply_chat_template(messages, { add_generation_prompt: true })
-    const inputs = await processor(text, [image], { return_tensors: 'pt' })
-
-    // Streaming token output via TextStreamer (uses processor.tokenizer)
-    const streamer = new TextStreamer(processor.tokenizer, {
+    // Streaming token output via TextStreamer (uses our standalone tokenizer)
+    const streamer = new TextStreamer(tokenizer, {
       skip_prompt: true,
       skip_special_tokens: true,
       callback_function: (chunk) => {
@@ -327,17 +321,17 @@ async function ask(prompt) {
     })
 
     const generated_ids = await model.generate({
-      ...inputs,
+      ...text_inputs,
+      ...visual_inputs,
       max_new_tokens: 256,
       do_sample:      false,
       streamer,
     })
 
-    // If streaming didn't fire (some browsers/builds drop the callback),
-    // decode the full generation as a fallback.
+    // If streaming didn't fire, decode the full generation as a fallback.
     if (!$('answer').textContent.trim()) {
-      const newTokens = generated_ids.slice(null, [inputs.input_ids.dims.at(-1), null])
-      const decoded   = processor.batch_decode(newTokens, { skip_special_tokens: true })
+      const newTokens = generated_ids.slice(null, [text_inputs.input_ids.dims.at(-1), null])
+      const decoded   = tokenizer.batch_decode(newTokens, { skip_special_tokens: true })
       $('answer').textContent = (decoded[0] || '').trim()
     }
 
