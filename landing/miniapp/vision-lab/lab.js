@@ -39,12 +39,6 @@ const MODELS = {
     dtype: { embed_tokens: 'fp16', vision_encoder: 'fp16', decoder_model_merged: 'q4' },
     expected_size_mb: 1600,
   },
-  smolvlm: {
-    id:    'HuggingFaceTB/SmolVLM-500M-Instruct',
-    label: 'SmolVLM-500M',
-    dtype: 'q4',
-    expected_size_mb: 500,
-  },
 }
 
 const $ = id => document.getElementById(id)
@@ -55,7 +49,7 @@ let model             = null
 let stream            = null
 let conversation      = []          // [{ role, content }]
 let lastAnswer        = ''
-let modelKey          = 'smolvlm'
+let modelKey          = 'moondream'
 let currentFacingMode = 'environment'
 let frozenFrameURL    = null
 let arGalaxy          = null   // MiniGalaxy in AR mode, lazy-init on first route
@@ -153,7 +147,7 @@ $('modelChoice').addEventListener('change', e => { modelKey = e.target.value })
 
 async function startSetup() {
   modelKey = $('modelChoice').value
-  if (!MODELS[modelKey]) modelKey = 'smolvlm'
+  if (!MODELS[modelKey]) modelKey = 'moondream'
   $('gate').hidden = true
   $('loading').hidden = false
 
@@ -184,14 +178,6 @@ async function startSetup() {
       $('progressDetail').innerHTML =
         'This is a transformers.js version issue, not a model issue. ' +
         'Hard-refresh the page (Cmd+Shift+R) and try again — the new bundle should load.'
-      return
-    }
-    // Moondream's onnx-community repo went gated upstream — fall back to SmolVLM
-    // for fresh visitors. Users with the model cached in OPFS still hit the cache.
-    if (modelKey === 'moondream' && !window.__triedSmolvlm) {
-      window.__triedSmolvlm = true
-      $('progressDetail').innerHTML = 'Moondream upstream is unreachable for new visitors — falling back to SmolVLM-500M in 2 s…'
-      setTimeout(() => { modelKey = 'smolvlm'; $('modelChoice').value = 'smolvlm'; startSetup() }, 2000)
       return
     }
     $('progressDetail').innerHTML =
