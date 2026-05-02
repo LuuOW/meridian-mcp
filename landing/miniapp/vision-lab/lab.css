@@ -232,6 +232,17 @@
 }
 .lab-skill-rule:empty { display: none; }
 
+.lab-skill-physics { margin: 0 0 14px; }
+.lab-skill-physics:empty { display: none; }
+.lab-skill-physics h4 {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 14px 0 8px;
+  font-weight: 600;
+}
+
 .lab-skill-keywords { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
 .lab-skill-keywords:empty { display: none; }
 .lab-skill-keyword {
