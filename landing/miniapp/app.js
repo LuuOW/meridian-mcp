@@ -270,24 +270,12 @@ function renderWhy(skill) {
   const cls = skill.classification || {}
   const phys = cls.physics || {}
 
-  // Token-hit bars (open-domain — no IDF, so we use raw weighted hits)
-  const kw   = (b.kw_hits   || 0) * 10
-  const desc = (b.desc_hits || 0) * 5
-  const body = (b.body_hits || 0) * 1
-  const max  = Math.max(kw, desc, body, 1)
-
-  const bar = (label, val) => `
-    <span class="label">${escapeHTML(label)}</span>
-    <span class="bar"><span class="bar-fill" style="width:${(val / max * 100).toFixed(0)}%"></span></span>
-    <span class="val">${val.toFixed(0)}</span>`
-
   const physBar = (label, val) => `
     <span class="label">${escapeHTML(label)}</span>
     <span class="bar"><span class="bar-fill phys" style="width:${(val * 100).toFixed(0)}%"></span></span>
     <span class="val">${val.toFixed(2)}</span>`
 
-  // Wavelength (nm) → CSS rgb. Standard CIE-style approximation, good enough
-  // for a 6-px swatch alongside the value.
+  // Wavelength (nm) → CSS rgb. Standard CIE-style approximation.
   const nmToRGB = (nm) => {
     let r = 0, g = 0, b = 0
     if      (nm >= 380 && nm < 440) { r = -(nm - 440) / 60; g = 0; b = 1 }
@@ -303,8 +291,6 @@ function renderWhy(skill) {
     <span class="label">${escapeHTML(label)}</span>
     <span class="bar"><span class="bar-fill phys" style="width:${(Math.min(val, max) / max * 100).toFixed(0)}%"></span></span>
     <span class="val">${val.toFixed(decimals)}${unit ? ' ' + unit : ''}</span>`
-
-  const tokens = (b.tokens || []).map(t => `<span class="tok">${escapeHTML(t)}</span>`).join('')
 
   const pills = []
   if (cls.parent)              pills.push(`<span class="meta-pill">parent <em>${escapeHTML(cls.parent)}</em></span>`)
@@ -324,28 +310,8 @@ function renderWhy(skill) {
     : ''
 
   return `
-    <h4>Why score = ${skill.route_score.toFixed(2)}</h4>
-    <div class="score-breakdown">
-      ${bar('keywords (×10)',   kw)}
-      ${bar('description (×5)', desc)}
-      ${bar('body (×1)',        body)}
-    </div>
-    ${tokens ? `<div class="token-hits">${tokens}</div>` : ''}
-
-    ${Object.keys(phys).length ? `
-      <h4 style="margin-top:18px">Physics signature</h4>
-      <div class="score-breakdown">
-        ${physBar('mass',          phys.mass         ?? 0)}
-        ${physBar('scope',         phys.scope        ?? 0)}
-        ${physBar('independence',  phys.independence ?? 0)}
-        ${physBar('cross_domain',  phys.cross_domain ?? 0)}
-        ${physBar('fragmentation', phys.fragmentation?? 0)}
-        ${physBar('drag',          phys.drag         ?? 0)}
-      </div>
-    ` : ''}
-
     ${phys.orbital ? `
-      <h4 style="margin-top:18px">Orbital dynamics</h4>
+      <h4>Orbital dynamics</h4>
       <div class="score-breakdown">
         ${orbitalBar('semi_major_axis', phys.orbital.semi_major_axis, 7,         'AU', 2)}
         ${orbitalBar('eccentricity',    phys.orbital.eccentricity,    1,         '',   3)}
