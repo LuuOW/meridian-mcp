@@ -31,7 +31,49 @@ import { MiniGalaxy } from '/miniapp/mini-galaxy.js'
 
 // Force network fetches to HF (don't try local /models/...)
 env.allowLocalModels = false
-env.useBrowserCache  = true
+
+// OPFS-backed cache. The default Cache API silently drops large entries
+// when quota is tight (especially on Safari) — OPFS is persistent by design
+// and handles GB-sized model files reliably.
+class OPFSCache {
+  constructor(dir) { this.dir = dir }
+  static async open() {
+    if (typeof navigator?.storage?.getDirectory !== 'function')
+      throw new Error('OPFS not available')
+    const root = await navigator.storage.getDirectory()
+    const dir  = await root.getDirectoryHandle('hf-models', { create: true })
+    return new OPFSCache(dir)
+  }
+  _key(req) {
+    const url = typeof req === 'string' ? req : req.url
+    return url.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 240)
+  }
+  async match(req) {
+    try {
+      const fh   = await this.dir.getFileHandle(this._key(req))
+      const file = await fh.getFile()
+      return new Response(file, { status: 200, headers: { 'content-length': String(file.size) } })
+    } catch { return undefined }
+  }
+  async put(req, response) {
+    const buf = await response.arrayBuffer()
+    const fh  = await this.dir.getFileHandle(this._key(req), { create: true })
+    const w   = await fh.createWritable()
+    await w.write(buf)
+    await w.close()
+  }
+}
+
+try {
+  env.customCache     = await OPFSCache.open()
+  env.useCustomCache  = true
+  env.useBrowserCache = false
+  console.info('vision-lab: OPFS cache enabled')
+} catch (e) {
+  env.useCustomCache  = false
+  env.useBrowserCache = true
+  console.warn('vision-lab: OPFS unavailable, falling back to Cache API:', e.message)
+}
 
 const MODELS = {
   moondream: {
@@ -132,6 +174,25 @@ async function checkCapabilities() {
       lines.push({ ok: true, text: `Storage quota: ~${gb} GB total (${used} GB used)` })
     } catch {}
   }
+
+  // OPFS cache contents — tells the user whether the model is already cached
+  try {
+    if (env.customCache?.dir) {
+      let count = 0, bytes = 0
+      for await (const [name, handle] of env.customCache.dir.entries()) {
+        if (handle.kind === 'file') {
+          count++
+          const f = await handle.getFile()
+          bytes += f.size
+        }
+      }
+      const mb = (bytes / (1024 ** 2)).toFixed(0)
+      lines.push({ ok: count > 0, text: count > 0
+        ? `Model cache: ${count} files, ${mb} MB on disk (no re-download)`
+        : 'Model cache: empty (first run will download ~1.6 GB)'
+      })
+    }
+  } catch {}
 
   $('capabilityCheck').innerHTML = lines.map(l =>
     `<div class="cap-line ${l.ok ? 'cap-ok' : 'cap-bad'}">${l.ok ? '✓' : '⚠'} ${escapeHTML(l.text)}</div>`
