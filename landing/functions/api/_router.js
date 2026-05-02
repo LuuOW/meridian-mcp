@@ -7,13 +7,7 @@
 // skill_orbit.py — close enough for the demo, deterministic, runs in a
 // Workers V8 isolate.
 
-const STOP = new Set([
-  'the','and','for','with','that','this','from','have','your','about',
-  'into','what','when','where','which','their','there','these','those',
-  'will','would','should','could','been','being','need','want','get',
-  'set','use','using','make','made','like','also','some','any','all',
-  'one','two','out','off','its',"it's",'you',"you're",'our',
-])
+import { tokenize, uniq } from './_tokenize.js'
 
 // Class weights — match the production decision rules:
 //   planet:    primary domain anchor → highest
@@ -30,15 +24,6 @@ const CLASS_BOOST = {
   asteroid:  0.85,
   comet:     0.80,
 }
-
-function tokenize(s) {
-  return (s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .split(/\s+/)
-    .filter(t => t.length >= 3 && !STOP.has(t))
-}
-function uniq(arr) { return [...new Set(arr)] }
 
 // Score a single skill against a tokenized task.
 // Returns score + the breakdown (used by the side panel "why" view).

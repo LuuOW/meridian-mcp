@@ -43,22 +43,8 @@ const CLASS_BOOST = {
   moon: 1.05, asteroid: 0.85, comet: 0.80,
 }
 
-const STOP = new Set([
-  'the','and','for','with','that','this','from','have','your','about',
-  'into','what','when','where','which','their','there','these','those',
-  'will','would','should','could','been','being','need','want','get',
-  'set','use','using','make','made','like','also','some','any','all',
-  'one','two','out','off','its',"it's",'you',"you're",'our',
-])
+import { tokenize, uniq } from './_tokenize.js'
 
-function tokenize(s) {
-  return (s || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .split(/\s+/)
-    .filter(t => t.length >= 3 && !STOP.has(t))
-}
-function uniq(arr) { return [...new Set(arr)] }
 function clamp(v, lo = 0, hi = 1) { return v < lo ? lo : v > hi ? hi : v }
 function r3(x) { return Math.round(x * 1000) / 1000 }
 // djb2 hash — deterministic, fast, 32-bit
