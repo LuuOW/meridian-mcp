@@ -33,6 +33,12 @@ env.allowLocalModels = false
 env.useBrowserCache  = true
 
 const MODELS = {
+  moondream: {
+    id:    'onnx-community/moondream2',
+    label: 'Moondream2',
+    dtype: { embed_tokens: 'fp16', vision_encoder: 'fp16', decoder_model_merged: 'q4' },
+    expected_size_mb: 1600,
+  },
   smolvlm: {
     id:    'HuggingFaceTB/SmolVLM-500M-Instruct',
     label: 'SmolVLM-500M',
@@ -177,6 +183,14 @@ async function startSetup() {
       $('progressDetail').innerHTML =
         'This is a transformers.js version issue, not a model issue. ' +
         'Hard-refresh the page (Cmd+Shift+R) and try again — the new bundle should load.'
+      return
+    }
+    // Moondream's onnx-community repo went gated upstream — fall back to SmolVLM
+    // for fresh visitors. Users with the model cached in OPFS still hit the cache.
+    if (modelKey === 'moondream' && !window.__triedSmolvlm) {
+      window.__triedSmolvlm = true
+      $('progressDetail').innerHTML = 'Moondream upstream is unreachable for new visitors — falling back to SmolVLM-500M in 2 s…'
+      setTimeout(() => { modelKey = 'smolvlm'; $('modelChoice').value = 'smolvlm'; startSetup() }, 2000)
       return
     }
     $('progressDetail').innerHTML =
