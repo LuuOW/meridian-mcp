@@ -427,7 +427,7 @@ function ensureArGalaxy() {
   arGalaxy = new MiniGalaxy($('arGalaxy'), {
     mode:   '3d',
     arMode: true,
-    onPlanetClick: (p) => openSkillPanel(p.slug),
+    onPlanetClick: (slug) => openSkillPanel(slug),
   })
   return arGalaxy
 }
