@@ -29,6 +29,7 @@ import {
 
 import { MiniGalaxy }        from '/miniapp/mini-galaxy.js'
 import { renderPhysicsPanel } from '/miniapp/physics-panel.js'
+import { routeTask }          from '/miniapp/api.js'
 import { initBurgerNav }      from '/nav.js'
 
 // Force network fetches to HF (don't try local /models/...)
@@ -436,17 +437,11 @@ $('routeBtn').addEventListener('click', async () => {
   $('routeBtn').textContent = 'Routing through orbital engine…'
   try {
     // Send to /api/orbital-route — the same backend the main miniapp uses
-    const r = await fetch('/api/orbital-route', {
-      method:  'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        task: lastAnswer.length > 600 ? lastAnswer.slice(0, 600) + '…' : lastAnswer,
-        limit: 5,
-        provider: 'groq',
-      }),
+    const data = await routeTask({
+      task:     lastAnswer.length > 600 ? lastAnswer.slice(0, 600) + '…' : lastAnswer,
+      limit:    5,
+      provider: 'groq',
     })
-    const data = await r.json()
-    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
 
     // Hand the routed skills to the AR galaxy overlay and reveal it
     showArGalaxy(data.selected || [])
