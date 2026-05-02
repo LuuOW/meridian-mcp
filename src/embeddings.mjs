@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname }                           from 'node:path'
 import { fileURLToPath }                           from 'node:url'
+import { parseFrontmatter }                        from './skill-md.mjs'
 
 const __dirname_emb = dirname(fileURLToPath(import.meta.url))
 const EMBED_CACHE   = join(__dirname_emb, '..', 'data', 'skill_embeddings.json')
@@ -83,15 +84,10 @@ export async function buildSkillEmbeddings() {
     // Build embedding text: description + first 400 chars of body
     let text = slug.replace(/-/g, ' ')
     try {
-      const raw = readFileSync(skillPath, 'utf8')
-      const m = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
-      if (m) {
-        const meta = m[1]
-        const body = m[2].slice(0, 400)
-        const desc = meta.match(/description:\s*(.+)/)?.[1] || ''
-        const name = meta.match(/name:\s*(.+)/)?.[1] || slug
-        text = `${name}. ${desc}. ${body}`
-      }
+      const { frontmatter, body } = parseFrontmatter(readFileSync(skillPath, 'utf8'))
+      const name = frontmatter.name || slug
+      const desc = frontmatter.description || ''
+      text = `${name}. ${desc}. ${body.slice(0, 400)}`
     } catch {}
 
     cache[slug] = { mtime, vec: await embed(text) }

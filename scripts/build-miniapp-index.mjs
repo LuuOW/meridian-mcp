@@ -6,29 +6,14 @@
 // Outputs landing/_skills.json plus an IDF table for the scorer.
 
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, statSync, existsSync } from 'node:fs'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join, dirname }      from 'node:path'
+import { fileURLToPath }      from 'node:url'
+import { parseFrontmatter }   from '../src/skill-md.mjs'
 
 const ROOT       = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SKILLS_DIR = join(ROOT, 'skills')
 const ORBIT_DATA = join(ROOT, 'galaxy', 'skills_data.json')
 const OUT_PATH   = join(ROOT, 'landing', '_skills.json')
-
-function parseFrontmatter(md) {
-  const m = md.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
-  if (!m) return { frontmatter: {}, body: md.trim() }
-  const fm = {}
-  for (const line of m[1].split('\n')) {
-    const km = line.match(/^([a-zA-Z_][\w-]*):\s*(.*)$/)
-    if (!km) continue
-    let v = km[2].trim()
-    if (v.startsWith('[') && v.endsWith(']')) {
-      try { v = JSON.parse(v.replace(/'/g, '"')) } catch {}
-    }
-    fm[km[1]] = v
-  }
-  return { frontmatter: fm, body: m[2].trim() }
-}
 
 // Load orbital metadata if available
 let orbital = {}
