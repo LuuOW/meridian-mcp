@@ -31,12 +31,6 @@ env.allowLocalModels = false
 env.useBrowserCache  = true
 
 const MODELS = {
-  moondream: {
-    id:    'onnx-community/moondream2',
-    label: 'Moondream2',
-    dtype: { embed_tokens: 'fp16', vision_encoder: 'fp16', decoder_model_merged: 'q4' },
-    expected_size_mb: 1600,
-  },
   smolvlm: {
     id:    'HuggingFaceTB/SmolVLM-500M-Instruct',
     label: 'SmolVLM-500M',
@@ -149,6 +143,7 @@ $('modelChoice').addEventListener('change', e => { modelKey = e.target.value })
 
 async function startSetup() {
   modelKey = $('modelChoice').value
+  if (!MODELS[modelKey]) modelKey = 'smolvlm'
   $('gate').hidden = true
   $('loading').hidden = false
 
@@ -181,15 +176,8 @@ async function startSetup() {
         'Hard-refresh the page (Cmd+Shift+R) and try again — the new bundle should load.'
       return
     }
-    // Genuine model-load failure on Moondream → fall back to SmolVLM (smaller, more reliable).
-    if (modelKey === 'moondream' && !window.__triedSmolvlm) {
-      window.__triedSmolvlm = true
-      $('progressDetail').innerHTML = 'Falling back to SmolVLM-500M in 2 s…'
-      setTimeout(() => { modelKey = 'smolvlm'; $('modelChoice').value = 'smolvlm'; startSetup() }, 2000)
-      return
-    }
     $('progressDetail').innerHTML =
-      'Both models failed to load. Check the browser console for the full stack trace, ' +
+      'Model failed to load. Check the browser console for the full stack trace, ' +
       'or open an issue with the message above at <a href="https://github.com/LuuOW/meridian-mcp/issues">github.com/LuuOW/meridian-mcp/issues</a>.'
   }
 }
