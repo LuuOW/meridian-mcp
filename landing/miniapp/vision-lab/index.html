@@ -101,6 +101,22 @@
         </button>
       </div>
       <div id="frozenBadge" class="lab-frozen-badge" hidden>frame frozen — release to resume</div>
+
+      <aside id="labSkillPanel" class="lab-skill-panel" aria-hidden="true" aria-labelledby="labSkillTitle">
+        <button id="labSkillClose" class="lab-skill-close" type="button" aria-label="Close skill details">✕</button>
+        <header class="lab-skill-header">
+          <h4 id="labSkillTitle"></h4>
+          <div class="lab-skill-tags">
+            <span id="labSkillClass" class="lab-skill-class"></span>
+            <span id="labSkillSystem" class="lab-skill-system"></span>
+            <span id="labSkillScore" class="lab-skill-score"></span>
+          </div>
+        </header>
+        <p id="labSkillDesc" class="lab-skill-desc"></p>
+        <div id="labSkillRule" class="lab-skill-rule"></div>
+        <div id="labSkillKeywords" class="lab-skill-keywords"></div>
+        <a id="labSkillOpen" class="lab-skill-open" href="#" target="_blank" rel="noopener">Open in main miniapp ↗</a>
+      </aside>
     </div>
 
     <div class="lab-presets" role="group" aria-label="Preset prompts">
