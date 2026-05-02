@@ -23,6 +23,7 @@ import { execSync }                              from 'node:child_process'
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join, dirname }                          from 'node:path'
 import { fileURLToPath }                          from 'node:url'
+import { parseFrontmatter }                       from '../src/skill-md.mjs'
 
 const __dirname  = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT  = join(__dirname, '..')
@@ -48,15 +49,10 @@ function parseSkillMd(slug) {
   const path = join(SKILLS_DIR, slug, 'SKILL.md')
   if (!existsSync(path)) return null
   const raw = readFileSync(path, 'utf8')
-  const m = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
-  if (!m) return { slug, raw, meta: {}, body: raw, words: wordCount(raw) }
-  const meta = {}
-  for (const line of m[1].split('\n')) {
-    const [k, ...rest] = line.split(':')
-    if (k && rest.length) meta[k.trim()] = rest.join(':').trim()
-  }
-  const hasKeywords = /keywords\s*:/i.test(m[1])
-  return { slug, raw, meta, body: m[2], words: wordCount(m[2]), hasKeywords }
+  const { frontmatter, body } = parseFrontmatter(raw)
+  const hasKeywords = 'keywords' in frontmatter
+  // Preserve the original return shape (`meta`) for downstream consumers.
+  return { slug, raw, meta: frontmatter, body, words: wordCount(body), hasKeywords }
 }
 
 // ── Run orbital classifier + simulator ────────────────────────────────────
