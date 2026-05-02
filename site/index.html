@@ -258,8 +258,8 @@ claude mcp add meridian meridian-mcp</code></pre>
     <li><code>cross_domain</code> — Shannon entropy across forge / signal / mind term sets.</li>
     <li><code>fragmentation</code> — keyword length stddev + cross_domain.</li>
     <li><code>drag</code> — proportion of long / hyphenated specialised terms.</li>
-    <li><code>dep_ratio</code> — best Jaccard with another skill in the batch (parent indicator).</li>
-    <li><code>lagrange_potential</code> — geometric mean of two strongest system affinities.</li>
+    <li><code>dep_ratio</code> — relatedness to siblings in the batch: <code>max(token-Jaccard × 1.5, keyword-Jaccard × 2.2)</code>, clamped to [0,1]. Keyword overlap is the cleaner relatedness signal.</li>
+    <li><code>lagrange_potential</code> — boosted minimum of the two strongest system affinities (<code>min(top₂) × 1.4</code>, clamped to [0,1]).</li>
   </ul>
 
   <h2 id="star-systems">Star systems</h2>
