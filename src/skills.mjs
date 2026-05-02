@@ -12,6 +12,7 @@ import { spawn }                                  from 'node:child_process'
 import { readFileSync, existsSync, readdirSync }   from 'node:fs'
 import { join }                                    from 'node:path'
 import { buildSkillEmbeddings, rankByEmbedding }   from './embeddings.mjs'
+import { parseFrontmatter }                        from './skill-md.mjs'
 
 const SKILLS_ROOT     = process.env.MERIDIAN_SKILLS_ROOT   || '/opt/skills'
 const SKILL_ORBIT_PY  = process.env.MERIDIAN_SKILL_ORBIT   || '/opt/skills/skill_orbit.py'
@@ -104,17 +105,8 @@ export function getSkill(slug) {
   const path = join(SKILLS_ROOT, slug, 'SKILL.md')
   if (!existsSync(path)) throw new Error(`skill not found: ${slug}`)
   const content = readFileSync(path, 'utf8')
-  // Parse frontmatter (between --- lines)
-  const m = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
-  const frontmatter = {}
-  if (m) {
-    for (const line of m[1].split('\n')) {
-      const kv = line.match(/^([a-z_]+):\s*(.*)$/i)
-      if (kv) frontmatter[kv[1]] = kv[2].trim()
-    }
-    return { slug, frontmatter, body: m[2].trim() }
-  }
-  return { slug, frontmatter: {}, body: content }
+  const { frontmatter, body } = parseFrontmatter(content)
+  return { slug, frontmatter, body }
 }
 
 export function searchSkills(query) {
