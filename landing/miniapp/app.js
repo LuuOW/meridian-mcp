@@ -4,6 +4,7 @@
 import { MiniGalaxy } from './mini-galaxy.js'
 import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
 import { renderPhysicsPanel } from './physics-panel.js'
+import { routeTask as routeTaskApi } from './api.js'
 import { initBurgerNav, loadVersionBadge } from '/nav.js'
 
 initBurgerNav()
@@ -152,13 +153,7 @@ askBtn.addEventListener('click', async () => {
 
 async function routeTask(task, limit) {
   const provider = modelSelect?.value || 'workers-ai'
-  const res = await fetch('/api/orbital-route', {
-    method:  'POST',
-    headers: { 'content-type': 'application/json' },
-    body:    JSON.stringify({ task, limit, provider }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+  const data = await routeTaskApi({ task, limit, provider })
   refreshQuota()       // sync the badge after a call lands
   return data
 }
