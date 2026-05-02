@@ -366,9 +366,12 @@ async function ask(prompt) {
   try {
     const image = await RawImage.fromURL(imgURL)
 
-    // Moondream2's prompt format (per the model card):
-    //   <image>\n\nQuestion: {q}\n\nAnswer:
-    const promptText = `<image>\n\nQuestion: ${prompt}\n\nAnswer:`
+    // Moondream2's prompt format. The model's vision encoder emits 729 features
+    // (SigLIP 378×378 / 14px patches, 27×27 grid). The Llava-style merger in
+    // transformers.js does a 1:1 replace, so we need 729 <image> placeholders
+    // in input_ids — not the single one the README example shows.
+    const NUM_IMAGE_TOKENS = 729
+    const promptText = `${'<image>'.repeat(NUM_IMAGE_TOKENS)}\n\nQuestion: ${prompt}\n\nAnswer:`
     const text_inputs   = tokenizer(promptText)
     const visual_inputs = await processor(image)
 
