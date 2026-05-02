@@ -15,12 +15,14 @@
 //
 // All inference runs in the user's browser. The VM is uninvolved.
 
+// v3.5.0 didn't have `image-text-to-text` (added in v3.6). Pinning
+// 3.7.5 — known to support the pipeline + the latest VLM exports.
 import {
   pipeline,
   env,
   RawImage,
   TextStreamer,
-} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0'
+} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5'
 
 // Force network fetches to HF (don't try local /models/...)
 env.allowLocalModels = false
@@ -164,13 +166,28 @@ async function startSetup() {
     diag(`Loaded: ${MODELS[modelKey].label}\nDevice: webgpu (or fallback)\nReady at: ${new Date().toLocaleTimeString()}`)
   } catch (e) {
     console.error(e)
-    $('progressText').textContent = 'Setup failed: ' + (e.message || e)
+    const msg = e?.message || String(e)
+    $('progressText').textContent = 'Setup failed: ' + msg
     $('progressText').classList.add('err')
-    if (modelKey === 'moondream') {
-      // Auto-fallback to SmolVLM
-      $('progressDetail').innerHTML = 'Trying SmolVLM-500M fallback in 2s…'
-      setTimeout(() => { modelKey = 'smolvlm'; startSetup() }, 2000)
+
+    // A "Unsupported pipeline" error means transformers.js version is the
+    // culprit, not the model — falling back to a different model won't help.
+    if (/unsupported pipeline/i.test(msg)) {
+      $('progressDetail').innerHTML =
+        'This is a transformers.js version issue, not a model issue. ' +
+        'Hard-refresh the page (Cmd+Shift+R) and try again — the new bundle should load.'
+      return
     }
+    // Genuine model-load failure on Moondream → fall back to SmolVLM (smaller, more reliable).
+    if (modelKey === 'moondream' && !window.__triedSmolvlm) {
+      window.__triedSmolvlm = true
+      $('progressDetail').innerHTML = 'Falling back to SmolVLM-500M in 2 s…'
+      setTimeout(() => { modelKey = 'smolvlm'; $('modelChoice').value = 'smolvlm'; startSetup() }, 2000)
+      return
+    }
+    $('progressDetail').innerHTML =
+      'Both models failed to load. Check the browser console for the full stack trace, ' +
+      'or open an issue with the message above at <a href="https://github.com/LuuOW/meridian-mcp/issues">github.com/LuuOW/meridian-mcp/issues</a>.'
   }
 }
 
