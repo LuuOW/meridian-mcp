@@ -15,13 +15,15 @@
 //
 // All inference runs in the user's browser. The VM is uninvolved.
 
-// v3.5.0 didn't have `image-text-to-text` (added in v3.6). Pinning
-// 3.7.5 — known to support the pipeline + the latest VLM exports.
+// transformers.js doesn't expose VLMs through the pipeline() abstraction —
+// you have to load the processor + model classes directly. This is the
+// canonical SmolVLM/Moondream pattern from the HF docs.
 import {
-  pipeline,
-  env,
+  AutoProcessor,
+  AutoModelForVision2Seq,
   RawImage,
   TextStreamer,
+  env,
 } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5'
 
 // Force network fetches to HF (don't try local /models/...)
@@ -46,7 +48,8 @@ const MODELS = {
 const $ = id => document.getElementById(id)
 
 // ── State ─────────────────────────────────────────────────────────────────
-let pipe              = null
+let processor         = null
+let model             = null
 let stream            = null
 let conversation      = []          // [{ role, content }]
 let lastAnswer        = ''
@@ -198,25 +201,31 @@ async function loadModel(key) {
   const totalBytes = m.expected_size_mb * 1024 * 1024
   let loadedBytes = 0
 
-  pipe = await pipeline('image-text-to-text', m.id, {
+  const progress_callback = (p) => {
+    if (p.status === 'progress') {
+      const prev = seenFiles.get(p.file) || 0
+      loadedBytes += (p.loaded - prev)
+      seenFiles.set(p.file, p.loaded)
+      const pct = Math.min(99, Math.round(loadedBytes / totalBytes * 100))
+      $('progressBar').value = pct
+      $('progressText').textContent = `${m.label} — ${p.file}`
+      $('progressDetail').textContent = `${(loadedBytes / (1024 ** 2)).toFixed(1)} MB · ~${pct}%`
+    } else if (p.status === 'done') {
+      $('progressDetail').textContent = `${p.file} ready ✓`
+    } else if (p.status === 'ready') {
+      $('progressBar').value = 100
+      $('progressText').textContent = 'Compiling shaders for WebGPU…'
+    }
+  }
+
+  // Direct class loading is the supported path for VLMs in transformers.js.
+  // The pipeline() abstraction predates VLMs and doesn't have a unified entry
+  // for them — `image-to-text` works for caption-only models, not chat VLMs.
+  processor = await AutoProcessor.from_pretrained(m.id, { progress_callback })
+  model     = await AutoModelForVision2Seq.from_pretrained(m.id, {
     device: 'webgpu',
     dtype:  m.dtype,
-    progress_callback: (p) => {
-      if (p.status === 'progress') {
-        const prev = seenFiles.get(p.file) || 0
-        loadedBytes += (p.loaded - prev)
-        seenFiles.set(p.file, p.loaded)
-        const pct = Math.min(99, Math.round(loadedBytes / totalBytes * 100))
-        $('progressBar').value = pct
-        $('progressText').textContent = `${m.label} — ${p.file}`
-        $('progressDetail').textContent = `${(loadedBytes / (1024 ** 2)).toFixed(1)} MB · ~${pct}%`
-      } else if (p.status === 'done') {
-        $('progressDetail').textContent = `${p.file} ready ✓`
-      } else if (p.status === 'ready') {
-        $('progressBar').value = 100
-        $('progressText').textContent = 'Compiling shaders for WebGPU…'
-      }
-    },
+    progress_callback,
   })
 
   $('progressBar').value = 100
@@ -276,7 +285,7 @@ $('askAgainBtn').addEventListener('click', () => {
 })
 
 async function ask(prompt) {
-  if (!pipe) return
+  if (!processor || !model) return
   // Capture a frame if not already frozen
   let imgURL = frozenFrameURL
   if (!imgURL) {
@@ -304,9 +313,12 @@ async function ask(prompt) {
       { role: 'user', content: [{ type: 'image' }, { type: 'text', text: prompt }] },
     ]
 
-    // Streaming token output
-    const tokenizer = pipe.tokenizer
-    const streamer = new TextStreamer(tokenizer, {
+    // Tokenize via the processor's chat template
+    const text = processor.apply_chat_template(messages, { add_generation_prompt: true })
+    const inputs = await processor(text, [image], { return_tensors: 'pt' })
+
+    // Streaming token output via TextStreamer (uses processor.tokenizer)
+    const streamer = new TextStreamer(processor.tokenizer, {
       skip_prompt: true,
       skip_special_tokens: true,
       callback_function: (chunk) => {
@@ -314,9 +326,20 @@ async function ask(prompt) {
       },
     })
 
-    const out = await pipe(messages, { images: [image], max_new_tokens: 256, do_sample: false, streamer })
-    const generated = (out?.[0]?.generated_text || '').trim()
-    if (!$('answer').textContent && generated) $('answer').textContent = generated  // non-streaming fallback
+    const generated_ids = await model.generate({
+      ...inputs,
+      max_new_tokens: 256,
+      do_sample:      false,
+      streamer,
+    })
+
+    // If streaming didn't fire (some browsers/builds drop the callback),
+    // decode the full generation as a fallback.
+    if (!$('answer').textContent.trim()) {
+      const newTokens = generated_ids.slice(null, [inputs.input_ids.dims.at(-1), null])
+      const decoded   = processor.batch_decode(newTokens, { skip_special_tokens: true })
+      $('answer').textContent = (decoded[0] || '').trim()
+    }
 
     lastAnswer = $('answer').textContent.trim()
     conversation.push({ role: 'user', content: [{ type: 'image' }, { type: 'text', text: prompt }] })
