@@ -20,10 +20,11 @@ const ZOOM_MIN = 0.4
 const ZOOM_MAX = 3.5
 
 export class MiniGalaxy {
-  constructor(canvas, { mode = '2d', onPlanetClick } = {}) {
+  constructor(canvas, { mode = '2d', onPlanetClick, arMode = false } = {}) {
     this.canvas = canvas
     this.ctx    = canvas.getContext('2d')
     this.mode   = mode
+    this.arMode = arMode  // if true: skip background/nebula, clear each frame so video shows through
     this.onPlanetClick = onPlanetClick || (() => {})
 
     // Camera state — tilt around X axis, rot around Y axis, zoom is uniform.
@@ -32,7 +33,7 @@ export class MiniGalaxy {
     this.t      = 0
     this.dpr    = Math.min(2, window.devicePixelRatio || 1)
     this.planets = []
-    this.stars   = this._makeStars(220)
+    this.stars   = arMode ? [] : this._makeStars(220)
     this.hover   = null
     this.lastFrame = 0
 
@@ -310,22 +311,27 @@ export class MiniGalaxy {
     const { ctx, w, h } = this
     if (!w || !h) return
 
-    // Background
-    const grad = ctx.createRadialGradient(w * 0.5, h * 0.4, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.85)
-    grad.addColorStop(0,   'rgba(28, 22, 50, 1)')
-    grad.addColorStop(0.5, 'rgba(12, 13, 30, 1)')
-    grad.addColorStop(1,   'rgba(6, 8, 15, 1)')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, w, h)
+    if (this.arMode) {
+      // Transparent overlay — let the camera frame show through
+      ctx.clearRect(0, 0, w, h)
+    } else {
+      // Background
+      const grad = ctx.createRadialGradient(w * 0.5, h * 0.4, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.85)
+      grad.addColorStop(0,   'rgba(28, 22, 50, 1)')
+      grad.addColorStop(0.5, 'rgba(12, 13, 30, 1)')
+      grad.addColorStop(1,   'rgba(6, 8, 15, 1)')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, w, h)
 
-    const neb = ctx.createRadialGradient(w * 0.7, h * 0.3, 0, w * 0.7, h * 0.3, Math.max(w, h) * 0.5)
-    neb.addColorStop(0, 'rgba(167, 139, 250, 0.18)')
-    neb.addColorStop(1, 'rgba(167, 139, 250, 0)')
-    ctx.fillStyle = neb; ctx.fillRect(0, 0, w, h)
-    const neb2 = ctx.createRadialGradient(w * 0.2, h * 0.75, 0, w * 0.2, h * 0.75, Math.max(w, h) * 0.45)
-    neb2.addColorStop(0, 'rgba(56, 189, 248, 0.12)')
-    neb2.addColorStop(1, 'rgba(56, 189, 248, 0)')
-    ctx.fillStyle = neb2; ctx.fillRect(0, 0, w, h)
+      const neb = ctx.createRadialGradient(w * 0.7, h * 0.3, 0, w * 0.7, h * 0.3, Math.max(w, h) * 0.5)
+      neb.addColorStop(0, 'rgba(167, 139, 250, 0.18)')
+      neb.addColorStop(1, 'rgba(167, 139, 250, 0)')
+      ctx.fillStyle = neb; ctx.fillRect(0, 0, w, h)
+      const neb2 = ctx.createRadialGradient(w * 0.2, h * 0.75, 0, w * 0.2, h * 0.75, Math.max(w, h) * 0.45)
+      neb2.addColorStop(0, 'rgba(56, 189, 248, 0.12)')
+      neb2.addColorStop(1, 'rgba(56, 189, 248, 0)')
+      ctx.fillStyle = neb2; ctx.fillRect(0, 0, w, h)
+    }
 
     // Stars
     for (const s of this.stars) {
@@ -427,10 +433,16 @@ export class MiniGalaxy {
       ctx.lineWidth = 0.6
       ctx.stroke()
 
-      if (isHover) {
-        ctx.fillStyle = 'rgba(230, 236, 245, 0.95)'
+      if (isHover || this.arMode) {
         ctx.font = '11px ui-monospace, monospace'
         ctx.textAlign = 'center'
+        if (this.arMode) {
+          // Halo for legibility over arbitrary camera scenes
+          ctx.lineWidth   = 3
+          ctx.strokeStyle = 'rgba(8, 10, 18, 0.85)'
+          ctx.strokeText(p.slug, sx, sy - size - 8)
+        }
+        ctx.fillStyle = 'rgba(230, 236, 245, 0.98)'
         ctx.fillText(p.slug, sx, sy - size - 8)
       }
     }
