@@ -141,9 +141,29 @@
   position: absolute; top: 0; left: 0;
 }
 .lab-snap[hidden] { display: none; }
+
+/* Galaxy overlay — transparent canvas painted over the live video */
+.lab-ar-galaxy {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: auto;            /* receive taps for raycast */
+  background: transparent;
+  display: block;
+}
+.lab-ar-galaxy[hidden] { display: none; }
+
+/* Dim the camera ~30% while the galaxy is up so planets read clearly */
+.lab-stage.galaxy-on .lab-video { opacity: 0.55; transition: opacity 220ms ease; }
+.lab-stage .lab-video { transition: opacity 220ms ease; }
 .lab-stage-controls {
   position: absolute; top: 12px; right: 12px;
   display: flex; gap: 8px;
+  z-index: 3;
+}
+.lab-icon-btn.active {
+  background: rgba(167, 139, 250, 0.35);
+  border-color: rgba(167, 139, 250, 0.85);
+  box-shadow: 0 0 14px rgba(167, 139, 250, 0.55);
 }
 .lab-icon-btn {
   width: 40px; height: 40px;
