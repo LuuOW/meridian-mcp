@@ -135,8 +135,13 @@ function physicsOf(skill, sibTokens) {
   const drag = clamp(longWords / Math.max(2, kws.length) * 0.7 + cross_domain * 0.2)
 
   // ── Orbital dynamics — derived from the base 8-vector ───────────────────
-  // Semi-major axis (AU-like, [1, 7]): heavy & versatile skills sit closer in.
-  const semi_major_axis = r3(1 + (1 - mass) * 4 + lagrange_potential * 2)
+  // Semi-major axis (AU-like, [1, 7]): heavy + broad + independent skills sit
+  // closer to the star. Lagrange-potential is intentionally NOT a term here —
+  // L1-L5 points sit *between* bodies, not in the outer system, so versatile
+  // skills shouldn't be pushed outward. L-potential stays as its own pill.
+  const semi_major_axis = r3(
+    1 + (1 - 0.5 * mass - 0.3 * scope - 0.2 * independence) * 6
+  )
   // Eccentricity ([0, 0.95]): mismatch between depth and breadth → elongated orbit.
   const eccentricity    = r3(clamp(Math.abs(mass - scope) * 0.85 + drag * 0.3, 0, 0.95))
   // Inclination (radians, [0, π/2]): cross-domain skills sit off the ecliptic.
