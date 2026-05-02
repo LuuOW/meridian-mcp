@@ -79,8 +79,10 @@ const MODELS = {
   moondream: {
     id:    'Xenova/moondream2',
     label: 'Moondream2',
-    dtype: { embed_tokens: 'fp16', vision_encoder: 'fp16', decoder_model_merged: 'q4' },
-    expected_size_mb: 1600,
+    // All-q4: keeps peak WebGPU memory under ~1.5 GB so Safari on 16 GB
+    // unified-memory Macs doesn't kill the tab during inference.
+    dtype: { embed_tokens: 'q4', vision_encoder: 'q4', decoder_model_merged: 'q4' },
+    expected_size_mb: 1100,
   },
 }
 
@@ -387,7 +389,7 @@ async function ask(prompt) {
     const generated_ids = await model.generate({
       ...text_inputs,
       ...visual_inputs,
-      max_new_tokens: 256,
+      max_new_tokens: 160,
       do_sample:      false,
       streamer,
     })
