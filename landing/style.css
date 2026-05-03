@@ -890,21 +890,6 @@ h1, h2, h3, h4 { text-wrap: balance; }
   opacity: 1;
 }
 
-/* ── Magnetic-button transition ──────────────────────────────────────────
-   landing.js writes inline `translate: Xpx Ypx`. Smoothing the property
-   here makes the pull feel springy instead of jittery. */
-[data-magnetic] {
-  transition: translate 0.18s var(--ease-out),
-              transform var(--dur-fast),
-              box-shadow var(--dur-base),
-              background var(--dur-base),
-              border-color var(--dur-base);
-  will-change: translate;
-}
-@media (prefers-reduced-motion: reduce) {
-  [data-magnetic] { transition: background var(--dur-base), border-color var(--dur-base); }
-}
-
 /* ── :has()-driven plan dim ──────────────────────────────────────────────
    When the user is hovering one plan card, fade the siblings to draw
    focus. Pure CSS, no JS state to keep in sync. */

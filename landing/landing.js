@@ -7,64 +7,6 @@
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
 
-// ── Magnetic buttons ────────────────────────────────────────────────────────
-// When the cursor enters a soft radius around any [data-magnetic] element,
-// translate it a fraction of the cursor's offset. Disengages cleanly past the
-// radius, throttled via rAF so it stays cheap during fast pointer moves.
-export function initMagnetic() {
-  if (reduceMotion) return
-  const els = document.querySelectorAll('[data-magnetic]')
-  if (!els.length) return
-
-  const RANGE    = 110   // px beyond the button bbox where pull starts
-  const STRENGTH = 0.22  // fraction of cursor delta the button moves
-
-  let raf = 0
-  let lastEvt = null
-
-  const apply = () => {
-    raf = 0
-    if (!lastEvt) return
-    // Pick the single nearest in-range button — otherwise two adjacent
-    // magnetic buttons in the same .cta-row both pull toward a cursor
-    // sitting between them and visibly drift together.
-    let nearest = null
-    let nearestDist = Infinity
-    const measured = []
-    for (const el of els) {
-      const r  = el.getBoundingClientRect()
-      const cx = r.left + r.width  / 2
-      const cy = r.top  + r.height / 2
-      const dx = lastEvt.clientX - cx
-      const dy = lastEvt.clientY - cy
-      const d  = Math.hypot(dx, dy)
-      const reach = RANGE + Math.max(r.width, r.height) / 2
-      measured.push({ el, dx, dy, d, inRange: d <= reach })
-      if (d <= reach && d < nearestDist) {
-        nearest = el
-        nearestDist = d
-      }
-    }
-    for (const m of measured) {
-      if (m.el === nearest) {
-        m.el.style.translate = `${(m.dx * STRENGTH).toFixed(1)}px ${(m.dy * STRENGTH).toFixed(1)}px`
-      } else if (m.el.style.translate) {
-        m.el.style.translate = ''
-      }
-    }
-  }
-
-  document.addEventListener('mousemove', (e) => {
-    lastEvt = e
-    if (!raf) raf = requestAnimationFrame(apply)
-  }, { passive: true })
-
-  // Drop translation on leave so a button never gets stuck off-axis
-  document.addEventListener('mouseleave', () => {
-    for (const el of els) el.style.translate = ''
-  })
-}
-
 // ── Click-to-copy on hero snippet ───────────────────────────────────────────
 export function initCopySnippet() {
   for (const pre of document.querySelectorAll('pre.hero-snippet')) {
