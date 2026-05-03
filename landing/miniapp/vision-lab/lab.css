@@ -420,6 +420,13 @@
   margin: 0 0 12px;
 }
 .lab-route-results ol { padding-left: 20px; margin: 0; }
+.lab-route-empty p,
+.lab-route-error p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+.lab-route-error p { color: #fca5a5; }
 .lab-route-result {
   margin-bottom: 14px;
   padding-bottom: 12px;
