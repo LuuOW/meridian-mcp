@@ -18,7 +18,7 @@ import { validateAndTouch } from './stripe/_keys.js'
 import { kvGet, kvPut, kvIncr, hasKV } from './_kv.js'
 import { gatewayUrl, workersAiGatewayOpts } from './_ai-gateway.js'
 import { sseResponse, iterOpenAIStream } from './_stream.js'
-import { embedTexts, cosine, vectorizeUpsert, hasEmbeddings } from './_vector.js'
+import { embedTexts, cosine, vectorizeUpsert, vectorizeQuery, hasEmbeddings, hasVectorize } from './_vector.js'
 
 // Free tier: anonymous calls are allowed but capped to a soft daily limit
 // per IP (best-effort — not the real auth boundary). Pro/Team keys lift that
@@ -282,8 +282,43 @@ async function runPipeline({ env, task, limit, candidates, provider, context, au
   }
   await sink.onProgress('cache_miss', {})
 
+  // Phase 0.5: embed the task once (used both for RAG retrieval below and
+  // semantic re-rank below the LLM call). Saves a duplicate Workers AI
+  // round-trip vs embedding the task separately in semanticRerank.
+  let taskVec = null
+  let ragMatches = []
+  if (hasEmbeddings(env)) {
+    const [v] = await embedTexts(env, [task])
+    if (v) taskVec = v
+  }
+
+  // Phase 0.6: RAG — query Vectorize for similar past skills, inject as
+  // an extra system message before the final user turn. Skips silently
+  // when Vectorize is unbound, the index is empty, or no matches clear
+  // the relevance threshold (cold-start safe).
+  if (taskVec && hasVectorize(env)) {
+    const matches = await vectorizeQuery(env, taskVec, 6)
+    // Filter by score, dedupe slugs (multiple upserts of the same skill
+    // are possible across days), keep top 3 distinct.
+    const seen = new Set()
+    ragMatches = matches
+      .filter(m => (m.score || 0) >= 0.55)
+      .filter(m => {
+        const slug = m.metadata?.slug
+        if (!slug || seen.has(slug)) return false
+        seen.add(slug); return true
+      })
+      .slice(0, 3)
+    if (ragMatches.length) {
+      await sink.onProgress('rag_retrieved', {
+        matches: ragMatches.length,
+        top_score: Number((ragMatches[0].score || 0).toFixed(3)),
+      })
+    }
+  }
+
   // Phase 1: build messages + call LLM.
-  const messages = buildMessages({ task, candidates, isVisionLab })
+  const messages = buildMessages({ task, candidates, isVisionLab, ragMatches })
   const llmStart = Date.now()
   let rawText
   try {
@@ -324,7 +359,7 @@ async function runPipeline({ env, task, limit, candidates, provider, context, au
   if (hasEmbeddings(env)) {
     await sink.onProgress('semantic_rerank', { model: 'bge-m3' })
     const t = Date.now()
-    reranked = await semanticRerank(env, task, ranked)
+    reranked = await semanticRerank(env, task, ranked, taskVec)
     embedMs  = Date.now() - t
   }
 
@@ -375,19 +410,33 @@ async function runPipeline({ env, task, limit, candidates, provider, context, au
   return responsePayload
 }
 
-// Build the 4-message prompt array used by both Groq + Workers AI calls.
-function buildMessages({ task, candidates, isVisionLab }) {
+// Build the prompt array used by both Groq + Workers AI calls. Optional
+// ragMatches inject a SECOND system message after the main one with
+// "previously generated similar skills" for inspiration only — the LLM
+// is instructed to author fresh skills, not echo the past.
+function buildMessages({ task, candidates, isVisionLab, ragMatches = [] }) {
   const exemplar = isVisionLab ? VISION_LAB_EXAMPLE_SKILL : EXAMPLE_SKILL
   const exemplarTaskHint = isVisionLab
     ? 'Task: someone is pointing their phone camera at a wooden chair.\n\nGenerate 1 skill, just to demonstrate the body format AND the hands-on, physically-immediate bias.'
     : `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.`
   const finalUserMsg = `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}${isVisionLab ? '\n' + VISION_LAB_BIAS : ''}`
-  return [
-    { role: 'system',    content: SYSTEM_PROMPT },
+
+  const messages = [{ role: 'system', content: SYSTEM_PROMPT }]
+  if (ragMatches.length) {
+    const ctxLines = ragMatches
+      .map(m => `- ${m.metadata?.slug || '?'}: ${m.metadata?.description || ''}${m.metadata?.class ? ` [${m.metadata.class}]` : ''}`)
+      .join('\n')
+    messages.push({
+      role: 'system',
+      content: `PRIOR-CONTEXT: this router has previously generated these related skills (semantic match against the current task). Use them ONLY as inspiration for slug-naming patterns, level of specificity, and depth of body — DO NOT echo their content. Author FRESH skills for the current task:\n\n${ctxLines}`,
+    })
+  }
+  messages.push(
     { role: 'user',      content: exemplarTaskHint },
     { role: 'assistant', content: JSON.stringify({ skills: [exemplar] }) },
     { role: 'user',      content: finalUserMsg },
-  ]
+  )
+  return messages
 }
 
 // Provider-specific LLM call helpers. All return a string of raw JSON
@@ -589,16 +638,26 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 // embedding + metadata) so the index warms up for future RAG features.
 // Upsert is fire-and-forget; we don't block the response on it.
 // ────────────────────────────────────────────────────────────────────────
-async function semanticRerank(env, task, ranked) {
+async function semanticRerank(env, task, ranked, preComputedTaskVec = null) {
   if (!hasEmbeddings(env) || !ranked?.length) return ranked
   try {
-    const inputs = [task, ...ranked.map(s => `${s.description || ''}\n\n${s.body || ''}`.slice(0, 2000))]
-    const vectors = await embedTexts(env, inputs)
-    if (vectors.length !== inputs.length) return ranked
+    let taskVec, skillVecs
+    if (preComputedTaskVec) {
+      // RAG retrieval already embedded the task — only embed the skill bodies.
+      const skillTexts = ranked.map(s => `${s.description || ''}\n\n${s.body || ''}`.slice(0, 2000))
+      skillVecs = await embedTexts(env, skillTexts)
+      if (skillVecs.length !== ranked.length) return ranked
+      taskVec = preComputedTaskVec
+    } else {
+      const inputs = [task, ...ranked.map(s => `${s.description || ''}\n\n${s.body || ''}`.slice(0, 2000))]
+      const vectors = await embedTexts(env, inputs)
+      if (vectors.length !== inputs.length) return ranked
+      taskVec  = vectors[0]
+      skillVecs = vectors.slice(1)
+    }
 
-    const taskVec = vectors[0]
     const enriched = ranked.map((s, i) => {
-      const sim = cosine(taskVec, vectors[i + 1])
+      const sim = cosine(taskVec, skillVecs[i])
       // Blend: orbital is the spine, semantic is a 0..40% multiplicative
       // boost. Keeps low-orbital-score skills from being floated by raw
       // semantic match (which would cause "looks similar" trojans to
