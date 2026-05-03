@@ -931,6 +931,38 @@ section.how, section.pricing, section.cta-final {
   .hero { padding-top: var(--s-7); }
 }
 
+/* ── Shared routing-progress indicator ────────────────────────────────────
+   Used by anything streaming SSE events from /api/orbital-route. Same look
+   on both the main miniapp and the vision lab so users see one unified
+   "the router is working" affordance instead of surface-specific surprises. */
+.routing-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+.routing-progress::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: routingProgressPulse 1.2s ease-in-out infinite;
+}
+@keyframes routingProgressPulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.6); }
+  50%      { opacity: 1;    transform: scale(1.1); }
+}
+.routing-progress.is-done::before { animation: none; opacity: 0.5; }
+@media (prefers-reduced-motion: reduce) {
+  .routing-progress::before { animation: none; }
+}
+
 /* ── Print: strip animation, neon, shadows ──────────────────────────── */
 @media print {
   .hero-orbits, .burger, .nav-version, .snippet-copy, .calendly-badge-widget { display: none !important; }

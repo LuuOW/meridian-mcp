@@ -455,7 +455,7 @@ $('routeBtn').addEventListener('click', async () => {
   $('answer').insertAdjacentHTML('afterend', `
     <div class="lab-route-results lab-route-streaming" id="labRouteResults">
       <h4 id="labRouteHead">Routing through orbital engine…</h4>
-      <p class="lab-route-progress" id="labRouteProgress">connecting…</p>
+      <p class="routing-progress" id="labRouteProgress">connecting…</p>
       <ol id="labRouteList"></ol>
       <p class="lab-route-foot" id="labRouteFoot" hidden></p>
     </div>
@@ -484,10 +484,12 @@ $('routeBtn').addEventListener('click', async () => {
           if (p.stage === 'connected')           progress.textContent = 'connected · waiting for LLM…'
           else if (p.stage === 'cache_hit')      progress.textContent = `cache hit (${p.cache_age_s}s old) — replaying`
           else if (p.stage === 'cache_miss')     progress.textContent = 'cache miss · authoring fresh skills…'
+          else if (p.stage === 'llm_streaming_start') progress.textContent = `LLM warming up (${p.model})…`
           else if (p.stage === 'llm_streaming')  progress.textContent = `LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
-          else if (p.stage === 'llm_calling')    progress.textContent = 'LLM running (no streaming on this provider)…'
+          else if (p.stage === 'llm_calling')    progress.textContent = `LLM running (${p.model})…`
           else if (p.stage === 'llm_complete')   progress.textContent = `LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
           else if (p.stage === 'classifying')    progress.textContent = `classifying ${p.candidates_generated} candidates orbitally…`
+          else if (p.stage === 'semantic_rerank') progress.textContent = `semantic re-rank (${p.model})…`
         },
         onSkill: (s) => {
           accumulatedSkills.push(s)

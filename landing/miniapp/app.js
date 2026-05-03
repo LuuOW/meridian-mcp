@@ -123,7 +123,7 @@ askBtn.addEventListener('click', async () => {
   requestAnimationFrame(() => galaxy._resize())
   resultsList.innerHTML =
     '<li class="no-results">' +
-    '<span class="loading-pulse" id="streamProgress">🪐 connecting to orbital router…</span>' +
+    '<p class="routing-progress" id="streamProgress">connecting to orbital router…</p>' +
     '</li>'
   resultsMeta.textContent = ''
   latestSelected = []
@@ -137,15 +137,15 @@ askBtn.addEventListener('click', async () => {
         onProgress: (p) => {
           const el = document.getElementById('streamProgress')
           if (!el) return
-          if (p.stage === 'connected')           el.textContent = '🪐 connected · waiting for LLM…'
-          else if (p.stage === 'cache_hit')      el.textContent = `⚡ cache hit (${p.cache_age_s}s old) — replaying`
-          else if (p.stage === 'cache_miss')     el.textContent = '🪐 cache miss · authoring fresh skills…'
-          else if (p.stage === 'llm_streaming_start') el.textContent = `✍️ LLM warming up (${p.model})…`
-          else if (p.stage === 'llm_streaming')  el.textContent = `✍️ LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
-          else if (p.stage === 'llm_calling')    el.textContent = `✍️ LLM running (${p.model})…`
-          else if (p.stage === 'llm_complete')   el.textContent = `✓ LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
-          else if (p.stage === 'classifying')    el.textContent = `🛰 classifying ${p.candidates_generated} candidates orbitally…`
-          else if (p.stage === 'semantic_rerank') el.textContent = `🧭 semantic re-rank (${p.model})…`
+          if (p.stage === 'connected')           el.textContent = 'connected · waiting for LLM…'
+          else if (p.stage === 'cache_hit')      el.textContent = `cache hit (${p.cache_age_s}s old) — replaying`
+          else if (p.stage === 'cache_miss')     el.textContent = 'cache miss · authoring fresh skills…'
+          else if (p.stage === 'llm_streaming_start') el.textContent = `LLM warming up (${p.model})…`
+          else if (p.stage === 'llm_streaming')  el.textContent = `LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
+          else if (p.stage === 'llm_calling')    el.textContent = `LLM running (${p.model})…`
+          else if (p.stage === 'llm_complete')   el.textContent = `LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
+          else if (p.stage === 'classifying')    el.textContent = `classifying ${p.candidates_generated} candidates orbitally…`
+          else if (p.stage === 'semantic_rerank') el.textContent = `semantic re-rank (${p.model})…`
         },
         onSkill: (s) => {
           // First skill arrival clears the placeholder.
