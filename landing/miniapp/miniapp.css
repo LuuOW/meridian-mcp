@@ -485,6 +485,16 @@
   display: flex; justify-content: space-between; align-items: center; gap: 10px;
   margin-bottom: 6px;
 }
+@keyframes resultItemIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.result-item-in {
+  animation: resultItemIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .result-item-in { animation: none; }
+}
 .result-slug {
   font-family: var(--font-mono); font-size: clamp(13px, 2.5vw, 14.5px); font-weight: 600;
   color: var(--text);
