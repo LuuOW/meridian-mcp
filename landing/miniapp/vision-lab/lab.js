@@ -448,13 +448,22 @@ $('routeBtn').addEventListener('click', async () => {
 
     // Open the main miniapp in a new tab with the task pre-filled? Or render inline?
     // Inline is simpler — show the top 5 here.
-    const html = data.selected.map(s => `
+    const html = data.selected.map(s => {
+      const cls   = s.classification?.class       || ''
+      const sys   = s.classification?.star_system || ''
+      const score = (s.route_score || 0).toFixed(1)
+      return `
       <li class="lab-route-result">
-        <strong>${escapeHTML(s.slug)}</strong>
-        <span class="lab-route-class" data-class="${escapeHTML(s.classification?.class || '')}">${escapeHTML(s.classification?.class || '')}</span>
+        <div class="lab-route-head">
+          <strong>${escapeHTML(s.slug)}</strong>
+          ${cls ? `<span class="lab-route-class" data-class="${escapeHTML(cls)}">${escapeHTML(cls)}</span>` : ''}
+          ${sys ? `<span class="lab-route-system">${escapeHTML(sys)}</span>` : ''}
+          <span class="lab-route-score">${score}</span>
+        </div>
         <p>${escapeHTML(s.description || '')}</p>
-      </li>
-    `).join('')
+        ${s.why ? `<div class="lab-route-why">${escapeHTML(s.why)}</div>` : ''}
+      </li>`
+    }).join('')
     $('answer').insertAdjacentHTML('afterend', `
       <div class="lab-route-results">
         <h4>Top ${data.selected.length} skills (orbital-classified)</h4>
