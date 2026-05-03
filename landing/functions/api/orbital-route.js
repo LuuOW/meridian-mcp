@@ -13,6 +13,7 @@
 // No static corpus. Every result is LLM-generated and orbitally classified.
 
 import { orbitalClassify, jsonResponse, corsHeaders } from './_orbital.js'
+import { isOwnerIp } from './_ip.js'
 import { validateAndTouch } from './stripe/_keys.js'
 
 // Free tier: anonymous calls are allowed but capped to a soft daily limit
@@ -98,8 +99,7 @@ export async function onRequest({ request, env }) {
   } else if (env.MERIDIAN_KEYS) {
     // Anonymous — soft per-IP per-day cap so the free tier is best-effort fair.
     const ip  = request.headers.get('cf-connecting-ip') || 'unknown'
-    const ownerSet = new Set((env.OWNER_IPS || '').split(',').map(s => s.trim()).filter(Boolean))
-    if (!ownerSet.has(ip)) {
+    if (!isOwnerIp(ip, env)) {
       const dkey = `free:${ip}:${new Date().toISOString().slice(0, 10)}`
       const cur  = parseInt(await env.MERIDIAN_KEYS.get(dkey), 10) || 0
       if (cur >= FREE_TIER_DAILY_PER_IP) {
