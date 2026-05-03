@@ -355,6 +355,11 @@ async function ask(prompt) {
     imgURL = c.toDataURL('image/jpeg', 0.9)
   }
 
+  // Clear any artifacts from the previous ask: route results card, AR galaxy
+  // overlay, open skill panel. The new answer is about a new frame/question, so
+  // skills routed from the prior answer would be misleading if left on screen.
+  clearRouteArtifacts()
+
   $('answerSection').hidden = false
   $('answer').textContent   = ''
   $('latencyBadge').textContent = '⏳ thinking…'
@@ -362,6 +367,7 @@ async function ask(prompt) {
   $('modelBadge').hidden        = false
   $('askBtn').disabled = true
   $('routeBtn').hidden = true
+  $('askAgainBtn').hidden = true
 
   const t0 = performance.now()
   try {
@@ -555,3 +561,16 @@ $('galaxyBtn').addEventListener('click', () => {
 
 // ── utils ─────────────────────────────────────────────────────────────────
 function diag(s) { $('diag').textContent = s }
+
+function clearRouteArtifacts() {
+  document.querySelectorAll('.lab-route-results').forEach(el => el.remove())
+  if (arGalaxy) {
+    arGalaxy.setSkills([])
+    $('arGalaxy').hidden = true
+    $('galaxyBtn').hidden = true
+    $('galaxyBtn').classList.remove('active')
+    document.querySelector('.lab-stage').classList.remove('galaxy-on')
+  }
+  lastSelected = []
+  closeSkillPanel()
+}
