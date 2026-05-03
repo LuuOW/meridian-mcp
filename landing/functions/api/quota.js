@@ -5,6 +5,7 @@
 
 import { sha256Hex, getKeyByHash, planLimits, thisMonth } from './stripe/_keys.js'
 import { jsonResponse, corsHeaders } from './_orbital.js'
+import { isOwnerIp } from './_ip.js'
 
 const FREE_DAILY = 5
 
@@ -38,16 +39,18 @@ export async function onRequest({ request, env }) {
   if (!env.MERIDIAN_KEYS) {
     return jsonResponse({ plan: 'free', daily_limit: FREE_DAILY, calls_today: 0, remaining: FREE_DAILY, kv_unbound: true })
   }
-  const ip   = request.headers.get('cf-connecting-ip') || 'unknown'
-  const day  = new Date().toISOString().slice(0, 10)
-  const dkey = `free:${ip}:${day}`
-  const cur  = parseInt(await env.MERIDIAN_KEYS.get(dkey), 10) || 0
+  const ip    = request.headers.get('cf-connecting-ip') || 'unknown'
+  const owner = isOwnerIp(ip, env)
+  const day   = new Date().toISOString().slice(0, 10)
+  const dkey  = `free:${ip}:${day}`
+  const cur   = parseInt(await env.MERIDIAN_KEYS.get(dkey), 10) || 0
   return jsonResponse({
     plan:        'free',
     daily_limit: FREE_DAILY,
     calls_today: cur,
-    remaining:   Math.max(0, FREE_DAILY - cur),
-    pct_used:    Math.round(100 * cur / FREE_DAILY),
+    remaining:   owner ? 'unlimited' : Math.max(0, FREE_DAILY - cur),
+    pct_used:    owner ? 0 : Math.round(100 * cur / FREE_DAILY),
+    owner,
     day,
   })
 }
