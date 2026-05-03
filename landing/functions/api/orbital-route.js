@@ -15,6 +15,8 @@
 import { orbitalClassify, jsonResponse, corsHeaders } from './_orbital.js'
 import { isOwnerIp } from './_ip.js'
 import { validateAndTouch } from './stripe/_keys.js'
+import { kvGet, kvPut, kvIncr, hasKV } from './_kv.js'
+import { gatewayUrl, workersAiGatewayOpts } from './_ai-gateway.js'
 
 // Free tier: anonymous calls are allowed but capped to a soft daily limit
 // per IP (best-effort — not the real auth boundary). Pro/Team keys lift that
@@ -148,18 +150,18 @@ export async function onRequest({ request, env }) {
         return jsonResponse({ error: authResult.error }, { status: authResult.code })
       }
     }
-  } else if (env.MERIDIAN_KEYS) {
+  } else if (hasKV(env)) {
     // Anonymous — soft per-IP per-day cap so the free tier is best-effort fair.
     const ip  = request.headers.get('cf-connecting-ip') || 'unknown'
     if (!isOwnerIp(ip, env)) {
       const dkey = `free:${ip}:${new Date().toISOString().slice(0, 10)}`
-      const cur  = parseInt(await env.MERIDIAN_KEYS.get(dkey), 10) || 0
+      const cur  = parseInt(await kvGet(env, dkey), 10) || 0
       if (cur >= FREE_TIER_DAILY_PER_IP) {
         return jsonResponse({
           error: `free tier exhausted (${FREE_TIER_DAILY_PER_IP} calls/day per IP). Upgrade to Pro for 10k/month — see ask-meridian.uk/#pricing`,
         }, { status: 429 })
       }
-      await env.MERIDIAN_KEYS.put(dkey, String(cur + 1), { expirationTtl: 90000 })
+      await kvIncr(env, dkey, 90000)
     }
   }
 
@@ -194,8 +196,8 @@ export async function onRequest({ request, env }) {
   // and typed manually should NOT share a cached result, since they get
   // different prompts.
   const cacheKey = await sha256(`${task.toLowerCase().replace(/\s+/g, ' ').trim()}::${limit}::${candidates}::${context}`)
-  if (env.MERIDIAN_KEYS) {
-    const cached = await env.MERIDIAN_KEYS.get(`route:${cacheKey}`, 'json')
+  if (hasKV(env)) {
+    const cached = await kvGet(env, `route:${cacheKey}`, 'json')
     if (cached) {
       cached.cache_hit  = true
       cached.cache_age_s = Math.floor((Date.now() - cached._cached_at) / 1000)
@@ -237,7 +239,7 @@ export async function onRequest({ request, env }) {
     const t0 = Date.now()
     if (provider === 'groq') {
       // Groq OpenAI-compatible /chat/completions — Llama-3.3-70B at ~300 tok/s
-      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const groqRes = await fetch(gatewayUrl(env, 'groq', '/chat/completions'), {
         method: 'POST',
         headers: {
           authorization:  `Bearer ${env.GROQ_API_KEY}`,
@@ -258,37 +260,37 @@ export async function onRequest({ request, env }) {
       raw = await env.AI.run(MODEL, {
         messages,
         response_format: {
-        type: 'json_schema',
-        json_schema: {
-          type: 'object', required: ['skills'], additionalProperties: false,
-          properties: {
-            skills: {
-              type: 'array',
-              // Cap at the requested count exactly so the model can't
-              // overshoot and burn token budget. Floor at 3 so a request
-              // for 1 still yields useful adjacent skills.
-              // Static bounds — Workers AI prefilters the schema and a
-              // dynamic per-request shape was correlating with timeouts.
-              minItems: 3,
-              maxItems: 8,
-              items: {
-                type: 'object',
-                required: ['slug', 'description', 'keywords', 'body'],
-                additionalProperties: false,
-                properties: {
-                  slug:        { type: 'string' },
-                  description: { type: 'string' },
-                  keywords:    { type: 'array', items: { type: 'string' } },
-                  body:        { type: 'string' },
+          type: 'json_schema',
+          json_schema: {
+            type: 'object', required: ['skills'], additionalProperties: false,
+            properties: {
+              skills: {
+                type: 'array',
+                // Cap at the requested count exactly so the model can't
+                // overshoot and burn token budget. Floor at 3 so a request
+                // for 1 still yields useful adjacent skills.
+                // Static bounds — Workers AI prefilters the schema and a
+                // dynamic per-request shape was correlating with timeouts.
+                minItems: 3,
+                maxItems: 8,
+                items: {
+                  type: 'object',
+                  required: ['slug', 'description', 'keywords', 'body'],
+                  additionalProperties: false,
+                  properties: {
+                    slug:        { type: 'string' },
+                    description: { type: 'string' },
+                    keywords:    { type: 'array', items: { type: 'string' } },
+                    body:        { type: 'string' },
+                  },
                 },
               },
             },
           },
         },
-      },
-      max_tokens:  3200,
-      temperature: 0.5,
-    })
+        max_tokens:  3200,
+        temperature: 0.5,
+      }, workersAiGatewayOpts(env))
     }   // end workers-ai branch
     aiLatencyMs = Date.now() - t0
   } catch (e) {
@@ -352,10 +354,10 @@ export async function onRequest({ request, env }) {
   }
 
   // Stash in cache (24 h TTL). Strip request-specific quota — re-attached on hit.
-  if (env.MERIDIAN_KEYS) {
+  if (hasKV(env)) {
     const toCache = { ...responsePayload, _cached_at: Date.now() }
     delete toCache.quota
-    await env.MERIDIAN_KEYS.put(`route:${cacheKey}`, JSON.stringify(toCache), { expirationTtl: 86400 })
+    await kvPut(env, `route:${cacheKey}`, toCache, 86400)
   }
 
   return jsonResponse(responsePayload, { headers })
