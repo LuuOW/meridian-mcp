@@ -17,6 +17,7 @@ import { isOwnerIp } from './_ip.js'
 import { validateAndTouch } from './stripe/_keys.js'
 import { kvGet, kvPut, kvIncr, hasKV } from './_kv.js'
 import { gatewayUrl, workersAiGatewayOpts } from './_ai-gateway.js'
+import { sseResponse, iterOpenAIStream } from './_stream.js'
 
 // Free tier: anonymous calls are allowed but capped to a soft daily limit
 // per IP (best-effort — not the real auth boundary). Pro/Team keys lift that
@@ -186,6 +187,19 @@ export async function onRequest({ request, env }) {
   }
   if (provider === 'groq' && !env.GROQ_API_KEY) {
     return jsonResponse({ error: 'Groq not configured — bind GROQ_API_KEY' }, { status: 503 })
+  }
+
+  // Streaming: ?stream=1 OR Accept: text/event-stream. Auth + quota have
+  // already gated above (we want clean 4xx JSON for those, not an SSE
+  // error event). From here on we own the response.
+  const url = new URL(request.url)
+  const wantsStream =
+    url.searchParams.get('stream') === '1' ||
+    request.headers.get('accept')?.includes('text/event-stream')
+  if (wantsStream) {
+    return runStreamingPipeline({
+      env, request, task, limit, candidates, provider, context, authResult,
+    })
   }
 
   // ── Phase 0: cache lookup. Same task in the last 24 h → cached response.
@@ -402,3 +416,215 @@ function parseGenerated(out) {
     }))
     .filter(s => SLUG_RE.test(s.slug))
 }
+
+// ────────────────────────────────────────────────────────────────────────
+// SSE streaming pipeline.
+//
+// Same logic as the JSON path, but emits progress events while the LLM is
+// generating, then per-skill events in ranked order, then a done event.
+// Cache hits go straight to per-skill + done (still over the wire format
+// so the client doesn't need a fast/slow code path).
+//
+// Wire format:
+//   event: progress  data: {stage, ...details}
+//   event: skill     data: {...full classified skill...}   (one per skill)
+//   event: done      data: {summary fields}
+//   event: error     data: {message}
+// ────────────────────────────────────────────────────────────────────────
+async function runStreamingPipeline({ env, request, task, limit, candidates, provider, context, authResult }) {
+  const { response, send, close } = sseResponse()
+  const isVisionLab = context === 'vision_lab'
+
+  // Emit immediately so the connection is not held silent — some proxies
+  // close idle connections before the first byte arrives.
+  send('progress', { stage: 'connected', task, provider, context })
+
+  ;(async () => {
+    try {
+      const cacheKey = await sha256(`${task.toLowerCase().replace(/\s+/g, ' ').trim()}::${limit}::${candidates}::${context}`)
+
+      // Cache hit short-circuit.
+      if (hasKV(env)) {
+        const cached = await kvGet(env, `route:${cacheKey}`, 'json')
+        if (cached) {
+          send('progress', { stage: 'cache_hit', cache_age_s: Math.floor((Date.now() - cached._cached_at) / 1000) })
+          for (const skill of cached.selected || []) {
+            await send('skill', skill)
+            await sleep(20)
+          }
+          await send('done', {
+            ...summaryOf(cached, { provider, context, isVisionLab, cache_hit: true }),
+          })
+          return
+        }
+      }
+
+      send('progress', { stage: 'cache_miss' })
+
+      const exemplar = isVisionLab ? VISION_LAB_EXAMPLE_SKILL : EXAMPLE_SKILL
+      const exemplarTaskHint = isVisionLab
+        ? 'Task: someone is pointing their phone camera at a wooden chair.\n\nGenerate 1 skill, just to demonstrate the body format AND the hands-on, physically-immediate bias.'
+        : `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.`
+      const finalUserMsg = `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}${isVisionLab ? '\n' + VISION_LAB_BIAS : ''}`
+      const messages = [
+        { role: 'system',    content: SYSTEM_PROMPT },
+        { role: 'user',      content: exemplarTaskHint },
+        { role: 'assistant', content: JSON.stringify({ skills: [exemplar] }) },
+        { role: 'user',      content: finalUserMsg },
+      ]
+
+      // Phase 1: LLM generation (streamed when provider supports it).
+      const llmStart = Date.now()
+      let rawText = ''
+
+      if (provider === 'groq') {
+        send('progress', { stage: 'llm_streaming_start', model: 'llama-3.3-70b-versatile' })
+        const groqRes = await fetch(gatewayUrl(env, 'groq', '/chat/completions'), {
+          method: 'POST',
+          headers: {
+            authorization:  `Bearer ${env.GROQ_API_KEY}`,
+            'content-type': 'application/json',
+            accept:         'text/event-stream',
+          },
+          body: JSON.stringify({
+            model:           'llama-3.3-70b-versatile',
+            messages,
+            response_format: { type: 'json_object' },
+            temperature:     0.5,
+            max_tokens:      3200,
+            stream:          true,
+          }),
+        })
+        if (!groqRes.ok) {
+          const errBody = await groqRes.text().catch(() => '')
+          throw new Error(`Groq HTTP ${groqRes.status}: ${errBody.slice(0, 200)}`)
+        }
+        // Throttle progress events: at most one per 250ms or per 600 chars.
+        let lastSent = 0, lastChars = 0
+        for await (const delta of iterOpenAIStream(groqRes)) {
+          rawText += delta
+          const now = Date.now()
+          if (now - lastSent > 250 || rawText.length - lastChars > 600) {
+            send('progress', { stage: 'llm_streaming', chars: rawText.length, ms: now - llmStart })
+            lastSent  = now
+            lastChars = rawText.length
+          }
+        }
+      } else {
+        // Workers AI: structured-output mode doesn't stream. One progress
+        // event before the call, one after.
+        send('progress', { stage: 'llm_calling', model: MODEL.split('/').pop() })
+        const out = await env.AI.run(MODEL, {
+          messages,
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              type: 'object', required: ['skills'], additionalProperties: false,
+              properties: {
+                skills: {
+                  type: 'array', minItems: 3, maxItems: 8,
+                  items: {
+                    type: 'object', required: ['slug', 'description', 'keywords', 'body'], additionalProperties: false,
+                    properties: {
+                      slug:        { type: 'string' },
+                      description: { type: 'string' },
+                      keywords:    { type: 'array', items: { type: 'string' } },
+                      body:        { type: 'string' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          max_tokens:  3200,
+          temperature: 0.5,
+        }, workersAiGatewayOpts(env))
+        rawText = typeof out === 'string' ? out
+                : typeof out?.response === 'string' ? out.response
+                : JSON.stringify(out?.response || out)
+      }
+
+      const aiLatencyMs = Date.now() - llmStart
+      send('progress', { stage: 'llm_complete', chars: rawText.length, ms: aiLatencyMs })
+
+      // Phase 2: parse + classify.
+      const generated = parseGenerated({ response: rawText })
+      if (!generated.length) {
+        await send('error', { message: 'LLM returned no usable skills' })
+        return
+      }
+
+      send('progress', { stage: 'classifying', candidates_generated: generated.length })
+      const classifyT0 = Date.now()
+      const ranked = orbitalClassify(generated, task)
+      const classifyMs = Date.now() - classifyT0
+
+      const selected = ranked.slice(0, limit).map(s => ({ ...s, source: 'dynamic' }))
+
+      // Phase 3: emit per-skill events. Small inter-event delay gives the
+      // browser room to render each card before the next arrives — a
+      // typewriter rhythm rather than a single bulk paint.
+      for (const skill of selected) {
+        await send('skill', skill)
+        await sleep(35)
+      }
+
+      const top = selected[0]?.route_score || 0
+      const confidence =
+        top >= 80 ? 'strong' :
+        top >= 30 ? 'moderate' :
+        top >  0  ? 'weak' : 'none'
+
+      const modelLabel = provider === 'groq' ? 'llama-3.3-70b-versatile (Groq)' : `${MODEL.split('/').pop()} (Workers AI)`
+      const responsePayload = {
+        task, provider, context,
+        model: modelLabel,
+        note: `Fully dynamic: skills generated by ${modelLabel}, classified by the open-domain orbital engine (planet / moon / asteroid / trojan / comet / irregular).${isVisionLab ? ' Hands-on / physical-interaction bias applied (vision_lab context).' : ''}`,
+        confidence,
+        top_score:            top,
+        candidates_generated: generated.length,
+        selected,
+        timing: { llm_ms: aiLatencyMs, classify_ms: classifyMs, total_ms: aiLatencyMs + classifyMs },
+        cache_hit: false,
+        quota: authResult?.ok ? {
+          plan:          authResult.record.plan,
+          remaining:     authResult.calls_remaining,
+          monthly_limit: authResult.record.monthly_limit,
+        } : null,
+      }
+
+      // Stash in cache (24 h TTL).
+      if (hasKV(env)) {
+        const toCache = { ...responsePayload, _cached_at: Date.now() }
+        delete toCache.quota
+        await kvPut(env, `route:${cacheKey}`, toCache, 86400)
+      }
+
+      await send('done', summaryOf(responsePayload, { provider, context, isVisionLab, cache_hit: false }))
+    } catch (e) {
+      await send('error', { message: e?.message || String(e) })
+    } finally {
+      await close()
+    }
+  })()
+
+  return response
+}
+
+function summaryOf(payload, { provider, context, isVisionLab, cache_hit }) {
+  return {
+    task:                 payload.task,
+    provider,
+    context,
+    model:                payload.model,
+    confidence:           payload.confidence,
+    top_score:            payload.top_score,
+    candidates_generated: payload.candidates_generated,
+    timing:               payload.timing,
+    cache_hit,
+    quota:                payload.quota || null,
+    note:                 payload.note,
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
