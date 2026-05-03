@@ -18,6 +18,7 @@ import { validateAndTouch } from './stripe/_keys.js'
 import { kvGet, kvPut, kvIncr, hasKV } from './_kv.js'
 import { gatewayUrl, workersAiGatewayOpts } from './_ai-gateway.js'
 import { sseResponse, iterOpenAIStream } from './_stream.js'
+import { embedTexts, cosine, vectorizeUpsert, hasEmbeddings } from './_vector.js'
 
 // Free tier: anonymous calls are allowed but capped to a soft daily limit
 // per IP (best-effort — not the real auth boundary). Pro/Team keys lift that
@@ -325,7 +326,15 @@ export async function onRequest({ request, env }) {
   const ranked = orbitalClassify(generated, task)
   const classifyMs = Date.now() - classifyT0
 
-  const selected = ranked.slice(0, limit).map(s => ({
+  // Phase 3.5: optional semantic re-rank using bge-m3 embeddings. Blends
+  // cosine similarity into route_score (up to 40% boost). No-op when
+  // env.AI is unavailable. Best-effort — falls through to lexical-only on
+  // any error.
+  const embedT0 = Date.now()
+  const reranked = await semanticRerank(env, task, ranked)
+  const embedMs  = Date.now() - embedT0
+
+  const selected = reranked.slice(0, limit).map(s => ({
     ...s,
     source: 'dynamic',
   }))
@@ -357,7 +366,8 @@ export async function onRequest({ request, env }) {
     timing: {
       llm_ms:        aiLatencyMs,
       classify_ms:   classifyMs,
-      total_ms:      aiLatencyMs + classifyMs,
+      embed_ms:      embedMs,
+      total_ms:      aiLatencyMs + classifyMs + embedMs,
     },
     cache_hit: false,
     quota: authResult?.ok ? {
@@ -559,7 +569,17 @@ async function runStreamingPipeline({ env, request, task, limit, candidates, pro
       const ranked = orbitalClassify(generated, task)
       const classifyMs = Date.now() - classifyT0
 
-      const selected = ranked.slice(0, limit).map(s => ({ ...s, source: 'dynamic' }))
+      // Semantic re-rank (best-effort, gated by env.AI).
+      let embedMs = 0
+      let reranked = ranked
+      if (hasEmbeddings(env)) {
+        send('progress', { stage: 'semantic_rerank', model: 'bge-m3' })
+        const t = Date.now()
+        reranked = await semanticRerank(env, task, ranked)
+        embedMs  = Date.now() - t
+      }
+
+      const selected = reranked.slice(0, limit).map(s => ({ ...s, source: 'dynamic' }))
 
       // Phase 3: emit per-skill events. Small inter-event delay gives the
       // browser room to render each card before the next arrives — a
@@ -584,7 +604,7 @@ async function runStreamingPipeline({ env, request, task, limit, candidates, pro
         top_score:            top,
         candidates_generated: generated.length,
         selected,
-        timing: { llm_ms: aiLatencyMs, classify_ms: classifyMs, total_ms: aiLatencyMs + classifyMs },
+        timing: { llm_ms: aiLatencyMs, classify_ms: classifyMs, embed_ms: embedMs, total_ms: aiLatencyMs + classifyMs + embedMs },
         cache_hit: false,
         quota: authResult?.ok ? {
           plan:          authResult.record.plan,
@@ -628,3 +648,56 @@ function summaryOf(payload, { provider, context, isVisionLab, cache_hit }) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+// ────────────────────────────────────────────────────────────────────────
+// Semantic re-rank.
+//
+// Embeds the user task + each ranked skill body via Workers AI bge-m3,
+// computes cosine similarity per skill, and blends it into the orbital
+// route_score with up to a 40% boost. Returns the ranked array re-sorted.
+// Best-effort — any error returns the input unchanged.
+//
+// When env.VECTORIZE is bound, also fires off an upsert of (skill_id →
+// embedding + metadata) so the index warms up for future RAG features.
+// Upsert is fire-and-forget; we don't block the response on it.
+// ────────────────────────────────────────────────────────────────────────
+async function semanticRerank(env, task, ranked) {
+  if (!hasEmbeddings(env) || !ranked?.length) return ranked
+  try {
+    const inputs = [task, ...ranked.map(s => `${s.description || ''}\n\n${s.body || ''}`.slice(0, 2000))]
+    const vectors = await embedTexts(env, inputs)
+    if (vectors.length !== inputs.length) return ranked
+
+    const taskVec = vectors[0]
+    const enriched = ranked.map((s, i) => {
+      const sim = cosine(taskVec, vectors[i + 1])
+      // Blend: orbital is the spine, semantic is a 0..40% multiplicative
+      // boost. Keeps low-orbital-score skills from being floated by raw
+      // semantic match (which would cause "looks similar" trojans to
+      // outrank actually-useful planets).
+      const semantic_score = Number(sim.toFixed(4))
+      const blended = Number((s.route_score * (1 + 0.4 * sim)).toFixed(3))
+      return { ...s, semantic_score, route_score_blended: blended }
+    })
+
+    // Fire-and-forget upsert into Vectorize (no-op when unbound).
+    vectorizeUpsert(env, ranked.map((s, i) => ({
+      id: s.slug,
+      values: vectors[i + 1],
+      metadata: {
+        slug:        s.slug,
+        description: (s.description || '').slice(0, 200),
+        class:       s.classification?.class || '',
+        star_system: s.classification?.star_system || '',
+      },
+    })))
+
+    enriched.sort((a, b) => b.route_score_blended - a.route_score_blended)
+    // Replace the visible route_score with the blended one so existing
+    // clients (which sort by route_score) see the re-ranked order.
+    return enriched.map(s => ({ ...s, route_score: s.route_score_blended }))
+  } catch (e) {
+    console.warn('[semantic-rerank] failed', e?.message)
+    return ranked
+  }
+}
