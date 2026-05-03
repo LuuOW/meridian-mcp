@@ -190,154 +190,151 @@ export async function onRequest({ request, env }) {
     return jsonResponse({ error: 'Groq not configured — bind GROQ_API_KEY' }, { status: 503 })
   }
 
-  // Streaming: ?stream=1 OR Accept: text/event-stream. Auth + quota have
+  // Streaming vs JSON branch. Both call the same runPipeline() with a
+  // different sink — see SINK_NOOP / makeStreamingSink below. Auth + quota
   // already gated above (we want clean 4xx JSON for those, not an SSE
   // error event). From here on we own the response.
   const url = new URL(request.url)
   const wantsStream =
     url.searchParams.get('stream') === '1' ||
     request.headers.get('accept')?.includes('text/event-stream')
+
   if (wantsStream) {
-    return runStreamingPipeline({
-      env, request, task, limit, candidates, provider, context, authResult,
-    })
+    const { response, send, close } = sseResponse()
+    // Fire immediately so proxies don't time out the idle connection
+    // before the LLM warms up.
+    send('progress', { stage: 'connected', task, provider, context })
+    ;(async () => {
+      try {
+        const result = await runPipeline({
+          env, task, limit, candidates, provider, context, authResult,
+          sink: makeStreamingSink(send),
+        })
+        await send('done', summaryOf(result))
+      } catch (e) {
+        await send('error', { message: e?.message || String(e) })
+      } finally {
+        await close()
+      }
+    })()
+    return response
   }
 
-  // ── Phase 0: cache lookup. Same task in the last 24 h → cached response.
-  // Saves ~30s + ~200 neurons per repeat. Keyed by SHA-256 of the normalised
-  // task text. Anonymous calls share the cache; per-user quotas still apply
-  // when a key is presented (we only skip the LLM, not the auth gate).
-  // Fold context into the cache key: the same VLM answer routed via vision_lab
-  // and typed manually should NOT share a cached result, since they get
-  // different prompts.
+  try {
+    const result = await runPipeline({
+      env, task, limit, candidates, provider, context, authResult,
+      sink: SINK_NOOP,
+    })
+    const headers = {}
+    if (authResult?.ok) {
+      headers['x-meridian-plan']            = authResult.record.plan
+      headers['x-meridian-calls-remaining'] = String(authResult.calls_remaining)
+      headers['x-meridian-monthly-limit']   = String(authResult.record.monthly_limit)
+    }
+    if (result.cache_hit) headers['x-meridian-cache'] = 'hit'
+    return jsonResponse(result, { headers })
+  } catch (e) {
+    const status = e?.status || 502
+    return jsonResponse({ error: e?.message || String(e) }, { status })
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Single pipeline — used by both the JSON and SSE handlers. The sink
+// decides whether progress and per-skill events go anywhere or get
+// dropped on the floor; the pipeline itself is identical across modes.
+//
+// sink shape:
+//   {
+//     streamingEnabled: boolean,            // does the sink want LLM token stream?
+//     onProgress(stage, details): void|Promise,
+//     onSkill(skill):              void|Promise,
+//   }
+//
+// Returns the full response payload (same shape the JSON handler returns
+// directly; the SSE handler builds a `done` summary from it).
+// ────────────────────────────────────────────────────────────────────────
+async function runPipeline({ env, task, limit, candidates, provider, context, authResult, sink }) {
+  const isVisionLab = context === 'vision_lab'
   const cacheKey = await sha256(`${task.toLowerCase().replace(/\s+/g, ' ').trim()}::${limit}::${candidates}::${context}`)
+
+  // Phase 0: cache lookup.
   if (hasKV(env)) {
     const cached = await kvGet(env, `route:${cacheKey}`, 'json')
     if (cached) {
-      cached.cache_hit  = true
-      cached.cache_age_s = Math.floor((Date.now() - cached._cached_at) / 1000)
+      const ageS = Math.floor((Date.now() - cached._cached_at) / 1000)
+      await sink.onProgress('cache_hit', { cache_age_s: ageS })
+      for (const skill of cached.selected || []) {
+        await sink.onSkill(skill)
+      }
       delete cached._cached_at
-      // Still attach quota info if the user is paid
+      cached.cache_hit  = true
+      cached.cache_age_s = ageS
       if (authResult?.ok) {
         cached.quota = {
-          plan: authResult.record.plan,
-          remaining: authResult.calls_remaining,
+          plan:          authResult.record.plan,
+          remaining:     authResult.calls_remaining,
           monthly_limit: authResult.record.monthly_limit,
         }
       }
-      return jsonResponse(cached, { headers: authResult?.ok ? {
-        'x-meridian-plan':            authResult.record.plan,
-        'x-meridian-calls-remaining': String(authResult.calls_remaining),
-        'x-meridian-cache':           'hit',
-      } : { 'x-meridian-cache': 'hit' }})
+      return cached
     }
   }
+  await sink.onProgress('cache_miss', {})
 
-  // ── Phase 1: LLM generation
-  // Pick the 1-shot exemplar based on context: vision_lab gets a hands-on
-  // example so the model anchors on physical-interaction skill bodies. The
-  // bias paragraph below the exemplar reinforces the constraint explicitly.
-  let raw, aiLatencyMs = null
-  const isVisionLab = context === 'vision_lab'
-  const exemplar    = isVisionLab ? VISION_LAB_EXAMPLE_SKILL : EXAMPLE_SKILL
-  const exemplarTaskHint = isVisionLab
-    ? 'Task: someone is pointing their phone camera at a wooden chair.\n\nGenerate 1 skill, just to demonstrate the body format AND the hands-on, physically-immediate bias.'
-    : `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.`
-  const finalUserMsg = `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}${isVisionLab ? '\n' + VISION_LAB_BIAS : ''}`
-  const messages = [
-    { role: 'system',    content: SYSTEM_PROMPT },
-    { role: 'user',      content: exemplarTaskHint },
-    { role: 'assistant', content: JSON.stringify({ skills: [exemplar] }) },
-    { role: 'user',      content: finalUserMsg },
-  ]
+  // Phase 1: build messages + call LLM.
+  const messages = buildMessages({ task, candidates, isVisionLab })
+  const llmStart = Date.now()
+  let rawText
   try {
-    const t0 = Date.now()
     if (provider === 'groq') {
-      // Groq OpenAI-compatible /chat/completions — Llama-3.3-70B at ~300 tok/s
-      const groqRes = await fetch(gatewayUrl(env, 'groq', '/chat/completions'), {
-        method: 'POST',
-        headers: {
-          authorization:  `Bearer ${env.GROQ_API_KEY}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          model:        'llama-3.3-70b-versatile',
-          messages,
-          response_format: { type: 'json_object' },
-          temperature:  0.5,
-          max_tokens:   3200,
-        }),
-      })
-      const groqData = await groqRes.json()
-      if (!groqRes.ok) throw new Error(groqData.error?.message || `Groq HTTP ${groqRes.status}`)
-      raw = { response: groqData.choices?.[0]?.message?.content || '' }
+      if (sink.streamingEnabled) {
+        await sink.onProgress('llm_streaming_start', { model: 'llama-3.3-70b-versatile' })
+        rawText = await callGroqStreaming(env, messages, async (chars, ms) => {
+          await sink.onProgress('llm_streaming', { chars, ms })
+        }, llmStart)
+      } else {
+        await sink.onProgress('llm_calling', { model: 'llama-3.3-70b-versatile' })
+        rawText = await callGroqJSON(env, messages)
+      }
     } else {
-      raw = await env.AI.run(MODEL, {
-        messages,
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            type: 'object', required: ['skills'], additionalProperties: false,
-            properties: {
-              skills: {
-                type: 'array',
-                // Cap at the requested count exactly so the model can't
-                // overshoot and burn token budget. Floor at 3 so a request
-                // for 1 still yields useful adjacent skills.
-                // Static bounds — Workers AI prefilters the schema and a
-                // dynamic per-request shape was correlating with timeouts.
-                minItems: 3,
-                maxItems: 8,
-                items: {
-                  type: 'object',
-                  required: ['slug', 'description', 'keywords', 'body'],
-                  additionalProperties: false,
-                  properties: {
-                    slug:        { type: 'string' },
-                    description: { type: 'string' },
-                    keywords:    { type: 'array', items: { type: 'string' } },
-                    body:        { type: 'string' },
-                  },
-                },
-              },
-            },
-          },
-        },
-        max_tokens:  3200,
-        temperature: 0.5,
-      }, workersAiGatewayOpts(env))
-    }   // end workers-ai branch
-    aiLatencyMs = Date.now() - t0
+      await sink.onProgress('llm_calling', { model: MODEL.split('/').pop() })
+      rawText = await callWorkersAI(env, messages)
+    }
   } catch (e) {
-    return jsonResponse({ error: `LLM call failed (${provider}): ` + (e?.message || e) }, { status: 502 })
+    throw withStatus(`LLM call failed (${provider}): ${e?.message || e}`, 502)
   }
+  const aiLatencyMs = Date.now() - llmStart
+  await sink.onProgress('llm_complete', { chars: rawText.length, ms: aiLatencyMs })
 
-  // ── Phase 2: parse + sanitize
-  const generated = parseGenerated(raw)
+  // Phase 2: parse + sanitize.
+  const generated = parseGenerated({ response: rawText })
   if (!generated.length) {
-    return jsonResponse({
-      error: 'LLM returned no usable skills',
-      _debug: typeof raw === 'object' ? raw : { response_excerpt: String(raw).slice(0, 400) },
-    }, { status: 502 })
+    throw withStatus('LLM returned no usable skills', 502)
   }
 
-  // ── Phase 3: orbital classification + routing
+  // Phase 3: orbital classify.
+  await sink.onProgress('classifying', { candidates_generated: generated.length })
   const classifyT0 = Date.now()
   const ranked = orbitalClassify(generated, task)
   const classifyMs = Date.now() - classifyT0
 
-  // Phase 3.5: optional semantic re-rank using bge-m3 embeddings. Blends
-  // cosine similarity into route_score (up to 40% boost). No-op when
-  // env.AI is unavailable. Best-effort — falls through to lexical-only on
-  // any error.
-  const embedT0 = Date.now()
-  const reranked = await semanticRerank(env, task, ranked)
-  const embedMs  = Date.now() - embedT0
+  // Phase 3.5: semantic re-rank (best-effort, gated on env.AI).
+  let embedMs = 0, reranked = ranked
+  if (hasEmbeddings(env)) {
+    await sink.onProgress('semantic_rerank', { model: 'bge-m3' })
+    const t = Date.now()
+    reranked = await semanticRerank(env, task, ranked)
+    embedMs  = Date.now() - t
+  }
 
-  const selected = reranked.slice(0, limit).map(s => ({
-    ...s,
-    source: 'dynamic',
-  }))
+  const selected = reranked.slice(0, limit).map(s => ({ ...s, source: 'dynamic' }))
+
+  // Phase 4: emit skills (sink-dependent — JSON sink no-ops, SSE sink
+  // sends each one and pauses for visual rhythm).
+  for (const skill of selected) {
+    await sink.onSkill(skill)
+  }
 
   const top = selected[0]?.route_score || 0
   const confidence =
@@ -345,29 +342,20 @@ export async function onRequest({ request, env }) {
     top >= 30 ? 'moderate' :
     top >  0  ? 'weak' : 'none'
 
-  const headers = {}
-  if (authResult?.ok) {
-    headers['x-meridian-plan']            = authResult.record.plan
-    headers['x-meridian-calls-remaining'] = String(authResult.calls_remaining)
-    headers['x-meridian-monthly-limit']   = String(authResult.record.monthly_limit)
-  }
-
   const modelLabel = provider === 'groq' ? 'llama-3.3-70b-versatile (Groq)' : `${MODEL.split('/').pop()} (Workers AI)`
   const responsePayload = {
-    task,
-    provider,
-    context,
+    task, provider, context,
     model: modelLabel,
     note: `Fully dynamic: skills generated by ${modelLabel}, classified by the open-domain orbital engine (planet / moon / asteroid / trojan / comet / irregular).${isVisionLab ? ' Hands-on / physical-interaction bias applied (vision_lab context).' : ''}`,
     confidence,
-    top_score:        top,
+    top_score:            top,
     candidates_generated: generated.length,
     selected,
     timing: {
-      llm_ms:        aiLatencyMs,
-      classify_ms:   classifyMs,
-      embed_ms:      embedMs,
-      total_ms:      aiLatencyMs + classifyMs + embedMs,
+      llm_ms:      aiLatencyMs,
+      classify_ms: classifyMs,
+      embed_ms:    embedMs,
+      total_ms:    aiLatencyMs + classifyMs + embedMs,
     },
     cache_hit: false,
     quota: authResult?.ok ? {
@@ -377,14 +365,174 @@ export async function onRequest({ request, env }) {
     } : null,
   }
 
-  // Stash in cache (24 h TTL). Strip request-specific quota — re-attached on hit.
+  // Cache (strip request-specific quota — re-attached on hit).
   if (hasKV(env)) {
     const toCache = { ...responsePayload, _cached_at: Date.now() }
     delete toCache.quota
     await kvPut(env, `route:${cacheKey}`, toCache, 86400)
   }
 
-  return jsonResponse(responsePayload, { headers })
+  return responsePayload
+}
+
+// Build the 4-message prompt array used by both Groq + Workers AI calls.
+function buildMessages({ task, candidates, isVisionLab }) {
+  const exemplar = isVisionLab ? VISION_LAB_EXAMPLE_SKILL : EXAMPLE_SKILL
+  const exemplarTaskHint = isVisionLab
+    ? 'Task: someone is pointing their phone camera at a wooden chair.\n\nGenerate 1 skill, just to demonstrate the body format AND the hands-on, physically-immediate bias.'
+    : `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.`
+  const finalUserMsg = `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}${isVisionLab ? '\n' + VISION_LAB_BIAS : ''}`
+  return [
+    { role: 'system',    content: SYSTEM_PROMPT },
+    { role: 'user',      content: exemplarTaskHint },
+    { role: 'assistant', content: JSON.stringify({ skills: [exemplar] }) },
+    { role: 'user',      content: finalUserMsg },
+  ]
+}
+
+// Provider-specific LLM call helpers. All return a string of raw JSON
+// suitable for parseGenerated({ response: rawText }).
+async function callGroqJSON(env, messages) {
+  const res = await fetch(gatewayUrl(env, 'groq', '/chat/completions'), {
+    method: 'POST',
+    headers: {
+      authorization:  `Bearer ${env.GROQ_API_KEY}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model:           'llama-3.3-70b-versatile',
+      messages,
+      response_format: { type: 'json_object' },
+      temperature:     0.5,
+      max_tokens:      3200,
+    }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error?.message || `Groq HTTP ${res.status}`)
+  return data.choices?.[0]?.message?.content || ''
+}
+
+async function callGroqStreaming(env, messages, onChunk, llmStart) {
+  const res = await fetch(gatewayUrl(env, 'groq', '/chat/completions'), {
+    method: 'POST',
+    headers: {
+      authorization:  `Bearer ${env.GROQ_API_KEY}`,
+      'content-type': 'application/json',
+      accept:         'text/event-stream',
+    },
+    body: JSON.stringify({
+      model:           'llama-3.3-70b-versatile',
+      messages,
+      response_format: { type: 'json_object' },
+      temperature:     0.5,
+      max_tokens:      3200,
+      stream:          true,
+    }),
+  })
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '')
+    throw new Error(`Groq HTTP ${res.status}: ${errBody.slice(0, 200)}`)
+  }
+  let raw = ''
+  let lastSent = 0, lastChars = 0
+  for await (const delta of iterOpenAIStream(res)) {
+    raw += delta
+    const now = Date.now()
+    // Throttle: at most one chunk event per 250ms or per 600 chars.
+    if (now - lastSent > 250 || raw.length - lastChars > 600) {
+      await onChunk(raw.length, now - llmStart)
+      lastSent  = now
+      lastChars = raw.length
+    }
+  }
+  return raw
+}
+
+async function callWorkersAI(env, messages) {
+  const out = await env.AI.run(MODEL, {
+    messages,
+    response_format: {
+      type: 'json_schema',
+      json_schema: {
+        type: 'object', required: ['skills'], additionalProperties: false,
+        properties: {
+          skills: {
+            type: 'array',
+            // Cap at the requested count exactly so the model can't overshoot
+            // and burn token budget. Floor at 3 so a request for 1 still yields
+            // useful adjacent skills. Static bounds — Workers AI prefilters the
+            // schema and a dynamic per-request shape was correlating with timeouts.
+            minItems: 3, maxItems: 8,
+            items: {
+              type: 'object',
+              required: ['slug', 'description', 'keywords', 'body'],
+              additionalProperties: false,
+              properties: {
+                slug:        { type: 'string' },
+                description: { type: 'string' },
+                keywords:    { type: 'array', items: { type: 'string' } },
+                body:        { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+    max_tokens:  3200,
+    temperature: 0.5,
+  }, workersAiGatewayOpts(env))
+  return typeof out === 'string'              ? out
+       : typeof out?.response === 'string'    ? out.response
+       : JSON.stringify(out?.response || out)
+}
+
+// Sink that swallows everything — JSON handler doesn't need progress events
+// or per-skill streaming.
+const SINK_NOOP = {
+  streamingEnabled: false,
+  onProgress: () => {},
+  onSkill:    () => {},
+}
+
+// Sink for the SSE handler. Every progress/skill becomes a wire event;
+// per-skill emission is paced for visual rhythm in the browser.
+function makeStreamingSink(send) {
+  return {
+    streamingEnabled: true,
+    onProgress: async (stage, details) => {
+      await send('progress', { stage, ...details })
+    },
+    onSkill: async (skill) => {
+      await send('skill', skill)
+      await sleep(35)
+    },
+  }
+}
+
+// Tag an Error with an HTTP status code so the JSON handler can echo it.
+function withStatus(message, status) {
+  const e = new Error(message)
+  e.status = status
+  return e
+}
+
+// Build the SSE `done` event payload from the full pipeline result.
+// Strips `selected` (those were already streamed individually) and keeps
+// just the metadata.
+function summaryOf(payload) {
+  return {
+    task:                 payload.task,
+    provider:             payload.provider,
+    context:              payload.context,
+    model:                payload.model,
+    confidence:           payload.confidence,
+    top_score:            payload.top_score,
+    candidates_generated: payload.candidates_generated,
+    timing:               payload.timing,
+    cache_hit:            Boolean(payload.cache_hit),
+    quota:                payload.quota || null,
+    note:                 payload.note,
+  }
 }
 
 async function sha256(s) {
@@ -425,226 +573,6 @@ function parseGenerated(out) {
       body:        typeof s.body === 'string' ? s.body.slice(0, 2000) : '',
     }))
     .filter(s => SLUG_RE.test(s.slug))
-}
-
-// ────────────────────────────────────────────────────────────────────────
-// SSE streaming pipeline.
-//
-// Same logic as the JSON path, but emits progress events while the LLM is
-// generating, then per-skill events in ranked order, then a done event.
-// Cache hits go straight to per-skill + done (still over the wire format
-// so the client doesn't need a fast/slow code path).
-//
-// Wire format:
-//   event: progress  data: {stage, ...details}
-//   event: skill     data: {...full classified skill...}   (one per skill)
-//   event: done      data: {summary fields}
-//   event: error     data: {message}
-// ────────────────────────────────────────────────────────────────────────
-async function runStreamingPipeline({ env, request, task, limit, candidates, provider, context, authResult }) {
-  const { response, send, close } = sseResponse()
-  const isVisionLab = context === 'vision_lab'
-
-  // Emit immediately so the connection is not held silent — some proxies
-  // close idle connections before the first byte arrives.
-  send('progress', { stage: 'connected', task, provider, context })
-
-  ;(async () => {
-    try {
-      const cacheKey = await sha256(`${task.toLowerCase().replace(/\s+/g, ' ').trim()}::${limit}::${candidates}::${context}`)
-
-      // Cache hit short-circuit.
-      if (hasKV(env)) {
-        const cached = await kvGet(env, `route:${cacheKey}`, 'json')
-        if (cached) {
-          send('progress', { stage: 'cache_hit', cache_age_s: Math.floor((Date.now() - cached._cached_at) / 1000) })
-          for (const skill of cached.selected || []) {
-            await send('skill', skill)
-            await sleep(20)
-          }
-          await send('done', {
-            ...summaryOf(cached, { provider, context, isVisionLab, cache_hit: true }),
-          })
-          return
-        }
-      }
-
-      send('progress', { stage: 'cache_miss' })
-
-      const exemplar = isVisionLab ? VISION_LAB_EXAMPLE_SKILL : EXAMPLE_SKILL
-      const exemplarTaskHint = isVisionLab
-        ? 'Task: someone is pointing their phone camera at a wooden chair.\n\nGenerate 1 skill, just to demonstrate the body format AND the hands-on, physically-immediate bias.'
-        : `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.`
-      const finalUserMsg = `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}${isVisionLab ? '\n' + VISION_LAB_BIAS : ''}`
-      const messages = [
-        { role: 'system',    content: SYSTEM_PROMPT },
-        { role: 'user',      content: exemplarTaskHint },
-        { role: 'assistant', content: JSON.stringify({ skills: [exemplar] }) },
-        { role: 'user',      content: finalUserMsg },
-      ]
-
-      // Phase 1: LLM generation (streamed when provider supports it).
-      const llmStart = Date.now()
-      let rawText = ''
-
-      if (provider === 'groq') {
-        send('progress', { stage: 'llm_streaming_start', model: 'llama-3.3-70b-versatile' })
-        const groqRes = await fetch(gatewayUrl(env, 'groq', '/chat/completions'), {
-          method: 'POST',
-          headers: {
-            authorization:  `Bearer ${env.GROQ_API_KEY}`,
-            'content-type': 'application/json',
-            accept:         'text/event-stream',
-          },
-          body: JSON.stringify({
-            model:           'llama-3.3-70b-versatile',
-            messages,
-            response_format: { type: 'json_object' },
-            temperature:     0.5,
-            max_tokens:      3200,
-            stream:          true,
-          }),
-        })
-        if (!groqRes.ok) {
-          const errBody = await groqRes.text().catch(() => '')
-          throw new Error(`Groq HTTP ${groqRes.status}: ${errBody.slice(0, 200)}`)
-        }
-        // Throttle progress events: at most one per 250ms or per 600 chars.
-        let lastSent = 0, lastChars = 0
-        for await (const delta of iterOpenAIStream(groqRes)) {
-          rawText += delta
-          const now = Date.now()
-          if (now - lastSent > 250 || rawText.length - lastChars > 600) {
-            send('progress', { stage: 'llm_streaming', chars: rawText.length, ms: now - llmStart })
-            lastSent  = now
-            lastChars = rawText.length
-          }
-        }
-      } else {
-        // Workers AI: structured-output mode doesn't stream. One progress
-        // event before the call, one after.
-        send('progress', { stage: 'llm_calling', model: MODEL.split('/').pop() })
-        const out = await env.AI.run(MODEL, {
-          messages,
-          response_format: {
-            type: 'json_schema',
-            json_schema: {
-              type: 'object', required: ['skills'], additionalProperties: false,
-              properties: {
-                skills: {
-                  type: 'array', minItems: 3, maxItems: 8,
-                  items: {
-                    type: 'object', required: ['slug', 'description', 'keywords', 'body'], additionalProperties: false,
-                    properties: {
-                      slug:        { type: 'string' },
-                      description: { type: 'string' },
-                      keywords:    { type: 'array', items: { type: 'string' } },
-                      body:        { type: 'string' },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          max_tokens:  3200,
-          temperature: 0.5,
-        }, workersAiGatewayOpts(env))
-        rawText = typeof out === 'string' ? out
-                : typeof out?.response === 'string' ? out.response
-                : JSON.stringify(out?.response || out)
-      }
-
-      const aiLatencyMs = Date.now() - llmStart
-      send('progress', { stage: 'llm_complete', chars: rawText.length, ms: aiLatencyMs })
-
-      // Phase 2: parse + classify.
-      const generated = parseGenerated({ response: rawText })
-      if (!generated.length) {
-        await send('error', { message: 'LLM returned no usable skills' })
-        return
-      }
-
-      send('progress', { stage: 'classifying', candidates_generated: generated.length })
-      const classifyT0 = Date.now()
-      const ranked = orbitalClassify(generated, task)
-      const classifyMs = Date.now() - classifyT0
-
-      // Semantic re-rank (best-effort, gated by env.AI).
-      let embedMs = 0
-      let reranked = ranked
-      if (hasEmbeddings(env)) {
-        send('progress', { stage: 'semantic_rerank', model: 'bge-m3' })
-        const t = Date.now()
-        reranked = await semanticRerank(env, task, ranked)
-        embedMs  = Date.now() - t
-      }
-
-      const selected = reranked.slice(0, limit).map(s => ({ ...s, source: 'dynamic' }))
-
-      // Phase 3: emit per-skill events. Small inter-event delay gives the
-      // browser room to render each card before the next arrives — a
-      // typewriter rhythm rather than a single bulk paint.
-      for (const skill of selected) {
-        await send('skill', skill)
-        await sleep(35)
-      }
-
-      const top = selected[0]?.route_score || 0
-      const confidence =
-        top >= 80 ? 'strong' :
-        top >= 30 ? 'moderate' :
-        top >  0  ? 'weak' : 'none'
-
-      const modelLabel = provider === 'groq' ? 'llama-3.3-70b-versatile (Groq)' : `${MODEL.split('/').pop()} (Workers AI)`
-      const responsePayload = {
-        task, provider, context,
-        model: modelLabel,
-        note: `Fully dynamic: skills generated by ${modelLabel}, classified by the open-domain orbital engine (planet / moon / asteroid / trojan / comet / irregular).${isVisionLab ? ' Hands-on / physical-interaction bias applied (vision_lab context).' : ''}`,
-        confidence,
-        top_score:            top,
-        candidates_generated: generated.length,
-        selected,
-        timing: { llm_ms: aiLatencyMs, classify_ms: classifyMs, embed_ms: embedMs, total_ms: aiLatencyMs + classifyMs + embedMs },
-        cache_hit: false,
-        quota: authResult?.ok ? {
-          plan:          authResult.record.plan,
-          remaining:     authResult.calls_remaining,
-          monthly_limit: authResult.record.monthly_limit,
-        } : null,
-      }
-
-      // Stash in cache (24 h TTL).
-      if (hasKV(env)) {
-        const toCache = { ...responsePayload, _cached_at: Date.now() }
-        delete toCache.quota
-        await kvPut(env, `route:${cacheKey}`, toCache, 86400)
-      }
-
-      await send('done', summaryOf(responsePayload, { provider, context, isVisionLab, cache_hit: false }))
-    } catch (e) {
-      await send('error', { message: e?.message || String(e) })
-    } finally {
-      await close()
-    }
-  })()
-
-  return response
-}
-
-function summaryOf(payload, { provider, context, isVisionLab, cache_hit }) {
-  return {
-    task:                 payload.task,
-    provider,
-    context,
-    model:                payload.model,
-    confidence:           payload.confidence,
-    top_score:            payload.top_score,
-    candidates_generated: payload.candidates_generated,
-    timing:               payload.timing,
-    cache_hit,
-    quota:                payload.quota || null,
-    note:                 payload.note,
-  }
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
