@@ -29,7 +29,7 @@ import {
 
 import { MiniGalaxy }        from '/miniapp/mini-galaxy.js'
 import { renderPhysicsPanel } from '/miniapp/physics-panel.js'
-import { routeTask }          from '/miniapp/api.js'
+import { routeTask, routeTaskStream } from '/miniapp/api.js'
 import { initBurgerNav }      from '/nav.js'
 import { escapeHTML, renderMarkdown } from '/miniapp/_md.js'
 
@@ -448,68 +448,103 @@ $('routeBtn').addEventListener('click', async () => {
   const orig = $('routeBtn').textContent
   $('routeBtn').disabled = true
   $('routeBtn').textContent = 'Routing through orbital engine…'
+
+  // Build the streaming results card up-front. Skills get appended as
+  // they arrive from the SSE stream; the foot line gets stamped on done.
+  const t0 = performance.now()
+  $('answer').insertAdjacentHTML('afterend', `
+    <div class="lab-route-results lab-route-streaming" id="labRouteResults">
+      <h4 id="labRouteHead">Routing through orbital engine…</h4>
+      <p class="lab-route-progress" id="labRouteProgress">connecting…</p>
+      <ol id="labRouteList"></ol>
+      <p class="lab-route-foot" id="labRouteFoot" hidden></p>
+    </div>
+  `)
+  const card     = $('labRouteResults')
+  const head     = $('labRouteHead')
+  const progress = $('labRouteProgress')
+  const list     = $('labRouteList')
+  const foot     = $('labRouteFoot')
+  const accumulatedSkills = []
+
   try {
-    // Send to /api/orbital-route — the same backend the main miniapp uses
-    const data = await routeTask({
-      task:     lastAnswer.length > 600 ? lastAnswer.slice(0, 600) + '…' : lastAnswer,
-      limit:    5,
-      provider: 'groq',
-      // Tell the router this came from a phone-camera-in-hand session, not a
-      // text prompt. The backend biases skill generation toward immediate
-      // physical interaction (hands-on inspection, quick tests, in-place
-      // repair) rather than research/literature/purchasing skills.
-      context:  'vision_lab',
-    })
+    const summary = await routeTaskStream(
+      {
+        task:     lastAnswer.length > 600 ? lastAnswer.slice(0, 600) + '…' : lastAnswer,
+        limit:    5,
+        provider: 'groq',
+        // Tell the router this came from a phone-camera-in-hand session, not a
+        // text prompt. The backend biases skill generation toward immediate
+        // physical interaction (hands-on inspection, quick tests, in-place
+        // repair) rather than research/literature/purchasing skills.
+        context:  'vision_lab',
+      },
+      {
+        onProgress: (p) => {
+          if (p.stage === 'connected')           progress.textContent = 'connected · waiting for LLM…'
+          else if (p.stage === 'cache_hit')      progress.textContent = `cache hit (${p.cache_age_s}s old) — replaying`
+          else if (p.stage === 'cache_miss')     progress.textContent = 'cache miss · authoring fresh skills…'
+          else if (p.stage === 'llm_streaming')  progress.textContent = `LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
+          else if (p.stage === 'llm_calling')    progress.textContent = 'LLM running (no streaming on this provider)…'
+          else if (p.stage === 'llm_complete')   progress.textContent = `LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
+          else if (p.stage === 'classifying')    progress.textContent = `classifying ${p.candidates_generated} candidates orbitally…`
+        },
+        onSkill: (s) => {
+          accumulatedSkills.push(s)
+          const cls   = s.classification?.class       || ''
+          const sys   = s.classification?.star_system || ''
+          const score = (s.route_score || 0).toFixed(1)
+          list.insertAdjacentHTML('beforeend', `
+            <li class="lab-route-result lab-route-result-in">
+              <div class="lab-route-head">
+                <strong>${escapeHTML(s.slug)}</strong>
+                ${cls ? `<span class="lab-route-class" data-class="${escapeHTML(cls)}">${escapeHTML(cls)}</span>` : ''}
+                ${sys ? `<span class="lab-route-system">${escapeHTML(sys)}</span>` : ''}
+                <span class="lab-route-score">${score}</span>
+              </div>
+              <p>${escapeHTML(s.description || '')}</p>
+              ${s.why ? `<div class="lab-route-why">${escapeHTML(s.why)}</div>` : ''}
+            </li>`)
+          // Update AR galaxy as each skill arrives so the orbiting planets
+          // appear progressively rather than all at once.
+          showArGalaxy(accumulatedSkills)
+        },
+      },
+    )
 
-    // Hand the routed skills to the AR galaxy overlay and reveal it
-    showArGalaxy(data.selected || [])
-
-    if (!data.selected?.length) {
-      $('answer').insertAdjacentHTML('afterend', `
-        <div class="lab-route-results lab-route-empty">
-          <p>No compatible skills found for this answer.</p>
-        </div>
-      `)
-      $('routeBtn').hidden = true
+    if (!accumulatedSkills.length) {
+      card.classList.remove('lab-route-streaming')
+      card.classList.add('lab-route-empty')
+      head.textContent = ''
+      progress.textContent = ''
+      list.innerHTML = ''
+      foot.hidden = false
+      foot.textContent = 'No compatible skills found for this answer.'
       return
     }
 
-    // Open the main miniapp in a new tab with the task pre-filled? Or render inline?
-    // Inline is simpler — show the top 5 here.
-    const html = data.selected.map(s => {
-      const cls   = s.classification?.class       || ''
-      const sys   = s.classification?.star_system || ''
-      const score = (s.route_score || 0).toFixed(1)
-      return `
-      <li class="lab-route-result">
-        <div class="lab-route-head">
-          <strong>${escapeHTML(s.slug)}</strong>
-          ${cls ? `<span class="lab-route-class" data-class="${escapeHTML(cls)}">${escapeHTML(cls)}</span>` : ''}
-          ${sys ? `<span class="lab-route-system">${escapeHTML(sys)}</span>` : ''}
-          <span class="lab-route-score">${score}</span>
-        </div>
-        <p>${escapeHTML(s.description || '')}</p>
-        ${s.why ? `<div class="lab-route-why">${escapeHTML(s.why)}</div>` : ''}
-      </li>`
-    }).join('')
-    $('answer').insertAdjacentHTML('afterend', `
-      <div class="lab-route-results">
-        <h4>Top ${data.selected.length} skills (orbital-classified)</h4>
-        <ol>${html}</ol>
-        <p class="lab-route-foot">
-          Provider: <code>${escapeHTML(data.provider || '?')}</code> ·
-          Latency: ${(data.timing?.total_ms / 1000 || 0).toFixed(1)}s ·
-          <a href="/miniapp/?task=${encodeURIComponent(lastAnswer.slice(0, 200))}">Open in main miniapp</a>
-        </p>
-      </div>
-    `)
+    card.classList.remove('lab-route-streaming')
+    head.textContent = `Top ${accumulatedSkills.length} skills (orbital-classified)`
+    progress.hidden  = true
+    foot.hidden      = false
+    const wallMs = Math.round(performance.now() - t0)
+    foot.innerHTML = `
+      Provider: <code>${escapeHTML(summary?.provider || '?')}</code> ·
+      Wall: ${(wallMs / 1000).toFixed(1)}s ·
+      <a href="/miniapp/?task=${encodeURIComponent(lastAnswer.slice(0, 200))}">Open in main miniapp</a>
+    `
     $('routeBtn').hidden = true
   } catch (e) {
-    $('answer').insertAdjacentHTML('afterend', `
-      <div class="lab-route-results lab-route-error">
-        <p><strong>Routing failed.</strong> ${escapeHTML(e.message || String(e))}</p>
-      </div>
-    `)
+    // The streaming card already exists; rewrite it as the error card so
+    // we don't double-render. clearRouteArtifacts() will sweep it away on
+    // the next ask().
+    card.classList.remove('lab-route-streaming')
+    card.classList.add('lab-route-error')
+    head.textContent     = ''
+    progress.hidden      = true
+    list.innerHTML       = ''
+    foot.hidden          = false
+    foot.innerHTML       = `<strong>Routing failed.</strong> ${escapeHTML(e.message || String(e))}`
   } finally {
     $('routeBtn').disabled = false
     $('routeBtn').textContent = orig
