@@ -1,5 +1,11 @@
 :root {
+  /* ── DESIGN TOKENS ─────────────────────────────────────────────────────
+     Centralised scales — the "Tailwind feel" without the build step.
+     Add new tokens before you reach for an inline magic number. */
+
+  /* Color (semantic) */
   --bg:         #0a0d14;
+  --bg-deep:    #06080f;
   --bg-card:    rgba(18,23,36,0.7);
   --bg-code:    #0f1220;
   --border:     rgba(148,163,184,0.14);
@@ -8,8 +14,40 @@
   --text-muted: #8a94a6;
   --text-faint: #5d6778;
   --accent:     #a78bfa;
+  --accent-d:   #8b5cf6;
   --accent-2:   #10b981;
   --astro:      #38bdf8;
+  --pink:       #f472b6;
+
+  /* Spacing scale (4px base) — use var(--s-N) instead of hard-coding px */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+
+  /* Section rhythm — fluid by viewport, capped */
+  --section-y: clamp(48px, 8vw, 96px);
+
+  /* Radius */
+  --r-1: 6px;
+  --r-2: 10px;
+  --r-3: 14px;
+  --r-pill: 999px;
+
+  /* Easing + duration */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    0.15s;
+  --dur-base:    0.25s;
+  --dur-slow:    0.5s;
+
+  /* Typography */
   --font-body:  -apple-system, 'Inter', system-ui, sans-serif;
   --font-mono:  'JetBrains Mono', ui-monospace, monospace;
 }
@@ -652,4 +690,266 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 .grad {
   background-size: 200% 100%;
   animation: gradShift 8s ease-in-out infinite;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   2026 POLISH LAYER
+   Modern CSS primitives that punch above their weight — no JS framework,
+   no build step. Each block is self-contained and can be removed without
+   breaking the baseline above.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Typography: native text balancing for headings + paragraphs ────────── */
+h1, h2, h3, h4 { text-wrap: balance; }
+.lead, .feature p, .step p, .pricing-note { text-wrap: pretty; }
+
+/* ── Cross-document view transitions ─────────────────────────────────────
+   Native, navigation-driven page morphs. The brand wordmark and primary
+   CTA carry stable view-transition-name attrs so they animate through
+   navigations to /miniapp/, /docs, etc. instead of hard-cutting. */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.32s;
+  animation-timing-function: var(--ease-out);
+}
+
+/* ── Hero: orbital decoration + cursor-aware halo ────────────────────────
+   The SVG sits behind the headline and bleeds beyond the section edges.
+   The cursor halo is a radial gradient anchored to --cursor-x/y, which
+   landing.js drives in rAF. Falls back to a static centred glow when the
+   pointer hasn't entered (or reduced-motion is on). */
+.hero { position: relative; isolation: isolate; }
+.hero-orbits {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: min(960px, 110vw);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  pointer-events: none;
+  z-index: -2;
+  opacity: 0.55;
+  filter: blur(0.3px);
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: -10% -10% -10% -10%;
+  z-index: -1;
+  background: radial-gradient(
+    400px 300px at var(--cursor-x, 50%) var(--cursor-y, 35%),
+    rgba(167, 139, 250, 0.18),
+    rgba(56, 189, 248, 0.08) 35%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transition: background 0.4s var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-orbits { animation: none; }
+}
+
+/* Hero entrance — staggered reveal on first paint. Uses pure `animation`
+   with `both` so the keyframe `from` state holds before the delay fires. */
+@keyframes heroIn {
+  from { opacity: 0; translate: 0 18px; filter: blur(6px); }
+  to   { opacity: 1; translate: 0 0;    filter: blur(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero .eyebrow      { animation: heroIn 0.7s var(--ease-out) both; }
+  .hero .hero-title   { animation: heroIn 0.7s var(--ease-out) 0.08s both; }
+  .hero .hero-lead    { animation: heroIn 0.7s var(--ease-out) 0.16s both; }
+  .hero .hero-cta     { animation: heroIn 0.7s var(--ease-out) 0.24s both; }
+  .hero .hero-snippet { animation: heroIn 0.7s var(--ease-out) 0.32s both; }
+}
+
+/* ── Scroll-driven section reveals ────────────────────────────────────────
+   `animation-timeline: view()` ties the keyframe progress to where the
+   element sits in the viewport. Gated behind @supports so non-Chromium
+   browsers see a fully visible card instead of a stuck `from` state. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    @keyframes reveal-up {
+      from { opacity: 0; translate: 0 28px; }
+      to   { opacity: 1; translate: 0 0; }
+    }
+    .feature, .step, .plan, .stat, .cta-final {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 28%;
+    }
+  }
+}
+
+/* ── Container queries for cards ──────────────────────────────────────────
+   Cards adapt to their *grid column width*, not the viewport. Same card
+   reads well in a 3-col landing grid or a 1-col mobile stack without a
+   media query. */
+.features, .how-grid, .plans, .stats { container-type: inline-size; }
+@container (max-width: 320px) {
+  .feature, .step, .plan, .stat { padding: 18px 16px; }
+  .feature h3, .step h4 { font-size: 15px; }
+}
+
+/* ── Stats strip ─────────────────────────────────────────────────────────
+   Sits between hero and features, gives the page a numerical anchor. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-3);
+  margin: var(--s-7) 0 var(--s-7);
+  padding: var(--s-5) var(--s-3);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(167,139,250,0.04), transparent 60%);
+}
+.stat {
+  text-align: center;
+  padding: var(--s-3) var(--s-2);
+  border-right: 1px dashed var(--border);
+}
+.stat:last-child { border-right: none; }
+.stat-num {
+  font-family: var(--font-mono);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #ddd6fe, var(--accent) 70%, var(--accent-d));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.05;
+}
+.stat-unit {
+  font-size: 0.55em;
+  color: var(--accent);
+  -webkit-text-fill-color: var(--accent);
+  margin-left: 1px;
+  letter-spacing: 0;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: var(--s-2);
+  text-wrap: balance;
+  line-height: 1.45;
+}
+@media (max-width: 760px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stat:nth-child(2n) { border-right: none; }
+  .stat:nth-child(-n+2) { border-bottom: 1px dashed var(--border); padding-bottom: var(--s-4); }
+}
+
+/* ── Click-to-copy on hero snippet ───────────────────────────────────── */
+.hero-snippet { position: relative; padding-right: 78px; }
+.snippet-copy {
+  position: absolute;
+  top: 10px; right: 10px;
+  padding: 5px 11px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(167, 139, 250, 0.08);
+  color: var(--accent);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-radius: var(--r-1);
+  cursor: pointer;
+  opacity: 0;
+  translate: 0 -4px;
+  transition: opacity var(--dur-base), translate var(--dur-base),
+              background var(--dur-base), border-color var(--dur-base),
+              color var(--dur-base);
+}
+.hero-snippet:hover .snippet-copy,
+.hero-snippet:focus-within .snippet-copy,
+.snippet-copy:focus-visible {
+  opacity: 1;
+  translate: 0 0;
+}
+.snippet-copy:hover {
+  background: rgba(167, 139, 250, 0.16);
+  border-color: rgba(167, 139, 250, 0.55);
+}
+.snippet-copy.copied {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: var(--accent-2);
+  opacity: 1;
+}
+.snippet-copy.failed {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.45);
+  color: #fca5a5;
+  opacity: 1;
+}
+
+/* ── Magnetic-button transition ──────────────────────────────────────────
+   landing.js writes inline `translate: Xpx Ypx`. Smoothing the property
+   here makes the pull feel springy instead of jittery. */
+[data-magnetic] {
+  transition: translate 0.18s var(--ease-out),
+              transform var(--dur-fast),
+              box-shadow var(--dur-base),
+              background var(--dur-base),
+              border-color var(--dur-base);
+  will-change: translate;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-magnetic] { transition: background var(--dur-base), border-color var(--dur-base); }
+}
+
+/* ── :has()-driven plan dim ──────────────────────────────────────────────
+   When the user is hovering one plan card, fade the siblings to draw
+   focus. Pure CSS, no JS state to keep in sync. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .plans:has(.plan:hover) .plan:not(:hover) {
+    opacity: 0.55;
+    transition: opacity var(--dur-base);
+  }
+  .plans .plan { transition: opacity var(--dur-base), transform var(--dur-base), border-color var(--dur-base); }
+  .plans .plan:hover { transform: translateY(-3px); }
+}
+
+/* ── Featured plan: orbiting accent dots ────────────────────────────── */
+.plan-featured { overflow: hidden; }
+.plan-featured::after {
+  content: '';
+  position: absolute;
+  top: 18px; right: 18px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.7);
+  animation: featuredPulse 2.4s ease-in-out infinite;
+}
+@keyframes featuredPulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.85); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+
+/* ── Section heading rhythm tightening ─────────────────────────────── */
+section.how, section.pricing, section.cta-final {
+  padding-top: var(--section-y);
+  padding-bottom: var(--section-y);
+}
+
+/* ── Hero responsive adjustments for orbits ──────────────────────────── */
+@media (max-width: 640px) {
+  .hero-orbits { width: 130vw; opacity: 0.4; }
+  .hero { padding-top: var(--s-7); }
+}
+
+/* ── Print: strip animation, neon, shadows ──────────────────────────── */
+@media print {
+  .hero-orbits, .burger, .nav-version, .snippet-copy, .calendly-badge-widget { display: none !important; }
+  *, *::before, *::after { animation: none !important; transition: none !important; box-shadow: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .grad, .plan-price { -webkit-text-fill-color: #000 !important; background: none !important; }
 }
