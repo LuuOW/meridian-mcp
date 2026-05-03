@@ -208,6 +208,10 @@ $('modelChoice').addEventListener('change', e => { modelKey = e.target.value })
 async function startSetup() {
   modelKey = $('modelChoice').value
   if (!MODELS[modelKey]) modelKey = 'smolvlm'
+  // Lock the model dropdown after setup begins. Swapping the value after the
+  // model is loaded would silently update `modelKey` but ask() would still run
+  // on the previously loaded weights — the dropdown would lie about reality.
+  $('modelChoice').disabled = true
   $('gate').hidden = true
   $('loading').hidden = false
 
@@ -309,6 +313,7 @@ $('snapBtn').addEventListener('click', () => {
   v.style.opacity = '0.25'
   $('frozenBadge').hidden = false
   frozenFrameURL = c.toDataURL('image/jpeg', 0.9)
+  clearAnswerAndRoute()
 })
 
 $('flipBtn').addEventListener('click', async () => {
@@ -319,6 +324,7 @@ $('flipBtn').addEventListener('click', async () => {
   $('video').style.opacity = '1'
   $('frozenBadge').hidden = true
   frozenFrameURL = null
+  clearAnswerAndRoute()
 })
 
 // ── Preset prompts ────────────────────────────────────────────────────────
@@ -453,6 +459,16 @@ $('routeBtn').addEventListener('click', async () => {
     // Hand the routed skills to the AR galaxy overlay and reveal it
     showArGalaxy(data.selected || [])
 
+    if (!data.selected?.length) {
+      $('answer').insertAdjacentHTML('afterend', `
+        <div class="lab-route-results lab-route-empty">
+          <p>No compatible skills found for this answer.</p>
+        </div>
+      `)
+      $('routeBtn').hidden = true
+      return
+    }
+
     // Open the main miniapp in a new tab with the task pre-filled? Or render inline?
     // Inline is simpler — show the top 5 here.
     const html = data.selected.map(s => {
@@ -484,7 +500,11 @@ $('routeBtn').addEventListener('click', async () => {
     `)
     $('routeBtn').hidden = true
   } catch (e) {
-    alert('Routing failed: ' + e.message)
+    $('answer').insertAdjacentHTML('afterend', `
+      <div class="lab-route-results lab-route-error">
+        <p><strong>Routing failed.</strong> ${escapeHTML(e.message || String(e))}</p>
+      </div>
+    `)
   } finally {
     $('routeBtn').disabled = false
     $('routeBtn').textContent = orig
@@ -573,4 +593,18 @@ function clearRouteArtifacts() {
   }
   lastSelected = []
   closeSkillPanel()
+}
+
+// Snap/flip both invalidate any prior answer (it described a different frame
+// or camera). Tear down the answer panel and routed skills so the user isn't
+// looking at a description of something that's no longer on screen.
+function clearAnswerAndRoute() {
+  clearRouteArtifacts()
+  lastAnswer = ''
+  $('answer').textContent = ''
+  $('latencyBadge').textContent = ''
+  $('modelBadge').hidden = true
+  $('routeBtn').hidden = true
+  $('askAgainBtn').hidden = true
+  $('answerSection').hidden = true
 }
