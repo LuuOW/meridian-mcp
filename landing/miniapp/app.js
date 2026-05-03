@@ -4,7 +4,7 @@
 import { MiniGalaxy } from './mini-galaxy.js'
 import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
 import { renderPhysicsPanel } from './physics-panel.js'
-import { routeTask as routeTaskApi } from './api.js'
+import { routeTaskStream } from './api.js'
 import { escapeHTML, renderMarkdown } from './_md.js'
 import { initBurgerNav, loadVersionBadge } from '/nav.js'
 
@@ -123,15 +123,41 @@ askBtn.addEventListener('click', async () => {
   requestAnimationFrame(() => galaxy._resize())
   resultsList.innerHTML =
     '<li class="no-results">' +
-    '<span class="loading-pulse">🪐 Llama-3.3-70B is authoring SKILL specs…</span><br>' +
-    '<small>then the orbital engine derives physics signatures and classifies each into a celestial class — planet · moon · trojan · asteroid · comet · irregular.<br><em>Workers AI: 40–50 s. Groq: 5–10 s.</em></small>' +
+    '<span class="loading-pulse" id="streamProgress">🪐 connecting to orbital router…</span>' +
     '</li>'
   resultsMeta.textContent = ''
+  latestSelected = []
   closePanel()
 
+  const provider = modelSelect?.value || 'workers-ai'
   try {
-    const data = await routeTask(task, ROUTE_LIMIT)
-    renderResults(data)
+    const summary = await routeTaskStream(
+      { task, limit: ROUTE_LIMIT, provider },
+      {
+        onProgress: (p) => {
+          const el = document.getElementById('streamProgress')
+          if (!el) return
+          if (p.stage === 'connected')           el.textContent = '🪐 connected · waiting for LLM…'
+          else if (p.stage === 'cache_hit')      el.textContent = `⚡ cache hit (${p.cache_age_s}s old) — replaying`
+          else if (p.stage === 'cache_miss')     el.textContent = '🪐 cache miss · authoring fresh skills…'
+          else if (p.stage === 'llm_streaming_start') el.textContent = `✍️ LLM warming up (${p.model})…`
+          else if (p.stage === 'llm_streaming')  el.textContent = `✍️ LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
+          else if (p.stage === 'llm_calling')    el.textContent = `✍️ LLM running (${p.model})…`
+          else if (p.stage === 'llm_complete')   el.textContent = `✓ LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
+          else if (p.stage === 'classifying')    el.textContent = `🛰 classifying ${p.candidates_generated} candidates orbitally…`
+          else if (p.stage === 'semantic_rerank') el.textContent = `🧭 semantic re-rank (${p.model})…`
+        },
+        onSkill: (s) => {
+          // First skill arrival clears the placeholder.
+          if (!latestSelected.length) resultsList.innerHTML = ''
+          latestSelected.push(s)
+          appendSkillCard(s)
+          galaxy.setSkills(latestSelected)
+        },
+      },
+    )
+    refreshQuota()
+    renderMeta(summary)
   } catch (err) {
     resultsList.innerHTML = `<li class="no-results">Error: ${escapeHTML(err.message)}</li>`
     // On error, immediately re-arm AR so user can try again without
@@ -149,50 +175,40 @@ askBtn.addEventListener('click', async () => {
   }
 })
 
-async function routeTask(task, limit) {
-  const provider = modelSelect?.value || 'workers-ai'
-  const data = await routeTaskApi({ task, limit, provider })
-  refreshQuota()       // sync the badge after a call lands
-  return data
+function appendSkillCard(s) {
+  const cls = s.classification?.class || ''
+  const sys = s.classification?.star_system || ''
+  const li = document.createElement('li')
+  li.className = 'result-item result-item-in'
+  li.dataset.slug = s.slug
+  li.innerHTML = `
+    <div class="result-head">
+      <span class="result-slug">${escapeHTML(s.slug)}</span>
+      ${cls ? `<span class="result-class" data-class="${escapeHTML(cls)}">${escapeHTML(cls)}</span>` : ''}
+      ${sys ? `<span class="result-system">${escapeHTML(sys)}</span>` : ''}
+      <span class="result-score">${s.route_score.toFixed(1)}</span>
+    </div>
+    <p class="result-desc">${escapeHTML(s.description || '')}</p>
+    <div class="result-why">${escapeHTML(s.why || '')}</div>`
+  li.addEventListener('click', () => openPanel(s.slug))
+  resultsList.appendChild(li)
 }
 
-function renderResults(data) {
-  latestSelected = data.selected || []
-  galaxy.setSkills(latestSelected)
-
-  let meta = `<span class="conf-${data.confidence}">${data.confidence}</span> · ` +
-             `top <strong>${data.top_score.toFixed(1)}</strong> · ` +
-             `${latestSelected.length}/${data.candidates_generated || latestSelected.length} skills`
-  if (data.timing) {
-    meta += ` · LLM ${data.timing.llm_ms} ms + classify ${data.timing.classify_ms} ms`
-  }
-  resultsMeta.innerHTML = meta
-
+function renderMeta(summary) {
+  if (!summary) return
   if (!latestSelected.length) {
     resultsList.innerHTML = '<li class="no-results">No skills matched. Try different wording or one of the examples.</li>'
     return
   }
-
-  resultsList.querySelectorAll('.result-item').forEach(el => el.replaceWith(el.cloneNode(true)))  // detach old listeners
-  resultsList.innerHTML = latestSelected.map(s => {
-    const cls = s.classification?.class || ''
-    const sys = s.classification?.star_system || ''
-    return `
-    <li class="result-item" data-slug="${escapeHTML(s.slug)}">
-      <div class="result-head">
-        <span class="result-slug">${escapeHTML(s.slug)}</span>
-        ${cls ? `<span class="result-class" data-class="${escapeHTML(cls)}">${escapeHTML(cls)}</span>` : ''}
-        ${sys ? `<span class="result-system">${escapeHTML(sys)}</span>` : ''}
-        <span class="result-score">${s.route_score.toFixed(1)}</span>
-      </div>
-      <p class="result-desc">${escapeHTML(s.description || '')}</p>
-      <div class="result-why">${escapeHTML(s.why || '')}</div>
-    </li>`
-  }).join('')
-
-  resultsList.querySelectorAll('.result-item').forEach(el => {
-    el.addEventListener('click', () => openPanel(el.dataset.slug))
-  })
+  let meta = `<span class="conf-${summary.confidence}">${summary.confidence}</span> · ` +
+             `top <strong>${summary.top_score.toFixed(1)}</strong> · ` +
+             `${latestSelected.length}/${summary.candidates_generated || latestSelected.length} skills`
+  if (summary.timing) {
+    meta += ` · LLM ${summary.timing.llm_ms} ms + classify ${summary.timing.classify_ms} ms`
+    if (summary.timing.embed_ms) meta += ` + embed ${summary.timing.embed_ms} ms`
+  }
+  if (summary.cache_hit) meta += ' · ⚡ cache'
+  resultsMeta.innerHTML = meta
 }
 
 // SIDE PANEL --------------------------------------------------------------
