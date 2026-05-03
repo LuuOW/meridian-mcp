@@ -19,7 +19,7 @@
 <a href="#main" class="skip-link">Skip to main content</a>
 
 <nav class="nav" aria-label="Primary">
-  <a href="/" class="brand">◎ Meridian</a>
+  <a href="/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
 
   <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
     <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
@@ -37,21 +37,85 @@
 
 <main id="main" class="hero-wrap">
   <section class="hero">
+    <!-- Decorative orbital mechanics diagram, positioned behind the hero text.
+         SMIL animation works in every modern browser without requiring JS or
+         an SVG-aware CSS engine. Hidden from assistive tech. -->
+    <svg class="hero-orbits" viewBox="0 0 800 800" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id="meridianCore">
+          <stop offset="0%"  stop-color="#a78bfa" stop-opacity="0.85"/>
+          <stop offset="55%" stop-color="#a78bfa" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="400" cy="400" r="160" fill="url(#meridianCore)"/>
+      <!-- ring 1 — innermost, planet-class skill -->
+      <g>
+        <circle cx="400" cy="400" r="140" fill="none" stroke="rgba(167,139,250,0.22)" stroke-dasharray="1 5"/>
+        <circle cx="540" cy="400" r="6" fill="#7dd3fc">
+          <animateTransform attributeName="transform" type="rotate" from="0 400 400" to="360 400 400" dur="22s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      <!-- ring 2 — moon-class -->
+      <g>
+        <circle cx="400" cy="400" r="220" fill="none" stroke="rgba(56,189,248,0.18)" stroke-dasharray="1 7"/>
+        <circle cx="180" cy="400" r="5" fill="#cbd5e1">
+          <animateTransform attributeName="transform" type="rotate" from="360 400 400" to="0 400 400" dur="38s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      <!-- ring 3 — trojan-class -->
+      <g>
+        <circle cx="400" cy="400" r="300" fill="none" stroke="rgba(167,139,250,0.14)" stroke-dasharray="1 9"/>
+        <circle cx="700" cy="400" r="4" fill="#c4b5fd">
+          <animateTransform attributeName="transform" type="rotate" from="0 400 400" to="360 400 400" dur="58s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="100" cy="400" r="4" fill="#c4b5fd">
+          <animateTransform attributeName="transform" type="rotate" from="0 400 400" to="360 400 400" dur="58s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      <!-- ring 4 — comet sweep, eccentric -->
+      <g>
+        <ellipse cx="400" cy="400" rx="370" ry="200" fill="none" stroke="rgba(244,114,182,0.10)" stroke-dasharray="1 12"/>
+        <circle cx="770" cy="400" r="3" fill="#f9a8d4">
+          <animateTransform attributeName="transform" type="rotate" from="0 400 400" to="360 400 400" dur="84s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+    </svg>
+
     <span id="heroVersion" class="eyebrow" data-loading>MCP server · v1.0.0</span>
-    <h1>Dynamic AI skill routing<br><span class="grad">via orbital mechanics.</span></h1>
-    <p class="lead">
+    <h1 class="hero-title">Dynamic AI skill routing<br><span class="grad">via orbital mechanics.</span></h1>
+    <p class="lead hero-lead">
       Llama-3.3-70B writes a fresh set of skills for every task. An open-domain orbital engine derives a physics
       signature for each one — mass, scope, cross-domain affinity, Lagrange potential — and classifies it into a celestial
       class (planet, moon, trojan, asteroid, comet, irregular). You get back a deterministically ranked list with a
       decision rule per skill. Works with Claude Code, Cursor, Windsurf, or any MCP client.
     </p>
-    <div class="cta-row">
-      <a href="/miniapp/" class="btn btn-primary">Try it live →</a>
-      <a href="https://docs.ask-meridian.uk#install" class="btn btn-ghost">Install in 30 seconds</a>
+    <div class="cta-row hero-cta">
+      <a href="/miniapp/" class="btn btn-primary" data-magnetic style="view-transition-name: cta-primary">Try it live →</a>
+      <a href="https://docs.ask-meridian.uk#install" class="btn btn-ghost" data-magnetic>Install in 30 seconds</a>
     </div>
 
     <pre class="hero-snippet"><code>npm install -g meridian-skills-mcp
 claude mcp add meridian meridian-mcp</code></pre>
+  </section>
+
+  <section class="stats" aria-label="By the numbers">
+    <div class="stat">
+      <div class="stat-num">5</div>
+      <div class="stat-label">candidate skills authored per task</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">6</div>
+      <div class="stat-label">celestial classes, deterministic argmax</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">70<span class="stat-unit">B</span></div>
+      <div class="stat-label">parameter Llama-3.3 author model</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">5<span class="stat-unit">KB</span></div>
+      <div class="stat-label">stdio MCP shim, MIT-licensed</div>
+    </div>
   </section>
 
   <section class="features" aria-label="Key features">
@@ -120,7 +184,7 @@ claude mcp add meridian meridian-mcp</code></pre>
           <li><code>X-Meridian-Calls-Remaining</code> header</li>
           <li>Cancel anytime via Stripe portal</li>
         </ul>
-        <button class="btn btn-primary btn-block" data-plan="pro" data-checkout aria-label="Subscribe to Pro plan, twenty-nine US dollars per month">Subscribe — $29/mo</button>
+        <button class="btn btn-primary btn-block" data-plan="pro" data-checkout data-magnetic aria-label="Subscribe to Pro plan, twenty-nine US dollars per month">Subscribe — $29/mo</button>
       </div>
 
       <div class="plan">
@@ -172,8 +236,8 @@ claude mcp add meridian meridian-mcp</code></pre>
     <h2>Stop guessing which prompt template fits.</h2>
     <p class="lead">Let the router pick the right expert.</p>
     <div class="cta-row">
-      <a href="https://docs.ask-meridian.uk" class="btn btn-primary">Read the docs</a>
-      <a href="https://github.com/LuuOW/meridian-mcp" class="btn btn-ghost">Star on GitHub</a>
+      <a href="https://docs.ask-meridian.uk" class="btn btn-primary" data-magnetic>Read the docs</a>
+      <a href="https://github.com/LuuOW/meridian-mcp" class="btn btn-ghost" data-magnetic>Star on GitHub</a>
     </div>
   </section>
 </main>
@@ -193,8 +257,13 @@ claude mcp add meridian meridian-mcp</code></pre>
 
 <script type="module">
 import { initBurgerNav, loadVersionBadge } from '/nav.js'
+import { initMagnetic, initCopySnippet, initHeroCursor, initViewTransitions } from '/landing.js'
 initBurgerNav()
 loadVersionBadge('heroVersion', 'versionBadge')
+initMagnetic()
+initCopySnippet()
+initHeroCursor()
+initViewTransitions()
 </script>
 
 <!-- Calendly badge widget -->
