@@ -1,0 +1,20 @@
+{
+  "name": "Meridian Vision Lab",
+  "short_name": "Vision Lab",
+  "description": "On-device vision-language models via WebGPU — SmolVLM-500M or Moondream2. Frames never leave the browser.",
+  "start_url": "/miniapp/vision-lab/",
+  "scope": "/miniapp/vision-lab/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0a0d14",
+  "background_color": "#0a0d14",
+  "categories": ["productivity", "utilities", "developer"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

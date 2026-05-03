@@ -13,6 +13,25 @@
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
+
+<!-- Speculation Rules: prerender same-origin destinations on a 200ms hover.
+     Cheap perceived-latency win — clicking "Try it live" or "Vision Lab" lands
+     on a fully-rendered page. Browsers without support ignore the rule. -->
+<script type="speculationrules">
+{
+  "prerender": [{
+    "where": { "and": [
+      { "href_matches": "/miniapp/*" },
+      { "not": { "selector_matches": ".no-prerender" } }
+    ]},
+    "eagerness": "moderate"
+  }],
+  "prefetch": [{
+    "where": { "href_matches": "/*" },
+    "eagerness": "conservative"
+  }]
+}
+</script>
 </head>
 <body>
 
