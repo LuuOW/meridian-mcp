@@ -79,6 +79,58 @@ const EXAMPLE_SKILL = {
 - Mixing same-named people into one source set.`,
 }
 
+// Vision-lab 1-shot — same SKILL.md format as EXAMPLE_SKILL but biased
+// toward immediate physical interaction. Used in place of EXAMPLE_SKILL
+// when the request carries context: 'vision_lab' so the model anchors on
+// hands-on/in-the-moment skill bodies instead of research-flavoured ones.
+const VISION_LAB_EXAMPLE_SKILL = {
+  slug: 'wooden-chair-stability-check',
+  description: 'Diagnose whether a wooden chair is safe to sit on right now using only your hands, weight, and 30 seconds.',
+  keywords: ['chair', 'stability', 'wobble-test', 'joint-inspection', 'in-place-test', 'load-bearing', 'tenon', 'glue-failure', 'wood-rot', 'physical-inspection', 'hands-on', 'safety-check'],
+  body: `## Use It For
+
+- Deciding in 30 seconds whether to sit on an unfamiliar wooden chair
+- Spotting a failing joint before it collapses under load
+- Triaging a wobbly chair as "tighten now" vs. "do not use"
+
+## Workflow
+
+1. With one hand on the seat front, push down and rock side-to-side — listen for ticking from the joints.
+2. Lift the chair and twist the legs against each other; any rotation at the seat-leg junction means a failed tenon or dried glue.
+3. Press a thumbnail into each leg near the floor — a soft mark means rot; reject the chair.
+4. Sit slowly, hands on the seat edges, weight forward — if the back creaks or the rear legs splay, stand back up.
+
+## Heuristics
+
+- Loud single ticks under load = loose joint; slow whine = wood flex (usually fine).
+- A chair that wobbles diagonally has a single bad joint; one that wobbles in all directions has multiple.
+- White-glue squeeze-out at a joint is old and brittle — assume the joint is dead.
+
+## Anti-Patterns
+
+- Sitting first and "feeling for it" — the failure mode is the chair collapsing.
+- Tightening visible screws without checking tenons; most chair failures are at glued mortise-and-tenon joints, not screws.
+- Ignoring rear-leg splay because the chair "felt fine" empty.`,
+}
+
+// Bias paragraph appended to the user message when context === 'vision_lab'.
+// Lives outside the system prompt so it can evolve per-context without
+// rewriting the global rubric. Strong & specific — vague nudges get
+// ignored by Llama-3.3-70B in favour of the system prompt's defaults.
+const VISION_LAB_BIAS = `
+CONTEXT: this task came from a person holding a phone camera, physically co-located with the subject RIGHT NOW. They are looking at it through the lens.
+
+Strongly bias every skill toward IMMEDIATE PHYSICAL INTERACTION the person could perform within the next 60 seconds using:
+- their hands, weight, voice, or body
+- simple tools likely on hand (phone, pen, water, a coin, light source, the camera itself)
+- the subject's own affordances (touch, lift, twist, press, listen, smell, look-from-different-angle)
+
+PREFER skills like: hands-on inspection, quick safety/stability test, in-place quick fix, sensory diagnosis (touch/sound/smell), measurement with everyday tools, "what to do RIGHT NOW" decision rules, immediate-context triage.
+
+AVOID skills that require: research time, library/database lookup, purchasing, historical context, extended workflows lasting >5 minutes, multi-day projects, anything the person could only do back at a desk.
+
+The cross-domain bridge skill should still apply, but it too must be hands-on (e.g. a relevant first-aid skill if the subject is a person, a fire-safety skill if the subject is hot machinery).`
+
 export async function onRequest({ request, env }) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() })
   if (request.method !== 'POST')    return jsonResponse({ error: 'POST only' }, { status: 405 })
@@ -119,6 +171,10 @@ export async function onRequest({ request, env }) {
   const limit      = Math.max(1, Math.min(20, parseInt(body.limit, 10) || 5))
   const candidates = Math.max(3, Math.min(8, parseInt(body.candidates, 10) || 5))
   const provider   = ['workers-ai', 'groq'].includes(body.provider) ? body.provider : 'workers-ai'
+  // Context modifies skill generation (e.g. vision_lab biases toward
+  // immediate physical interaction). Default 'text' keeps existing
+  // behaviour for typed tasks from the main miniapp + MCP clients.
+  const context    = ['text', 'vision_lab'].includes(body.context) ? body.context : 'text'
 
   if (!task)             return jsonResponse({ error: 'task required'           }, { status: 400 })
   if (task.length > 800) return jsonResponse({ error: 'task too long (max 800)' }, { status: 400 })
@@ -134,7 +190,10 @@ export async function onRequest({ request, env }) {
   // Saves ~30s + ~200 neurons per repeat. Keyed by SHA-256 of the normalised
   // task text. Anonymous calls share the cache; per-user quotas still apply
   // when a key is presented (we only skip the LLM, not the auth gate).
-  const cacheKey = await sha256(`${task.toLowerCase().replace(/\s+/g, ' ').trim()}::${limit}::${candidates}`)
+  // Fold context into the cache key: the same VLM answer routed via vision_lab
+  // and typed manually should NOT share a cached result, since they get
+  // different prompts.
+  const cacheKey = await sha256(`${task.toLowerCase().replace(/\s+/g, ' ').trim()}::${limit}::${candidates}::${context}`)
   if (env.MERIDIAN_KEYS) {
     const cached = await env.MERIDIAN_KEYS.get(`route:${cacheKey}`, 'json')
     if (cached) {
@@ -158,12 +217,21 @@ export async function onRequest({ request, env }) {
   }
 
   // ── Phase 1: LLM generation
+  // Pick the 1-shot exemplar based on context: vision_lab gets a hands-on
+  // example so the model anchors on physical-interaction skill bodies. The
+  // bias paragraph below the exemplar reinforces the constraint explicitly.
   let raw, aiLatencyMs = null
+  const isVisionLab = context === 'vision_lab'
+  const exemplar    = isVisionLab ? VISION_LAB_EXAMPLE_SKILL : EXAMPLE_SKILL
+  const exemplarTaskHint = isVisionLab
+    ? 'Task: someone is pointing their phone camera at a wooden chair.\n\nGenerate 1 skill, just to demonstrate the body format AND the hands-on, physically-immediate bias.'
+    : `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.`
+  const finalUserMsg = `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}${isVisionLab ? '\n' + VISION_LAB_BIAS : ''}`
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user',   content: `Task: build a source base for a person-specific voice model from public material.\n\nGenerate 1 skill, just to demonstrate the body format.` },
-    { role: 'assistant', content: JSON.stringify({ skills: [EXAMPLE_SKILL] }) },
-    { role: 'user',   content: `Task: ${task}\n\nGenerate ${candidates} skills covering the task and adjacent territory. Use the same depth as the persona-research example: real ## headings, concrete tools, named techniques, anti-patterns, opinionated heuristics. ${candidates >= 8 ? 'Include at least one cross-domain bridge skill (touches another star system).' : ''}` },
+    { role: 'system',    content: SYSTEM_PROMPT },
+    { role: 'user',      content: exemplarTaskHint },
+    { role: 'assistant', content: JSON.stringify({ skills: [exemplar] }) },
+    { role: 'user',      content: finalUserMsg },
   ]
   try {
     const t0 = Date.now()
@@ -263,8 +331,9 @@ export async function onRequest({ request, env }) {
   const responsePayload = {
     task,
     provider,
+    context,
     model: modelLabel,
-    note: `Fully dynamic: skills generated by ${modelLabel}, classified by the open-domain orbital engine (planet / moon / asteroid / trojan / comet / irregular).`,
+    note: `Fully dynamic: skills generated by ${modelLabel}, classified by the open-domain orbital engine (planet / moon / asteroid / trojan / comet / irregular).${isVisionLab ? ' Hands-on / physical-interaction bias applied (vision_lab context).' : ''}`,
     confidence,
     top_score:        top,
     candidates_generated: generated.length,

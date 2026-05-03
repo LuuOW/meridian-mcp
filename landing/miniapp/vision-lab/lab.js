@@ -454,6 +454,11 @@ $('routeBtn').addEventListener('click', async () => {
       task:     lastAnswer.length > 600 ? lastAnswer.slice(0, 600) + '…' : lastAnswer,
       limit:    5,
       provider: 'groq',
+      // Tell the router this came from a phone-camera-in-hand session, not a
+      // text prompt. The backend biases skill generation toward immediate
+      // physical interaction (hands-on inspection, quick tests, in-place
+      // repair) rather than research/literature/purchasing skills.
+      context:  'vision_lab',
     })
 
     // Hand the routed skills to the AR galaxy overlay and reveal it
