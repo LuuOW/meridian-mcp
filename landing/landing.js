@@ -25,17 +25,31 @@ export function initMagnetic() {
   const apply = () => {
     raf = 0
     if (!lastEvt) return
+    // Pick the single nearest in-range button — otherwise two adjacent
+    // magnetic buttons in the same .cta-row both pull toward a cursor
+    // sitting between them and visibly drift together.
+    let nearest = null
+    let nearestDist = Infinity
+    const measured = []
     for (const el of els) {
       const r  = el.getBoundingClientRect()
       const cx = r.left + r.width  / 2
       const cy = r.top  + r.height / 2
       const dx = lastEvt.clientX - cx
       const dy = lastEvt.clientY - cy
+      const d  = Math.hypot(dx, dy)
       const reach = RANGE + Math.max(r.width, r.height) / 2
-      if (Math.hypot(dx, dy) > reach) {
-        if (el.style.translate) el.style.translate = ''
-      } else {
-        el.style.translate = `${(dx * STRENGTH).toFixed(1)}px ${(dy * STRENGTH).toFixed(1)}px`
+      measured.push({ el, dx, dy, d, inRange: d <= reach })
+      if (d <= reach && d < nearestDist) {
+        nearest = el
+        nearestDist = d
+      }
+    }
+    for (const m of measured) {
+      if (m.el === nearest) {
+        m.el.style.translate = `${(m.dx * STRENGTH).toFixed(1)}px ${(m.dy * STRENGTH).toFixed(1)}px`
+      } else if (m.el.style.translate) {
+        m.el.style.translate = ''
       }
     }
   }
