@@ -8,6 +8,7 @@
 <title>Vision Lab — Meridian</title>
 <meta name="description" content="In-browser vision-language models — SmolVLM-500M or Moondream2 on WebGPU, no server.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/miniapp/vision-lab/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/miniapp/miniapp.css">
 <link rel="stylesheet" href="/miniapp/vision-lab/lab.css">
@@ -166,5 +167,16 @@
 </main>
 
 <script type="module" src="/miniapp/vision-lab/lab.js"></script>
+<script>
+  // Register the shell SW. Scope is the lab dir, so the worker can't
+  // intercept fetches outside /miniapp/vision-lab/. Failures are
+  // non-fatal — the lab works without it, just not offline.
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', () => {
+      navigator.serviceWorker.register('/miniapp/vision-lab/sw.js', { scope: '/miniapp/vision-lab/' })
+        .catch(err => console.warn('[sw] registration failed', err))
+    })
+  }
+</script>
 </body>
 </html>
