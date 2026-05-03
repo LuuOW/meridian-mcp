@@ -144,6 +144,7 @@ askBtn.addEventListener('click', async () => {
           else if (p.stage === 'llm_streaming')  el.textContent = `LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
           else if (p.stage === 'llm_calling')    el.textContent = `LLM running (${p.model})…`
           else if (p.stage === 'llm_complete')   el.textContent = `LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
+          else if (p.stage === 'rag_retrieved')  el.textContent = `RAG: ${p.matches} similar past skills (top score ${p.top_score})`
           else if (p.stage === 'classifying')    el.textContent = `classifying ${p.candidates_generated} candidates orbitally…`
           else if (p.stage === 'semantic_rerank') el.textContent = `semantic re-rank (${p.model})…`
         },

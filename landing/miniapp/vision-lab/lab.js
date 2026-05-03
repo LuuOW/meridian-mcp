@@ -488,6 +488,7 @@ $('routeBtn').addEventListener('click', async () => {
           else if (p.stage === 'llm_streaming')  progress.textContent = `LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
           else if (p.stage === 'llm_calling')    progress.textContent = `LLM running (${p.model})…`
           else if (p.stage === 'llm_complete')   progress.textContent = `LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
+          else if (p.stage === 'rag_retrieved')  progress.textContent = `RAG: ${p.matches} similar past skills (top score ${p.top_score})`
           else if (p.stage === 'classifying')    progress.textContent = `classifying ${p.candidates_generated} candidates orbitally…`
           else if (p.stage === 'semantic_rerank') progress.textContent = `semantic re-rank (${p.model})…`
         },
