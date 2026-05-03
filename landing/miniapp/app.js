@@ -5,6 +5,7 @@ import { MiniGalaxy } from './mini-galaxy.js'
 import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
 import { renderPhysicsPanel } from './physics-panel.js'
 import { routeTask as routeTaskApi } from './api.js'
+import { escapeHTML, renderMarkdown } from './_md.js'
 import { initBurgerNav, loadVersionBadge } from '/nav.js'
 
 initBurgerNav()
@@ -90,9 +91,6 @@ function setMode(m) {
 }
 mode2dBtn.addEventListener('click', () => setMode('2d'))
 mode3dBtn.addEventListener('click', () => setMode('3d'))
-
-const escapeHTML = s => String(s).replace(/[&<>"']/g, c =>
-  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
 
 document.querySelectorAll('.ex-chip').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -360,40 +358,3 @@ function showRescanButton() {
   }
 }
 
-// MARKDOWN ---------------------------------------------------------------
-function renderMarkdown(md) {
-  const codeBlocks = []
-  md = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
-    codeBlocks.push(`<pre><code class="lang-${escapeHTML(lang)}">${escapeHTML(code)}</code></pre>`)
-    return ` CODE${codeBlocks.length - 1} `
-  })
-
-  const inlines = []
-  md = md.replace(/`([^`\n]+)`/g, (_, c) => {
-    inlines.push(`<code>${escapeHTML(c)}</code>`)
-    return ` INL${inlines.length - 1} `
-  })
-
-  md = escapeHTML(md)
-
-  md = md.replace(/^(#{1,6})\s+(.+)$/gm, (_, h, t) => `<h${h.length}>${t}</h${h.length}>`)
-
-  md = md.replace(/((?:^[-*]\s+.+(?:\n|$))+)/gm, block => {
-    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^[-*]\s+/, '')}</li>`).join('')
-    return `<ul>${items}</ul>\n`
-  })
-
-  md = md
-    .split(/\n{2,}/)
-    .map(b => {
-      const t = b.trim()
-      if (!t) return ''
-      if (/^<(h\d|ul|ol|pre)[\s>]/.test(t) || t.startsWith(' CODE')) return t
-      return `<p>${t.replace(/\n/g, '<br>')}</p>`
-    })
-    .join('\n')
-
-  md = md.replace(/ INL(\d+) /g,  (_, i) => inlines[+i])
-  md = md.replace(/ CODE(\d+) /g, (_, i) => codeBlocks[+i])
-  return md
-}

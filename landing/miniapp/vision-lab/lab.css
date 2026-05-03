@@ -479,6 +479,19 @@
   word-break: break-word;
   line-height: 1.5;
 }
+.lab-skill-body {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.lab-skill-body-empty {
+  color: var(--text-faint);
+  font-style: italic;
+  font-size: 12.5px;
+}
 .lab-route-foot {
   margin-top: 12px;
   font-size: 12px;
