@@ -31,6 +31,7 @@ import { MiniGalaxy }        from '/miniapp/mini-galaxy.js'
 import { renderPhysicsPanel } from '/miniapp/physics-panel.js'
 import { routeTask }          from '/miniapp/api.js'
 import { initBurgerNav }      from '/nav.js'
+import { escapeHTML, renderMarkdown } from '/miniapp/_md.js'
 
 // Force network fetches to HF (don't try local /models/...)
 env.allowLocalModels = false
@@ -524,6 +525,9 @@ function openSkillPanel(slug) {
   $('labSkillDesc').textContent   = s.description || ''
   $('labSkillRule').textContent   = rule
   $('labSkillPhysics').innerHTML  = renderPhysicsPanel(s)
+  $('labSkillBody').innerHTML     = s.body
+    ? renderMarkdown(s.body)
+    : `<p class="lab-skill-body-empty">No skill body returned.</p>`
   $('labSkillKeywords').innerHTML = kw.map(k => `<span class="lab-skill-keyword">${escapeHTML(k)}</span>`).join('')
   $('labSkillOpen').href = `/miniapp/?task=${encodeURIComponent(s.description || s.slug)}`
 
@@ -550,8 +554,4 @@ $('galaxyBtn').addEventListener('click', () => {
 })
 
 // ── utils ─────────────────────────────────────────────────────────────────
-function escapeHTML(s) {
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
-}
 function diag(s) { $('diag').textContent = s }
