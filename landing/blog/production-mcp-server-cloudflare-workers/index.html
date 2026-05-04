@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Building a production MCP server on Cloudflare Workers — Meridian Blog</title>
+<meta name="description" content="Most MCP tutorials show npx create-mcp and a Hello world tool. Real servers in production need auth, per-key quotas, billing, and an upgrade path. Here's the architecture for ask-meridian.uk on Cloudflare's free tier.">
+<meta property="og:title" content="Building a production MCP server on Cloudflare Workers (with auth + Stripe)">
+<meta property="og:description" content="The full architecture for shipping an MCP server with auth, rate-limiting, Stripe billing, and SSE streaming on Cloudflare's free tier.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .cta-card { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px; padding: 24px; margin: 36px 0; }
+  .cta-card h3 { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="promo-strip" target="_blank" rel="noopener">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <a href="/blog/">Blog</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-04 · 8 min read</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      Building a production MCP server on Cloudflare Workers (with auth + Stripe)
+    </h1>
+
+    <p>
+      Most "build an MCP server" tutorials in May 2026 show you <code>npx create-mcp</code>
+      and a <code>Hello, world</code> tool. That works for a demo. It does not work for
+      anything you'd expose to the public internet, because the moment your server can do
+      anything useful — call an LLM, query a database, hit a paid API — random people will
+      drain your bill.
+    </p>
+
+    <p>
+      A production MCP server in 2026 needs five things the templates skip: authentication,
+      per-user quotas, billing, observability, and edge deployment. This is the architecture
+      we use for <a href="https://ask-meridian.uk">ask-meridian.uk</a> — a live MCP server
+      in the official MCP Registry — and it costs $0/month in hosting until you cross 100k
+      requests/day.
+    </p>
+
+    <h2>The architecture in one diagram</h2>
+    <pre><code>   Claude Code / Cursor / Cline / Windsurf
+        │ stdio JSON-RPC
+        ▼
+   ┌──────────────────────────────────────┐
+   │ npm-installable shim                  │  ~5 KB JavaScript on the user's
+   │ (forwards every call over HTTPS)      │  laptop, fetched via npx -y
+   └────────────┬─────────────────────────┘
+                │ HTTPS POST + Authorization: Bearer …
+                ▼
+   ┌──────────────────────────────────────┐
+   │ Cloudflare Worker / Pages Function    │  validates bearer, checks
+   │                                       │  quota, calls upstream LLM
+   └────┬──────────────────┬──────────────┘
+        ▼                  ▼
+   Cloudflare KV      Stripe (Checkout +
+   key:HASH           Customer Portal +
+   monthly:HASH:YM    webhooks → /api/stripe/webhook)
+   free:IP:DAY</code></pre>
+
+    <p>
+      Three boxes, all free or near-free. Cloudflare Workers free tier covers 100k
+      requests/day. KV covers 100k reads/day + 1k writes/day. Stripe is 2.9% + 30¢ per
+      successful charge — no fixed monthly cost, no per-API-call cost.
+    </p>
+
+    <h2>Why a fat backend + thin shim</h2>
+    <p>
+      The pattern that wins in 2026 is what we call <strong>fat backend + thin shim</strong>.
+      The user installs a small npm package locally; that package speaks MCP JSON-RPC on
+      stdio (because that's what their client wants) and forwards every <code>tools/call</code>
+      to your real backend over HTTPS.
+    </p>
+
+    <p>Three reasons this beats running everything locally on the user's machine:</p>
+    <ul>
+      <li><strong>Zero secrets on the user's disk.</strong> API keys for Anthropic, Groq, etc. live on your server, never in the user's environment.</li>
+      <li><strong>Instant updates.</strong> When you ship a new tool or fix a bug, you redeploy the Worker — every user gets the new version without doing anything.</li>
+      <li><strong>Centralized observability.</strong> Every call goes through your backend. You see usage, you can rate-limit, you can ship feature flags.</li>
+    </ul>
+
+    <h2>The auth flow</h2>
+    <p>
+      Stripe → Webhook → KV. When a user pays, Stripe's webhook hits
+      <code>/api/stripe/webhook</code>. We generate a 32-byte random key
+      (<code>mrd_live_…</code>), store its SHA-256 hash in KV under
+      <code>key:HASH</code>, and stash the plain-text key under
+      <code>session:STRIPE_SESSION_ID</code> with a 30-minute TTL.
+    </p>
+
+    <p>
+      The user lands on <code>/api/stripe/claim?session_id=…</code> after checkout. We pull
+      the plain-text key once, delete the session entry, and show the key in an HTML page.
+      They save it (we tell them they only see it once). From then on, every request carries
+      <code>Authorization: Bearer mrd_live_…</code> and we look up the SHA-256 in KV.
+    </p>
+
+    <p>
+      Why hash? Because if your KV ever gets dumped — insider threat, misconfiguration,
+      SDK bug — the leaked data shouldn't include working credentials. You only ever store
+      the SHA-256.
+    </p>
+
+    <h2>Per-IP rate limiting on the free tier</h2>
+    <p>
+      For anonymous traffic (no bearer header), we cap at 5-10 requests/day per IP. The
+      pattern is one read + one write to KV per request:
+    </p>
+
+    <pre><code>const ip   = request.headers.get('cf-connecting-ip') || 'unknown'
+const dkey = `free:${ip}:${new Date().toISOString().slice(0, 10)}`
+const used = parseInt((await env.MCP_KV.get(dkey)) || '0', 10)
+if (used >= LIMIT) return json({ error: 'free tier exhausted' }, { status: 429 })
+await env.MCP_KV.put(dkey, String(used + 1), { expirationTtl: 90000 })</code></pre>
+
+    <p>
+      KV doesn't support atomic increments. At 5/day per IP that doesn't matter — racing
+      under-counts by 1 occasionally is fine. At 5/sec it would matter; for that you'd
+      use Durable Objects.
+    </p>
+
+    <p>
+      One non-obvious gotcha: residential IPv6. ISPs hand out /64 prefixes; the host bits
+      change every few hours. Per-IPv6-address counting under-counts. The fix is to compute
+      the /64 prefix and use that as the rate-limit key. We do this in
+      <a href="https://github.com/LuuOW/meridian-mcp/blob/main/landing/functions/api/_ip.js">_ip.js</a>
+      — about 30 lines.
+    </p>
+
+    <h2>The cost-of-goods problem</h2>
+    <p>
+      You're charging $29/mo. Your real cost is the LLM API call you make for the user.
+      If a user can run up $50 of LLM cost on their $29 plan, you lose money. The whole
+      game is keeping COGS &lt; revenue per user.
+    </p>
+
+    <p>Three levers worth pulling, in order:</p>
+
+    <ol>
+      <li><strong>Cache aggressively.</strong> Same task → same response, 99% of the time.
+        Hash the input + parameters, cache the LLM output for 24 hours. Repeat queries
+        cost you ~$0.0001 instead of $0.005.</li>
+      <li><strong>Use Cloudflare AI Gateway.</strong> Free observability + caching layer
+        in front of any LLM provider. Set <code>cache_ttl=86400</code> and identical
+        upstream requests dedupe at the gateway, even when your KV cache misses.</li>
+      <li><strong>Route to the cheapest provider that meets the quality bar.</strong>
+        Workers AI for the bulk (free tier covers a lot), Groq for "needs to be fast"
+        (~$0.0005/call), Anthropic Sonnet only when the task actually needs it
+        (~$0.012/call).</li>
+    </ol>
+
+    <h2>SSE streaming to make 30-second waits feel like 5</h2>
+    <p>
+      An LLM call to Anthropic Sonnet on a complex task can take 20-30 seconds. Users
+      stare at a spinner and abort at 8 seconds. The fix is Server-Sent Events: as the
+      LLM streams tokens to your Worker, you stream progress events back to the user.
+    </p>
+
+    <p>
+      The wire format is simple: <code>event: progress\ndata: {...}\n\n</code>. The
+      hard parts are (1) parsing OpenAI-format SSE chunks from the upstream, (2)
+      throttling progress events so you don't flood the client, (3) gracefully handling
+      cancellation when the user closes their tab. About 80 lines of TypeScript total.
+    </p>
+
+    <div class="cta-card">
+      <h3>Want every line of code, working, in your hands today?</h3>
+      <p style="margin: 8px 0 16px;">
+        The full step-by-step guide ships the complete Worker (~400 lines), the npm-publishable
+        stdio shim (~150 lines), the Stripe webhook handler with signature verification, the
+        SSE streaming pipeline, the AI Gateway wiring, and a copy-paste MCP Registry submission
+        — plus the exact production gotchas in chapter 9 that you'd otherwise hit live.
+      </p>
+      <a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="btn btn-primary" target="_blank" rel="noopener">
+        Get the guide — $29 →
+      </a>
+    </div>
+
+    <h2>What we got wrong (so you don't)</h2>
+    <p>
+      Three things that bit us building Meridian, all of which the guide covers:
+    </p>
+    <ul>
+      <li><strong>KV propagation latency.</strong> Brand-new buyers got 401s on their first
+        protected call because the <code>key:HASH</code> entry hadn't propagated yet from
+        the webhook handler's edge to the user's edge. Fix: in the claim endpoint, set the
+        entry with explicit cacheTtl on the local edge.</li>
+      <li><strong>Webhook idempotency.</strong> Stripe retries failed webhooks for up to
+        3 days. If your handler creates a key on every retry, you have 4 keys for the same
+        customer. Always dedupe by the event's id.</li>
+      <li><strong>The 1 MB Worker bundle limit.</strong> The official <code>stripe</code>
+        npm package is 700 KB. <code>openai</code> SDK is 400 KB. Together you're over.
+        Solution: 25 lines of raw <code>fetch()</code> against Stripe's REST API does
+        everything we need.</li>
+    </ul>
+
+    <h2>The end state</h2>
+    <p>
+      A live MCP server that takes real money via Stripe, has per-user quotas, runs on
+      Cloudflare's free tier, and is listed in the official MCP Registry. Total
+      infrastructure cost at ~50 paying users: $0/month. Revenue: $1,450/month.
+    </p>
+
+    <p>
+      Meridian itself is the proof — try the live demo at
+      <a href="https://ask-meridian.uk">ask-meridian.uk</a>, browse the source at
+      <a href="https://github.com/LuuOW/meridian-mcp">github.com/LuuOW/meridian-mcp</a>.
+      The patterns above are exactly what's in the public repo.
+    </p>
+
+    <div class="cta-card">
+      <h3>Ship yours in 30 minutes →</h3>
+      <p style="margin: 8px 0 16px;">
+        Working CF Worker template + stdio shim + 60-page guide for $29. MIT-licensed code,
+        commercial use OK.
+      </p>
+      <a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="btn btn-primary" target="_blank" rel="noopener">
+        Build Your Own MCP Server — $29 →
+      </a>
+    </div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>

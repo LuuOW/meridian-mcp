@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LLM-authored skills + classical orbital classifier — Meridian Blog</title>
+<meta name="description" content="Why Meridian uses Llama-3.3-70B to author fresh skills per task and a deterministic JS classifier to assign celestial classes — instead of either static-corpus RAG or end-to-end LLM ranking.">
+<meta property="og:title" content="LLM-authored skills + a classical orbital classifier — why we route this way">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .cta-card { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px; padding: 24px; margin: 36px 0; }
+  .cta-card h3 { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="promo-strip" target="_blank" rel="noopener">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <a href="/blog/">Blog</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-04 · 6 min read</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      LLM-authored skills + a classical orbital classifier — why we route this way
+    </h1>
+
+    <p>
+      Most AI skill-routing systems in 2026 do one of two things. Either they retrieve
+      from a static curated corpus (vector search → top-K → present), or they run the
+      whole task through an LLM end-to-end and trust the model's ranking.
+    </p>
+
+    <p>
+      <a href="https://ask-meridian.uk">Meridian</a> does neither. We have Llama-3.3-70B
+      <strong>author fresh skills per task</strong>, then run them through a deterministic
+      JS classifier that assigns each one a celestial class — planet, moon, trojan,
+      asteroid, comet, or irregular — based on physics-style features derived from the
+      skill body.
+    </p>
+
+    <p>This sounds quirky. Here's why we did it.</p>
+
+    <h2>The static-corpus problem</h2>
+    <p>
+      Static-corpus RAG works well when the corpus is rich and the user query falls
+      inside its known territory. It fails when:
+    </p>
+
+    <ul>
+      <li>The corpus has gaps. Every "we should add a skill for X" is a backlog item that
+        slows your iteration.</li>
+      <li>The corpus drifts stale. Your "best practices for Y" skill from 2024 doesn't
+        cover the 2026 patterns.</li>
+      <li>The user's wording diverges from the curator's. Now you need synonyms, query
+        rewriting, hybrid lexical + semantic search, etc.</li>
+    </ul>
+
+    <p>
+      For an open-domain skill router — where any developer might ask anything — a static
+      corpus is a perpetual maintenance burden. So we don't have one. Every result is
+      generated on demand.
+    </p>
+
+    <h2>The end-to-end LLM problem</h2>
+    <p>
+      The opposite extreme: skip retrieval, just give the task to a smart model and ask
+      it to "list 5 relevant skills." This is what most "AI agent" demos do.
+    </p>
+
+    <p>It has its own failure mode: <strong>nondeterminism</strong>. Run the same query
+       twice, get different ranks. Tweak temperature, get different orderings. There's
+       no signal that ties the result to anything verifiable.</p>
+
+    <h2>What Meridian does instead</h2>
+    <p>The pipeline:</p>
+
+    <ol>
+      <li><strong>LLM authors candidates.</strong> Llama-3.3-70B generates 5-8 fresh
+        skill specs per task — full markdown bodies, ~600 chars each, with named tools,
+        decision rules, anti-patterns. A 1-shot exemplar in the prompt anchors the
+        format.</li>
+      <li><strong>Classical classifier scores them.</strong> A pure-JS function derives
+        physics-style features from each skill body: mass, scope, independence,
+        cross-domain, fragmentation, drag, dep_ratio. It picks an argmax over six
+        per-class scores and assigns a celestial class.</li>
+      <li><strong>Lexical + semantic ranking.</strong> Token-overlap routing score
+        against the user task, multiplied by a class-specific boost (planets get more
+        weight than asteroids), modulated by Lagrange-point versatility. Optionally
+        re-ranked by cosine similarity from bge-m3 embeddings.</li>
+      <li><strong>Top-K returned.</strong> Each with its full SKILL.md body, classification,
+        and decision rule.</li>
+    </ol>
+
+    <p>The properties this gives us:</p>
+
+    <ul>
+      <li><strong>Fresh per task.</strong> No corpus to maintain.</li>
+      <li><strong>Deterministic ranking.</strong> Given the same generated set, the
+        classifier always produces the same order.</li>
+      <li><strong>Explainable.</strong> Every result includes the physics features used
+        to classify it. You can show users <em>why</em> a skill outranked another.</li>
+      <li><strong>Composable.</strong> The orbital metaphor makes it natural to talk
+        about skill relationships ("this trojan orbits that planet"). It's a UI/UX
+        primitive, not just a scoring function.</li>
+    </ul>
+
+    <h2>Why "celestial" categories at all</h2>
+    <p>
+      Honestly: because it's a memorable taxonomy. Six names that map to six functional
+      roles a skill can play in a task:
+    </p>
+
+    <ul>
+      <li><strong>Planet</strong> — the central skill, broad scope, anchors the task</li>
+      <li><strong>Moon</strong> — orbits a planet, narrower, supports it</li>
+      <li><strong>Trojan</strong> — sits at a Lagrange point between two planets,
+        bridges domains</li>
+      <li><strong>Asteroid</strong> — small, focused, often anti-pattern or failure-mode
+        skill</li>
+      <li><strong>Comet</strong> — eccentric orbit, high cross-domain affinity, useful
+        rarely but powerfully</li>
+      <li><strong>Irregular</strong> — doesn't fit; useful as a flag</li>
+    </ul>
+
+    <p>
+      The naming is aesthetic but the partition is functional — the classifier picks
+      based on real features, not vibes. Each skill gets a class, and the UI presents
+      them as orbiting bodies (literally — there's an interactive WebGL galaxy view at
+      <a href="/miniapp/">/miniapp/</a>).
+    </p>
+
+    <h2>Where this breaks down</h2>
+    <p>The honest cases where Meridian's approach is worse than alternatives:</p>
+
+    <ul>
+      <li><strong>Latency.</strong> Generating 5-8 skill bodies via Llama-3.3-70B takes
+        5-30 seconds. Static-corpus RAG returns in 50ms. We mitigate with KV caching
+        (24h TTL) + AI Gateway dedup, but cold queries are slow.</li>
+      <li><strong>Cost.</strong> Each fresh-cache call burns 2-3k LLM tokens. At
+        Workers AI free tier this is fine; at scale we'd need to push more aggressively
+        toward the cache + bge-m3 pre-filter.</li>
+      <li><strong>Quality variance.</strong> The LLM occasionally writes garbage skills.
+        The classifier filters by slug pattern + minimum body length but can't filter
+        for "is this actually useful." Pre-Pareto launch we hand-curated; now we trust
+        the model + accept some noise.</li>
+    </ul>
+
+    <h2>Where it goes next</h2>
+    <p>
+      The current classifier is heuristic — every "physics signature" is a JS function
+      we hand-tuned. The natural next step is making the physics actually do work:
+      replacing those heuristics with a real n-body simulation where each skill is a
+      body in an embedding-projected space, with mass derived from semantic weight,
+      and Lagrange points as actual cluster attractors that the solver finds.
+    </p>
+
+    <p>
+      That's the bet our research repo
+      <a href="https://github.com/LuuOW/qrouter">qrouter</a> is exploring — quantum
+      natural-language retrieval via DisCoCat tensor diagrams + Born-rule overlap. Live
+      demo at <a href="https://qrouter.ask-meridian.uk">qrouter.ask-meridian.uk</a>.
+    </p>
+
+    <div class="cta-card">
+      <h3>Want to ship this kind of architecture for your own MCP service?</h3>
+      <p style="margin: 8px 0 16px;">
+        The full guide ships every line of code that powers Meridian's routing pipeline:
+        Worker setup, KV cache, AI Gateway, Vectorize semantic re-rank, SSE streaming.
+        $29 on Gumroad.
+      </p>
+      <a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="btn btn-primary" target="_blank" rel="noopener">
+        Build Your Own MCP Server — $29 →
+      </a>
+    </div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>
