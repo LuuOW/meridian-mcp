@@ -1097,6 +1097,24 @@ section.how, section.pricing, section.cta-final {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+.product-buy-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.product-buy-direct {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+.product-buy-gumroad {
+  font-size: 12.5px !important;
+  padding: 7px 12px !important;
+  opacity: 0.85;
+}
+.product-buy-gumroad:hover { opacity: 1; }
 .products-foot {
   font-size: 13px;
   color: var(--text-faint);
