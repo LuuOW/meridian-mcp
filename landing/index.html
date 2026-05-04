@@ -37,10 +37,9 @@
 
 <a href="#main" class="skip-link">Skip to main content</a>
 
-<!-- Top promo strip — links to the BYOMCP guide. Hide if you want a calmer
-     landing; otherwise it's the highest-leverage CTA on the page. -->
-<a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="promo-strip" target="_blank" rel="noopener">
-  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+<!-- Top promo strip — links to the new products section below. -->
+<a href="#products" class="promo-strip">
+  📘 New · <strong>Build Your Own MCP Server</strong> ($29) + <strong>10 Production-Ready MCP Servers</strong> ($49) · <span class="promo-strip-cta">See products ↓</span>
 </a>
 
 <nav class="nav" aria-label="Primary">
@@ -159,6 +158,59 @@ claude mcp add meridian meridian-mcp</code></pre>
       <h3>Open source core</h3>
       <p>The MCP client is a 5&nbsp;KB stdio shim under MIT. Same backend powers the <a href="/miniapp/">browser miniapp</a> and the <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm package</a>. One source of truth.</p>
     </article>
+  </section>
+
+  <!-- ── PRODUCTS ────────────────────────────────────────────────────── -->
+  <section class="products" id="products">
+    <h2>Build production MCP infra</h2>
+    <p class="lead">Two opinionated, fast-shipping bundles for shipping your own MCP server in 2026. Same author. Same stack as ask-meridian.uk.</p>
+
+    <div class="products-grid">
+
+      <article class="product-card">
+        <div class="product-emoji">📘</div>
+        <h3>Build Your Own MCP Server With Auth + Billing</h3>
+        <p class="product-tagline">In 30 minutes — same stack that powers ask-meridian.uk</p>
+        <ul class="product-features">
+          <li>60-page no-fluff guide (HTML + Markdown source)</li>
+          <li>Working Cloudflare Worker template (TypeScript)</li>
+          <li>Stripe webhook + API-key issuance + per-key quotas</li>
+          <li>npm-publishable stdio shim template</li>
+          <li>SSE streaming + Vectorize RAG + AI Gateway wiring</li>
+          <li>MCP Registry submission walkthrough</li>
+          <li>MIT-licensed code, commercial-use OK</li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-price">$29</span>
+          <a href="https://kempefire.gumroad.com/l/build-your-own-mcp" target="_blank" rel="noopener" class="btn btn-primary">Buy on Gumroad →</a>
+        </div>
+      </article>
+
+      <article class="product-card">
+        <div class="product-emoji">🧰</div>
+        <h3>MCP Server Pack — 10 Production-Ready MCP Servers</h3>
+        <p class="product-tagline">Drop-in MCP servers for Claude Code, Cursor, Cline, Windsurf</p>
+        <ul class="product-features">
+          <li><code>calc</code> — math + unit conversion</li>
+          <li><code>time</code> — date/time/timezone (now/parse/format/diff/ago/tz)</li>
+          <li><code>fs-search</code> — grep/find/tree on local files</li>
+          <li><code>hn-search</code> + <code>arxiv</code> + <code>wikipedia</code></li>
+          <li><code>regex</code> + <code>json-tools</code> + <code>markdown-tools</code></li>
+          <li><code>dns-tools</code> — lookup/reverse/MX/TXT</li>
+          <li>Install script + unified Claude Code config snippet</li>
+        </ul>
+        <div class="product-foot">
+          <span class="product-price">$49</span>
+          <a href="https://kempefire.gumroad.com/l/mcp-server-pack" target="_blank" rel="noopener" class="btn btn-primary">Buy on Gumroad →</a>
+        </div>
+      </article>
+
+    </div>
+
+    <p class="products-foot">
+      💸 Want both? The bundle pricing is in the works — for now, both at <strong>$78 total</strong>.
+      Free public samples on GitHub: <a href="https://github.com/LuuOW/build-your-own-mcp">build-your-own-mcp</a> · <a href="https://github.com/LuuOW/mcp-server-pack">mcp-server-pack</a>.
+    </p>
   </section>
 
   <section class="how">
