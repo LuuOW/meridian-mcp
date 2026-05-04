@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Blog — Meridian</title>
+<meta name="description" content="Notes on building production MCP servers, AI agent infrastructure, and quantum-inspired retrieval — by the author of ask-meridian.uk.">
+<meta property="og:title" content="Meridian Blog — production AI agent infra notes">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ask-meridian.uk/blog/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="promo-strip" target="_blank" rel="noopener">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <a href="/blog/" class="current">Blog</a>
+    <a href="https://docs.ask-meridian.uk">Docs</a>
+    <a href="/miniapp/">Try it</a>
+    <a href="/miniapp/vision-lab/">🔭 Vision Lab</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main id="main" class="hero-wrap">
+  <section class="hero" style="padding-top: 64px;">
+    <span class="eyebrow">Notes</span>
+    <h1>Building production AI agent infrastructure</h1>
+    <p class="lead">
+      What we've learned shipping Meridian — an MCP server with real auth, Stripe billing,
+      RAG via Vectorize, and SSE streaming on Cloudflare's free tier. Plus side notes
+      on photonic / quantum retrieval research.
+    </p>
+  </section>
+
+  <section style="padding: 0 0 72px;">
+    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-04 · 8 min read</div>
+      <h2 style="margin: 8px 0 12px; font-size: 22px;">
+        <a href="/blog/production-mcp-server-cloudflare-workers/" style="color: var(--text); text-decoration: none;">
+          Building a production MCP server on Cloudflare Workers (with auth + Stripe)
+        </a>
+      </h2>
+      <p style="margin: 0; color: var(--text-muted);">
+        Most MCP tutorials show <code>npx create-mcp</code> and a Hello-world tool. Real servers in production need auth, per-key quotas, billing, and an upgrade path. Here's the architecture we use for ask-meridian.uk — entirely on Cloudflare's free tier — and the specific gotchas you'll hit.
+      </p>
+    </article>
+
+    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-04 · 6 min read</div>
+      <h2 style="margin: 8px 0 12px; font-size: 22px;">
+        <a href="/blog/llm-skill-routing-orbital-classifier/" style="color: var(--text); text-decoration: none;">
+          LLM-authored skills + a classical orbital classifier — why we route this way
+        </a>
+      </h2>
+      <p style="margin: 0; color: var(--text-muted);">
+        Most RAG systems either retrieve from a static corpus or end-to-end LLM-rank. Meridian does neither. Llama-3.3-70B authors fresh skills per task; a deterministic JS classifier assigns each one a celestial class (planet/moon/trojan/asteroid/comet/irregular) based on physics-style features. Why the metaphor, why the deterministic step, and where it goes next.
+      </p>
+    </article>
+
+    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-04 · 5 min read</div>
+      <h2 style="margin: 8px 0 12px; font-size: 22px;">
+        <a href="/blog/cloudflare-ai-gateway-vectorize-rag/" style="color: var(--text); text-decoration: none;">
+          Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines
+        </a>
+      </h2>
+      <p style="margin: 0; color: var(--text-muted);">
+        Workers AI for embeddings (free tier), Vectorize for semantic search (free tier), AI Gateway for caching + observability (free). The whole stack costs $0 until you cross 100k requests/month. Here's the wiring we use for meridian's RAG layer.
+      </p>
+    </article>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://docs.ask-meridian.uk">Documentation</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>
