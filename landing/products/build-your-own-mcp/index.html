@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#0a0d14">
+<title>Build Your Own MCP Server With Auth + Billing — $29 — Meridian</title>
+<meta name="description" content="60-page guide + working Cloudflare Worker template + npm-publishable stdio shim. Stripe webhook + API key issuance + per-key quotas + SSE streaming + Vectorize RAG + AI Gateway. The same stack that powers ask-meridian.uk.">
+<meta property="og:title" content="Build Your Own MCP Server With Auth + Billing — In 30 Minutes">
+<meta property="og:description" content="60-page no-fluff guide. Working CF Worker + stdio shim. Stripe + KV + AI Gateway wired correctly from day 1. $29 one-time.">
+<meta property="og:type" content="product">
+<meta property="og:url" content="https://ask-meridian.uk/products/build-your-own-mcp/">
+<meta property="og:image" content="https://ask-meridian.uk/img/products/byomcp-cover.jpg">
+<link rel="canonical" href="https://ask-meridian.uk/products/build-your-own-mcp/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .pdp { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; }
+  .pdp-cover { width: 100%; aspect-ratio: 16/9; border-radius: 14px; border: 1px solid var(--border); object-fit: cover; margin-bottom: 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .pdp-emoji { font-size: 48px; margin-bottom: 12px; line-height: 1; }
+  .pdp h1 { font-size: 32px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
+  .pdp .pdp-tagline { font-size: 17px; color: var(--text-muted); margin: 0 0 28px; font-style: italic; }
+  .pdp .pdp-price-row { display: flex; align-items: center; gap: 18px; margin: 24px 0; padding: 20px 24px; border: 1px solid rgba(167,139,250,0.4); border-radius: 14px; background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); }
+  .pdp .pdp-price { font-size: 36px; font-weight: 700; background: linear-gradient(180deg, #ddd6fe, var(--accent) 70%, var(--accent-d)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .pdp .pdp-price-row .btn { font-size: 16px; padding: 14px 24px; }
+  .pdp h2 { font-size: 22px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .pdp .toc-list { background: var(--bg-card); padding: 18px 22px; border-radius: 12px; border: 1px solid var(--border); }
+  .pdp .toc-list ol { margin: 0; padding-left: 20px; color: var(--text); font-size: 14px; }
+  .pdp .toc-list li { margin: 6px 0; }
+  .pdp .features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; margin: 18px 0; }
+  .pdp .features li { list-style: none; position: relative; padding-left: 22px; color: var(--text-muted); font-size: 14px; }
+  .pdp .features li::before { content: '✓'; position: absolute; left: 0; color: var(--accent-2); font-weight: 700; }
+  .pdp .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; font-size: 13px; }
+  .pdp .meta-card { padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+  .pdp .meta-card .meta-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+  .pdp .quote { border-left: 4px solid var(--accent); padding: 12px 18px; margin: 24px 0; font-style: italic; color: var(--text-muted); }
+  @media (max-width: 600px) { .pdp .features, .pdp .meta-grid { grid-template-columns: 1fr; } .pdp h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <a href="/#products">Products</a>
+    <a href="/blog/">Blog</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main id="main" class="pdp">
+  <img src="/img/products/byomcp-cover.jpg" alt="Build Your Own MCP Server — orbital diagram cover" class="pdp-cover" width="1280" height="720">
+  <h1>Build Your Own MCP Server With Auth + Billing — In 30 Minutes</h1>
+  <p class="pdp-tagline">The same stack that powers ask-meridian.uk, in a 60-page guide. $0 hosting. Real Stripe billing. MIT-licensed code.</p>
+
+  <div class="pdp-price-row">
+    <span class="pdp-price">$29</span>
+    <button class="btn btn-primary product-buy-direct" data-slug="build-your-own-mcp" style="margin-left: auto;">Buy now → instant download</button>
+  </div>
+
+  <p>Most MCP server tutorials in 2026 stop at <code>npx create-mcp</code> and a Hello-world tool. That's a demo. This guide takes you to a production server that actually takes money: Cloudflare Workers + KV + Stripe checkout + per-user quotas + AI Gateway + Vectorize RAG + SSE streaming, listed in the official MCP Registry.</p>
+
+  <h2>What's in the bundle</h2>
+  <ul class="features">
+    <li>60-page guide (HTML + Markdown source)</li>
+    <li>Working Cloudflare Worker template (TypeScript)</li>
+    <li>npm-publishable stdio shim template</li>
+    <li>Stripe checkout + webhook handler</li>
+    <li>API key issuance with SHA-256 hashing</li>
+    <li>Per-IP + per-key rate limiting (with IPv6 /64 prefix)</li>
+    <li>SSE streaming for live LLM token progress</li>
+    <li>Vectorize RAG + AI Gateway wiring</li>
+    <li>MCP Registry submission walkthrough</li>
+    <li>Production gotchas chapter (chapter 9)</li>
+    <li>MIT license, commercial use OK</li>
+    <li>Instant download after payment</li>
+  </ul>
+
+  <h2>Table of contents (12 chapters)</h2>
+  <div class="toc-list">
+    <ol>
+      <li>What MCP actually is</li>
+      <li>The architecture you're going to ship</li>
+      <li>Cloudflare account setup + first deploy (5 min)</li>
+      <li>KV namespace + per-IP rate limiting (5 min)</li>
+      <li>Stripe account + the $29/mo Pro tier (10 min)</li>
+      <li>API-key issuance via Stripe webhook (5 min)</li>
+      <li>The MCP stdio shim — npm-publishable (5 min)</li>
+      <li>Submitting to the official MCP Registry</li>
+      <li>Production gotchas (cold starts, KV propagation, webhook retries)</li>
+      <li>Adding LLM calls cost-safely</li>
+      <li>Bonus: SSE streaming for live progress events</li>
+      <li>Bonus: Vectorize-backed result caching</li>
+    </ol>
+  </div>
+
+  <div class="quote">
+    "Most tutorials stopped at <code>Hello, world</code>. This one took me from there to taking real Stripe payments in an afternoon. The chapter on production gotchas alone saved me a weekend." — what an early reader could legitimately say. (No fake testimonials yet — be the first.)
+  </div>
+
+  <h2>Specs</h2>
+  <div class="meta-grid">
+    <div class="meta-card"><div class="meta-label">Format</div>HTML guide + Markdown source + ZIP</div>
+    <div class="meta-card"><div class="meta-label">Pages</div>60+ (browser-printable to PDF)</div>
+    <div class="meta-card"><div class="meta-label">License</div>MIT (code), buyer-only (PDF)</div>
+    <div class="meta-card"><div class="meta-label">Stack</div>Cloudflare Workers + KV + Stripe</div>
+    <div class="meta-card"><div class="meta-label">Languages</div>TypeScript (Worker) + JavaScript (shim)</div>
+    <div class="meta-card"><div class="meta-label">Free sample</div><a href="https://github.com/LuuOW/build-your-own-mcp">GitHub repo</a></div>
+  </div>
+
+  <h2>How delivery works</h2>
+  <p>Click <strong>Buy now</strong>, you're sent to Stripe's hosted checkout. Pay, you're redirected back to a download page on ask-meridian.uk. Bookmark that URL — you can revisit it anytime to re-download (it's keyed to your Stripe session). Receipt email also has the link. Lost everything? Email <a href="mailto:lucas.kempe@icloud.com">lucas.kempe@icloud.com</a> with your Stripe receipt.</p>
+
+  <div class="pdp-price-row">
+    <span class="pdp-price">$29</span>
+    <button class="btn btn-primary product-buy-direct" data-slug="build-your-own-mcp" style="margin-left: auto;">Buy now → instant download</button>
+  </div>
+
+  <p style="text-align: center; margin-top: 28px; color: var(--text-faint); font-size: 13px;">
+    Built by <a href="https://github.com/LuuOW">@LuuOW</a> · Author of <a href="https://ask-meridian.uk">ask-meridian.uk</a> + <a href="https://github.com/LuuOW/qrouter">qrouter</a> · See also: <a href="/products/mcp-server-pack/">MCP Server Pack</a> ($49)
+  </p>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/#products">Products</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed code</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+<script>
+  document.querySelectorAll('.product-buy-direct').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.dataset.slug
+      const orig = btn.textContent
+      btn.disabled = true
+      btn.textContent = 'Redirecting to Stripe…'
+      try {
+        const r = await fetch('/api/stripe/checkout-product', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ slug }),
+        })
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
+        location.href = data.url
+      } catch (e) {
+        alert('Checkout failed: ' + e.message)
+        btn.disabled = false
+        btn.textContent = orig
+      }
+    })
+  })
+</script>
+</body>
+</html>

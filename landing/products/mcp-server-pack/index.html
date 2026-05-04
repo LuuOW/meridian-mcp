@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#0a0d14">
+<title>MCP Server Pack — 10 Production-Ready MCP Servers — $49 — Meridian</title>
+<meta name="description" content="10 single-purpose MCP servers (calc, time, fs-search, hn, arxiv, regex, json-tools, markdown, wikipedia, dns) + one-shot install script. All stdio. MIT-licensed. Drop straight into Claude Code.">
+<meta property="og:title" content="MCP Server Pack — 10 Production-Ready MCP Servers for Claude Code">
+<meta property="og:description" content="10 single-purpose MCP servers + install script. Stdio. MIT. $49 one-time.">
+<meta property="og:type" content="product">
+<meta property="og:url" content="https://ask-meridian.uk/products/mcp-server-pack/">
+<meta property="og:image" content="https://ask-meridian.uk/img/products/pack-cover.jpg">
+<link rel="canonical" href="https://ask-meridian.uk/products/mcp-server-pack/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .pdp { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; }
+  .pdp-cover { width: 100%; aspect-ratio: 16/9; border-radius: 14px; border: 1px solid var(--border); object-fit: cover; margin-bottom: 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .pdp h1 { font-size: 32px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
+  .pdp .pdp-tagline { font-size: 17px; color: var(--text-muted); margin: 0 0 28px; font-style: italic; }
+  .pdp .pdp-price-row { display: flex; align-items: center; gap: 18px; margin: 24px 0; padding: 20px 24px; border: 1px solid rgba(167,139,250,0.4); border-radius: 14px; background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); }
+  .pdp .pdp-price { font-size: 36px; font-weight: 700; background: linear-gradient(180deg, #ddd6fe, var(--accent) 70%, var(--accent-d)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .pdp .pdp-price-row .btn { font-size: 16px; padding: 14px 24px; }
+  .pdp h2 { font-size: 22px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .pdp .features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; margin: 18px 0; }
+  .pdp .features li { list-style: none; position: relative; padding-left: 22px; color: var(--text-muted); font-size: 14px; }
+  .pdp .features li::before { content: '✓'; position: absolute; left: 0; color: var(--accent-2); font-weight: 700; }
+  .pdp .server-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+  .pdp .server-card { padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+  .pdp .server-card .name { font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 700; }
+  .pdp .server-card .desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .pdp .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; font-size: 13px; }
+  .pdp .meta-card { padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+  .pdp .meta-card .meta-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+  @media (max-width: 600px) { .pdp .features, .pdp .meta-grid, .pdp .server-grid { grid-template-columns: 1fr; } .pdp h1 { font-size: 26px; } }
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <a href="/#products">Products</a>
+    <a href="/blog/">Blog</a>
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+  </div>
+</nav>
+
+<main id="main" class="pdp">
+  <img src="/img/products/pack-cover.jpg" alt="MCP Server Pack — 10 modular tiles" class="pdp-cover" width="1280" height="720">
+  <h1>MCP Server Pack — 10 Production-Ready MCP Servers for Claude Code</h1>
+  <p class="pdp-tagline">Ten single-purpose stdio MCP servers + a one-shot install script. Drop straight into <code>~/.claude.json</code>. MIT-licensed.</p>
+
+  <div class="pdp-price-row">
+    <span class="pdp-price">$49</span>
+    <button class="btn btn-primary product-buy-direct" data-slug="mcp-server-pack" style="margin-left: auto;">Buy now → instant download</button>
+  </div>
+
+  <p>Most MCP server tutorials teach you how to write <em>one</em> tool. This pack gives you ten, already wired, already tested, already shipped. Calc, time, fs-search, HN search, arXiv, regex, JSON tools, markdown tools, Wikipedia, DNS — each as a single-purpose stdio server you can install in 30 seconds and call from Claude Code, Cursor, or any other MCP-aware client.</p>
+
+  <h2>What's in the pack</h2>
+  <div class="server-grid">
+    <div class="server-card"><div class="name">calc</div><div class="desc">Math expression parser + unit conversion (free public sample)</div></div>
+    <div class="server-card"><div class="name">time</div><div class="desc">now / parse / format / diff / ago / timezone</div></div>
+    <div class="server-card"><div class="name">fs-search</div><div class="desc">grep / find / tree (sandboxed to a workspace dir)</div></div>
+    <div class="server-card"><div class="name">hn-search</div><div class="desc">Algolia HN API — search stories, top, recent</div></div>
+    <div class="server-card"><div class="name">arxiv</div><div class="desc">Search + fetch arXiv abstracts by ID/keyword</div></div>
+    <div class="server-card"><div class="name">regex</div><div class="desc">match, find-all, named groups, replace</div></div>
+    <div class="server-card"><div class="name">json-tools</div><div class="desc">jsonpath, schema-validate, diff, pretty-print</div></div>
+    <div class="server-card"><div class="name">markdown-tools</div><div class="desc">md → html, html → md, TOC extract, slugify</div></div>
+    <div class="server-card"><div class="name">wikipedia</div><div class="desc">summary / search / sections by title or URL</div></div>
+    <div class="server-card"><div class="name">dns-tools</div><div class="desc">A / AAAA / MX / TXT / SPF / DMARC lookups</div></div>
+  </div>
+
+  <h2>Why this exists</h2>
+  <ul class="features">
+    <li>One <code>install-all.sh</code> wires the lot into <code>~/.claude.json</code></li>
+    <li>Each server is single-purpose (=easy to debug)</li>
+    <li>All stdio (no servers running, no ports open)</li>
+    <li>Zero external dependencies for 7 of the 10</li>
+    <li>Calc is open-sourced as the free public sample</li>
+    <li>Pure Python or Node — pick per server</li>
+    <li>MIT license, commercial use OK</li>
+    <li>Instant download after payment</li>
+  </ul>
+
+  <h2>Specs</h2>
+  <div class="meta-grid">
+    <div class="meta-card"><div class="meta-label">Format</div>10 server folders + install script + ZIP</div>
+    <div class="meta-card"><div class="meta-label">Servers</div>10 (1 free public sample)</div>
+    <div class="meta-card"><div class="meta-label">License</div>MIT</div>
+    <div class="meta-card"><div class="meta-label">Transport</div>stdio (MCP standard)</div>
+    <div class="meta-card"><div class="meta-label">Languages</div>Python + Node.js (mixed by server)</div>
+    <div class="meta-card"><div class="meta-label">Free sample</div><a href="https://github.com/LuuOW/mcp-server-pack">GitHub repo</a></div>
+  </div>
+
+  <h2>How delivery works</h2>
+  <p>Click <strong>Buy now</strong>, you're sent to Stripe's hosted checkout. Pay, you're redirected back to a download page on ask-meridian.uk. Bookmark that URL — you can revisit it anytime to re-download (it's keyed to your Stripe session). Receipt email also has the link. Lost everything? Email <a href="mailto:lucas.kempe@icloud.com">lucas.kempe@icloud.com</a> with your Stripe receipt.</p>
+
+  <div class="pdp-price-row">
+    <span class="pdp-price">$49</span>
+    <button class="btn btn-primary product-buy-direct" data-slug="mcp-server-pack" style="margin-left: auto;">Buy now → instant download</button>
+  </div>
+
+  <p style="text-align: center; margin-top: 28px; color: var(--text-faint); font-size: 13px;">
+    Built by <a href="https://github.com/LuuOW">@LuuOW</a> · Author of <a href="https://ask-meridian.uk">ask-meridian.uk</a> + <a href="https://github.com/LuuOW/qrouter">qrouter</a> · See also: <a href="/products/build-your-own-mcp/">Build Your Own MCP Server</a> ($29)
+  </p>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/#products">Products</a>
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed code</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+<script>
+  document.querySelectorAll('.product-buy-direct').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.dataset.slug
+      const orig = btn.textContent
+      btn.disabled = true
+      btn.textContent = 'Redirecting to Stripe…'
+      try {
+        const r = await fetch('/api/stripe/checkout-product', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ slug }),
+        })
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
+        location.href = data.url
+      } catch (e) {
+        alert('Checkout failed: ' + e.message)
+        btn.disabled = false
+        btn.textContent = orig
+      }
+    })
+  })
+</script>
+</body>
+</html>
