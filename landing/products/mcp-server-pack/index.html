@@ -15,8 +15,9 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
 <style>
-  .pdp { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; }
-  .pdp-cover { width: 100%; aspect-ratio: 16/9; border-radius: 14px; border: 1px solid var(--border); object-fit: cover; margin-bottom: 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .pdp { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; position: relative; z-index: 1; }
+  .pdp-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-size: cover; background-position: center top; background-attachment: fixed; opacity: 0.12; filter: blur(6px) saturate(1.1); }
+  .pdp-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at top, rgba(10,13,20,0.55) 0%, rgba(10,13,20,0.95) 70%); }
   .pdp h1 { font-size: 32px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
   .pdp .pdp-tagline { font-size: 17px; color: var(--text-muted); margin: 0 0 28px; font-style: italic; }
   .pdp .pdp-price-row { display: flex; align-items: center; gap: 18px; margin: 24px 0; padding: 20px 24px; border: 1px solid rgba(167,139,250,0.4); border-radius: 14px; background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); }
@@ -52,8 +53,8 @@
   </div>
 </nav>
 
+<div class="pdp-bg" aria-hidden="true" style="background-image: url('/img/products/pack-cover.jpg');"></div>
 <main id="main" class="pdp">
-  <img src="/img/products/pack-cover.jpg" alt="MCP Server Pack — 10 modular tiles" class="pdp-cover" width="1280" height="720">
   <h1>MCP Server Pack — 10 Production-Ready MCP Servers for Claude Code</h1>
   <p class="pdp-tagline">Ten single-purpose stdio MCP servers + a one-shot install script. Drop straight into <code>~/.claude.json</code>. MIT-licensed.</p>
 
