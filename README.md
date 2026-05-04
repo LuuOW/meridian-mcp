@@ -1,5 +1,9 @@
 # Meridian Skills MCP
 
+> 📘 **Want to ship your own MCP server like this one?**
+> [Build Your Own MCP Server With Auth + Billing — In 30 Minutes](https://kempefire.gumroad.com/l/build-your-own-mcp) ($29)
+> Same exact stack: Cloudflare Workers + KV + Stripe webhook + AI Gateway. Working code + 60-page guide.
+
 **Dynamic AI skill routing via orbital mechanics.**
 
 Stdio MCP that calls the Meridian orbital router at [ask-meridian.uk](https://ask-meridian.uk).
