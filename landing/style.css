@@ -998,6 +998,114 @@ section.how, section.pricing, section.cta-final {
   .promo-strip { font-size: 11px; padding: 7px 10px; }
 }
 
+/* ── Products section ────────────────────────────────────────────────── */
+.products {
+  padding: var(--section-y) 0;
+  text-align: center;
+}
+.products h2 {
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+.products .lead {
+  margin-bottom: 36px;
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+.product-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 14px;
+  padding: 28px 26px;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base);
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.06);
+}
+.product-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow: 0 8px 32px rgba(167, 139, 250, 0.18);
+}
+.product-emoji {
+  font-size: 32px;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.product-card h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.product-tagline {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+  font-style: italic;
+}
+.product-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+.product-features li {
+  position: relative;
+  padding: 4px 0 4px 18px;
+}
+.product-features li::before {
+  content: '◦';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+.product-features code {
+  background: rgba(167,139,250,0.10);
+  color: #ddd6fe;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11.5px;
+}
+.product-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+.product-price {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(180deg, #ddd6fe, var(--accent) 70%, var(--accent-d));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.products-foot {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin-top: 12px;
+}
+@media (max-width: 760px) {
+  .products-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Print: strip animation, neon, shadows ──────────────────────────── */
 @media print {
   .hero-orbits, .burger, .nav-version, .snippet-copy, .calendly-badge-widget { display: none !important; }
