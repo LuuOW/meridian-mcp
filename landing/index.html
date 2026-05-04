@@ -182,7 +182,10 @@ claude mcp add meridian meridian-mcp</code></pre>
         </ul>
         <div class="product-foot">
           <span class="product-price">$29</span>
-          <a href="https://kempefire.gumroad.com/l/build-your-own-mcp" target="_blank" rel="noopener" class="btn btn-primary">Buy on Gumroad →</a>
+          <div class="product-buy-row">
+            <button class="btn btn-primary product-buy-direct" data-slug="build-your-own-mcp">Buy direct →</button>
+            <a href="https://kempefire.gumroad.com/l/build-your-own-mcp" target="_blank" rel="noopener" class="btn btn-ghost product-buy-gumroad">or Gumroad</a>
+          </div>
         </div>
       </article>
 
@@ -201,11 +204,42 @@ claude mcp add meridian meridian-mcp</code></pre>
         </ul>
         <div class="product-foot">
           <span class="product-price">$49</span>
-          <a href="https://kempefire.gumroad.com/l/mcp-server-pack" target="_blank" rel="noopener" class="btn btn-primary">Buy on Gumroad →</a>
+          <div class="product-buy-row">
+            <button class="btn btn-primary product-buy-direct" data-slug="mcp-server-pack">Buy direct →</button>
+            <a href="https://kempefire.gumroad.com/l/mcp-server-pack" target="_blank" rel="noopener" class="btn btn-ghost product-buy-gumroad">or Gumroad</a>
+          </div>
         </div>
       </article>
 
     </div>
+
+    <script>
+      // One-time digital purchase flow — POSTs slug to our checkout
+      // endpoint, redirects to Stripe-hosted Checkout. Same UX as the
+      // Pro tier subscription flow.
+      document.querySelectorAll('.product-buy-direct').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const slug = btn.dataset.slug
+          const orig = btn.textContent
+          btn.disabled = true
+          btn.textContent = 'Redirecting to Stripe…'
+          try {
+            const r = await fetch('/api/stripe/checkout-product', {
+              method:  'POST',
+              headers: { 'content-type': 'application/json' },
+              body:    JSON.stringify({ slug }),
+            })
+            const data = await r.json()
+            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
+            location.href = data.url
+          } catch (e) {
+            alert('Checkout failed: ' + e.message)
+            btn.disabled = false
+            btn.textContent = orig
+          }
+        })
+      })
+    </script>
 
     <p class="products-foot">
       💸 Want both? The bundle pricing is in the works — for now, both at <strong>$78 total</strong>.
