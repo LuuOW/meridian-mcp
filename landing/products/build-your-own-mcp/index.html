@@ -15,8 +15,9 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
 <style>
-  .pdp { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; }
-  .pdp-cover { width: 100%; aspect-ratio: 16/9; border-radius: 14px; border: 1px solid var(--border); object-fit: cover; margin-bottom: 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .pdp { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; position: relative; z-index: 1; }
+  .pdp-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-size: cover; background-position: center top; background-attachment: fixed; opacity: 0.12; filter: blur(6px) saturate(1.1); }
+  .pdp-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at top, rgba(10,13,20,0.55) 0%, rgba(10,13,20,0.95) 70%); }
   .pdp-emoji { font-size: 48px; margin-bottom: 12px; line-height: 1; }
   .pdp h1 { font-size: 32px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
   .pdp .pdp-tagline { font-size: 17px; color: var(--text-muted); margin: 0 0 28px; font-style: italic; }
@@ -53,8 +54,8 @@
   </div>
 </nav>
 
+<div class="pdp-bg" aria-hidden="true" style="background-image: url('/img/products/byomcp-cover.jpg');"></div>
 <main id="main" class="pdp">
-  <img src="/img/products/byomcp-cover.jpg" alt="Build Your Own MCP Server — orbital diagram cover" class="pdp-cover" width="1280" height="720">
   <h1>Build Your Own MCP Server With Auth + Billing — In 30 Minutes</h1>
   <p class="pdp-tagline">The same stack that powers ask-meridian.uk, in a 60-page guide. $0 hosting. Real Stripe billing. MIT-licensed code.</p>
 
