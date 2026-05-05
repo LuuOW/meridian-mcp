@@ -14,8 +14,13 @@ import { join }                                    from 'node:path'
 import { buildSkillEmbeddings, rankByEmbedding }   from './embeddings.mjs'
 import { parseFrontmatter }                        from './skill-md.mjs'
 
-const SKILLS_ROOT     = process.env.MERIDIAN_SKILLS_ROOT   || '/opt/skills'
-const SKILL_ORBIT_PY  = process.env.MERIDIAN_SKILL_ORBIT   || '/opt/skills/skill_orbit.py'
+// Default to repo-relative paths so the MCP server runs from any clone
+// without needing /opt/skills installed. Override with env vars for prod.
+import { dirname }                                  from 'node:path'
+import { fileURLToPath }                            from 'node:url'
+const _REPO = dirname(dirname(fileURLToPath(import.meta.url)))
+const SKILLS_ROOT     = process.env.MERIDIAN_SKILLS_ROOT || join(_REPO, 'skills')
+const SKILL_ORBIT_PY  = process.env.MERIDIAN_SKILL_ORBIT || join(_REPO, 'skills', 'skill_orbit.py')
 const PYTHON          = process.env.MERIDIAN_PYTHON        || 'python3'
 
 // ── Embedding warm-up on module load ─────────────────────────────────────────

@@ -74,100 +74,25 @@
 
 <main class="success-wrap">
   <div class="success-card">
-    <h1>🎉 You're on the <span id="plan">Pro</span> plan</h1>
-    <p class="lead">Your API key — <strong>copy it now, this is the only time it'll be shown.</strong></p>
+    <h1>🎉 Payment received</h1>
+    <p class="lead">Thanks for your purchase. Stripe will send your receipt by email.</p>
 
-    <div id="loading"><span class="spinner"></span>Provisioning your key…</div>
-    <div id="ready" hidden>
-      <div class="key-box" id="keyBox"></div>
-      <button id="copyBtn" class="copy-btn">Copy key</button>
+    <div class="next-steps">
+      <h2>What happens next</h2>
+      <p>Your API key (for Pro / Team plans) or your download link (for one-time
+      products) is provisioned manually and emailed to the address on your
+      Stripe receipt within 24 hours. If you don't receive it, reply to the
+      receipt or write to <a href="mailto:lucas.kempe@icloud.com">lucas.kempe@icloud.com</a>
+      with your Stripe session ID.</p>
 
-      <div class="warning">
-        <strong>⚠ This page only works once.</strong>
-        Stripe verified your subscription. Your key is hashed server-side; we
-        cannot show it again. If you lose it, contact <a href="mailto:hello@ask-meridian.uk">hello@ask-meridian.uk</a> to rotate.
-      </div>
-
-      <div class="next-steps">
-        <h2>Use it with the MCP</h2>
-        <pre><code>npm install -g meridian-skills-mcp
-MERIDIAN_API_KEY=&lt;your-key&gt; claude mcp add meridian meridian-mcp</code></pre>
-
-        <h2 style="margin-top:18px">Or via curl</h2>
-        <pre><code>curl -X POST https://ask-meridian.uk/api/orbital-route \
-  -H "Authorization: Bearer &lt;your-key&gt;" \
-  -H "content-type: application/json" \
-  -d '{"task":"set up rate limiting on a public API"}'</code></pre>
-
-        <p style="margin-top:18px">Manage your subscription at the <a href="#" id="portalLink">billing portal</a>.</p>
-      </div>
+      <h2 style="margin-top:18px">Manage your subscription</h2>
+      <p>Stripe sends every receipt with a “Manage subscription” link.
+      Use that link, or write to <a href="mailto:lucas.kempe@icloud.com">lucas.kempe@icloud.com</a>
+      to cancel.</p>
     </div>
-
-    <div id="errorBox" class="err" hidden></div>
   </div>
 </main>
 
-<script>
-const params  = new URLSearchParams(location.search)
-const sid     = params.get('session_id')
-const $       = id => document.getElementById(id)
-const loading = $('loading')
-const ready   = $('ready')
-const errBox  = $('errorBox')
-let savedKey  = null
-
-if (!sid) {
-  loading.hidden = true
-  errBox.hidden  = false
-  errBox.textContent = 'Missing session_id in URL. Did you arrive from a real Stripe checkout?'
-} else {
-  claim(sid)
-}
-
-async function claim(sid, attempt = 0) {
-  try {
-    const r = await fetch('/api/stripe/claim', {
-      method:  'POST',
-      headers: { 'content-type': 'application/json' },
-      body:    JSON.stringify({ session_id: sid }),
-    })
-    const data = await r.json()
-    if (r.status === 202 && attempt < 12) {
-      // Webhook hasn't arrived yet — retry
-      setTimeout(() => claim(sid, attempt + 1), 2500)
-      return
-    }
-    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
-    savedKey = data.api_key
-    $('plan').textContent  = data.plan === 'team' ? 'Team' : 'Pro'
-    $('keyBox').textContent = data.api_key
-    loading.hidden = true
-    ready.hidden   = false
-    $('copyBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(savedKey)
-      const b = $('copyBtn')
-      b.textContent = '✓ Copied'
-      b.classList.add('copied')
-      setTimeout(() => { b.textContent = 'Copy key'; b.classList.remove('copied') }, 1500)
-    })
-    $('portalLink').addEventListener('click', async (e) => {
-      e.preventDefault()
-      const r = await fetch('/api/stripe/portal', {
-        method:  'POST',
-        headers: { 'content-type': 'application/json' },
-        body:    JSON.stringify({ api_key: savedKey }),
-      })
-      const d = await r.json()
-      if (d.url) location.href = d.url
-      else alert(d.error || 'failed')
-    })
-  } catch (e) {
-    loading.hidden = true
-    errBox.hidden  = false
-    errBox.textContent = 'Failed to retrieve key: ' + e.message
-  }
-}
-</script>
 
 </body>
 </html>

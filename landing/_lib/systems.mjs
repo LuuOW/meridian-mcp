@@ -1,8 +1,5 @@
-// Star-system term sets — single source of truth for the JS edge classifier.
-// Mirrors galaxy/system-terms.json (which Python's skill_orbit.py also reads).
-// Kept inline as a JS module rather than `import 'json'` so it works without
-// relying on JSON-import support in the Pages Functions bundler. A unit test
-// in tests/system-terms.test.mjs verifies this stays in sync with the JSON.
+// Star-system term sets — drives cross_domain entropy + lagrange affinity
+// in the orbital classifier. Mirrors galaxy/system-terms.json.
 
 export const SYSTEM_TERMS = {
   forge: new Set([
