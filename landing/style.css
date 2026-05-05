@@ -368,17 +368,39 @@ pre code { background: none; padding: 0; color: inherit; }
   margin-left: 6px;
 }
 
-/* Section dividers inside the burger panel — replaces the flat list of 8
-   anchors with a grouped layout: Showcase (live demos), Resources, External. */
+/* Collapsible sections inside the burger panel. Each <details class="nav-group">
+   wraps a <summary class="nav-section"> header + the items beneath it; the
+   user clicks the header to expand/collapse. Showcase opens by default;
+   Resources expands automatically when the active page is in that group. */
+.nav-menu .nav-group {
+  border-top: 1px solid rgba(167, 139, 250, 0.10);
+  margin-top: 6px;
+  padding-top: 4px;
+}
+.nav-menu .nav-group:first-of-type { border-top: 0; margin-top: 4px; padding-top: 0; }
+.nav-menu .nav-group > summary {
+  cursor: pointer;
+  list-style: none;             /* hide default disclosure marker */
+  user-select: none;
+}
+.nav-menu .nav-group > summary::-webkit-details-marker { display: none; }
 .nav-menu .nav-section {
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(167, 139, 250, 0.65);
-  padding: 14px 14px 4px;
+  color: rgba(167, 139, 250, 0.75);
+  padding: 12px 14px 6px;
   font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.nav-menu .nav-section:first-child { padding-top: 4px; }
+.nav-menu .nav-section::after {
+  content: '+';
+  font-size: 14px;
+  color: rgba(167, 139, 250, 0.55);
+  transition: transform 0.18s ease, color 0.18s;
+}
+.nav-menu .nav-group[open] > summary .nav-section::after { transform: rotate(45deg); color: var(--accent); }
+.nav-menu .nav-group > summary:hover .nav-section { color: var(--text); }
 .nav-menu a.nav-app {
   display: block;
   padding: 10px 14px;
