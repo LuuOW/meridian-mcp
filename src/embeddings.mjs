@@ -16,7 +16,7 @@ import { parseFrontmatter }                        from './skill-md.mjs'
 
 const __dirname_emb = dirname(fileURLToPath(import.meta.url))
 const EMBED_CACHE   = join(__dirname_emb, '..', 'data', 'skill_embeddings.json')
-const SKILLS_ROOT   = process.env.MERIDIAN_SKILLS_ROOT || '/opt/skills'
+const SKILLS_ROOT   = process.env.MERIDIAN_SKILLS_ROOT || join(__dirname_emb, '..', 'skills')
 const MODEL_ID      = 'Xenova/all-MiniLM-L6-v2'
 
 let _pipeline = null

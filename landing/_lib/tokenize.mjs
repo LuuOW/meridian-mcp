@@ -1,8 +1,7 @@
-// Shared tokenizer for the edge classifiers.
-// Lowercase, replace non-alphanumeric (preserving hyphen) with whitespace,
-// drop short tokens (<3 chars) and a small English stop-word set.
-// Used by both the lexical scorer (_router.js) and the orbital classifier
-// (_orbital.js) so token boundaries and STOP membership stay aligned.
+// Shared tokenizer. Lowercase → strip non-alphanum (keep hyphen) → drop
+// short tokens (<3) and English stopwords. Mirrors src/embeddings.mjs and
+// scripts/build-miniapp-index.mjs so token boundaries stay aligned across
+// build-time IDF and runtime scoring.
 
 export const STOP = new Set([
   'the','and','for','with','that','this','from','have','your','about',
