@@ -167,24 +167,9 @@
 <script>
   document.querySelectorAll('.product-buy-direct').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const slug = btn.dataset.slug
-      const orig = btn.textContent
       btn.disabled = true
       btn.textContent = 'Redirecting to Stripe…'
-      try {
-        const r = await fetch('/api/stripe/checkout-product', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ slug }),
-        })
-        const data = await r.json()
-        if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
-        location.href = data.url
-      } catch (e) {
-        alert('Checkout failed: ' + e.message)
-        btn.disabled = false
-        btn.textContent = orig
-      }
+      location.href = 'https://buy.stripe.com/fZu6oJ6Fn8vx3VZ7EF7ok02'
     })
   })
 </script>

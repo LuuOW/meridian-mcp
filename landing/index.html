@@ -240,29 +240,20 @@ claude mcp add meridian meridian-mcp</code></pre>
     </div>
 
     <script>
-      // One-time digital purchase flow — POSTs slug to our checkout
-      // endpoint, redirects to Stripe-hosted Checkout. Same UX as the
-      // Pro tier subscription flow.
+      // One-time digital purchase flow — Stripe Payment Links, generated
+      // once via Stripe API and pinned here. No backend; the click
+      // navigates directly to Stripe-hosted checkout.
+      const PRODUCT_LINKS = {
+        'build-your-own-mcp': 'https://buy.stripe.com/fZu8wR7JrfXZeAD2kl7ok01',
+        'mcp-server-pack':    'https://buy.stripe.com/fZu6oJ6Fn8vx3VZ7EF7ok02',
+      }
       document.querySelectorAll('.product-buy-direct').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const slug = btn.dataset.slug
-          const orig = btn.textContent
+        btn.addEventListener('click', () => {
+          const url = PRODUCT_LINKS[btn.dataset.slug]
+          if (!url) { alert('No payment link for ' + btn.dataset.slug); return }
           btn.disabled = true
           btn.textContent = 'Redirecting to Stripe…'
-          try {
-            const r = await fetch('/api/stripe/checkout-product', {
-              method:  'POST',
-              headers: { 'content-type': 'application/json' },
-              body:    JSON.stringify({ slug }),
-            })
-            const data = await r.json()
-            if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
-            location.href = data.url
-          } catch (e) {
-            alert('Checkout failed: ' + e.message)
-            btn.disabled = false
-            btn.textContent = orig
-          }
+          location.href = url
         })
       })
     </script>
@@ -345,26 +336,19 @@ claude mcp add meridian meridian-mcp</code></pre>
   </section>
 
   <script>
+  // Subscription plans → Stripe Payment Links (recurring prices, mode
+  // auto-selected by Stripe). Generated once via the Stripe API.
+  const PLAN_LINKS = {
+    pro:  'https://buy.stripe.com/28EaEZ7JrdPR0JN0cd7ok03',
+    team: 'https://buy.stripe.com/4gMaEZ2p7cLN6474st7ok04',
+  }
   document.querySelectorAll('[data-checkout]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const plan = btn.dataset.plan
-      const orig = btn.textContent
+    btn.addEventListener('click', () => {
+      const url = PLAN_LINKS[btn.dataset.plan]
+      if (!url) { alert('No payment link for plan ' + btn.dataset.plan); return }
       btn.disabled = true
       btn.textContent = 'Redirecting to Stripe…'
-      try {
-        const res = await fetch('/api/stripe/checkout', {
-          method:  'POST',
-          headers: { 'content-type': 'application/json' },
-          body:    JSON.stringify({ plan }),
-        })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
-        location.href = data.url
-      } catch (e) {
-        alert('Checkout failed: ' + e.message)
-        btn.disabled = false
-        btn.textContent = orig
-      }
+      location.href = url
     })
   })
   </script>
