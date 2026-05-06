@@ -470,14 +470,8 @@ $('routeBtn').addEventListener('click', async () => {
   try {
     const summary = await routeTaskStream(
       {
-        task:     lastAnswer.length > 600 ? lastAnswer.slice(0, 600) + '…' : lastAnswer,
-        limit:    5,
-        provider: 'groq',
-        // Tell the router this came from a phone-camera-in-hand session, not a
-        // text prompt. The backend biases skill generation toward immediate
-        // physical interaction (hands-on inspection, quick tests, in-place
-        // repair) rather than research/literature/purchasing skills.
-        context:  'vision_lab',
+        task:  lastAnswer.length > 600 ? lastAnswer.slice(0, 600) + '…' : lastAnswer,
+        limit: 5,
       },
       {
         onProgress: (p) => {
@@ -532,7 +526,7 @@ $('routeBtn').addEventListener('click', async () => {
     foot.hidden      = false
     const wallMs = Math.round(performance.now() - t0)
     foot.innerHTML = `
-      Provider: <code>${escapeHTML(summary?.provider || '?')}</code> ·
+      Classifier: <code>${escapeHTML(summary?.classifier || 'orbital-edge-v1')}</code> ·
       Wall: ${(wallMs / 1000).toFixed(1)}s ·
       <a href="/miniapp/?task=${encodeURIComponent(lastAnswer.slice(0, 200))}">Open in main miniapp</a>
     `
