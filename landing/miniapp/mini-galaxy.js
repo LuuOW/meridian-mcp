@@ -1,7 +1,7 @@
 // mini-galaxy.js — small inline canvas above results.
 // Two modes: 2D (top-down orbital plane) and 3D (tilted perspective).
 // Persistent starfield + skill planets seeded from the latest /api/route response.
-// Visual language adapted from the standalone galaxy viz at galaxy.ask-meridian.uk.
+// Visual language adapted from the standalone galaxy viz (since retired).
 
 const RING_COLORS = [
   { ring: 'rgba(167, 139, 250, 0.55)', planet: '#c4b5fd', glow: 'rgba(167, 139, 250, 0.45)' }, // violet
