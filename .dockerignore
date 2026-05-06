@@ -1,0 +1,5 @@
+# The Dockerfile installs the published npm package — we don't need
+# any of the repo's local source in the image. Keeps the build context
+# tiny so `docker build` doesn't ship 30 MB of skills/, landing/, etc.
+*
+!Dockerfile
