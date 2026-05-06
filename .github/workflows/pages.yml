@@ -4,9 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'site/**'
       - 'landing/**'
-      - 'galaxy/**'
       - 'skills/**'
       - 'scripts/build-miniapp-index.mjs'
       - '.github/workflows/pages.yml'
@@ -37,12 +35,10 @@ jobs:
       - name: Build miniapp skill index
         run: node scripts/build-miniapp-index.mjs
 
-      - name: Assemble combined Pages tree
+      - name: Assemble Pages tree
         run: |
           mkdir -p dist
           cp -R landing/. dist/
-          if [ -d site ];   then mkdir -p dist/docs   && cp -R site/.   dist/docs/;   fi
-          if [ -d galaxy ]; then mkdir -p dist/galaxy && cp -R galaxy/. dist/galaxy/; fi
           ls -la dist | head
 
       - uses: actions/configure-pages@v5
