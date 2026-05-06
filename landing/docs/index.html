@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Meridian — Documentation</title>
-<meta name="description" content="Dynamic skill routing for AI agents — LLM-generated skills classified by an orbital engine.">
+<meta name="description" content="Self-contained MCP. GitHub Models generates candidate skills, the bundled orbital classifier ranks them — no backend, no Cloudflare.">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Meridian Docs">
-<meta property="og:description" content="Dynamic skill routing for AI agents — LLM-generated skills classified by an orbital engine.">
+<meta property="og:description" content="Self-contained MCP. GitHub Models generates candidate skills, the bundled orbital classifier ranks them.">
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -40,7 +40,6 @@
   <div class="sidebar-section">
     <div class="section-title">Architecture</div>
     <a href="#pipeline">Pipeline</a>
-    <a href="#api">HTTP API</a>
     <a href="#mcp-tool">MCP tool</a>
     <a href="#response">Response shape</a>
   </div>
@@ -62,57 +61,65 @@
 
   <h1 id="overview">Meridian documentation</h1>
   <p class="lead">
-    Meridian routes tasks to relevant skills using a two-stage pipeline:
-    <strong>Llama-3.3-70B generates candidate skills</strong>, then an <strong>open-domain orbital classifier</strong>
-    assigns each one a celestial class (planet · moon · trojan · asteroid · comet · irregular) and ranks them
-    against the task. Same backend powers the
-    <a href="/miniapp/">browser miniapp</a> and the npm-installable MCP.
+    Meridian is a self-contained stdio MCP for AI agents. It generates
+    candidate skills with an LLM, then ranks them with a local
+    <strong>orbital classifier</strong> that assigns each one a celestial
+    class (planet · moon · trojan · asteroid · comet · irregular). No
+    backend, no server, no Python — the npm package ships everything it
+    needs and runs entirely in your agent's process.
   </p>
 
   <h2 id="install">Install</h2>
 
   <h3>1. MCP for Claude Code, Cursor, Windsurf, etc.</h3>
   <pre><code class="lang-bash">npm install -g meridian-skills-mcp
-claude mcp add meridian meridian-mcp</code></pre>
+claude mcp add meridian meridian-mcp \
+  -e MERIDIAN_GITHUB_TOKEN=ghp_yourTokenHere</code></pre>
   <p>
-    Same install works in Cursor, Windsurf, Goose, Continue, and any client that speaks stdio MCP.
-    The package is a <strong>~5 KB thin client</strong> that posts to the public router endpoint —
-    no local model, no Python, internet required.
+    Same install works in Cursor, Windsurf, Goose, Continue, and any
+    client that speaks stdio MCP. The package is one Node entrypoint plus
+    the bundled orbital classifier — no native deps.
   </p>
 
-  <h3>2. Browser miniapp (no install)</h3>
+  <h3>2. Get a GitHub Models token</h3>
   <p>
-    Open <a href="/miniapp/">ask-meridian.uk/miniapp</a>.
-    Type a task or hit the <code>📷 Scan an object</code> button to use real-time camera object-detection
-    as the input. Same backend, fancier UI.
+    The MCP calls <a href="https://github.com/marketplace/models">GitHub Models</a>
+    to generate the candidate skills. Create a fine-grained PAT at
+    <a href="https://github.com/settings/tokens?type=beta">github.com/settings/tokens</a>
+    with <strong>account permissions → Models: Read</strong>. That single
+    permission is enough; the token sees nothing else on your account.
+    Pass it as <code>MERIDIAN_GITHUB_TOKEN</code> (or <code>GITHUB_TOKEN</code>).
   </p>
 
-  <h3>3. Direct HTTP</h3>
-  <pre><code class="lang-bash">curl -X POST https://ask-meridian.uk/api/orbital-route \
-  -H "content-type: application/json" \
-  -d '{"task":"set up rate limiting on a public API","limit":5}'</code></pre>
-  <p>Public, no key required (today). See <a href="#latency">latency &amp; quota</a> for the realistic shape.</p>
+  <h3>3. Browser miniapp (no install)</h3>
+  <p>
+    Open <a href="/miniapp/">ask-meridian.uk/miniapp</a>. Type a task or
+    hit <code>📷 Scan an object</code> to use real-time camera object
+    detection as the input. Same orbital classifier, runs in-browser,
+    routes against the bundled 88-skill corpus.
+  </p>
 
   <h2 id="quickstart">Quickstart</h2>
   <p>Once the MCP is registered, your AI client auto-discovers the tool. Just ask:</p>
   <pre><code class="lang-text">Use meridian to find skills for setting up a public API rate limiter.</code></pre>
   <p>
-    The client calls <code>meridian.route_task({ task, limit })</code>, the backend generates 5 LLM
-    candidates, classifies them orbitally, and returns ranked skills with full markdown bodies — which
+    The client calls <code>meridian.route_task({ task, limit })</code>. The
+    package generates 5 LLM candidates via GitHub Models, classifies them
+    orbitally, and returns ranked skills with full markdown bodies — which
     your client lifts straight into its context window.
   </p>
 
   <h2 id="pipeline">Pipeline</h2>
-  <pre><code>POST /api/orbital-route { task, limit }
+  <pre><code>meridian.route_task({ task, limit })
             │
             ↓
-  Cloudflare Workers AI
-  Llama-3.3-70B-fp8-fast
+  GitHub Models inference
+  (default: meta/llama-3.3-70b-instruct)
   → 5 candidate skills
     {slug, description, keywords, body}
             │
             ↓
-  Open-domain orbital classifier (JS)
+  Local orbital classifier (JS, &lt;5 ms)
             │
    ─────────┴──────────
    physics:   mass · scope · independence ·
@@ -129,55 +136,39 @@ claude mcp add meridian meridian-mcp</code></pre>
             ↓
         ranked array</code></pre>
 
-  <h2 id="api">HTTP API</h2>
+  <p>
+    There is no HTTP endpoint to call from outside the MCP. If you want
+    routing without registering an MCP, use the
+    <a href="/miniapp/">browser miniapp</a> — same classifier, different
+    front-end.
+  </p>
 
-  <h3><code>POST /api/orbital-route</code></h3>
-  <p>The single canonical endpoint. Both miniapp and MCP call it.</p>
+  <h2 id="mcp-tool">MCP tool</h2>
+  <p>The package exposes one tool:</p>
 
-  <p><strong>Request body</strong></p>
+  <h3><code>route_task(task: string, limit?: integer)</code></h3>
+  <p>
+    Generates candidates, classifies them orbitally, and returns the
+    ranked list as a single agent-readable markdown block. Each entry
+    ships with its full skill body so the caller LLM doesn't need a
+    second tool call to read it.
+  </p>
+
+  <p><strong>Input</strong></p>
   <pre><code class="lang-json">{
-  "task": "string (≤ 800 chars, required)",
-  "limit": 5,            // 1-10 (default 5)
-  "candidates": 5        // 3-8 (default 5; max LLM-generated before slicing)
-}</code></pre>
-
-  <p><strong>Response (200)</strong></p>
-  <pre><code class="lang-json">{
-  "task": "...",
-  "note": "Fully dynamic: skills generated by ...",
-  "confidence": "strong | moderate | weak | none",
-  "top_score": 109.3,
-  "candidates_generated": 5,
-  "selected": [ /* see Response shape below */ ],
-  "timing": { "llm_ms": 38000, "classify_ms": 2, "total_ms": 38002 }
+  "task":  "string (≤ 800 chars, required)",
+  "limit": 5     // 1-10 (default 5)
 }</code></pre>
 
   <p><strong>Errors</strong></p>
   <ul>
-    <li><code>400</code> — task missing / too long / invalid JSON.</li>
-    <li><code>502</code> — Workers AI failed. <code>{ "error": "LLM call failed: …" }</code>. Retry safe.</li>
-    <li><code>503</code> — AI binding not configured (only on a misconfigured deployment).</li>
+    <li><code>task required</code> — missing or empty.</li>
+    <li><code>task too long</code> — over 800 chars.</li>
+    <li><code>GitHub Models error</code> — token missing, rate limited, or upstream failure. Surfaced verbatim to the agent.</li>
   </ul>
 
-  <h2 id="mcp-tool">MCP tool</h2>
-  <p>v1.0.0 of <code>meridian-skills-mcp</code> exposes one tool:</p>
-
-  <h3><code>route_task(task: string, limit?: integer)</code></h3>
-  <p>
-    Posts to <code>/api/orbital-route</code>, formats the response as agent-readable markdown,
-    returns it in a single text content block. Each generated skill ships with its full body so the
-    caller LLM can read it without an extra fetch.
-  </p>
-
-  <p>
-    The earlier <code>get_skill</code>, <code>list_skills</code>, and <code>search_skills</code> tools
-    from the 0.3.x line were removed — they were a closed-domain abstraction that has no meaning
-    under dynamic LLM generation. <a href="#self-host">See self-hosting</a> if you want the curated
-    corpus path.
-  </p>
-
   <h2 id="response">Response shape</h2>
-  <p>Each entry in <code>selected[]</code>:</p>
+  <p>The MCP renders results as markdown for the agent. The underlying ranked entries look like:</p>
   <pre><code class="lang-json">{
   "slug":        "redis-token-bucket",
   "name":        "redis-token-bucket",
@@ -257,14 +248,13 @@ claude mcp add meridian meridian-mcp</code></pre>
     <li><code>cross_domain</code> — Shannon entropy across forge / signal / mind term sets.</li>
     <li><code>fragmentation</code> — keyword length stddev + cross_domain.</li>
     <li><code>drag</code> — proportion of long / hyphenated specialised terms.</li>
-    <li><code>dep_ratio</code> — relatedness to siblings in the batch: <code>max(token-Jaccard × 1.5, keyword-Jaccard × 2.2)</code>, clamped to [0,1]. Keyword overlap is the cleaner relatedness signal.</li>
+    <li><code>dep_ratio</code> — relatedness to siblings in the batch: <code>max(token-Jaccard × 1.5, keyword-Jaccard × 2.2)</code>, clamped to [0,1].</li>
     <li><code>lagrange_potential</code> — boosted minimum of the two strongest system affinities (<code>min(top₂) × 1.4</code>, clamped to [0,1]).</li>
   </ul>
 
   <h2 id="star-systems">Star systems</h2>
   <p>
-    Three system term sets (lifted verbatim from <code>skill_orbit.py</code>) determine which gravitational
-    well a skill orbits:
+    Three system term sets determine which gravitational well a skill orbits:
   </p>
   <ul>
     <li><strong>Forge</strong> — devops/backend: <code>api · docker · deploy · network · backend · nginx · ssh · ci/cd · build · server · database · redis · cache · auth · test · kubernetes · tunnel · vpn · observability</code></li>
@@ -276,54 +266,62 @@ claude mcp add meridian meridian-mcp</code></pre>
   </p>
 
   <h2 id="config">Configuration</h2>
-  <p>Environment variables for the MCP client:</p>
+  <p>Environment variables for the MCP:</p>
   <table>
     <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
     <tbody>
-      <tr><td><code>MERIDIAN_API_URL</code></td>
-          <td><code>https://ask-meridian.uk/api/orbital-route</code></td>
-          <td>Override the backend (e.g. for a self-hosted Pages clone or a staging deployment).</td></tr>
-      <tr><td><code>MERIDIAN_API_KEY</code></td>
-          <td><em>(none)</em></td>
-          <td>Sent as <code>Authorization: Bearer …</code>. Currently unused server-side; reserved for future per-user gating.</td></tr>
+      <tr><td><code>MERIDIAN_GITHUB_TOKEN</code> <em>(or <code>GITHUB_TOKEN</code>)</em></td>
+          <td><em>(required)</em></td>
+          <td>Fine-grained PAT with <em>Models: Read</em>. Used to call GitHub Models.</td></tr>
+      <tr><td><code>MERIDIAN_MODEL</code></td>
+          <td><code>meta/llama-3.3-70b-instruct</code></td>
+          <td>Override the model. Any GitHub Models catalog id works (e.g. <code>openai/gpt-4o</code>).</td></tr>
+      <tr><td><code>MERIDIAN_MODELS_ENDPOINT</code></td>
+          <td><code>https://models.github.ai/inference/chat/completions</code></td>
+          <td>Override the inference endpoint (e.g. for a self-hosted gateway).</td></tr>
+      <tr><td><code>MERIDIAN_CANDIDATES</code></td>
+          <td><code>5</code></td>
+          <td>How many candidate skills the LLM generates per call (3–8).</td></tr>
       <tr><td><code>MERIDIAN_TIMEOUT_MS</code></td>
           <td><code>90000</code></td>
-          <td>Abort the fetch after this many ms. Increase if your client has a tool-call timeout shorter than 60 s.</td></tr>
+          <td>Abort the inference request after this many ms.</td></tr>
     </tbody>
   </table>
 
   <h2 id="latency">Latency &amp; quota</h2>
   <ul>
-    <li><strong>Per call</strong> — typical 30–50 s. Llama-3.3-70B does the bulk of the work; the JS classifier runs in &lt; 5 ms.</li>
-    <li><strong>Free tier</strong> — Workers AI gives ~10 000 neurons/day account-wide. Each call costs ~150–300 neurons. Real-world budget: ~30–60 calls/day shared across all clients before the LLM step starts erroring.</li>
-    <li><strong>Failure mode</strong> — when quota is exhausted the function returns <code>502 LLM call failed</code>. Retry after the daily reset.</li>
-    <li><strong>No silent fallback</strong> — there is no static-corpus fallback. The MCP and miniapp surface the error directly.</li>
+    <li><strong>Per call</strong> — typical 5–15 s. Most of the budget is GitHub Models inference; the local classifier runs in &lt; 5 ms.</li>
+    <li><strong>Free tier</strong> — GitHub Models has a free per-account daily request budget that resets at 00:00 UTC. Limits depend on the model tier (Llama-3.3-70B is in the higher-cost tier; smaller models burn fewer requests). See <a href="https://docs.github.com/en/github-models">GitHub Models limits</a>.</li>
+    <li><strong>Failure mode</strong> — when the token is missing, expired, or rate-limited, the MCP returns a clear error to the agent instead of silently falling back.</li>
   </ul>
 
   <h2 id="self-host">Self-hosting (closed-domain, offline)</h2>
   <p>
-    The 1.0.0 release is a thin client that requires the public backend. If you need the older
-    <em>local model + curated corpus</em> path, pin to:
+    If you need <em>local model + curated corpus</em> with no network calls,
+    pin to the legacy line:
   </p>
   <pre><code class="lang-bash">npm install -g meridian-skills-mcp@0.3.2</code></pre>
   <p>That ships:</p>
   <ul>
     <li>The <code>skill_orbit.py</code> Python orbital classifier.</li>
-    <li>An <code>@xenova/transformers</code> MiniLM-L6-v2 embedding pre-filter (~23 MB ONNX model, downloaded on first call).</li>
+    <li>An <code>@xenova/transformers</code> MiniLM-L6-v2 embedding pre-filter (~23 MB ONNX).</li>
     <li>An 88-skill curated corpus of <code>SKILL.md</code> files.</li>
     <li>Four tools: <code>route_task</code>, <code>get_skill</code>, <code>list_skills</code>, <code>search_skills</code>.</li>
   </ul>
   <p>
-    Tradeoff: closed-domain (only the curated 88 skills classify properly), but no internet required and
-    routing is &lt; 3 s. The tradeoff <code>1.0.0</code> made was the opposite — open-domain (any task), but
-    HTTP only and 30 – 50 s per call.
+    Tradeoff: closed-domain (only the curated 88 skills classify), but no
+    internet required. Versions <code>1.x</code> ran the LLM and classifier on
+    a Cloudflare Worker — that backend was retired during the GitHub Pages
+    migration; <code>1.0.1</code> POSTs to a dead endpoint and is no longer
+    supported.
   </p>
 
   <footer class="doc-footer">
     <p>
-      Last updated 2026-05-01 ·
+      Last updated 2026-05-06 ·
       <a href="https://github.com/LuuOW/meridian-mcp">Source on GitHub</a> ·
       <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a> ·
+      <a href="https://github.com/LuuOW/meridian-mcp/pkgs/npm/meridian-skills-mcp">GitHub Packages</a> ·
       <a href="/miniapp/">Try the miniapp</a>
     </p>
   </footer>
