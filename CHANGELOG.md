@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.0.0] — 2026-05-06
+
+**Self-contained MCP. The Cloudflare backend was retired during the GitHub
+Pages migration; `1.0.1` POSTs to a dead endpoint. `2.0.0` collapses the
+architecture into the npm package itself.**
+
+### Added
+- `mcp/_lib/` — bundled orbital classifier (orbital.mjs, tokenize.mjs,
+  systems.mjs). Identical code to `landing/_lib/` so the browser and the
+  npm package share one classifier.
+- GitHub Models integration. Default model `meta/llama-3.3-70b-instruct`.
+- New env vars: `MERIDIAN_GITHUB_TOKEN` (or `GITHUB_TOKEN`),
+  `MERIDIAN_MODEL`, `MERIDIAN_MODELS_ENDPOINT`, `MERIDIAN_CANDIDATES`.
+- `.github/workflows/publish.yml` — tag-driven dual-registry publish to
+  both the public npm registry (as `meridian-skills-mcp`) and GitHub
+  Packages (as `@luuow/meridian-skills-mcp`).
+
+### Changed
+- Wall time per call: 30–50 s → **5–15 s** (no extra hop, GitHub's
+  inference is quicker than Workers AI was).
+- Output shape unchanged. Drop-in replacement for `1.x` once
+  `MERIDIAN_GITHUB_TOKEN` is set.
+
+### Removed
+- `MERIDIAN_API_URL`, `MERIDIAN_API_KEY` env vars (no backend to point at).
+- Tests for retired CF Pages Functions: `ai-gateway`, `ip-allowlist`,
+  `kv`, `stream`, `vector`, `system-terms`. The remaining 46 tests pass.
+
+### Migration from `1.x`
+1. Generate a GitHub PAT with `Models: read` permission.
+2. `export MERIDIAN_GITHUB_TOKEN=...` (or rely on `GITHUB_TOKEN`).
+3. `npm install -g meridian-skills-mcp@latest`.
+4. No agent prompt changes needed.
+
 ## [1.0.0] — 2026-05-01
 
 **Major architecture flip — the MCP becomes a thin stdio→HTTP client over the same backend the public miniapp uses.**
