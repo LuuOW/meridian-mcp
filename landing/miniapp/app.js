@@ -16,34 +16,9 @@ const taskInput      = $('taskInput')
 const askBtn         = $('askBtn')
 const arBtn          = $('arBtn')
 
-// Defaults — controls were removed from the UI; routing is always
-// fully dynamic: LLM generates the corpus, orbital engine classifies it.
+// Routing now runs entirely in-browser against the static _skills.json
+// corpus — no LLM provider, no quota, no model selector.
 const ROUTE_LIMIT = 5
-
-const modelSelect = document.getElementById('modelSelect')
-const quotaPill   = document.getElementById('quotaPill')
-
-async function refreshQuota() {
-  try {
-    const r = await fetch('/api/quota')
-    const d = await r.json()
-    if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
-    const txt = quotaPill.querySelector('.quota-text')
-    const dot = quotaPill.querySelector('.quota-dot')
-    if (d.plan === 'free') {
-      txt.textContent = `Free · ${d.calls_today}/${d.daily_limit} today`
-    } else {
-      txt.textContent = `${d.plan[0].toUpperCase() + d.plan.slice(1)} · ${d.remaining}/${d.monthly_limit} this month`
-    }
-    quotaPill.removeAttribute('data-loading')
-    const pct = d.pct_used ?? 0
-    dot.style.background = pct >= 90 ? '#f87171' : pct >= 60 ? '#fbbf24' : '#10b981'
-  } catch {
-    quotaPill.querySelector('.quota-text').textContent = 'quota: offline'
-    quotaPill.removeAttribute('data-loading')
-  }
-}
-refreshQuota()
 const resultsSection = $('resultsSection')
 const resultsList    = $('resultsList')
 const resultsMeta    = $('resultsMeta')
@@ -129,10 +104,9 @@ askBtn.addEventListener('click', async () => {
   latestSelected = []
   closePanel()
 
-  const provider = modelSelect?.value || 'workers-ai'
   try {
     const summary = await routeTaskStream(
-      { task, limit: ROUTE_LIMIT, provider },
+      { task, limit: ROUTE_LIMIT },
       {
         onProgress: (p) => {
           const el = document.getElementById('streamProgress')
@@ -157,7 +131,6 @@ askBtn.addEventListener('click', async () => {
         },
       },
     )
-    refreshQuota()
     renderMeta(summary)
   } catch (err) {
     resultsList.innerHTML = `<li class="no-results">Error: ${escapeHTML(err.message)}</li>`
