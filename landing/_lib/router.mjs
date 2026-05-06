@@ -28,17 +28,26 @@ export function setSkills(arr) {
 export async function route({ task, limit = 5, skillsUrl } = {}) {
   if (!task || typeof task !== 'string') throw new Error('task required')
   const skills = await loadSkills(skillsUrl)
-  if (!skills.length) return { task, skills: [], total: 0 }
+  if (!skills.length) {
+    return { task, skills: [], total: 0, top_score: 0, confidence: 'low',
+             candidates_generated: 0, classifier: 'orbital-edge-v1' }
+  }
 
-  // The orbital classifier needs body + keywords + description per skill.
-  // _skills.json from build-miniapp-index.mjs already includes those fields.
   const ranked = orbitalClassify(skills, task)
   const top = ranked.slice(0, Math.max(1, Math.min(20, limit)))
+  const top_score = top[0]?.route_score || 0
+  // Confidence band tuned to the orbital scorer's typical scale (~0–200+).
+  // Above 30 the top match has clear keyword + description overlap; below
+  // 8 it's mostly noise. Same shape the old API exposed for UI styling.
+  const confidence = top_score >= 30 ? 'high' : top_score >= 8 ? 'medium' : 'low'
 
   return {
     task,
-    skills: top,
-    total:  ranked.length,
-    classifier: 'orbital-edge-v1',
+    skills:               top,
+    total:                ranked.length,
+    top_score,
+    confidence,
+    candidates_generated: ranked.length,
+    classifier:           'orbital-edge-v1',
   }
 }
