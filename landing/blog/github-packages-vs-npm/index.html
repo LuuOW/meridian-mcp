@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GitHub Packages vs npm — should you publish to both? — Meridian Blog</title>
+<meta name="description" content="We just shipped meridian-skills-mcp 2.0.0 to both the public npm registry and GitHub Packages from a single tag push. Here's why GitHub Packages earned its slot, where npm still wins, and the GitHub Actions workflow that does both at once.">
+<meta property="og:title" content="GitHub Packages vs npm — should you publish to both?">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/github-packages-vs-npm/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/github-packages-vs-npm/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; vertical-align: top; }
+  .article-body th { background: rgba(255,255,255,0.04); font-weight: 600; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .cta-card { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px; padding: 24px; margin: 36px 0; }
+  .cta-card h3 { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<a href="https://kempefire.gumroad.com/l/build-your-own-mcp" class="promo-strip" target="_blank" rel="noopener">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Showcase</summary>
+      <a href="/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Skill orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to skills</span>
+      </a>
+      <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Resources</summary>
+      <a href="/#products">Products</a>
+      <a href="/blog/" class="current">Blog</a>
+      <a href="https://docs.ask-meridian.uk">Docs</a>
+      <a href="/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/lens">GitHub · lens</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-06 · 7 min read</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      GitHub Packages vs npm — should you publish to both?
+    </h1>
+
+    <p>
+      We just shipped <a href="https://github.com/LuuOW/meridian-mcp">meridian-skills-mcp</a>
+      v2.0.0 to <strong>both</strong> the public npm registry (as <code>meridian-skills-mcp</code>)
+      and GitHub Packages (as <code>@luuow/meridian-skills-mcp</code>) from a single
+      <code>git tag v2.0.0 &amp;&amp; git push origin v2.0.0</code>. Whole thing
+      is one workflow file, one pre-existing <code>NPM_TOKEN</code> secret, and the
+      automatic <code>GITHUB_TOKEN</code>.
+    </p>
+
+    <p>
+      Worth noting because the conventional wisdom is "just publish to npm." That
+      conventional wisdom is correct as far as it goes — but GitHub Packages has
+      earned its slot in our build, and the cost of dual-publishing is small enough
+      that not doing it is the questionable choice now. Here's the case.
+    </p>
+
+    <h2>The publish workflow, in full</h2>
+
+    <p>
+      One file, two registries, three jobs:
+    </p>
+
+    <pre><code># .github/workflows/publish.yml
+name: Publish package
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: npm }
+      - run: npm ci
+      - run: node --test tests/*.test.mjs
+
+  npm:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci --omit=dev
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  ghp:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@luuow'
+      - run: npm ci --omit=dev
+      - run: npm pkg set name=@luuow/meridian-skills-mcp
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+</code></pre>
+
+    <p>
+      Notice the <code>npm pkg set name=@luuow/meridian-skills-mcp</code> line in
+      the GitHub Packages job. That's the only piece of friction. GitHub Packages
+      requires scoped names, and the scope must match the GitHub user/org. So we
+      keep the canonical <code>package.json</code> with the unscoped public name
+      (<code>meridian-skills-mcp</code> — what's already on npm) and just rewrite
+      the name field for one job.
+    </p>
+
+    <h2>Where GitHub Packages actually wins</h2>
+
+    <h3>1. The auth surface is the same as your code's</h3>
+    <p>
+      <code>GITHUB_TOKEN</code> is the token your CI already has. The token your
+      repo settings already manage. The token your branch protection already
+      respects. Publishing to GitHub Packages reuses it. No npm account, no
+      separate <code>NPM_TOKEN</code> rotation, no second dashboard.
+    </p>
+    <p>
+      For internal packages especially, this is huge. Your "who can publish"
+      question collapses into "who can push to this repo's <code>main</code>."
+      That's it. Same answer for source code, same answer for releases.
+    </p>
+
+    <h3>2. Provenance is automatic, not opt-in</h3>
+    <p>
+      Every package on GitHub Packages is linked to the exact commit SHA, exact
+      workflow run, and exact runner that built it. The package page shows them.
+      You click through to the build log from the version. The version is signed
+      by the GitHub OIDC token of the runner.
+    </p>
+    <p>
+      npm gained provenance attestations in 2023, but they require explicit
+      <code>npm publish --provenance</code> + a <code>publishConfig</code> in
+      <code>package.json</code> + the package name to start with a scope. GitHub
+      Packages just <em>does</em> it.
+    </p>
+
+    <h3>3. One registry for npm, Docker, Maven, NuGet, RubyGems</h3>
+    <p>
+      <code>ghcr.io/luuow/meridian-mcp</code> (Docker image) and
+      <code>npm.pkg.github.com/@luuow/meridian-skills-mcp</code> (npm package) are
+      the same account, same auth, same UI. If you ship a CLI as both an npm
+      package and a Docker image — increasingly common — having them under one
+      roof means one auth dance, not two.
+    </p>
+
+    <h3>4. Private packages are free</h3>
+    <p>
+      GitHub Packages includes private packages on the free tier (within standard
+      storage/bandwidth quotas). The npm equivalent — npm Pro — is $7/seat/month.
+      For an internal-only package shared across a few repos, "publish to GitHub
+      Packages, period" is the right answer. The minute the package is internal,
+      npm has no advantage.
+    </p>
+
+    <h2>Where npm still wins</h2>
+
+    <h3>1. Anonymous install</h3>
+    <p>
+      This is the big one and it's not close. <code>npm install
+      meridian-skills-mcp</code> Just Works for anyone, anywhere, with zero auth.
+      <code>npm install @luuow/meridian-skills-mcp</code> from GitHub Packages
+      requires every consumer to have a <code>.npmrc</code> with
+      <code>@luuow:registry=https://npm.pkg.github.com</code> AND an auth token —
+      <em>even for public packages</em>. That's a long-standing GitHub Packages
+      design choice and it's the single biggest reason it hasn't displaced npm
+      for public distribution.
+    </p>
+    <p>
+      Practically: if anyone you don't know is going to install your package,
+      keep publishing to npm. Don't make a stranger configure registry settings
+      to try your tool.
+    </p>
+
+    <h3>2. Default-tooling integration</h3>
+    <p>
+      Every package manager front-end, every CI cache, every "search npm"
+      surface, every <code>npx</code> invocation, every codesandbox dependency
+      resolver — they all default to <code>registry.npmjs.org</code>. If you
+      <em>only</em> publish to GitHub Packages you're invisible to all of that.
+    </p>
+
+    <h3>3. Discoverability</h3>
+    <p>
+      <code>npmjs.com</code>'s search is mediocre but it exists. GitHub Packages
+      doesn't have a global search; you find a package by knowing the
+      <code>@owner</code> in advance. For an open-source library you want people
+      to <em>find</em>, npm is the only choice.
+    </p>
+
+    <h2>So: publish to both</h2>
+
+    <p>
+      The honest conclusion isn't "switch to GitHub Packages." It's "the
+      marginal cost of also publishing to GitHub Packages is one
+      <code>npm pkg set name</code> line and one extra job in your existing
+      release workflow."
+    </p>
+
+    <table>
+      <thead><tr><th></th><th>npm public</th><th>GitHub Packages</th></tr></thead>
+      <tbody>
+        <tr><td>Anonymous install</td><td>✅</td><td>❌ (auth required even for public)</td></tr>
+        <tr><td>Auth shared with code</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Provenance (linked to SHA + run)</td><td>opt-in (<code>--provenance</code>)</td><td>automatic</td></tr>
+        <tr><td>Private packages on free tier</td><td>❌ ($7/seat/mo)</td><td>✅</td></tr>
+        <tr><td>Same registry as Docker images</td><td>❌</td><td>✅ (<code>ghcr.io</code>)</td></tr>
+        <tr><td>Naming: scope required</td><td>optional</td><td>required, must match owner</td></tr>
+        <tr><td>Default for <code>npm install</code></td><td>✅</td><td>❌</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      For a tool you want strangers to <code>npm install</code>: npm is required.
+      GitHub Packages is a great <em>second</em> location — it gives you provenance,
+      cleaner auth for CI consumers inside your org, and a path to private without
+      paying.
+    </p>
+
+    <h2>The npm side is also doing a thing now</h2>
+
+    <p>
+      Worth flagging: npm now has <a href="https://docs.npmjs.com/generating-provenance-statements">
+      provenance statements</a> via Sigstore, npm Trusted Publishing
+      (OIDC-based, no long-lived tokens), and tightened scope-by-default
+      defaults. The gap to GitHub Packages on attestation is closing. The gap on
+      "public install requires no auth" is not — and probably never will, because
+      that's GitHub's billing posture more than a technical decision.
+    </p>
+
+    <p>
+      So the publishing playbook for 2026, in our opinion:
+    </p>
+
+    <ol>
+      <li><strong>Public open-source npm package?</strong> Publish to both. Use
+        npm Trusted Publishing for the npm half (no <code>NPM_TOKEN</code>
+        secret to rotate). The dual-publish workflow above is your starting
+        point.</li>
+      <li><strong>Private internal package?</strong> GitHub Packages only. No
+        reason to maintain an npm Pro subscription anymore.</li>
+      <li><strong>Hybrid (CLI + Docker)?</strong> Both registries for the npm
+        half, <code>ghcr.io</code> for the Docker half. Single auth surface for
+        consumers who use both.</li>
+    </ol>
+
+    <h2>One last note: the rename trick</h2>
+
+    <p>
+      The reason we keep <code>meridian-skills-mcp</code> (unscoped) on npm and
+      <code>@luuow/meridian-skills-mcp</code> on GitHub Packages — instead of
+      forcing the scoped name everywhere — is install ergonomics. Most users
+      will install via:
+    </p>
+
+    <pre><code>npm install -g meridian-skills-mcp
+claude mcp add meridian meridian-mcp</code></pre>
+
+    <p>
+      Renaming to <code>@luuow/meridian-skills-mcp</code> would break that one-liner
+      for everyone who isn't already configured for GitHub Packages. The
+      <code>npm pkg set name=...</code> rewrite at publish time avoids that —
+      both registries get the build artefact you want, with the name each
+      registry's consumers expect.
+    </p>
+
+    <p>
+      It's three lines of YAML for an entire second registry. Hard to argue with that.
+    </p>
+
+    <div class="cta-card">
+      <h3>Want to ship your own MCP server end-to-end?</h3>
+      <p style="margin: 8px 0 16px;">
+        The full guide ships every line of code that powers Meridian's routing
+        pipeline — including the dual-registry release workflow above and the
+        <code>NPM_TOKEN</code> / <code>GITHUB_TOKEN</code> setup that goes with it.
+      </p>
+      <p style="margin: 0;">
+        <a href="https://kempefire.gumroad.com/l/build-your-own-mcp" target="_blank" rel="noopener" style="background: #a78bfa; color: #0a0d14; padding: 12px 22px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">
+          Build Your Own MCP Server — $29 →
+        </a>
+      </p>
+    </div>
+
+    <p style="margin-top: 48px; font-size: 13px; color: var(--text-faint);">
+      Both v2.0.0 packages went live on 2026-05-06 from
+      <a href="https://github.com/LuuOW/meridian-mcp/actions">this workflow run</a>.
+      Public on
+      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npmjs.com</a> and
+      <a href="https://github.com/LuuOW/meridian-mcp/pkgs/npm/meridian-skills-mcp">GitHub Packages</a>.
+    </p>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <p>
+    <a href="/">◎ Meridian</a> · <a href="/blog/">Blog</a> ·
+    <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a> ·
+    <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a>
+  </p>
+</footer>
+</body>
+</html>
