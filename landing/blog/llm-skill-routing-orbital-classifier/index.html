@@ -79,10 +79,19 @@
 
 <main id="main" style="padding-top: 48px;">
   <article class="article-body">
-    <div class="article-meta">2026-05-04 · 6 min read</div>
+    <div class="article-meta">2026-05-04 · 6 min read · updated 2026-05-06</div>
     <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
       LLM-authored skills + a classical orbital classifier — why we route this way
     </h1>
+
+    <div style="border:1px solid rgba(167,139,250,0.4);background:rgba(167,139,250,0.10);border-radius:10px;padding:14px 18px;margin:0 0 24px;font-size:14px;color:#ddd6fe">
+      <strong>Update 2026-05-06.</strong> The pipeline below is unchanged
+      conceptually, but the LLM call now goes through <a href="https://github.com/marketplace/models" style="color:#ede9fe;text-decoration:underline">GitHub Models</a>
+      instead of Workers AI, and the orbital classifier ships bundled inside
+      the npm package — there is no <code>/api/orbital-route</code> endpoint
+      anymore. See <a href="/docs/" style="color:#ede9fe;text-decoration:underline">/docs/</a> for the
+      current architecture.
+    </div>
 
     <p>
       Most AI skill-routing systems in 2026 do one of two things. Either they retrieve
@@ -194,11 +203,11 @@
 
     <ul>
       <li><strong>Latency.</strong> Generating 5-8 skill bodies via Llama-3.3-70B takes
-        5-30 seconds. Static-corpus RAG returns in 50ms. We mitigate with KV caching
-        (24h TTL) + AI Gateway dedup, but cold queries are slow.</li>
-      <li><strong>Cost.</strong> Each fresh-cache call burns 2-3k LLM tokens. At
-        Workers AI free tier this is fine; at scale we'd need to push more aggressively
-        toward the cache + bge-m3 pre-filter.</li>
+        5-15 seconds on GitHub Models. Static-corpus RAG returns in 50ms. The MCP
+        client itself does no caching — agent-side caching is the caller's call.</li>
+      <li><strong>Cost.</strong> Each call burns 2-3k LLM tokens. GitHub Models'
+        free tier daily budget is the practical ceiling; at scale you'd want the
+        bge-m3 pre-filter or your own inference endpoint.</li>
       <li><strong>Quality variance.</strong> The LLM occasionally writes garbage skills.
         The classifier filters by slug pattern + minimum body length but can't filter
         for "is this actually useful." Pre-Pareto launch we hand-curated; now we trust

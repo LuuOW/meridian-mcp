@@ -85,6 +85,15 @@
       Building a production MCP server on Cloudflare Workers (with auth + Stripe)
     </h1>
 
+    <div style="border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.08);border-radius:10px;padding:14px 18px;margin:0 0 24px;font-size:14px;color:#fca5a5">
+      <strong>Update 2026-05-06.</strong> Meridian itself has since migrated
+      off Cloudflare entirely — v2.0 is a self-contained npm package backed
+      by GitHub Models + GitHub Pages, no backend at all. The architecture
+      below is still a fine reference for anyone who <em>does</em> want to
+      ship on Workers, but it's no longer the stack ask-meridian.uk runs on.
+      See <a href="/docs/" style="color:#fecaca;text-decoration:underline">/docs/</a> for the current architecture.
+    </div>
+
     <p>
       Most "build an MCP server" tutorials in May 2026 show you <code>npx create-mcp</code>
       and a <code>Hello, world</code> tool. That works for a demo. It does not work for
