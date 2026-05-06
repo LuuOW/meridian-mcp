@@ -1,0 +1,65 @@
+name: Publish package
+
+# Tag a release like `v2.0.0` and the workflow publishes the package to
+# both the public npm registry (as `meridian-skills-mcp`) and to GitHub
+# Packages (as `@luuow/meridian-skills-mcp`). Tests must pass first.
+#
+# Required secrets:
+#   NPM_TOKEN — npm "Automation" token from npmjs.com (owner of
+#   `meridian-skills-mcp`). If not set, only the GitHub Packages step
+#   runs (the npm step will fail clearly).
+# GitHub Packages auth uses the workflow's GITHUB_TOKEN automatically.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/*.test.mjs
+
+  npm:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci --omit=dev
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  ghp:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@luuow'
+      - run: npm ci --omit=dev
+      - name: Re-scope name to @luuow/meridian-skills-mcp
+        run: npm pkg set name=@luuow/meridian-skills-mcp
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
