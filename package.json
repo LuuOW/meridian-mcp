@@ -1,7 +1,7 @@
 {
   "name": "meridian-skills-mcp",
-  "version": "1.0.1",
-  "description": "Stdio MCP for the Meridian orbital skill router — dynamic LLM-generated skills classified into celestial classes (planet/moon/trojan/asteroid/comet/irregular).",
+  "version": "2.0.0",
+  "description": "Self-contained stdio MCP for the Meridian orbital skill router. Generates candidate skills with Llama-3.3-70B (via GitHub Models) and ranks them with a local orbital classifier (planet/moon/trojan/asteroid/comet/irregular). No backend required.",
   "type": "module",
   "bin": {
     "meridian-mcp": "./mcp/index.mjs"
