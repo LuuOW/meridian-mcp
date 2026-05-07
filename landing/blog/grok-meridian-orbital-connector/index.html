@@ -28,7 +28,11 @@
   .cta-card { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px; padding: 24px; margin: 36px 0; }
   .cta-card h3 { margin: 0 0 8px; }
   .conn-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin: 24px 0; display: flex; gap: 18px; align-items: center; }
-  .conn-card img { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; }
+  .conn-card .conn-pair { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .conn-card .conn-logo { width: 48px; height: 48px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,0.04); border: 1px solid var(--border); padding: 8px; box-sizing: border-box; }
+  .conn-card .conn-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .conn-card .conn-arrow { color: var(--text-faint); font-size: 22px; line-height: 1; }
+  .conn-card .conn-meridian { background: #0a0d14; }
   .conn-card .conn-name { font-weight: 600; font-size: 18px; }
   .conn-card .conn-tag { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
 </style>
@@ -92,7 +96,15 @@
     </h1>
 
     <div class="conn-card">
-      <img src="https://mcp.ask-meridian.uk/icon.svg" alt="Meridian icon" width="56" height="56">
+      <div class="conn-pair">
+        <div class="conn-logo">
+          <img src="/img/brand/grok/Grok_Logomark_Light.svg" alt="Grok" width="48" height="48">
+        </div>
+        <span class="conn-arrow" aria-hidden="true">⇄</span>
+        <div class="conn-logo conn-meridian">
+          <img src="/favicon.svg" alt="Meridian" width="48" height="48">
+        </div>
+      </div>
       <div>
         <div class="conn-name">Meridian Skills · custom MCP connector</div>
         <div class="conn-tag"><code>https://mcp.ask-meridian.uk/mcp</code> · OAuth 2.1 + PKCE · zero install</div>
