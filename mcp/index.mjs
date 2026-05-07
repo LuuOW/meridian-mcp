@@ -1,14 +1,15 @@
 #!/usr/bin/env node
-// Meridian Skills MCP — stdio server, fully self-contained.
+// Meridian MCP — stdio server, fully self-contained.
 //
 // On every route_task call:
-//   1. Llama-3.3-70B (via GitHub Models) generates 5 candidate SKILL.md
-//      shapes for the task — slug, description, keywords, body.
+//   1. Llama-3.3-70B (via GitHub Models) generates 5 candidate entries
+//      for the task — slug, description, keywords, body. A candidate
+//      can be any routable entity (tool, prompt, document, product…).
 //   2. The bundled orbital classifier ranks the candidates and assigns
-//      each a celestial class (planet / moon / trojan / asteroid / comet
-//      / irregular), parent, star system, and lagrange potential.
+//      each a celestial body class (planet / moon / trojan / asteroid /
+//      comet / irregular), parent, star system, and lagrange potential.
 //   3. The ranked list is returned as agent-readable markdown with each
-//      skill's full body inline so the caller LLM can lift it straight
+//      candidate's full body inline so the caller LLM can lift it straight
 //      into its context window.
 //
 // No backend, no Cloudflare Worker, no curated corpus, no Python. The
@@ -30,7 +31,7 @@ import { PKG_VERSION, TOOLS, routeTask } from './_lib/core.mjs'
 const TOKEN = process.env.MERIDIAN_GITHUB_TOKEN || process.env.GITHUB_TOKEN || ''
 
 const server = new Server(
-  { name: 'meridian-skills', version: PKG_VERSION },
+  { name: 'meridian', version: PKG_VERSION },
   { capabilities: { tools: {} } },
 )
 

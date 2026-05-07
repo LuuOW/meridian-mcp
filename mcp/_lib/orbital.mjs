@@ -1,7 +1,9 @@
 // Open-domain orbital classifier. Derives a physics signature for each
-// skill (mass, scope, independence, cross_domain, fragmentation, drag,
-// dep_ratio), assigns a celestial class, computes orbital + optical
-// parameters, and scores task→skill relevance.
+// candidate (mass, scope, independence, cross_domain, fragmentation, drag,
+// dep_ratio), assigns a celestial body class, computes orbital + optical
+// parameters, and scores task→candidate relevance. Domain-agnostic — a
+// candidate can be a tool, prompt, document, product, or any routable
+// entity.
 //
 // Pure JS. Runs identically in browser and Node — no bundler-only globals.
 
@@ -21,10 +23,10 @@ function hashStr(s) {
   return Math.abs(h)
 }
 
-export function physicsOf(skill, sibTokens) {
-  const desc  = (skill.description || '').toLowerCase()
-  const body  = (skill.body || '').toLowerCase()
-  const kws   = (skill.keywords || []).map(k => String(k).toLowerCase())
+export function physicsOf(candidate, sibTokens) {
+  const desc  = (candidate.description || '').toLowerCase()
+  const body  = (candidate.body || '').toLowerCase()
+  const kws   = (candidate.keywords || []).map(k => String(k).toLowerCase())
   const kwSet = new Set(kws)
   const tokens = uniq(tokenize(`${desc} ${body} ${kws.join(' ')}`))
 
@@ -67,13 +69,13 @@ export function physicsOf(skill, sibTokens) {
 
   let bestTokSim = 0, bestKwSim = 0
   for (const sib of sibTokens) {
-    if (sib.skill === skill) continue
+    if (sib.candidate === candidate) continue
     const inter = sib.toks.reduce((n, t) => n + (tokens.includes(t) ? 1 : 0), 0)
     const union = new Set([...tokens, ...sib.toks]).size
     const j = union ? inter / union : 0
     if (j > bestTokSim) bestTokSim = j
 
-    const sibKws = new Set((sib.skill.keywords || []).map(k => String(k).toLowerCase()))
+    const sibKws = new Set((sib.candidate.keywords || []).map(k => String(k).toLowerCase()))
     if (sibKws.size && kwSet.size) {
       let ki = 0
       for (const k of kwSet) if (sibKws.has(k)) ki++
@@ -100,7 +102,7 @@ export function physicsOf(skill, sibTokens) {
   const orbital_period  = r3(Math.pow(semi_major_axis, 1.5))
   const perihelion      = r3(semi_major_axis * (1 - eccentricity))
   const aphelion        = r3(semi_major_axis * (1 + eccentricity))
-  const slugHash        = hashStr(skill.slug || '')
+  const slugHash        = hashStr(candidate.slug || '')
   const mean_anomaly    = r3(((slugHash % 1000) / 1000) * 2 * Math.PI)
 
   // wavelength — heavy + isolated → red end; cross-domain + drag →
@@ -108,7 +110,7 @@ export function physicsOf(skill, sibTokens) {
   // cross_domain·50) was monotonically dominated by mass and clustered
   // at 600 nm because mass·370 ≥ 110 made the deep-violet band
   // structurally unreachable. Two-axis pull recovers the full visible
-  // band on extreme inputs while leaving "average" skills mid-band.
+  // band on extreme inputs while leaving "average" candidates mid-band.
   const redPull  = 0.55 * mass + 0.25 * independence + 0.10 * lagrange_potential
   const bluePull = 0.55 * cross_domain + 0.30 * fragmentation + 0.20 * drag
   const wavelength = Math.round(clamp(
@@ -117,7 +119,7 @@ export function physicsOf(skill, sibTokens) {
   ))
   const polarization    = r3(clamp(1 - fragmentation, 0, 1))
   const amplitude       = r3(mass)
-  const phaseHash       = hashStr(`${skill.slug || ''}|${(body || '').slice(0, 64)}`)
+  const phaseHash       = hashStr(`${candidate.slug || ''}|${(body || '').slice(0, 64)}`)
   const phase           = r3(((phaseHash % 1000) / 1000) * 2 * Math.PI)
 
   return {
@@ -138,7 +140,7 @@ export function classOf(p, hasParentInSet) {
   // Planet uses min(mass, scope, independence)^1.5 instead of the
   // product. The product let two strong axes drown out a missing one
   // (a long body with sparse keywords still beat planet's 0.4 floor);
-  // min penalises the deficit, which is what "anchor skill" actually
+  // min penalises the deficit, which is what "anchor candidate" actually
   // means semantically — strong on every dimension, not just on average.
   const planet_score   = Math.min(p.mass, p.scope, p.independence) ** 1.5
   const moon_score     = Math.max(0, 0.5 - p.independence) * 2
@@ -146,7 +148,7 @@ export function classOf(p, hasParentInSet) {
                          * (1 - 0.5 * p.mass)
   const trojan_score   = p.dep_ratio * (hasParentInSet ? 1 : 0.5) * (1 - p.fragmentation)
   // Asteroid threshold raised from 0.4 → 0.55 to match the new (lower-
-  // saturation) mass distribution. Without this, niche/small skills
+  // saturation) mass distribution. Without this, niche/small candidates
   // never cleared the threshold because mass had drifted up across
   // the whole panel under the old saturation.
   const asteroid_score = Math.max(0, 0.55 - p.mass) * 2.5 * p.scope * p.independence
@@ -169,24 +171,24 @@ function decisionRule(cls, p, parent, systems) {
   const cdSystems = systems.filter(s => p.star_affinity[s] >= 0.25)
   switch (cls) {
     case 'planet':
-      return `Domain anchor in the ${sys} system — high mass (${p.mass.toFixed(2)}) × scope (${p.scope.toFixed(2)}) × independence (${p.independence.toFixed(2)}). Loads as a primary skill.`
+      return `Domain anchor in the ${sys} system — high mass (${p.mass.toFixed(2)}) × scope (${p.scope.toFixed(2)}) × independence (${p.independence.toFixed(2)}). Loads as a primary candidate.`
     case 'moon':
-      return `Sub-skill orbiting ${parent ? parent + ' ' : 'a parent skill'}— low independence (${p.independence.toFixed(2)}). Auto-loads alongside its parent.`
+      return `Satellite of ${parent ? parent + ' ' : 'a parent candidate'}— low independence (${p.independence.toFixed(2)}). Co-loads with its parent.`
     case 'trojan':
-      return `Companion at L4/L5 of ${parent ? parent + ' ' : 'a parent skill'}— high dep_ratio (${p.dep_ratio.toFixed(2)}), low fragmentation. Co-activates permanently.`
+      return `Companion at L4/L5 of ${parent ? parent + ' ' : 'a parent candidate'}— high dep_ratio (${p.dep_ratio.toFixed(2)}), low fragmentation. Co-activates permanently.`
     case 'asteroid':
-      return `Narrow-scope niche tool — low mass (${p.mass.toFixed(2)}) but independently useful. Loaded only when explicitly relevant.`
+      return `Narrow-scope niche entry — low mass (${p.mass.toFixed(2)}) but independently useful. Loaded only when explicitly relevant.`
     case 'comet':
-      return `Occasional / specialized skill — high drag (${p.drag.toFixed(2)}) × cross_domain (${p.cross_domain.toFixed(2)}). Triggers on rare task profiles.`
+      return `Occasional / specialized candidate — high drag (${p.drag.toFixed(2)}) × cross_domain (${p.cross_domain.toFixed(2)}). Triggers on rare task profiles.`
     case 'irregular':
       return `Cross-domain bridge — spans ${cdSystems.join(' ↔ ') || 'multiple systems'}. High fragmentation, useful for hybrid tasks.`
   }
   return ''
 }
 
-export function orbitalClassify(skills, task) {
-  const enriched = skills.map(s => ({
-    skill: s,
+export function orbitalClassify(candidates, task) {
+  const enriched = candidates.map(s => ({
+    candidate: s,
     toks: uniq([
       ...tokenize(s.description),
       ...tokenize(s.body),
@@ -194,7 +196,7 @@ export function orbitalClassify(skills, task) {
     ]),
   }))
 
-  const physics = enriched.map(({ skill }) => physicsOf(skill, enriched))
+  const physics = enriched.map(({ candidate }) => physicsOf(candidate, enriched))
 
   const parents = enriched.map(({ toks }, i) => {
     let best = null, bestSim = 0
@@ -204,22 +206,22 @@ export function orbitalClassify(skills, task) {
       const inter = sib.toks.reduce((n, t) => n + (toks.includes(t) ? 1 : 0), 0)
       const union = new Set([...toks, ...sib.toks]).size
       const j2 = union ? inter / union : 0
-      if (j2 > bestSim) { bestSim = j2; best = sib.skill.slug }
+      if (j2 > bestSim) { bestSim = j2; best = sib.candidate.slug }
     }
     return bestSim > 0.18 ? best : null
   })
 
   const taskTokens = uniq(tokenize(task))
 
-  const classified = enriched.map(({ skill }, i) => {
+  const classified = enriched.map(({ candidate }, i) => {
     const p = physics[i]
     const parent = parents[i]
     const { cls, scores } = classOf(p, !!parent)
 
     let hits = [], desc_hits = 0, body_hits = 0, kw_hits = 0
-    const kwTokens = new Set((skill.keywords || []).flatMap(k => tokenize(k)))
-    const descTokens = new Set(tokenize(skill.description))
-    const body = (skill.body || '').toLowerCase()
+    const kwTokens = new Set((candidate.keywords || []).flatMap(k => tokenize(k)))
+    const descTokens = new Set(tokenize(candidate.description))
+    const body = (candidate.body || '').toLowerCase()
     for (const t of taskTokens) {
       const k = kwTokens.has(t),  d = descTokens.has(t),  b = body.includes(t)
       if (k) kw_hits++
@@ -238,11 +240,11 @@ export function orbitalClassify(skills, task) {
     const lagrange_systems = systems.filter(s => p.star_affinity[s] >= 0.25)
 
     return {
-      slug:        skill.slug,
-      name:        skill.name || skill.slug,
-      description: skill.description,
-      body:        skill.body || '',
-      keywords:    skill.keywords || [],
+      slug:        candidate.slug,
+      name:        candidate.name || candidate.slug,
+      description: candidate.description,
+      body:        candidate.body || '',
+      keywords:    candidate.keywords || [],
       route_score,
       classification: {
         class:              cls,

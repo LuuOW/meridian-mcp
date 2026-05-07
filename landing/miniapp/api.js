@@ -1,4 +1,4 @@
-// Skill router client. Used by miniapp/app.js and vision-lab/lab.js.
+// Meridian router client. Used by miniapp/app.js and vision-lab/lab.js.
 //
 // Routes through the live Meridian MCP at mcp.ask-meridian.uk via its
 // first-party browser endpoint (POST /v1/route). The endpoint is
@@ -7,9 +7,9 @@
 // the full classifier output.
 //
 // History note: an earlier path ran a local browser-side classifier
-// against a static _skills.json corpus (./_lib/router.mjs). That copy
-// drifted from the LLM-generated candidates the server produces and
-// has been removed.
+// against a static _candidates.json corpus (./_lib/router.mjs). That
+// copy drifted from the LLM-generated candidates the server produces
+// and has been removed.
 //
 // Signatures (routeTask, routeTaskStream) preserved so callers don't
 // change. The streaming variant fakes its progress stages — the MCP
@@ -44,12 +44,10 @@ async function postRoute(task, limit, signal) {
   if (!res.ok) throw new Error(body.error || `Meridian MCP HTTP ${res.status}`)
 
   // Server returns { task, confidence, top_score, candidates_generated,
-  // selected, timing }. Callers expect `skills` (legacy from the local
-  // router shape) so we alias it here without losing any fields.
-  return {
-    ...body,
-    skills: body.selected || [],
-  }
+  // selected, timing }. Expose as `candidates` for callers; keep the
+  // legacy `skills` alias for backwards compatibility with old front-ends.
+  const candidates = body.selected || []
+  return { ...body, candidates, skills: candidates }
 }
 
 export async function routeTask({ task, limit = 5, signal } = {}) {
@@ -60,12 +58,14 @@ export async function routeTask({ task, limit = 5, signal } = {}) {
 // Streaming variant. The MCP returns the full result in a single POST,
 // but the UI consumers expect a sequence of progress stages so the
 // "5–15 s of nothing" feels alive. Fire synthetic progress stages
-// before the request returns, then per-skill onSkill callbacks once
-// the result lands.
+// before the request returns, then per-candidate onCandidate callbacks
+// once the result lands.
 export async function routeTaskStream(
   { task, limit = 5, signal } = {},
-  { onProgress = () => {}, onSkill = () => {} } = {},
+  { onProgress = () => {}, onCandidate, onSkill } = {},
 ) {
+  // Back-compat: older callers pass `onSkill`. Honour both.
+  const cb = onCandidate || onSkill || (() => {})
   onProgress({ stage: 'connected' })
   onProgress({ stage: 'llm_calling', model: 'meta/llama-3.3-70b-instruct' })
 
@@ -74,28 +74,27 @@ export async function routeTaskStream(
   if (result.candidates_generated) {
     onProgress({ stage: 'classifying', candidates_generated: result.candidates_generated })
   }
-  for (const s of result.skills) onSkill(s)
-  onProgress({ stage: 'done', count: result.skills.length })
+  for (const s of result.candidates) cb(s)
+  onProgress({ stage: 'done', count: result.candidates.length })
   return result
 }
 
 // Fire-and-forget /v1/feedback POST. The worker uses these to drive
-// online SGD on top of the orbital classifier — every skill the user
-// engages with is one pairwise-ranking step. Never throws or blocks
-// the UI; failures log at warn level.
-export function sendFeedback({ task, skills, chosenSlug, action = 'click' }) {
-  if (!task || !Array.isArray(skills) || !chosenSlug) return
+// online SGD on top of the orbital classifier — every candidate the
+// user engages with is one pairwise-ranking step. Never throws or
+// blocks the UI; failures log at warn level.
+export function sendFeedback({ task, candidates, skills, chosenSlug, action = 'click' }) {
+  // Back-compat: older callers pass `skills`.
+  const list = candidates || skills
+  if (!task || !Array.isArray(list) || !chosenSlug) return
   try {
     fetch(FEEDBACK_ENDPOINT, {
       method:  'POST',
       headers: { 'content-type': 'application/json' },
       body:    JSON.stringify({
         query:        task,
-        // The worker re-uses the same shape /v1/route returns. The
-        // miniapp aliased `selected → skills` on the way in (api.js
-        // line ~50), so we send `selected` back to match the worker's
-        // schema.
-        selected:     skills,
+        // Worker schema is `selected` (matches /v1/route output).
+        selected:     list,
         chosen_slug:  chosenSlug,
         action,
       }),

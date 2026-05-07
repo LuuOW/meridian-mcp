@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Meridian — Documentation</title>
-<meta name="description" content="Self-contained MCP. GitHub Models generates candidate skills, the bundled orbital classifier ranks them — no backend, no Cloudflare.">
+<meta name="description" content="Self-contained MCP. GitHub Models generates candidates, the bundled orbital classifier ranks them — no backend, no Cloudflare.">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Meridian Docs">
-<meta property="og:description" content="Self-contained MCP. GitHub Models generates candidate skills, the bundled orbital classifier ranks them.">
+<meta property="og:description" content="Self-contained MCP. GitHub Models generates candidates, the bundled orbital classifier ranks them.">
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -63,10 +63,10 @@
 
   <h1 id="overview">Meridian documentation</h1>
   <p class="lead">
-    Meridian is a skill router for AI agents — local <strong>stdio MCP</strong>
+    Meridian is a orbital task router — local <strong>stdio MCP</strong>
     for Claude Code/Cursor/Windsurf, hosted <strong>remote MCP</strong>
     at <code>mcp.ask-meridian.uk</code> for Grok/ChatGPT/Claude.ai. It
-    generates candidate skills with an LLM, then ranks them with a local
+    generates candidates with an LLM, then ranks them with a local
     <strong>orbital classifier</strong> that assigns each one a celestial
     class (planet · moon · trojan · asteroid · comet · irregular).
   </p>
@@ -74,7 +74,7 @@
   <h2 id="install">Install</h2>
 
   <h3>1. Stdio MCP — Claude Code, Cursor, Windsurf, Goose, Continue</h3>
-  <pre><code class="lang-bash">npm install -g meridian-skills-mcp
+  <pre><code class="lang-bash">npm install -g meridian-mcp
 claude mcp add meridian meridian-mcp \
   -e MERIDIAN_GITHUB_TOKEN=ghp_yourTokenHere</code></pre>
   <p>
@@ -110,7 +110,7 @@ claude mcp add meridian meridian-mcp \
     Open <a href="/miniapp/">ask-meridian.uk/miniapp</a>. Type a task or
     hit <code>📷 Scan an object</code> to use real-time camera object
     detection as the input. Same orbital classifier, runs in-browser,
-    routes against the bundled 88-skill corpus.
+    routes against the bundled 88-candidate corpus.
   </p>
 
   <h2 id="grok" style="display: flex; align-items: center; gap: 12px;">
@@ -146,7 +146,7 @@ claude mcp add meridian meridian-mcp \
       one-time auth code, Grok exchanges it at <code>/token</code> with PKCE
       verification, and gets a 1-hour Bearer back.</li>
     <li><code>route_task</code> appears in Grok's tools list. Ask
-      something like <em>"route a task to ranked skills: build a
+      something like <em>"route a task to ranked candidates: build a
       WebSocket-backed presence indicator"</em> and Grok invokes it.</li>
   </ol>
 
@@ -167,11 +167,11 @@ claude mcp add meridian meridian-mcp \
 
   <h2 id="quickstart">Quickstart</h2>
   <p>Once the MCP is registered, your AI client auto-discovers the tool. Just ask:</p>
-  <pre><code class="lang-text">Use meridian to find skills for setting up a public API rate limiter.</code></pre>
+  <pre><code class="lang-text">Use meridian to find candidates for setting up a public API rate limiter.</code></pre>
   <p>
     The client calls <code>meridian.route_task({ task, limit })</code>. The
     package generates 5 LLM candidates via GitHub Models, classifies them
-    orbitally, and returns ranked skills with full markdown bodies — which
+    orbitally, and returns ranked candidates with full markdown bodies — which
     your client lifts straight into its context window.
   </p>
 
@@ -181,7 +181,7 @@ claude mcp add meridian meridian-mcp \
             ↓
   GitHub Models inference
   (default: meta/llama-3.3-70b-instruct)
-  → 5 candidate skills
+  → 5 candidates
     {slug, description, keywords, body}
             │
             ↓
@@ -219,7 +219,7 @@ claude mcp add meridian meridian-mcp \
   <p>
     Generates candidates, classifies them orbitally, and returns the
     ranked list as a single agent-readable markdown block. Each entry
-    ships with its full skill body so the caller LLM doesn't need a
+    ships with its full candidate body so the caller LLM doesn't need a
     second tool call to read it.
   </p>
 
@@ -254,7 +254,7 @@ claude mcp add meridian meridian-mcp \
 
   <p>
     Use this when you're shipping a browser app on an ask-meridian.uk
-    sub-property and want skill routing without making the user paste a
+    sub-property and want task routing without making the user paste a
     PAT or run an OAuth callback. Use <code>/mcp</code> instead when the
     caller is an external connector host (Grok, ChatGPT, Claude.ai).
   </p>
@@ -282,7 +282,7 @@ claude mcp add meridian meridian-mcp \
   <p>
     Same pipeline as <code>route_task</code>, but returns the
     <em>structured</em> classifier output (not the markdown wrapper) so
-    front-ends can render orbits, score bars, and per-skill physics
+    front-ends can render orbits, score bars, and per-candidate physics
     panels directly:
   </p>
   <pre><code class="lang-json">{
@@ -307,7 +307,7 @@ claude mcp add meridian meridian-mcp \
   <p>
     The browser endpoint <code>/v1/route</code> applies a fitted-correction layer on top of
     the heuristic ranking. The correction is trained by a separate POST endpoint that
-    front-ends fire whenever a user engages a skill (clicks a planet in
+    front-ends fire whenever a user engages a candidate (clicks a planet in
     <a href="https://lens.ask-meridian.uk">Lens</a>, opens a detail panel in the
     <a href="/miniapp/">miniapp</a>, etc.). Constant per-request cost (~1 ms), no batch
     training, no GPU, no local execution.
@@ -325,11 +325,11 @@ claude mcp add meridian meridian-mcp \
   }'</code></pre>
   <p>
     Each POST runs one pairwise-ranking SGD step (logistic ranking loss over (chosen,
-    every-other) pairs, lr 0.02, L2 0.001) against a 24-feature vector per skill: 8 physics
+    every-other) pairs, lr 0.02, L2 0.001) against a 24-feature vector per candidate: 8 physics
     scalars, 6 class one-hot, 3 star-system one-hot, 3 token-hit features, route_score
     normalised by batch max, rank position, has-parent, habitable-zone. The fitted
     correction multiplies <code>route_score</code> by <code>1 + tanh(K · w·x)</code> —
-    bounded to [0, 2] so no individual skill can be silently boosted beyond 2× heuristic.
+    bounded to [0, 2] so no individual candidate can be silently boosted beyond 2× heuristic.
   </p>
 
   <p><strong>action</strong> values: <code>click</code>, <code>detail_open</code>,
@@ -409,12 +409,12 @@ claude mcp add meridian meridian-mcp \
 }</code></pre>
 
   <h2 id="celestial-classes">Celestial classes</h2>
-  <p>Each generated skill is assigned exactly one class — argmax over six per-class scores:</p>
+  <p>Each candidate is assigned exactly one class — argmax over six per-class scores:</p>
   <table>
     <thead><tr><th>Class</th><th>Decision rule</th><th>Score boost</th></tr></thead>
     <tbody>
       <tr><td><strong>Planet</strong></td>
-          <td>Domain anchor — high mass × scope × independence. Loads as a primary skill.</td>
+          <td>Domain anchor — high mass × scope × independence. Loads as a primary candidate.</td>
           <td>×1.30</td></tr>
       <tr><td><strong>Trojan</strong></td>
           <td>Companion at L4/L5 of a parent — high dep_ratio, low fragmentation. Co-activates permanently with its parent.</td>
@@ -423,7 +423,7 @@ claude mcp add meridian meridian-mcp \
           <td>Cross-domain bridge — spans multiple star systems with high fragmentation.</td>
           <td>×1.10</td></tr>
       <tr><td><strong>Moon</strong></td>
-          <td>Sub-skill orbiting a parent — low independence, dep_ratio drives loading.</td>
+          <td>Satellite of a parent — low independence, dep_ratio drives loading.</td>
           <td>×1.05</td></tr>
       <tr><td><strong>Asteroid</strong></td>
           <td>Narrow-scope niche tool — low mass but independently useful.</td>
@@ -435,7 +435,7 @@ claude mcp add meridian meridian-mcp \
   </table>
 
   <h2 id="physics">Physics signature</h2>
-  <p>Per-skill features derived from content alone (no curated lookup tables):</p>
+  <p>Per-candidate features derived from content alone (no curated lookup tables):</p>
   <ul>
     <li><code>mass</code> — log(body_length) + keyword count, normalized.</li>
     <li><code>scope</code> — keyword diversity + cross_domain contribution.</li>
@@ -449,7 +449,7 @@ claude mcp add meridian meridian-mcp \
 
   <h2 id="star-systems">Star systems</h2>
   <p>
-    Three system term sets determine which gravitational well a skill orbits:
+    Three system term sets determine which gravitational well a candidate orbits:
   </p>
   <ul>
     <li><strong>Forge</strong> — devops/backend: <code>api · docker · deploy · network · backend · nginx · ssh · ci/cd · build · server · database · redis · cache · auth · test · kubernetes · tunnel · vpn · observability</code></li>
@@ -457,7 +457,7 @@ claude mcp add meridian meridian-mcp \
     <li><strong>Mind</strong> — AI/research: <code>llm · prompt · reasoning · agent · embedding · vector · rag · evaluation · orchestration · memory · knowledge · openai · anthropic · inference · fine-tune · transcript · synthesis</code></li>
   </ul>
   <p>
-    Skills with strong affinity in ≥ 2 systems get a <strong>versatility boost</strong> (1 + min(0.30, lagrange_potential × 0.5)) on the route score.
+    Candidates with strong affinity in ≥ 2 systems get a <strong>versatility boost</strong> (1 + min(0.30, lagrange_potential × 0.5)) on the route score.
   </p>
 
   <h2 id="config">Configuration</h2>
@@ -476,7 +476,7 @@ claude mcp add meridian meridian-mcp \
           <td>Override the inference endpoint (e.g. for a self-hosted gateway).</td></tr>
       <tr><td><code>MERIDIAN_CANDIDATES</code></td>
           <td><code>5</code></td>
-          <td>How many candidate skills the LLM generates per call (3–8).</td></tr>
+          <td>How many candidates the LLM generates per call (3–8).</td></tr>
       <tr><td><code>MERIDIAN_TIMEOUT_MS</code></td>
           <td><code>90000</code></td>
           <td>Abort the inference request after this many ms.</td></tr>
@@ -495,16 +495,16 @@ claude mcp add meridian meridian-mcp \
     If you need <em>local model + curated corpus</em> with no network calls,
     pin to the legacy line:
   </p>
-  <pre><code class="lang-bash">npm install -g meridian-skills-mcp@0.3.2</code></pre>
+  <pre><code class="lang-bash">npm install -g meridian-mcp@0.3.2</code></pre>
   <p>That ships:</p>
   <ul>
-    <li>The <code>skill_orbit.py</code> Python orbital classifier.</li>
+    <li>The <code>skill_orbit.py</code> Python orbital classifier (legacy 0.x).</li>
     <li>An <code>@xenova/transformers</code> MiniLM-L6-v2 embedding pre-filter (~23 MB ONNX).</li>
-    <li>An 88-skill curated corpus of <code>SKILL.md</code> files.</li>
-    <li>Four tools: <code>route_task</code>, <code>get_skill</code>, <code>list_skills</code>, <code>search_skills</code>.</li>
+    <li>An 88-entry curated corpus of <code>candidate document</code> files.</li>
+    <li>Four tools: <code>route_task</code>, <code>get_candidate</code>, <code>list_candidates</code>, <code>search_candidates</code>.</li>
   </ul>
   <p>
-    Tradeoff: closed-domain (only the curated 88 skills classify), but no
+    Tradeoff: closed-domain (only the curated 88 entries classify), but no
     internet required. Versions <code>1.x</code> ran the LLM and classifier on
     a Cloudflare Worker — that backend was retired during the GitHub Pages
     migration; <code>1.0.1</code> POSTs to a dead endpoint and is no longer
@@ -515,8 +515,8 @@ claude mcp add meridian meridian-mcp \
     <p>
       Last updated 2026-05-06 ·
       <a href="https://github.com/LuuOW/meridian-mcp">Source on GitHub</a> ·
-      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a> ·
-      <a href="https://github.com/LuuOW/meridian-mcp/pkgs/npm/meridian-skills-mcp">GitHub Packages</a> ·
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a> ·
+      <a href="https://github.com/LuuOW/meridian-mcp/pkgs/npm/meridian-mcp">GitHub Packages</a> ·
       <a href="/miniapp/">Try the miniapp</a>
     </p>
   </footer>

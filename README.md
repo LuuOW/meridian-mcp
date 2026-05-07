@@ -1,16 +1,18 @@
-# Meridian Skills MCP
+# Meridian MCP
 
-**Dynamic AI skill routing via orbital mechanics.**
+**Dynamic task routing via orbital mechanics. Domain-agnostic — candidates can be tools, prompts, documents, products, or any routable entity.**
 
-Self-contained MCP — stdio for local hosts (Claude Code, Cursor, Windsurf…) and Streamable HTTP for remote connectors (Grok, ChatGPT custom MCP, anything that takes a server URL). Generates candidate skills with Llama-3.3-70B (via [GitHub Models](https://github.com/marketplace/models)) and ranks them with a local orbital classifier into celestial classes (`planet`, `moon`, `trojan`, `asteroid`, `comet`, `irregular`).
+Self-contained MCP — stdio for local hosts (Claude Code, Cursor, Windsurf…) and Streamable HTTP for remote connectors (Grok, ChatGPT custom MCP, anything that takes a server URL). Generates candidates with Llama-3.3-70B (via [GitHub Models](https://github.com/marketplace/models)) and ranks them with a local orbital classifier into celestial body classes (`planet`, `moon`, `trojan`, `asteroid`, `comet`, `irregular`).
 
-[![npm](https://img.shields.io/npm/v/meridian-skills-mcp.svg)](https://www.npmjs.com/package/meridian-skills-mcp)
+[![npm](https://img.shields.io/npm/v/meridian-mcp.svg)](https://www.npmjs.com/package/meridian-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **3.0 — renamed from `meridian-skills-mcp`.** The classifier was always domain-agnostic; the "skills" framing biased the LLM prompt toward AI-agent capabilities. v3 drops that framing across the prompt, code, branding, and npm name. Migration: `npm i -g meridian-mcp` (the old package is deprecated; both binaries are still named `meridian-mcp` / `meridian-mcp-http` so client configs keep working). The hosted HTTP MCP at `mcp.ask-meridian.uk/mcp` continues to work — URL unchanged.
 
 ## Install (stdio — Claude Code / Cursor / Windsurf)
 
 ```bash
-npm install -g meridian-skills-mcp
+npm install -g meridian-mcp
 claude mcp add meridian meridian-mcp
 ```
 
@@ -49,14 +51,14 @@ The same URL works for **ChatGPT custom MCPs** and **Claude.ai connectors** — 
 If you'd rather operate your own remote MCP, the package ships a Node binary:
 
 ```bash
-npx -y meridian-skills-mcp meridian-mcp-http
+npx -y meridian-mcp meridian-mcp-http
 # → listening on http://0.0.0.0:3333/mcp · auth=pass-through · v2.1.0
 ```
 
 Or via Docker (`MCP_MODE=http` flips the entrypoint):
 
 ```bash
-docker run --rm -p 3333:3333 -e MCP_MODE=http meridian-skills-mcp
+docker run --rm -p 3333:3333 -e MCP_MODE=http meridian-mcp
 ```
 
 Auth modes:
@@ -73,7 +75,7 @@ Single tool: **`route_task(task, limit?)`**.
 ```
 input: a natural-language task
    ↓
-GitHub Models (Llama-3.3-70B) generates 5 candidate skills
+GitHub Models (Llama-3.3-70B) generates 5 candidates
    ↓
 local orbital classifier
    • derives physics: mass, scope, independence,
@@ -81,13 +83,13 @@ local orbital classifier
    • assigns class: planet | moon | trojan |
                     asteroid | comet | irregular
    • computes star-system membership (forge / signal / mind),
-     parent skill, Lagrange potential
+     parent candidate, Lagrange potential
    ↓
-output: ranked skills with full bodies, classifications,
+output: ranked candidates with full bodies, classifications,
         and decision rules
 ```
 
-Typical call takes **5–15 seconds**. Each result ships its full markdown body so the caller agent can lift the skill straight into its context window.
+Typical call takes **5–15 seconds**. Each result ships its full markdown body so the caller agent can lift the candidate straight into its context window.
 
 ## Configuration
 
@@ -112,7 +114,7 @@ The `1.x` line called a Cloudflare Worker (`https://ask-meridian.uk/api/orbital-
 - **Faster.** 5–15 s instead of 30–50 s (no extra network hop, GitHub's inference is quick).
 - **Same output shape.** Drop-in replacement; no agent prompt changes needed.
 
-To keep using the closed-domain Python scorer + curated 88-skill corpus that shipped with `0.3.x`, pin to `meridian-skills-mcp@0.3.2`. To keep calling the now-defunct Cloudflare backend, pin to `1.0.1` (will fail with HTTP 405 on every call).
+To keep using the closed-domain Python scorer + curated 88-entry corpus that shipped with `0.3.x`, pin to `meridian-skills-mcp@0.3.2`. To keep calling the now-defunct Cloudflare backend, pin to `1.0.1` (will fail with HTTP 405 on every call).
 
 ## Web miniapp + the live remote MCP
 
@@ -125,14 +127,14 @@ Both call the **first-party browser endpoint** `/v1/route` — Origin-allowliste
 
 ## Online learning loop
 
-The browser endpoint `/v1/route` applies a fitted-correction layer on top of the heuristic ranking. Every time a user engages a skill (planet click in lens, detail-panel open in miniapp, card click in vision-lab), the front-end POSTs to `/v1/feedback` and the worker runs **one pairwise-ranking SGD step** against the chosen skill vs every non-chosen candidate. Constant per-request cost (~1 ms), no GPU, no local execution.
+The browser endpoint `/v1/route` applies a fitted-correction layer on top of the heuristic ranking. Every time a user engages a candidate (planet click in lens, detail-panel open in miniapp, card click in vision-lab), the front-end POSTs to `/v1/feedback` and the worker runs **one pairwise-ranking SGD step** against the chosen candidate vs every other. Constant per-request cost (~1 ms), no GPU, no local execution.
 
 ```
 user click → /v1/feedback → KV → SGD step → updated weights → next /v1/route uses them
 ```
 
-- `final_score = heuristic_route_score × (1 + tanh(K · w·x))` — bounded to [0, 2], so no individual skill can be silently boosted beyond 2× heuristic.
-- 24-feature vector per skill: 8 physics scalars + 6 class one-hot + 3 star-system one-hot + 3 token-hit features + 4 ranking features.
+- `final_score = heuristic_route_score × (1 + tanh(K · w·x))` — bounded to [0, 2], so no individual candidate can be silently boosted beyond 2× heuristic.
+- 24-feature vector per candidate: 8 physics scalars + 6 class one-hot + 3 star-system one-hot + 3 token-hit features + 4 ranking features.
 - Cold start: `w = 0`, multiplier = 1, pure heuristic. Day 1 deployments don't need any training data.
 - The OAuth-gated `/mcp` path (Grok / ChatGPT / Claude.ai connectors) keeps deterministic heuristic ranking for reproducibility.
 - Two GitHub Actions cron jobs close the loop without organic traffic: `classifier-bootstrap.yml` (every 3 days, feeds labelled examples from a public HF benchmark into `/v1/feedback`) and `classifier-health.yml` (Mondays, posts recall@1 / @5 + model state to `landing/healthz.json`).

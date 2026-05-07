@@ -11,7 +11,7 @@
 //   - preset prompt chips, custom prompt input
 //   - Moondream2 primary, SmolVLM-500M fallback if Moondream load fails
 // Phase 3 composition:
-//   - "Find compatible skills" → POST mcp.ask-meridian.uk/v1/route
+//   - "Find compatible candidates" → POST mcp.ask-meridian.uk/v1/route
 //     with the VLM answer; routing + orbital classification happen
 //     server-side in the Cloudflare Worker.
 //
@@ -366,8 +366,8 @@ async function ask(prompt) {
   }
 
   // Clear any artifacts from the previous ask: route results card, AR galaxy
-  // overlay, open skill panel. The new answer is about a new frame/question, so
-  // skills routed from the prior answer would be misleading if left on screen.
+  // overlay, open candidate panel. The new answer is about a new frame/question, so
+  // candidates routed from the prior answer would be misleading if left on screen.
   clearRouteArtifacts()
 
   $('answerSection').hidden = false
@@ -453,7 +453,7 @@ $('routeBtn').addEventListener('click', async () => {
   $('routeBtn').disabled = true
   $('routeBtn').textContent = 'Routing through orbital engine…'
 
-  // Build the streaming results card up-front. Skills get appended as
+  // Build the streaming results card up-front. Candidates get appended as
   // they arrive from the SSE stream; the foot line gets stamped on done.
   const t0 = performance.now()
   $('answer').insertAdjacentHTML('afterend', `
@@ -469,7 +469,7 @@ $('routeBtn').addEventListener('click', async () => {
   const progress = $('labRouteProgress')
   const list     = $('labRouteList')
   const foot     = $('labRouteFoot')
-  const accumulatedSkills = []
+  const accumulatedCandidates = []
 
   try {
     const summary = await routeTaskStream(
@@ -481,22 +481,22 @@ $('routeBtn').addEventListener('click', async () => {
         onProgress: (p) => {
           if (p.stage === 'connected')           progress.textContent = 'connected · waiting for LLM…'
           else if (p.stage === 'cache_hit')      progress.textContent = `cache hit (${p.cache_age_s}s old) — replaying`
-          else if (p.stage === 'cache_miss')     progress.textContent = 'cache miss · authoring fresh skills…'
+          else if (p.stage === 'cache_miss')     progress.textContent = 'cache miss · authoring fresh candidates…'
           else if (p.stage === 'llm_streaming_start') progress.textContent = `LLM warming up (${p.model})…`
           else if (p.stage === 'llm_streaming')  progress.textContent = `LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
           else if (p.stage === 'llm_calling')    progress.textContent = `LLM running (${p.model})…`
           else if (p.stage === 'llm_complete')   progress.textContent = `LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
-          else if (p.stage === 'rag_retrieved')  progress.textContent = `RAG: ${p.matches} similar past skills (top score ${p.top_score})`
+          else if (p.stage === 'rag_retrieved')  progress.textContent = `RAG: ${p.matches} similar past candidates (top score ${p.top_score})`
           else if (p.stage === 'classifying')    progress.textContent = `classifying ${p.candidates_generated} candidates orbitally…`
           else if (p.stage === 'semantic_rerank') progress.textContent = `semantic re-rank (${p.model})…`
         },
-        onSkill: (s) => {
-          accumulatedSkills.push(s)
+        onCandidate: (s) => {
+          accumulatedCandidates.push(s)
           const cls   = s.classification?.class       || ''
           const sys   = s.classification?.star_system || ''
           const score = (s.route_score || 0).toFixed(1)
           // data-slug lets the click delegation below find the right
-          // skill for /v1/feedback without re-querying the DOM each time.
+          // candidate for /v1/feedback without re-querying the DOM each time.
           list.insertAdjacentHTML('beforeend', `
             <li class="lab-route-result lab-route-result-in" data-slug="${escapeHTML(s.slug)}">
               <div class="lab-route-head">
@@ -508,41 +508,41 @@ $('routeBtn').addEventListener('click', async () => {
               <p>${escapeHTML(s.description || '')}</p>
               ${s.why ? `<div class="lab-route-why">${escapeHTML(s.why)}</div>` : ''}
             </li>`)
-          // Update AR galaxy as each skill arrives so the orbiting planets
+          // Update AR galaxy as each candidate arrives so the orbiting planets
           // appear progressively rather than all at once.
-          showArGalaxy(accumulatedSkills)
+          showArGalaxy(accumulatedCandidates)
         },
       },
     )
 
-    if (!accumulatedSkills.length) {
+    if (!accumulatedCandidates.length) {
       card.classList.remove('lab-route-streaming')
       card.classList.add('lab-route-empty')
       head.textContent = ''
       progress.textContent = ''
       list.innerHTML = ''
       foot.hidden = false
-      foot.textContent = 'No compatible skills found for this answer.'
+      foot.textContent = 'No compatible candidates found for this answer.'
       return
     }
 
     card.classList.remove('lab-route-streaming')
-    head.textContent = `Top ${accumulatedSkills.length} skills (orbital-classified)`
+    head.textContent = `Top ${accumulatedCandidates.length} candidates (orbital-classified)`
     progress.hidden  = true
     foot.hidden      = false
 
     // Click delegation: any click on a card fires /v1/feedback with the
     // clicked card's slug as chosen. Bound once after the stream ends
-    // so we don't re-bind on every onSkill tick.
+    // so we don't re-bind on every onCandidate tick.
     const taskForFeedback = lastAnswer.slice(0, 600)
     list.addEventListener('click', (e) => {
       const li = e.target.closest('li[data-slug]')
       if (!li) return
       const chosenSlug = li.dataset.slug
-      if (!chosenSlug || accumulatedSkills.length < 2) return
+      if (!chosenSlug || accumulatedCandidates.length < 2) return
       sendFeedback({
         task:       taskForFeedback,
-        skills:     accumulatedSkills,
+        candidates:     accumulatedCandidates,
         chosenSlug,
         action:     'click',
       })
@@ -577,23 +577,23 @@ function ensureArGalaxy() {
   arGalaxy = new MiniGalaxy($('arGalaxy'), {
     mode:   '3d',
     arMode: true,
-    onPlanetClick: (slug) => openSkillPanel(slug),
+    onPlanetClick: (slug) => openCandidatePanel(slug),
   })
   return arGalaxy
 }
 
-function showArGalaxy(skills) {
-  if (!skills?.length) return
-  lastSelected = skills
+function showArGalaxy(candidates) {
+  if (!candidates?.length) return
+  lastSelected = candidates
   const g = ensureArGalaxy()
-  g.setSkills(skills)
+  g.setCandidates(candidates)
   $('arGalaxy').hidden = false
   $('galaxyBtn').hidden = false
   $('galaxyBtn').classList.add('active')
   document.querySelector('.lab-stage').classList.add('galaxy-on')
 }
 
-function openSkillPanel(slug) {
+function openCandidatePanel(slug) {
   const s = lastSelected.find(x => x.slug === slug)
   if (!s) return
   const cls = s.classification?.class || ''
@@ -602,34 +602,34 @@ function openSkillPanel(slug) {
   const rule = s.classification?.decision_rule || ''
   const kw = Array.isArray(s.keywords) ? s.keywords.slice(0, 8) : []
 
-  $('labSkillTitle').textContent  = s.slug
-  $('labSkillClass').textContent  = cls
-  $('labSkillClass').dataset.class = cls
-  $('labSkillSystem').textContent = sys
-  $('labSkillSystem').style.display = sys ? '' : 'none'
-  $('labSkillScore').textContent  = `score ${score}`
-  $('labSkillDesc').textContent   = s.description || ''
-  $('labSkillRule').textContent   = rule
-  $('labSkillPhysics').innerHTML  = renderPhysicsPanel(s)
-  $('labSkillBody').innerHTML     = s.body
+  $('labCandidateTitle').textContent  = s.slug
+  $('labCandidateClass').textContent  = cls
+  $('labCandidateClass').dataset.class = cls
+  $('labCandidateSystem').textContent = sys
+  $('labCandidateSystem').style.display = sys ? '' : 'none'
+  $('labCandidateScore').textContent  = `score ${score}`
+  $('labCandidateDesc').textContent   = s.description || ''
+  $('labCandidateRule').textContent   = rule
+  $('labCandidatePhysics').innerHTML  = renderPhysicsPanel(s)
+  $('labCandidateBody').innerHTML     = s.body
     ? renderMarkdown(s.body)
-    : `<p class="lab-skill-body-empty">No skill body returned.</p>`
-  $('labSkillKeywords').innerHTML = kw.map(k => `<span class="lab-skill-keyword">${escapeHTML(k)}</span>`).join('')
-  $('labSkillOpen').href = `/miniapp/?task=${encodeURIComponent(s.description || s.slug)}`
+    : `<p class="lab-candidate-body-empty">No candidate body returned.</p>`
+  $('labCandidateKeywords').innerHTML = kw.map(k => `<span class="lab-candidate-keyword">${escapeHTML(k)}</span>`).join('')
+  $('labCandidateOpen').href = `/miniapp/?task=${encodeURIComponent(s.description || s.slug)}`
 
-  const panel = $('labSkillPanel')
+  const panel = $('labCandidatePanel')
   panel.classList.add('open')
   panel.setAttribute('aria-hidden', 'false')
 }
 
-function closeSkillPanel() {
-  const panel = $('labSkillPanel')
+function closeCandidatePanel() {
+  const panel = $('labCandidatePanel')
   panel.classList.remove('open')
   panel.setAttribute('aria-hidden', 'true')
 }
 
-$('labSkillClose').addEventListener('click', closeSkillPanel)
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSkillPanel() })
+$('labCandidateClose').addEventListener('click', closeCandidatePanel)
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCandidatePanel() })
 
 $('galaxyBtn').addEventListener('click', () => {
   const stage = document.querySelector('.lab-stage')
@@ -645,18 +645,18 @@ function diag(s) { $('diag').textContent = s }
 function clearRouteArtifacts() {
   document.querySelectorAll('.lab-route-results').forEach(el => el.remove())
   if (arGalaxy) {
-    arGalaxy.setSkills([])
+    arGalaxy.setCandidates([])
     $('arGalaxy').hidden = true
     $('galaxyBtn').hidden = true
     $('galaxyBtn').classList.remove('active')
     document.querySelector('.lab-stage').classList.remove('galaxy-on')
   }
   lastSelected = []
-  closeSkillPanel()
+  closeCandidatePanel()
 }
 
 // Snap/flip both invalidate any prior answer (it described a different frame
-// or camera). Tear down the answer panel and routed skills so the user isn't
+// or camera). Tear down the answer panel and routed candidates so the user isn't
 // looking at a description of something that's no longer on screen.
 function clearAnswerAndRoute() {
   clearRouteArtifacts()

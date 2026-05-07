@@ -63,7 +63,7 @@ function resolveGitHubToken(bearer) {
 
 function buildServer(githubToken) {
   const server = new Server(
-    { name: 'meridian-skills', version: PKG_VERSION },
+    { name: 'meridian', version: PKG_VERSION },
     { capabilities: { tools: {} } },
   )
 
