@@ -1,0 +1,58 @@
+name: Deploy CF Worker
+
+# Pushes to main that touch the Worker or its shared library deploy
+# meridian-mcp to Cloudflare and bind it to https://mcp.ask-meridian.uk.
+#
+# Required secrets:
+#   CLOUDFLARE_API_TOKEN  — scoped token with Workers Scripts: Edit,
+#     Workers KV Storage: Edit, Account Settings: Read, Zone: Read.
+#     Already configured on this repo from earlier setup.
+#   CLOUDFLARE_ACCOUNT_ID — your CF account ID.
+#
+# The Worker secret MERIDIAN_GITHUB_TOKEN is set out-of-band via
+# `wrangler secret put` — secrets are persisted per-Worker and survive
+# deploys, so they don't need to be re-uploaded here.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cf-worker/**'
+      - 'mcp/_lib/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Deploy to Cloudflare
+        run: npx --yes wrangler@4 deploy
+        working-directory: cf-worker
+        env:
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke-test the live URL
+        run: |
+          set -e
+          curl -fsS https://mcp.ask-meridian.uk/healthz | tee /dev/null | grep -q '^ok$'
+          curl -fsS https://mcp.ask-meridian.uk/.well-known/oauth-authorization-server \
+            | grep -q '"authorization_endpoint":"https://mcp.ask-meridian.uk/authorize"'
+          echo "smoke ok"
