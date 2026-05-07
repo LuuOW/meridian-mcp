@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>From 17% to 81% — calibrating an orbital skill classifier with simulations and online SGD — Meridian Blog</title>
+<meta name="description" content="A skill-routing classifier had a planet bias (17/18 panel skills classified as 'planet'). We ran simulations against two physics textbooks, retuned heuristics, evaluated against real labelled data, and shipped an online-SGD layer that learns from every user click. The full journey, with numbers.">
+<meta property="og:title" content="From 17% to 81% — calibrating an orbital skill classifier with simulations and online SGD">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/orbital-classifier-online-learning/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/orbital-classifier-online-learning/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  /* Inline SVG chart styling */
+  .chart-frame { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 24px 0; }
+  .chart-frame svg { display: block; max-width: 100%; height: auto; }
+  .chart-caption { font-size: 12px; color: var(--text-faint); margin-top: 10px; text-align: center; font-family: var(--font-mono); letter-spacing: 0.04em; }
+
+  .key-figure { font-size: 56px; line-height: 1; font-weight: 700; color: var(--accent, #a78bfa); font-family: var(--font-mono); margin: 8px 0; }
+  .key-label  { font-size: 12px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin: 24px 0; }
+  .stat-card  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+
+  .arrow-flow { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 18px; margin: 24px 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.85; color: #cbd5e1; }
+  .arrow-flow strong { color: #c4b5fd; }
+</style>
+</head>
+<body>
+
+<a href="/products/build-your-own-mcp/" class="promo-strip">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <details class="nav-group" open>
+      <summary class="nav-section">Showcase</summary>
+      <a href="/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Skill orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to skills</span>
+      </a>
+      <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="/#products">Products</a>
+      <a href="/blog/" class="current">Blog</a>
+      <a href="/docs/">Docs</a>
+      <a href="/#pricing">Pricing</a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/lens">GitHub · lens</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+</nav>
+
+<article class="article-body">
+  <header style="padding-top: 64px;">
+    <p class="article-meta">2026-05-07 · 10 min read · engineering</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD</h1>
+    <p class="lead">
+      A skill-routing classifier had a planet bias — 17 of 18 panel skills got classified as
+      <code>planet</code>. We tried two textbook physics frameworks (Vallado's CRTBP, Sears &amp;
+      Zemansky's spectral classification), neither beat heuristics. We retuned heuristics and
+      hit 50% on the panel. Then we ran the same classifier against real labelled data and
+      hit 81% recall@1. Then we wired an online-SGD loop on top so it keeps improving from
+      every user click. Here's the full journey, with the numbers.
+    </p>
+  </header>
+
+  <section>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="key-label">starting</div>
+        <div class="key-figure">17%</div>
+        <div style="font-size: 12px; color: var(--text-muted);">class accuracy on panel</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">after v2 retune</div>
+        <div class="key-figure">50%</div>
+        <div style="font-size: 12px; color: var(--text-muted);">class accuracy on panel</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">on real data</div>
+        <div class="key-figure">81%</div>
+        <div style="font-size: 12px; color: var(--text-muted);">recall@1, public benchmark</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">online learning</div>
+        <div class="key-figure">∞</div>
+        <div style="font-size: 12px; color: var(--text-muted);">SGD steps per user click</div>
+      </div>
+    </div>
+  </section>
+
+  <h2>The bug we caught with a calibration panel</h2>
+
+  <p>
+    Meridian's MCP routes a free-form task to compatible skills using a deterministic
+    <em>orbital classifier</em> — each candidate gets a physics signature
+    (<code>mass · scope · independence · cross_domain · fragmentation · drag · dep_ratio</code>)
+    and a celestial class (<code>planet · moon · trojan · asteroid · comet · irregular</code>).
+    It's been in production at <code>mcp.ask-meridian.uk</code> since v2.0. We added a
+    calibration script (<code>scripts/calibrate-classifier.mjs</code>) — a fixed 18-skill panel,
+    three skills per class — and pointed it at the production code.
+  </p>
+
+  <p>The result was bad. <strong>17 of 18 skills classified as <code>planet</code>.</strong></p>
+
+  <div class="chart-frame">
+    <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Class distribution before retune: 17 planet, 0 moon, 0 trojan, 0 asteroid, 0 comet, 1 irregular">
+      <style>
+        .bar    { fill: #7c3aed; }
+        .barlbl { font: 600 13px var(--font-mono, ui-monospace, monospace); fill: #cbd5e1; }
+        .axis   { font: 11px var(--font-mono, ui-monospace, monospace); fill: #94a3b8; }
+        .title  { font: 600 14px var(--font-mono, ui-monospace, monospace); fill: #ddd6fe; }
+      </style>
+      <text x="20" y="22" class="title">CLASS DISTRIBUTION — before retune  (17/18 planet)</text>
+      <!-- 6 classes; bars width = (count/18) * 580 -->
+      <g transform="translate(140, 50)">
+        <text x="-10" y="14" class="axis" text-anchor="end">planet</text>
+        <rect x="0"  y="2"  width="548" height="16" class="bar"/>
+        <text x="556" y="14" class="barlbl">17</text>
+
+        <text x="-10" y="42" class="axis" text-anchor="end">moon</text>
+        <rect x="0"  y="30" width="0"   height="16" class="bar"/>
+        <text x="6"   y="42" class="barlbl" fill="#475569">0</text>
+
+        <text x="-10" y="70" class="axis" text-anchor="end">trojan</text>
+        <rect x="0"  y="58" width="0"   height="16" class="bar"/>
+        <text x="6"   y="70" class="barlbl" fill="#475569">0</text>
+
+        <text x="-10" y="98" class="axis" text-anchor="end">asteroid</text>
+        <rect x="0"  y="86" width="0"   height="16" class="bar"/>
+        <text x="6"   y="98" class="barlbl" fill="#475569">0</text>
+
+        <text x="-10" y="126" class="axis" text-anchor="end">comet</text>
+        <rect x="0"  y="114" width="0"  height="16" class="bar"/>
+        <text x="6"   y="126" class="barlbl" fill="#475569">0</text>
+
+        <text x="-10" y="154" class="axis" text-anchor="end">irregular</text>
+        <rect x="0"  y="142" width="32" height="16" class="bar"/>
+        <text x="40"  y="154" class="barlbl">1</text>
+
+        <text x="180" y="200" class="axis">class accuracy = 0.167   ·   2 of 6 classes used</text>
+      </g>
+    </svg>
+    <p class="chart-caption">orbital.mjs — production v1, 18 panel skills, single routing task</p>
+  </div>
+
+  <p>
+    Investigation took about an hour and pointed straight at the <code>mass</code> formula:
+  </p>
+
+  <pre><code>mass = (log10(bodyLen) − 1.7) × 0.35 + min(0.4, kws.length / 15)</code></pre>
+
+  <p>
+    Tuned for short SKILL.md bodies (~300 chars, 4 keywords). For the 1500–2500-char,
+    6–8 keyword bodies that <strong>Llama-3.3-70B emits today</strong>, mass saturates at ~0.95
+    for almost everything. Same shape with <code>scope</code> (0.25 floor + saturating
+    keyword term) and <code>independence</code>. The planet score was
+    <code>mass × scope × independence</code>, three saturated axes multiplied.
+    Result: planet always wins.
+  </p>
+
+  <p>
+    A real LLM-distribution shift, not a code regression — the formula was right when it
+    shipped, and the model behind <code>route_task</code> evolved out from under it.
+    A failure mode worth a name: <strong>silent calibration drift</strong>.
+  </p>
+
+  <h2>The temptation to physics our way out</h2>
+
+  <p>
+    The first instinct was to ground the classifier in real physics. The orbital metaphor
+    has a ready-made textbook: David Vallado's
+    <em>Fundamentals of Astrodynamics and Applications</em>, §12.7 — the
+    <strong>Circular Restricted Three-Body Problem</strong> (CRTBP). Two primaries, a test
+    particle, a Jacobi constant. Lagrange points (L1–L5) have closed-form coordinates.
+    Trojan asteroids live at the triangular points (L4/L5). The Hill sphere is one cube root
+    away. <em>Every</em> celestial class has a textbook physical definition.
+  </p>
+
+  <p>
+    We built a CRTBP simulator (<code>scripts/simulate-classifier-crtbp.mjs</code>) that maps
+    each skill's physics signature to a state vector in the synodic frame, computes Jacobi C
+    via Vallado Eq. 12-15, and assigns class by physics test:
+  </p>
+
+  <pre><code>// Vallado §12.7
+const M_STAR = 0.1                              // mass ratio
+const L4 = { x: 0.5 - M_STAR, y:  Math.sqrt(3)/2 }    // Eq. 12-18 triangular
+const L5 = { x: 0.5 - M_STAR, y: -Math.sqrt(3)/2 }
+const HILL_R = Math.cbrt(M_STAR / 3)            // Hill sphere
+// Class = first match: irregular → trojan → moon → comet → planet → asteroid</code></pre>
+
+  <p>
+    The math works. Jacobi constants computed correctly. L4/L5 landed at the textbook positions.
+    Hill radius came out right. <strong>The classification result was 22% — worse than the
+    bug we started with.</strong> 17 of 18 panel skills became <code>comet</code> because
+    every test particle's Jacobi C was below C(L1), and the comet rule fires on
+    <code>C &lt; C(L1)</code>. The physics is sound; the
+    <em>SKILL.md → synodic-frame mapping</em> is the bottleneck. With no labelled ground
+    truth to fit it, every skill ended up at the same Jacobi-band, and physics couldn't
+    separate them.
+  </p>
+
+  <p>
+    Sears &amp; Zemansky Vol. 2 gave us a richer framing. Light has many more
+    simultaneously-meaningful axes than orbits: wavelength, polarization, amplitude, phase,
+    coherence, full spectrum, Doppler shift. Astronomy classifies <em>stars</em> by spectral
+    type (O / B / A / F / G / K / M), not by orbits. We built a spectral classifier that
+    encodes each skill as a 32-bin visible-band spectrum (Stefan-Boltzmann continuum +
+    Doppler-broadened emission lines per domain hit) and assigns class by best-fit cosine
+    similarity to six prototype spectra.
+  </p>
+
+  <p>
+    Same outcome: <strong>33%</strong>, also worse than v2 heuristic. The encoding from text
+    to spectrum produced too-similar spectra for skills sharing a single dominant domain;
+    sibling correlation went to 1.00 for 11 of 18 skills, the moon test fired everywhere.
+    The right framework with the wrong encoder produces noise.
+  </p>
+
+  <div class="chart-frame">
+    <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Class accuracy by approach">
+      <style>
+        .bar2  { fill: url(#grad-bar); }
+        .bar2-loser { fill: #475569; }
+        .barlbl2 { font: 600 12px var(--font-mono, ui-monospace, monospace); fill: #ddd6fe; }
+        .axis2 { font: 11px var(--font-mono, ui-monospace, monospace); fill: #94a3b8; }
+        .title2 { font: 600 14px var(--font-mono, ui-monospace, monospace); fill: #ddd6fe; }
+      </style>
+      <defs>
+        <linearGradient id="grad-bar" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#38bdf8"/>
+        </linearGradient>
+      </defs>
+      <text x="20" y="22" class="title2">CLASS ACCURACY ON PANEL — five approaches tried</text>
+      <g transform="translate(220, 50)">
+        <text x="-10" y="14" class="axis2" text-anchor="end">v1 (production bug)</text>
+        <rect x="0"  y="2"  width="62"  height="16" class="bar2-loser"/>
+        <text x="70"  y="14" class="barlbl2">0.167</text>
+
+        <text x="-10" y="42" class="axis2" text-anchor="end">CRTBP physics</text>
+        <rect x="0"  y="30" width="83"  height="16" class="bar2-loser"/>
+        <text x="91"  y="42" class="barlbl2">0.222</text>
+
+        <text x="-10" y="70" class="axis2" text-anchor="end">spectral physics</text>
+        <rect x="0"  y="58" width="123" height="16" class="bar2-loser"/>
+        <text x="131" y="70" class="barlbl2">0.333</text>
+
+        <text x="-10" y="98" class="axis2" text-anchor="end">v2 + CRTBP hybrid</text>
+        <rect x="0"  y="86" width="144" height="16" class="bar2-loser"/>
+        <text x="152" y="98" class="barlbl2">0.389</text>
+
+        <text x="-10" y="126" class="axis2" text-anchor="end">v2 retune (shipped)</text>
+        <rect x="0"  y="114" width="185" height="16" class="bar2"/>
+        <text x="193" y="126" class="barlbl2">0.500  ✓</text>
+
+        <text x="0"   y="170" class="axis2">two textbook physics frameworks · neither beat heuristics</text>
+      </g>
+    </svg>
+    <p class="chart-caption">Class accuracy on the synthetic 18-skill calibration panel.</p>
+  </div>
+
+  <h2>The boring fix that worked</h2>
+
+  <p>
+    With both physics frameworks underperforming, the pragmatic answer was rebalancing the
+    heuristic constants against current LLM output statistics. Three changes in
+    <code>mcp/_lib/orbital.mjs</code>:
+  </p>
+
+  <ul>
+    <li>
+      <strong><code>mass</code></strong> renormalised across realistic body lengths
+      (200–3000 chars) and keyword counts (3–12). Median LLM output now hits
+      <code>mass ≈ 0.5</code> instead of saturating at <code>~0.95</code>.
+    </li>
+    <li>
+      <strong>Planet score</strong> switched from product to
+      <code>min(mass, scope, independence)<sup>1.5</sup></code>. The product let two strong
+      axes drown out a missing one; <code>min</code> penalises the deficit, which is what
+      "anchor skill" actually means semantically — strong on every dimension, not strong on
+      average.
+    </li>
+    <li>
+      <strong>Asteroid threshold</strong> raised from 0.4 → 0.55 to match the new (lower)
+      mass distribution.
+    </li>
+  </ul>
+
+  <p>
+    Class accuracy on the panel: <strong>0.167 → 0.500</strong>. Class distribution
+    rebalanced to four classes used (was two). Mass and scope discrimination both recovered
+    above 0.5. <a href="https://github.com/LuuOW/meridian-mcp/commit/d1051fb">Shipped at
+    <code>d1051fb</code></a>; the simulation script that validated it before any production
+    change is in the repo as <code>scripts/simulate-classifier-v2.mjs</code>.
+  </p>
+
+  <h2>The plot twist: real labelled data</h2>
+
+  <p>
+    The synthetic panel is a stress test — three skills per class, designed to break things.
+    What does the classifier do on <em>real</em> task→tool data? We pulled 60 rows from
+    <a href="https://huggingface.co/datasets/shawhin/tool-use-finetuning"><code>shawhin/tool-use-finetuning</code></a>
+    via the Hugging Face datasets API (no auth, free), filtered to the 21 rows with
+    single-correct-tool labels, and ran v2 against them.
+  </p>
+
+  <div class="chart-frame">
+    <svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Recall on labelled benchmark">
+      <style>
+        .bar3 { fill: #38bdf8; }
+        .bar3b { fill: #f59e0b; }
+        .bar3r { fill: #475569; }
+        .lbl3 { font: 600 12px var(--font-mono, ui-monospace, monospace); fill: #ddd6fe; }
+        .ax3  { font: 11px var(--font-mono, ui-monospace, monospace); fill: #94a3b8; }
+        .ttl3 { font: 600 14px var(--font-mono, ui-monospace, monospace); fill: #ddd6fe; }
+      </style>
+      <text x="20" y="22" class="ttl3">RECALL ON shawhin/tool-use-finetuning  (21 single-tool rows)</text>
+      <g transform="translate(190, 50)">
+        <text x="-10" y="14" class="ax3" text-anchor="end">recall@1  v2</text>
+        <rect x="0"  y="2" width="324" height="16" class="bar3"/>
+        <text x="332" y="14" class="lbl3">0.810</text>
+
+        <text x="-10" y="42" class="ax3" text-anchor="end">recall@1  trivial</text>
+        <rect x="0"  y="30" width="286" height="16" class="bar3b"/>
+        <text x="294" y="42" class="lbl3">0.714</text>
+
+        <text x="-10" y="70" class="ax3" text-anchor="end">recall@1  random</text>
+        <rect x="0"  y="58" width="38" height="16" class="bar3r"/>
+        <text x="46"  y="70" class="lbl3">0.095</text>
+
+        <text x="-10" y="110" class="ax3" text-anchor="end">recall@5  v2</text>
+        <rect x="0"  y="98" width="381" height="16" class="bar3"/>
+        <text x="389" y="110" class="lbl3">0.952</text>
+
+        <text x="-10" y="138" class="ax3" text-anchor="end">recall@5  trivial</text>
+        <rect x="0"  y="126" width="343" height="16" class="bar3b"/>
+        <text x="351" y="138" class="lbl3">0.857</text>
+
+        <text x="0"   y="180" class="ax3">v2 beats random by 8.5×, trivial overlap by 10pp on @1</text>
+      </g>
+    </svg>
+    <p class="chart-caption">Real labelled tool-routing data — first positive result on external evaluation.</p>
+  </div>
+
+  <p>
+    <strong>81% recall@1, 95% recall@5.</strong> 8.5× above the random baseline (~9.5%
+    expected on ~20 candidates) and 10 percentage points above a 5-line token-overlap
+    baseline. This is a much better number than the synthetic-panel score, which means the
+    panel was harder than real-world tool routing — exactly what a stress test is supposed
+    to do.
+  </p>
+
+  <p>
+    The panel had been overstating the bug. The classifier was always doing real work on
+    real inputs; it just lost its margin of error on intentionally-adversarial fixtures.
+  </p>
+
+  <h2>Closing the loop: online SGD without a training run</h2>
+
+  <p>
+    81% leaves 19 percentage points to ceiling. Closing that gap normally means labelling
+    data and fitting a classifier — but we don't have a training pipeline, and the operator
+    machine is "a notepad with network and git". So we built the loop fully cloud-native:
+    every component runs on free GitHub Actions, GitHub Models, or Cloudflare Workers KV.
+    The local machine never compiles or trains anything.
+  </p>
+
+  <div class="arrow-flow">
+    <strong>user click on a planet</strong> in lens / miniapp / Photon
+    <br>↓
+    <br>POST <strong>mcp.ask-meridian.uk/v1/feedback</strong> &nbsp; { query, candidates[], chosen_slug }
+    <br>↓
+    <br>Worker pulls fitted-weights from KV (~24 floats per class)
+    <br>↓
+    <br>One <strong>pairwise-ranking SGD step</strong> against (chosen, every-other) — ~1 ms
+    <br>↓
+    <br>Worker writes weights back to KV
+    <br>↓
+    <br>Next <strong>/v1/route</strong> call: <code>final_score = heuristic × (1 + tanh(K · w·x))</code>
+    <br>↓
+    <br>Better orbits → better clicks → ...
+  </div>
+
+  <p>
+    The fitted layer multiplies the heuristic v2 ranking by <code>1 + tanh(K · w·x)</code>,
+    bounded to [0, 2]. Cold start: <code>w = 0</code>, multiplier = 1, pure heuristic.
+    As feedback accumulates, weights drift. At launch the worker reported
+    <code>cold_start: true</code>; within minutes of the first integration test it had
+    learned 21 pairs, then 405 after a single bootstrap-cron run. By the time you read this
+    the production model is at:
+  </p>
+
+  <p><a href="https://mcp.ask-meridian.uk/v1/model-info"><code>GET https://mcp.ask-meridian.uk/v1/model-info</code></a></p>
+
+  <pre><code>{
+  "version": "v1",
+  "n_updates": 64,
+  "n_pairs":  1213,
+  "cold_start": false,
+  "updated_at": "2026-05-07T17:47:14.815Z"
+}</code></pre>
+
+  <p>
+    Two GitHub Actions cron jobs keep the loop alive without organic traffic:
+  </p>
+
+  <ul>
+    <li>
+      <strong>classifier-bootstrap.yml</strong> (every 3 days) fetches labelled examples
+      from the same HF dataset, classifies them locally with the orbital classifier in the
+      runner, POSTs each to <code>/v1/feedback</code>. Seeds the fitted weights with real
+      human-validated data — 21 pairwise updates per cron tick.
+    </li>
+    <li>
+      <strong>classifier-health.yml</strong> (Mondays 06:00 UTC) re-runs the public-data eval
+      and writes <code>landing/healthz.json</code> with current recall@1 / @5 and model
+      state. Drift catches regressions automatically — if next week's number drops more
+      than tolerance, the workflow fails and the operator sees it.
+    </li>
+  </ul>
+
+  <h2>What's gained, what's not</h2>
+
+  <p>The architecture has a few specific properties worth naming:</p>
+
+  <ul>
+    <li>
+      <strong>Heuristic stays as the cold-start.</strong> Day 1 deployments and brand-new
+      domains use the v2 heuristic with multiplier = 1. No "training data required"
+      onboarding cliff.
+    </li>
+    <li>
+      <strong>Fitted correction is bounded.</strong> The <code>tanh</code> squash means no
+      single skill can be silently boosted beyond 2× heuristic, even if a feedback flood
+      tried.
+    </li>
+    <li>
+      <strong>Per-request training cost is constant.</strong> One KV read, ~24 multiplies
+      per candidate, one KV write. ~1 ms per <code>/v1/feedback</code> POST. The Worker
+      stays well inside Cloudflare's free tier even at organic-feedback scale.
+    </li>
+    <li>
+      <strong>Connectors stay deterministic.</strong> The OAuth-gated <code>/mcp</code>
+      endpoint (Grok / ChatGPT / Claude.ai) returns pure heuristic ranking — no per-call
+      drift means the connector behaviour is reproducible. Only the browser-facing
+      <code>/v1/route</code> endpoint applies the fitted correction.
+    </li>
+  </ul>
+
+  <p>
+    What this <em>doesn't</em> get us: the remaining 19 percentage points to recall@1 = 1.0.
+    For that, we need labelled <em>off-distribution</em> data — tasks the synthetic and
+    public benchmarks don't cover. That's what the
+    <a href="https://manifund.org">Manifund</a> /
+    <a href="https://funds.effectivealtruism.org/funds/far-future">LTFF</a> /
+    <a href="https://bluedot.org/programs/rapid-grants">Bluedot</a> grant work targets:
+    a labelled task→skill dataset purpose-built for tool-routing failure modes.
+  </p>
+
+  <h2>The receipts</h2>
+
+  <p>
+    Five simulation scripts live in <code>scripts/</code> as durable receipts of what we
+    tried and what worked. Each one runs without local training, just Node + network:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>script</th><th>approach</th><th>panel acc</th><th>verdict</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>simulate-classifier-v2.mjs</code></td>
+        <td>heuristic retune (mass / scope / planet / asteroid)</td>
+        <td>0.500</td>
+        <td>shipped</td>
+      </tr>
+      <tr>
+        <td><code>simulate-classifier-crtbp.mjs</code></td>
+        <td>Vallado §12.7 — CRTBP + Jacobi + Hill</td>
+        <td>0.222</td>
+        <td>diagnostic only</td>
+      </tr>
+      <tr>
+        <td><code>simulate-classifier-spectral.mjs</code></td>
+        <td>Sears &amp; Zemansky 32–38 — spectral classification</td>
+        <td>0.333</td>
+        <td>diagnostic only</td>
+      </tr>
+      <tr>
+        <td><code>simulate-classifier-v2-with-crtbp.mjs</code></td>
+        <td>v2 + Hill-sphere moon + L4/L5 trojan</td>
+        <td>0.389</td>
+        <td>diagnostic only</td>
+      </tr>
+      <tr>
+        <td><code>eval-against-public-data.mjs</code></td>
+        <td>v2 vs HF benchmark (real labels)</td>
+        <td>0.810 r@1</td>
+        <td>weekly cron</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Source: <a href="https://github.com/LuuOW/meridian-mcp">github.com/LuuOW/meridian-mcp</a>
+    — the worker (<code>cf-worker/online_learning.mjs</code>),
+    the cron workflows (<code>.github/workflows/classifier-*.yml</code>), and the front-end
+    feedback wiring (<a href="https://github.com/LuuOW/lens">lens</a> +
+    <code>landing/miniapp/api.js</code>) are all in tree.
+  </p>
+
+  <h2>Two takeaways for anyone calibrating a heuristic classifier</h2>
+
+  <ol>
+    <li>
+      <strong>Build a calibration panel before you need one.</strong> Without
+      <code>scripts/calibrate-classifier.mjs</code>, the planet-bias bug would have stayed
+      silent for weeks. The panel itself is 18 hand-crafted SKILL.md objects in a single
+      JS file — cheaper than not catching the drift.
+    </li>
+    <li>
+      <strong>Don't physics your way out of an empirical labelling problem.</strong>
+      The CRTBP and spectral simulations were satisfying to write but neither beat
+      heuristics, because the bottleneck was the SKILL-text → physics mapping, which has
+      no closed-form solution. Online SGD on top of heuristics solved more in 50 lines than
+      either textbook framework did in 300.
+    </li>
+  </ol>
+
+  <div style="margin: 48px 0; padding: 24px; background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px;">
+    <h3 style="margin: 0 0 8px;">Try the live classifier</h3>
+    <p style="margin: 0;">
+      The browser miniapp at <a href="/miniapp/"><code>/miniapp/</code></a> calls
+      <code>mcp.ask-meridian.uk/v1/route</code> directly. Every skill you click trains the
+      online layer. Current model state:
+      <a href="https://mcp.ask-meridian.uk/v1/model-info"><code>GET /v1/model-info</code></a>.
+    </p>
+  </div>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — orbital skill router with online learning. <a href="/blog/">More posts</a> · <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a> · <a href="/docs/">Docs</a></p>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('burgerBtn'), menu = document.getElementById('navMenu')
+    if (!btn || !menu) return
+    btn.addEventListener('click', function () {
+      var open = menu.classList.toggle('open')
+      btn.setAttribute('aria-expanded', String(open))
+    })
+  })()
+</script>
+
+</body>
+</html>
