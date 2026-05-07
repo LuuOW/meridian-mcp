@@ -11,6 +11,9 @@
 <link rel="canonical" href="https://ask-meridian.uk/blog/orbital-classifier-online-learning/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
 <style>
   .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
   .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -38,6 +41,38 @@
 
   .arrow-flow { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 18px; margin: 24px 0; font-family: var(--font-mono); font-size: 13px; line-height: 1.85; color: #cbd5e1; }
   .arrow-flow strong { color: #c4b5fd; }
+
+  /* KaTeX math callout */
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    opacity: 0.85;
+  }
+  .math-block .katex-display { margin: 0; }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+  .math-inline {
+    background: rgba(167,139,250,0.10);
+    border: 1px solid rgba(139,92,246,0.22);
+    border-radius: 6px;
+    padding: 1px 8px;
+  }
 </style>
 </head>
 <body>
@@ -186,15 +221,17 @@
     Investigation took about an hour and pointed straight at the <code>mass</code> formula:
   </p>
 
-  <pre><code>mass = (log10(bodyLen) − 1.7) × 0.35 + min(0.4, kws.length / 15)</code></pre>
+  <div class="math-block" data-label="mass formula — v1 (the buggy one)">
+    $$\text{mass} \;=\; \bigl(\log_{10}(\text{bodyLen}) - 1.7\bigr) \cdot 0.35 \;+\; \min\!\left(0.4,\; \frac{|\text{kws}|}{15}\right)$$
+  </div>
 
   <p>
     Tuned for short SKILL.md bodies (~300 chars, 4 keywords). For the 1500–2500-char,
     6–8 keyword bodies that <strong>Llama-3.3-70B emits today</strong>, mass saturates at ~0.95
     for almost everything. Same shape with <code>scope</code> (0.25 floor + saturating
     keyword term) and <code>independence</code>. The planet score was
-    <code>mass × scope × independence</code>, three saturated axes multiplied.
-    Result: planet always wins.
+    \(\text{mass} \cdot \text{scope} \cdot \text{independence}\), three saturated axes
+    multiplied. Result: planet always wins.
   </p>
 
   <p>
@@ -232,8 +269,8 @@ const HILL_R = Math.cbrt(M_STAR / 3)            // Hill sphere
     The math works. Jacobi constants computed correctly. L4/L5 landed at the textbook positions.
     Hill radius came out right. <strong>The classification result was 22% — worse than the
     bug we started with.</strong> 17 of 18 panel skills became <code>comet</code> because
-    every test particle's Jacobi C was below C(L1), and the comet rule fires on
-    <code>C &lt; C(L1)</code>. The physics is sound; the
+    every test particle's Jacobi constant \(C\) was below \(C(L_1)\), and the comet rule fires
+    on \(C &lt; C(L_1)\). The physics is sound; the
     <em>SKILL.md → synodic-frame mapping</em> is the bottleneck. With no labelled ground
     truth to fit it, every skill ended up at the same Jacobi-band, and physics couldn't
     separate them.
@@ -314,8 +351,8 @@ const HILL_R = Math.cbrt(M_STAR / 3)            // Hill sphere
     </li>
     <li>
       <strong>Planet score</strong> switched from product to
-      <code>min(mass, scope, independence)<sup>1.5</sup></code>. The product let two strong
-      axes drown out a missing one; <code>min</code> penalises the deficit, which is what
+      \(\min(\text{mass},\, \text{scope},\, \text{independence})^{1.5}\). The product let two
+      strong axes drown out a missing one; \(\min\) penalises the deficit, which is what
       "anchor skill" actually means semantically — strong on every dimension, not strong on
       average.
     </li>
@@ -415,15 +452,21 @@ const HILL_R = Math.cbrt(M_STAR / 3)            // Hill sphere
     <br>↓
     <br>Worker writes weights back to KV
     <br>↓
-    <br>Next <strong>/v1/route</strong> call: <code>final_score = heuristic × (1 + tanh(K · w·x))</code>
+    <br>Next <strong>/v1/route</strong> call applies the fitted correction (formula below)
     <br>↓
     <br>Better orbits → better clicks → ...
   </div>
 
+  <div class="math-block" data-label="fitted scoring rule">
+    $$\text{score}_{\text{final}} \;=\; \text{score}_{\text{heuristic}} \;\cdot\; \bigl(1 \,+\, \tanh(K \cdot \mathbf{w} \cdot \mathbf{x})\bigr)$$
+  </div>
+
   <p>
-    The fitted layer multiplies the heuristic v2 ranking by <code>1 + tanh(K · w·x)</code>,
-    bounded to [0, 2]. Cold start: <code>w = 0</code>, multiplier = 1, pure heuristic.
-    As feedback accumulates, weights drift. At launch the worker reported
+    The fitted layer multiplies the heuristic v2 ranking by
+    \(1 + \tanh(K \cdot \mathbf{w} \cdot \mathbf{x}) \in [0,\, 2]\), so no candidate can be
+    silently boosted beyond \(2\times\) heuristic. Cold start: \(\mathbf{w} = \mathbf{0}\),
+    multiplier \(= 1\), pure heuristic. As feedback accumulates, weights drift. At launch the
+    worker reported
     <code>cold_start: true</code>; within minutes of the first integration test it had
     learned 21 pairs, then 405 after a single bootstrap-cron run. By the time you read this
     the production model is at:
@@ -469,8 +512,8 @@ const HILL_R = Math.cbrt(M_STAR / 3)            // Hill sphere
       onboarding cliff.
     </li>
     <li>
-      <strong>Fitted correction is bounded.</strong> The <code>tanh</code> squash means no
-      single skill can be silently boosted beyond 2× heuristic, even if a feedback flood
+      <strong>Fitted correction is bounded.</strong> The \(\tanh\) squash means no single
+      skill can be silently boosted beyond \(2\times\) heuristic, even if a feedback flood
       tried.
     </li>
     <li>
