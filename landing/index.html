@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Meridian — Calibrated AI skill routing</title>
-<meta name="description" content="Dynamic AI skill routing — Llama-3.3-70B writes skills, an open-domain orbital engine classifies them into celestial classes (planet, moon, trojan, asteroid, comet, irregular).">
+<title>Meridian — Calibrated task routing</title>
+<meta name="description" content="Dynamic task routing — Llama-3.3-70B writes candidates, an open-domain orbital engine classifies each into celestial classes (planet, moon, trojan, asteroid, comet, irregular).">
 
 <meta property="og:type" content="website">
-<meta property="og:title" content="Meridian — Dynamic AI skill routing">
-<meta property="og:description" content="Llama-3.3-70B authors skills, an orbital engine classifies them. MCP for Claude Code, Cursor, Windsurf.">
+<meta property="og:title" content="Meridian — Dynamic task routing">
+<meta property="og:description" content="Llama-3.3-70B authors candidates, an orbital engine classifies them. MCP for Claude Code, Cursor, Windsurf.">
 <meta property="og:url" content="https://ask-meridian.uk">
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -55,8 +55,8 @@
     <details class="nav-group" open>
       <summary class="nav-section">Showcase</summary>
       <a href="/miniapp/" class="nav-app" data-status="live">
-        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Skill orbit</span>
-        <span class="nav-app-tag">Browser miniapp · routes any task to skills</span>
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
       </a>
       <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
         <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
@@ -103,7 +103,7 @@
         </radialGradient>
       </defs>
       <circle cx="400" cy="400" r="160" fill="url(#meridianCore)"/>
-      <!-- ring 1 — innermost, planet-class skill -->
+      <!-- ring 1 — innermost, planet-class body -->
       <g>
         <circle cx="400" cy="400" r="140" fill="none" stroke="rgba(167,139,250,0.22)" stroke-dasharray="1 5"/>
         <circle cx="540" cy="400" r="6" fill="#7dd3fc">
@@ -137,12 +137,12 @@
     </svg>
 
     <span id="heroVersion" class="eyebrow" data-loading>MCP server · v1.0.0</span>
-    <h1 class="hero-title">Dynamic AI skill routing<br><span class="grad">via orbital mechanics.</span></h1>
+    <h1 class="hero-title">Dynamic task routing<br><span class="grad">via orbital mechanics.</span></h1>
     <p class="lead hero-lead">
-      Llama-3.3-70B writes a fresh set of skills for every task. An open-domain orbital engine derives a physics
+      Llama-3.3-70B writes a fresh set of candidates for every task. An open-domain orbital engine derives a physics
       signature for each one — mass, scope, cross-domain affinity, Lagrange potential — and classifies it into a celestial
       class (planet, moon, trojan, asteroid, comet, irregular). You get back a deterministically ranked list with a
-      decision rule per skill. Works with Claude Code, Cursor, Windsurf, Grok, ChatGPT, or any MCP client.
+      decision rule per candidate. Works with Claude Code, Cursor, Windsurf, Grok, ChatGPT, or any MCP client.
     </p>
     <div class="cta-row hero-cta">
       <a href="/miniapp/" class="btn btn-primary" style="view-transition-name: cta-primary">Try it live →</a>
@@ -154,7 +154,7 @@
     </div>
 
     <pre class="hero-snippet"><code># local: Claude Code, Cursor, Windsurf
-npm install -g meridian-skills-mcp
+npm install -g meridian-mcp
 claude mcp add meridian meridian-mcp
 
 # remote: Grok / ChatGPT (paste in connector setup)
@@ -164,7 +164,7 @@ https://mcp.ask-meridian.uk/mcp</code></pre>
   <section class="stats" aria-label="By the numbers">
     <div class="stat">
       <div class="stat-num">5</div>
-      <div class="stat-label">candidate skills authored per task</div>
+      <div class="stat-label">candidates authored per task</div>
     </div>
     <div class="stat">
       <div class="stat-num">6</div>
@@ -184,17 +184,17 @@ https://mcp.ask-meridian.uk/mcp</code></pre>
     <article class="feature">
       <div class="feature-icon" aria-hidden="true">◎</div>
       <h3>LLM proposes, orbital judges</h3>
-      <p>Llama-3.3-70B authors fresh skills for your task — opinionated SKILL.md bodies with use-it-for, workflow, heuristics, anti-patterns. The orbital engine then classifies each one deterministically.</p>
+      <p>Llama-3.3-70B authors fresh candidates for your task — opinionated candidate document bodies with use-it-for, workflow, heuristics, anti-patterns. The orbital engine then classifies each one deterministically.</p>
     </article>
     <article class="feature">
       <div class="feature-icon" aria-hidden="true">▲</div>
       <h3>Celestial classification</h3>
-      <p>Each generated skill gets a class — <strong>planet</strong>, <strong>moon</strong>, <strong>trojan</strong>, <strong>asteroid</strong>, <strong>comet</strong>, or <strong>irregular</strong> — based on physics features derived from its content (mass, scope, cross-domain affinity).</p>
+      <p>Each candidate gets a class — <strong>planet</strong>, <strong>moon</strong>, <strong>trojan</strong>, <strong>asteroid</strong>, <strong>comet</strong>, or <strong>irregular</strong> — based on physics features derived from its content (mass, scope, cross-domain affinity).</p>
     </article>
     <article class="feature">
       <div class="feature-icon" aria-hidden="true">⌬</div>
       <h3>Open source core</h3>
-      <p>The MCP client is a 5&nbsp;KB stdio shim under MIT. Same backend powers the <a href="/miniapp/">browser miniapp</a> and the <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm package</a>. One source of truth.</p>
+      <p>The MCP client is a 5&nbsp;KB stdio shim under MIT. Same backend powers the <a href="/miniapp/">browser miniapp</a> and the <a href="https://www.npmjs.com/package/meridian-mcp">npm package</a>. One source of truth.</p>
     </article>
   </section>
 
@@ -278,12 +278,12 @@ https://mcp.ask-meridian.uk/mcp</code></pre>
       <div class="step">
         <span class="step-num">1</span>
         <h4>LLM authoring</h4>
-        <p>Llama-3.3-70B (GitHub Models) writes 5 candidate skills for your task — full markdown bodies, ~600&nbsp;chars each, with named tools and decision rules.</p>
+        <p>Llama-3.3-70B (GitHub Models) writes 5 candidates for your task — full markdown bodies, ~600&nbsp;chars each, with named tools and decision rules.</p>
       </div>
       <div class="step">
         <span class="step-num">2</span>
         <h4>Physics signature</h4>
-        <p>For each skill we derive <code>mass</code>, <code>scope</code>, <code>independence</code>, <code>cross_domain</code>, <code>fragmentation</code>, <code>drag</code>, and <code>dep_ratio</code> — from content alone.</p>
+        <p>For each candidate we derive <code>mass</code>, <code>scope</code>, <code>independence</code>, <code>cross_domain</code>, <code>fragmentation</code>, <code>drag</code>, and <code>dep_ratio</code> — from content alone.</p>
       </div>
       <div class="step">
         <span class="step-num">3</span>
@@ -377,7 +377,7 @@ https://mcp.ask-meridian.uk/mcp</code></pre>
     <div class="footer-links">
       <a href="/docs/">Documentation</a>
       <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
-      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm</a>
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
       <a href="mailto:lucas.kempe@icloud.com">Contact</a>
     </div>
     <div class="footer-meta">© 2026 Meridian · MIT licensed</div>

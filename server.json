@@ -1,35 +1,35 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.LuuOW/meridian-skills",
-  "description": "Routes AI tasks to dynamic LLM-generated skills via an orbital classifier.",
+  "name": "io.github.LuuOW/meridian-mcp",
+  "description": "Orbital task router. Generates candidates with an LLM and ranks them via a deterministic orbital classifier (planet/moon/trojan/asteroid/comet/irregular). Domain-agnostic — candidates can be tools, prompts, documents, products.",
   "repository": {
     "url": "https://github.com/LuuOW/meridian-mcp",
     "source": "github"
   },
-  "version": "1.0.0",
+  "version": "3.0.0",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "meridian-skills-mcp",
-      "version": "1.0.0",
+      "identifier": "meridian-mcp",
+      "version": "3.0.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "MERIDIAN_API_URL",
-          "description": "Override the backend router URL.",
-          "isRequired": false,
-          "default": "https://ask-meridian.uk/api/orbital-route",
-          "format": "string",
-          "isSecret": false
-        },
-        {
-          "name": "MERIDIAN_API_KEY",
-          "description": "Optional bearer token for future rate-limit gating.",
-          "isRequired": false,
+          "name": "MERIDIAN_GITHUB_TOKEN",
+          "description": "GitHub PAT with `Models: read` permission. Required for inference.",
+          "isRequired": true,
           "format": "string",
           "isSecret": true
+        },
+        {
+          "name": "MERIDIAN_MODEL",
+          "description": "GitHub Models chat model identifier.",
+          "isRequired": false,
+          "default": "meta/llama-3.3-70b-instruct",
+          "format": "string",
+          "isSecret": false
         },
         {
           "name": "MERIDIAN_TIMEOUT_MS",

@@ -1,7 +1,7 @@
 {
-  "name": "meridian-skills-mcp",
-  "version": "2.2.2",
-  "description": "Self-contained MCP for the Meridian orbital skill router (stdio + HTTP/Streamable transports — Grok / ChatGPT / Claude compatible). Generates candidate skills with Llama-3.3-70B (via GitHub Models) and ranks them with a local orbital classifier (planet/moon/trojan/asteroid/comet/irregular). No backend required.",
+  "name": "meridian-mcp",
+  "version": "3.0.0",
+  "description": "Self-contained MCP — orbital task router with online-learning classifier (stdio + HTTP/Streamable transports — Grok / ChatGPT / Claude compatible). Generates candidates with Llama-3.3-70B (via GitHub Models) and ranks them via a local orbital classifier (planet/moon/trojan/asteroid/comet/irregular). Domain-agnostic — candidates can be tools, prompts, documents, products. No backend required.",
   "type": "module",
   "bin": {
     "meridian-mcp":      "./mcp/index.mjs",
@@ -29,9 +29,11 @@
     "model-context-protocol",
     "ai",
     "agents",
-    "skills",
+    "router",
     "routing",
+    "candidate-routing",
     "orbital",
+    "classifier",
     "claude",
     "cursor",
     "windsurf",
@@ -49,5 +51,5 @@
   "bugs": {
     "url": "https://github.com/LuuOW/meridian-mcp/issues"
   },
-  "mcpName": "io.github.LuuOW/meridian-skills"
+  "mcpName": "io.github.LuuOW/meridian-mcp"
 }

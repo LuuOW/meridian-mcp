@@ -1,11 +1,11 @@
-// Shared core for the Meridian Skills MCP — used by both transports
+// Shared core for the Meridian MCP — used by both transports
 // (stdio in mcp/index.mjs, HTTP in mcp/http.mjs). The token is a
 // per-call argument so the HTTP transport can pass through whatever
 // arrived in the Authorization header without touching env state.
 
 import { orbitalClassify } from './orbital.mjs'
 
-export const PKG_VERSION = '2.2.2'
+export const PKG_VERSION = '3.0.0'
 
 // Workers don't expose `process` by default — read defensively so this
 // module imports cleanly in CF Workers, Deno, Bun, and plain browsers.
@@ -22,28 +22,28 @@ export const TOOLS = [
   {
     name: 'route_task',
     description:
-      'Route a task to the most relevant skills. An LLM (Llama-3.3-70B via GitHub Models) generates fresh skill candidates, then a local orbital classifier ranks each into a celestial class (planet/moon/trojan/asteroid/comet/irregular) and returns the top matches with full markdown bodies, classification metadata, physics signature, and decision rule. ⚠ Each call typically takes 5–15 s. Returns at most `limit` skills (default 5).',
+      'Route a task to relevant candidates. An LLM (Llama-3.3-70B via GitHub Models) generates fresh candidate entries, then a local orbital classifier ranks each into a celestial body class (planet/moon/trojan/asteroid/comet/irregular) and returns the top matches with full markdown bodies, classification metadata, physics signature, and decision rule. Candidates can be tools, prompts, documents, products, or any routable entity — the classifier is domain-agnostic. ⚠ Each call typically takes 5–15 s. Returns at most `limit` candidates (default 5).',
     inputSchema: {
       type: 'object',
       properties: {
         task:  { type: 'string',  description: 'Task / question / context. Up to 800 chars.' },
-        limit: { type: 'integer', description: 'Max skills to return (1–10, default 5)', default: 5 },
+        limit: { type: 'integer', description: 'Max candidates to return (1–10, default 5)', default: 5 },
       },
       required: ['task'],
     },
   },
 ]
 
-const systemPrompt = (n) => `You generate "SKILL.md" candidate documents for an AI agent's tool registry.
+const systemPrompt = (n) => `You generate candidate routing entries for an orbital task router.
 
-For the user's task, propose ${n} candidate skills the agent might load. Each skill is a self-contained capability with a slug, one-line description, list of relevant keywords, and a markdown body that walks the agent through "Use it for", "Workflow", and any "Pitfalls".
+For the user's task, propose ${n} candidates that could fulfill it. A candidate is any routable entity — a tool, a prompt, a document, a product, a workflow — with a slug, one-line description, list of relevant keywords, and a markdown body covering "Use it for", "Workflow", and "Pitfalls".
 
 Respond with a JSON object:
 {
-  "skills": [
+  "candidates": [
     {
       "slug": "kebab-case-id",
-      "description": "one sentence explaining what this skill does",
+      "description": "one sentence explaining what this candidate does",
       "keywords": ["term1", "term2", "..."],
       "body": "## Use It For\\n- ...\\n\\n## Workflow\\n1. ...\\n\\n## Pitfalls\\n- ...\\n"
     }
@@ -55,7 +55,8 @@ Rules:
 - Slugs must be unique kebab-case strings.
 - Keywords are 4–10 short terms relevant to retrieval.
 - Body is concrete, action-oriented markdown with the three sections above.
-- Skills should be diverse — different angles on the task — not minor variations.
+- Candidates should be diverse — different angles on the task — not minor variations.
+- Do not assume candidates must be AI-agent capabilities; they can be any kind of routable entity.
 - No prose outside the JSON.`
 
 async function generateCandidates(task, n, { token, endpoint, model, timeoutMs }) {
@@ -67,7 +68,7 @@ async function generateCandidates(task, n, { token, endpoint, model, timeoutMs }
       headers: {
         'authorization': `Bearer ${token}`,
         'content-type': 'application/json',
-        'user-agent': `meridian-skills-mcp/${PKG_VERSION}`,
+        'user-agent': `meridian-mcp/${PKG_VERSION}`,
       },
       body: JSON.stringify({
         model,
@@ -75,7 +76,7 @@ async function generateCandidates(task, n, { token, endpoint, model, timeoutMs }
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt(n) },
-          { role: 'user',   content: `Task: ${task}\n\nGenerate ${n} candidate skills.` },
+          { role: 'user',   content: `Task: ${task}\n\nGenerate ${n} candidates.` },
         ],
       }),
       signal: ctrl.signal,
@@ -90,9 +91,13 @@ async function generateCandidates(task, n, { token, endpoint, model, timeoutMs }
       const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
       parsed = JSON.parse(cleaned)
     }
-    const skills = Array.isArray(parsed.skills) ? parsed.skills : []
-    if (!skills.length) throw new Error('LLM produced no skills')
-    return skills.map(s => ({
+    // Accept either `candidates` (current) or `skills` (legacy fallback for
+    // older models that still emit the old key).
+    const list = Array.isArray(parsed.candidates) ? parsed.candidates
+               : Array.isArray(parsed.skills)     ? parsed.skills
+               : []
+    if (!list.length) throw new Error('LLM produced no candidates')
+    return list.map(s => ({
       slug:        String(s.slug || '').slice(0, 80),
       name:        String(s.slug || ''),
       description: String(s.description || ''),
@@ -162,7 +167,7 @@ function formatResult(r) {
     '',
   ].filter(Boolean).join('\n')
 
-  const skills = (r.selected || []).map((s, i) => {
+  const candidatesMd = (r.selected || []).map((s, i) => {
     const c = s.classification || {}
     const meta = [
       `class: ${c.class || '?'}`,
@@ -186,5 +191,5 @@ function formatResult(r) {
     ].filter(Boolean).join('\n')
   }).join('\n---\n\n')
 
-  return header + skills
+  return header + candidatesMd
 }

@@ -1,5 +1,5 @@
 // Shared renderer for the orbital-dynamics + optical-properties sections.
-// Used by both the main miniapp's skill detail panel and the vision lab's
+// Used by both the main miniapp's candidate detail panel and the vision lab's
 // in-stage panel — single source of truth for the physics UI.
 
 const escapeHTML = (s) => String(s).replace(/[&<>"']/g, c =>
@@ -28,8 +28,8 @@ const orbitalBar = (label, val, max, unit, decimals = 2) => `
   <span class="bar"><span class="bar-fill phys" style="width:${(Math.min(val, max) / max * 100).toFixed(0)}%"></span></span>
   <span class="val">${val.toFixed(decimals)}${unit ? ' ' + unit : ''}</span>`
 
-export function renderPhysicsPanel(skill) {
-  const phys = skill?.classification?.physics || {}
+export function renderPhysicsPanel(candidate) {
+  const phys = candidate?.classification?.physics || {}
   const orb  = phys.orbital
   const opt  = phys.optical
   if (!orb && !opt) return ''

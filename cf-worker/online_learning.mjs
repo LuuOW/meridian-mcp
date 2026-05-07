@@ -4,14 +4,14 @@
 // ────────────
 // On every /v1/feedback POST, the Worker:
 //   1. Pulls a small fitted-weights JSON from KV (~24 floats).
-//   2. Extracts a 24-dim feature vector for every candidate skill in
+//   2. Extracts a 24-dim feature vector for every candidate in
 //      the feedback batch.
-//   3. Runs one pairwise-ranking SGD step against the chosen skill
-//      vs each non-chosen skill (RankNet/RankSVM-style).
+//   3. Runs one pairwise-ranking SGD step against the chosen candidate
+//      vs each non-chosen candidate (RankNet/RankSVM-style).
 //   4. Writes the updated weights back.
 //
 // On every /v1/route, the Worker:
-//   1. Computes the same feature vector per skill.
+//   1. Computes the same feature vector per candidate.
 //   2. Multiplies route_score by `1 + tanh(w · x)` so the heuristic
 //      v2 ranking is the cold-start base and the fitted correction is
 //      bounded to [0, 2] — protects against runaway updates.
@@ -27,7 +27,7 @@ export const FEATURE_DIM = 24
 
 // Hyper-parameters. Conservative — small per-event nudge, light
 // L2 to prevent runaway, tanh squashing on the output already
-// bounds per-skill correction.
+// bounds per-candidate correction.
 const LR     = 0.02     // learning rate
 const L2     = 0.001    // L2 regularization coefficient
 const TANH_K = 0.6      // applied to dot product before tanh, so the
@@ -35,7 +35,7 @@ const TANH_K = 0.6      // applied to dot product before tanh, so the
                         // |w·x| > 2 (room for fitted weights to grow).
 
 // ─── Feature extraction ───────────────────────────────────────────
-// 24 features per skill. Order is load-bearing: changing it requires
+// 24 features per candidate. Order is load-bearing: changing it requires
 // bumping FEATURE_VERSION and zeroing stored weights.
 //
 //   [0..7]    physics scalars (mass, scope, indep, cross_domain,
@@ -52,10 +52,10 @@ const SYSTEM_INDEX = { forge: 0, signal: 1, mind: 2 }
 
 function clamp(v, lo = 0, hi = 1) { return v < lo ? lo : v > hi ? hi : v }
 
-export function extractFeaturesBatch(skills) {
-  if (!Array.isArray(skills) || skills.length === 0) return []
-  const maxScore = Math.max(0.0001, ...skills.map(s => +s.route_score || 0))
-  return skills.map((s, i) => {
+export function extractFeaturesBatch(candidates) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return []
+  const maxScore = Math.max(0.0001, ...candidates.map(s => +s.route_score || 0))
+  return candidates.map((s, i) => {
     const f = new Float64Array(FEATURE_DIM)
     const phys = s?.classification?.physics || {}
     f[0] = clamp(+phys.mass         || 0)
@@ -79,7 +79,7 @@ export function extractFeaturesBatch(skills) {
     f[19] = clamp((+bd.body_hits || 0) / 10)
 
     f[20] = clamp((+s.route_score || 0) / maxScore)
-    f[21] = clamp(i / Math.max(1, skills.length - 1))
+    f[21] = clamp(i / Math.max(1, candidates.length - 1))
     f[22] = s?.classification?.parent ? 1 : 0
     f[23] = s?.classification?.habitable_zone ? 1 : 0
     return f
@@ -93,10 +93,10 @@ function dot(w, x) {
   return s
 }
 
-export function applyFittedCorrection(skills, weights) {
-  if (!weights || !weights.w) return skills      // no model yet → heuristic only
-  const features = extractFeaturesBatch(skills)
-  return skills.map((s, i) => {
+export function applyFittedCorrection(candidates, weights) {
+  if (!weights || !weights.w) return candidates      // no model yet → heuristic only
+  const features = extractFeaturesBatch(candidates)
+  return candidates.map((s, i) => {
     const score = dot(weights.w, features[i])
     const multiplier = 1 + Math.tanh(TANH_K * score)
     const newScore = (+s.route_score || 0) * multiplier
@@ -115,14 +115,14 @@ function sigmoid(x) {
   const z = Math.exp(x); return z / (1 + z)
 }
 
-export function sgdUpdate(weights, skills, chosenIndex, opts = {}) {
+export function sgdUpdate(weights, candidates, chosenIndex, opts = {}) {
   const lr = opts.lr ?? LR
   const l2 = opts.l2 ?? L2
 
   const w = weights?.w && weights.w.length === FEATURE_DIM
     ? Float64Array.from(weights.w)
     : new Float64Array(FEATURE_DIM)
-  const features = extractFeaturesBatch(skills)
+  const features = extractFeaturesBatch(candidates)
   const xPos = features[chosenIndex]
   if (!xPos) return { w: Array.from(w), n_updates: weights?.n_updates ?? 0, version: FEATURE_VERSION }
 

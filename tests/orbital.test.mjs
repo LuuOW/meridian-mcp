@@ -47,9 +47,9 @@ const cross_domain_like = {
   body: 'mixes mind, signal, and forge terminology aggressively. '.repeat(20),
 }
 
-function buildBatch(skills) {
-  return skills.map(s => ({
-    skill: s,
+function buildBatch(candidates) {
+  return candidates.map(s => ({
+    candidate: s,
     toks: [...new Set([
       ...(s.description || '').toLowerCase().split(/\W+/).filter(Boolean),
       ...(s.body || '').toLowerCase().split(/\W+/).filter(Boolean),

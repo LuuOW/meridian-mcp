@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d14">
 <title>Meridian — Try the router</title>
-<meta name="description" content="Type a task. See which skills the router picks and why.">
+<meta name="description" content="Type a task. See which candidates the router picks and why.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/miniapp/miniapp.css">
@@ -27,8 +27,8 @@
     <details class="nav-group" open>
       <summary class="nav-section">Showcase</summary>
       <a href="/miniapp/" class="nav-app current" data-status="live">
-        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Skill orbit</span>
-        <span class="nav-app-tag">Browser miniapp · routes any task to skills</span>
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Candidate orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
       </a>
       <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
         <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
@@ -64,10 +64,10 @@
 <main id="main" class="mini-wrap">
   <header class="mini-head">
     <span class="eyebrow">Live demo</span>
-    <h1>Type a task. See which skills the router picks.</h1>
+    <h1>Type a task. See which candidates the router picks.</h1>
     <p class="lead">
       Describe what you're trying to do — or scan a real-world object. An LLM authors fresh
-      skills for your task and the orbital engine classifies each into a celestial class.
+      candidates for your task and the orbital engine classifies each into a celestial class.
     </p>
   </header>
 
@@ -85,9 +85,9 @@
         maxlength="800"
         aria-describedby="taskHelp"></textarea>
     </div>
-    <p id="taskHelp" class="sr-only">Describe what you are trying to build. The router generates 5 candidate skills, then assigns each a celestial class.</p>
+    <p id="taskHelp" class="sr-only">Describe what you are trying to build. The router generates 5 candidates, then assigns each a celestial class.</p>
     <div class="ask-controls">
-      <button id="askBtn" class="btn btn-primary">Find compatible skills →</button>
+      <button id="askBtn" class="btn btn-primary">Find compatible candidates →</button>
       <button id="arBtn" class="ar-pill" type="button" aria-label="Scan a real-world object with the camera (uses object detection)">
         <span class="ar-pill-icon" aria-hidden="true">📷</span>
         <span class="ar-pill-label">Scan an object</span>
@@ -121,7 +121,7 @@
 
   <section id="resultsSection" class="results-section" hidden>
     <div class="mini-galaxy-frame">
-      <canvas id="miniGalaxyCanvas" class="mini-galaxy-canvas" aria-label="Visualization of routed skills as orbiting planets"></canvas>
+      <canvas id="miniGalaxyCanvas" class="mini-galaxy-canvas" aria-label="Visualization of routed candidates as orbiting planets"></canvas>
       <div class="mini-galaxy-controls">
         <span class="mini-galaxy-label">view</span>
         <div class="mode-toggle" role="tablist" aria-label="2D / 3D view">
@@ -143,33 +143,33 @@
       <strong>About this demo:</strong> the router here uses lexical + IDF scoring
       with orbital-class boosts (planet/trojan/moon/asteroid/comet) — a JS approximation
       of the full orbital algorithm in the
-      <a href="https://www.npmjs.com/package/meridian-skills-mcp">npm package</a>,
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm package</a>,
       which adds transformer embeddings and Python-based physics scoring.
       With <code>🪐 dynamic</code> on, an LLM (Llama-3.1-8b via Workers AI) generates
-      additional candidate skills which are scored alongside the static corpus.
+      additional candidates which are scored alongside the static corpus.
     </p>
   </footer>
 </main>
 
-<!-- Skill detail side panel -->
-<aside id="skillPanel" class="skill-panel" hidden aria-hidden="true">
-  <div class="skill-panel-backdrop" id="skillPanelBackdrop"></div>
-  <div class="skill-panel-body">
-    <header class="skill-panel-header">
-      <div class="skill-panel-title-row">
-        <h3 id="skillPanelTitle"></h3>
-        <span class="skill-panel-class" id="skillPanelClass"></span>
+<!-- Candidate detail side panel -->
+<aside id="candidatePanel" class="candidate-panel" hidden aria-hidden="true">
+  <div class="candidate-panel-backdrop" id="candidatePanelBackdrop"></div>
+  <div class="candidate-panel-body">
+    <header class="candidate-panel-header">
+      <div class="candidate-panel-title-row">
+        <h3 id="candidatePanelTitle"></h3>
+        <span class="candidate-panel-class" id="candidatePanelClass"></span>
       </div>
-      <button id="skillPanelClose" class="btn-ghost btn-sm" aria-label="Close skill panel">✕</button>
+      <button id="candidatePanelClose" class="btn-ghost btn-sm" aria-label="Close candidate panel">✕</button>
     </header>
 
-    <div class="skill-panel-scroll">
-      <section class="skill-panel-why" id="skillPanelWhy">
+    <div class="candidate-panel-scroll">
+      <section class="candidate-panel-why" id="candidatePanelWhy">
         <!-- score breakdown chart + decision rule injected by JS -->
       </section>
 
-      <section class="skill-panel-content" id="skillPanelContent">
-        <!-- skill description + body markdown injected by JS -->
+      <section class="candidate-panel-content" id="candidatePanelContent">
+        <!-- candidate description + body markdown injected by JS -->
       </section>
     </div>
   </div>
