@@ -114,9 +114,32 @@ The `1.x` line called a Cloudflare Worker (`https://ask-meridian.uk/api/orbital-
 
 To keep using the closed-domain Python scorer + curated 88-skill corpus that shipped with `0.3.x`, pin to `meridian-skills-mcp@0.3.2`. To keep calling the now-defunct Cloudflare backend, pin to `1.0.1` (will fail with HTTP 405 on every call).
 
-## Web miniapp
+## Web miniapp + the live remote MCP
 
-Same orbital classifier (in pure JS, runs in your browser) powers [ask-meridian.uk/miniapp](https://ask-meridian.uk/miniapp) — type a task, see the candidates orbit. The web demo uses a static 88-skill corpus instead of LLM generation; it's complementary to this MCP, not the same code path.
+Same orbital classifier powers two front-ends served from `mcp.ask-meridian.uk`:
+
+- **[ask-meridian.uk/miniapp](https://ask-meridian.uk/miniapp)** — type a task, see the candidates orbit. Calls the live MCP at `mcp.ask-meridian.uk/v1/route`, same Llama-3.3-70B + classifier path the connector uses.
+- **[lens.ask-meridian.uk](https://lens.ask-meridian.uk)** — WebXR Vision Lab, on-device SmolVLM, in-headset orbits. Same backend.
+
+Both call the **first-party browser endpoint** `/v1/route` — Origin-allowlisted, operator-paid, no PAT pasting. The OAuth-gated `/mcp` endpoint (this section's "Use as a Grok connector" path) is unchanged.
+
+## Online learning loop
+
+The browser endpoint `/v1/route` applies a fitted-correction layer on top of the heuristic ranking. Every time a user engages a skill (planet click in lens, detail-panel open in miniapp, card click in vision-lab), the front-end POSTs to `/v1/feedback` and the worker runs **one pairwise-ranking SGD step** against the chosen skill vs every non-chosen candidate. Constant per-request cost (~1 ms), no GPU, no local execution.
+
+```
+user click → /v1/feedback → KV → SGD step → updated weights → next /v1/route uses them
+```
+
+- `final_score = heuristic_route_score × (1 + tanh(K · w·x))` — bounded to [0, 2], so no individual skill can be silently boosted beyond 2× heuristic.
+- 24-feature vector per skill: 8 physics scalars + 6 class one-hot + 3 star-system one-hot + 3 token-hit features + 4 ranking features.
+- Cold start: `w = 0`, multiplier = 1, pure heuristic. Day 1 deployments don't need any training data.
+- The OAuth-gated `/mcp` path (Grok / ChatGPT / Claude.ai connectors) keeps deterministic heuristic ranking for reproducibility.
+- Two GitHub Actions cron jobs close the loop without organic traffic: `classifier-bootstrap.yml` (every 3 days, feeds labelled examples from a public HF benchmark into `/v1/feedback`) and `classifier-health.yml` (Mondays, posts recall@1 / @5 + model state to `landing/healthz.json`).
+
+Read-only model state: `GET https://mcp.ask-meridian.uk/v1/model-info`.
+
+Full architecture + the calibration journey that produced this design (the planet-bias bug, the two textbook physics frameworks we tried and abandoned, the v2 retune, the 81% recall@1 finding on real labelled data): [blog post](https://ask-meridian.uk/blog/orbital-classifier-online-learning/).
 
 ## License
 
