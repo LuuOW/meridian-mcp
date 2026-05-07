@@ -33,7 +33,7 @@ import {
 
 import { MiniGalaxy }        from '/miniapp/mini-galaxy.js'
 import { renderPhysicsPanel } from '/miniapp/physics-panel.js'
-import { routeTask, routeTaskStream } from '/miniapp/api.js'
+import { routeTask, routeTaskStream, sendFeedback } from '/miniapp/api.js'
 import { initBurgerNav }      from '/nav.js'
 import { escapeHTML, renderMarkdown } from '/miniapp/_md.js'
 
@@ -495,8 +495,10 @@ $('routeBtn').addEventListener('click', async () => {
           const cls   = s.classification?.class       || ''
           const sys   = s.classification?.star_system || ''
           const score = (s.route_score || 0).toFixed(1)
+          // data-slug lets the click delegation below find the right
+          // skill for /v1/feedback without re-querying the DOM each time.
           list.insertAdjacentHTML('beforeend', `
-            <li class="lab-route-result lab-route-result-in">
+            <li class="lab-route-result lab-route-result-in" data-slug="${escapeHTML(s.slug)}">
               <div class="lab-route-head">
                 <strong>${escapeHTML(s.slug)}</strong>
                 ${cls ? `<span class="lab-route-class" data-class="${escapeHTML(cls)}">${escapeHTML(cls)}</span>` : ''}
@@ -528,6 +530,23 @@ $('routeBtn').addEventListener('click', async () => {
     head.textContent = `Top ${accumulatedSkills.length} skills (orbital-classified)`
     progress.hidden  = true
     foot.hidden      = false
+
+    // Click delegation: any click on a card fires /v1/feedback with the
+    // clicked card's slug as chosen. Bound once after the stream ends
+    // so we don't re-bind on every onSkill tick.
+    const taskForFeedback = lastAnswer.slice(0, 600)
+    list.addEventListener('click', (e) => {
+      const li = e.target.closest('li[data-slug]')
+      if (!li) return
+      const chosenSlug = li.dataset.slug
+      if (!chosenSlug || accumulatedSkills.length < 2) return
+      sendFeedback({
+        task:       taskForFeedback,
+        skills:     accumulatedSkills,
+        chosenSlug,
+        action:     'click',
+      })
+    }, { once: false })
     const wallMs = Math.round(performance.now() - t0)
     foot.innerHTML = `
       Classifier: <code>${escapeHTML(summary?.classifier || 'orbital-edge-v1')}</code> ·

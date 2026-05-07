@@ -33,6 +33,9 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 
 import { PKG_VERSION, TOOLS, routeTask, routeTaskJson } from '../mcp/_lib/core.mjs'
+import {
+  applyFittedCorrection, sgdUpdate, loadWeights, saveWeights, FEATURE_VERSION,
+} from './online_learning.mjs'
 
 // Origins allowed to call the unauthenticated browser endpoint
 // (POST /v1/route). The MCP `/mcp` endpoint still requires OAuth and
@@ -389,9 +392,78 @@ async function handleBrowserRoute(request, env) {
         candidates: env.MERIDIAN_CANDIDATES  ? parseInt(env.MERIDIAN_CANDIDATES, 10)  : undefined,
       },
     })
+    // Apply fitted correction if a model has been trained. Heuristic
+    // route_score is the cold-start base; fitted weights nudge the
+    // ranking toward what users actually pick. Day 1: pure heuristic.
+    // Month 3: dominantly fitted. See cf-worker/online_learning.mjs.
+    const weights = await loadWeights(env.MCP_OAUTH)
+    if (weights) {
+      result.selected = applyFittedCorrection(result.selected || [], weights)
+      result._fitted_meta = {
+        version:   weights.version,
+        n_updates: weights.n_updates ?? 0,
+      }
+    } else {
+      result._fitted_meta = { version: FEATURE_VERSION, n_updates: 0, cold_start: true }
+    }
     return jsonResponse(result)
   } catch (e) {
     return jsonResponse({ error: e.message || String(e) }, { status: 502 })
+  }
+}
+
+// Browser-facing feedback endpoint. Front-ends post the candidates
+// they showed the user and which one the user engaged with. The
+// Worker pulls fitted weights from KV, runs one pairwise-ranking
+// SGD step, writes them back. Constant-time per request.
+//
+// Body shape:
+//   {
+//     query:       "rate-limit a public API",
+//     selected:    [ /* same shape as /v1/route's `selected` array */ ],
+//     chosen_slug: "redis-token-bucket",
+//     action:      "click" | "detail_open" | "copy" | "thumbs_up" | "dismiss"
+//   }
+//
+// `dismiss` skips updating; only positive engagements train. This
+// avoids penalising candidates the user simply didn't have time to
+// look at.
+async function handleBrowserFeedback(request, env) {
+  const origin = request.headers.get('origin') || ''
+  if (!BROWSER_ORIGIN_ALLOWLIST.has(origin)) {
+    return jsonResponse({ error: 'origin not allowed', origin }, { status: 403 })
+  }
+
+  let body
+  try { body = await request.json() }
+  catch { return jsonResponse({ error: 'expected JSON body' }, { status: 400 }) }
+
+  const action = body.action || 'click'
+  const skills = Array.isArray(body.selected) ? body.selected : []
+  if (action === 'dismiss' || !body.chosen_slug || skills.length < 2) {
+    // No training signal — record-only. We still return ok=true so
+    // clients can fire-and-forget.
+    return jsonResponse({ ok: true, applied: false, reason: 'no positive signal' })
+  }
+
+  const chosenIdx = skills.findIndex(s => s.slug === body.chosen_slug)
+  if (chosenIdx < 0) {
+    return jsonResponse({ error: 'chosen_slug not in selected[]' }, { status: 400 })
+  }
+
+  try {
+    const current = await loadWeights(env.MCP_OAUTH)
+    const next    = sgdUpdate(current, skills, chosenIdx)
+    await saveWeights(env.MCP_OAUTH, next)
+    return jsonResponse({
+      ok:           true,
+      applied:      true,
+      n_updates:    next.n_updates,
+      n_pairs:      next.n_pairs,
+      version:      next.version,
+    })
+  } catch (e) {
+    return jsonResponse({ error: e.message || String(e) }, { status: 500 })
   }
 }
 
@@ -476,6 +548,22 @@ export default {
 
     if (url.pathname === '/v1/route' && request.method === 'POST')
       return handleBrowserRoute(request, env)
+
+    if (url.pathname === '/v1/feedback' && request.method === 'POST')
+      return handleBrowserFeedback(request, env)
+
+    // Read-only endpoint for the eval cron + dashboards. Returns the
+    // current model's update count + version, no weights.
+    if (url.pathname === '/v1/model-info' && request.method === 'GET') {
+      const w = await loadWeights(env.MCP_OAUTH)
+      return jsonResponse({
+        version:    FEATURE_VERSION,
+        n_updates:  w?.n_updates ?? 0,
+        n_pairs:    w?.n_pairs   ?? 0,
+        updated_at: w?.updated_at || null,
+        cold_start: !w,
+      })
+    }
 
     return textResponse('not found', { status: 404 })
   },

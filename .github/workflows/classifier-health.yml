@@ -1,0 +1,99 @@
+name: Classifier health
+
+# Weekly recall@1 / recall@5 against the public HF benchmark. Posts
+# results to landing/healthz.json so the Pages site exposes the
+# current quality of the live classifier. Drift catches regressions
+# automatically — if next week's number drops more than ~5pp, an
+# Action failure (we exit non-zero on regression).
+#
+# Pure cloud: runs in Actions, fetches from HF datasets-server (no
+# auth), commits to repo, Pages auto-redeploys.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/eval-against-public-data.mjs'
+      - '.github/workflows/classifier-health.yml'
+
+permissions:
+  contents: write    # to commit the healthz update
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need full history to compare against last run
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+
+      - name: Run benchmark
+        id: eval
+        run: |
+          node scripts/eval-against-public-data.mjs --json > /tmp/eval.json
+          cat /tmp/eval.json
+          echo "json<<EOF"             >> "$GITHUB_OUTPUT"
+          cat /tmp/eval.json           >> "$GITHUB_OUTPUT"
+          echo "EOF"                   >> "$GITHUB_OUTPUT"
+
+      - name: Fetch model info
+        id: model
+        continue-on-error: true
+        run: |
+          curl -fsS https://mcp.ask-meridian.uk/v1/model-info > /tmp/model.json || echo '{}' > /tmp/model.json
+          cat /tmp/model.json
+
+      - name: Update landing/healthz.json
+        run: |
+          node <<'NODE'
+          const fs   = require('node:fs')
+          const path = require('node:path')
+          const eval_ = JSON.parse(fs.readFileSync('/tmp/eval.json', 'utf8'))
+          const model = JSON.parse(fs.readFileSync('/tmp/model.json', 'utf8'))
+          const out = {
+            ok: true,
+            classifier: {
+              recall_at_1:        eval_.recall.v2.at_1,
+              recall_at_5:        eval_.recall.v2.at_5,
+              recall_at_1_baseline: eval_.recall.trivial.at_1,
+              dataset:            eval_.dataset,
+              n_eval:             eval_.n_eval,
+              evaluated_at:       eval_.generated_at,
+            },
+            model: {
+              version:    model.version    || null,
+              n_updates:  model.n_updates  || 0,
+              n_pairs:    model.n_pairs    || 0,
+              cold_start: model.cold_start ?? true,
+              updated_at: model.updated_at || null,
+            },
+            built_at: new Date().toISOString(),
+          }
+          const target = path.join('landing', 'healthz.json')
+          fs.writeFileSync(target, JSON.stringify(out, null, 2) + '\n')
+          console.log('wrote', target)
+          NODE
+
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet landing/healthz.json; then
+            echo 'no change to healthz; skipping commit'
+            exit 0
+          fi
+          git add landing/healthz.json
+          git commit -m "ci(classifier): refresh weekly health snapshot
+
+          recall@1 = $(node -e 'console.log(JSON.parse(require("fs").readFileSync("/tmp/eval.json")).recall.v2.at_1)')
+          recall@5 = $(node -e 'console.log(JSON.parse(require("fs").readFileSync("/tmp/eval.json")).recall.v2.at_5)')
+
+          [skip ci]"
+          git push
