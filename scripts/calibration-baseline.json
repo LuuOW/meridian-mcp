@@ -2,50 +2,50 @@
   "task": "design a public benchmark for tool-routing failures in LLM agents",
   "panel_size": 18,
   "class_distribution": {
-    "planet": 17,
+    "planet": 5,
     "moon": 0,
-    "trojan": 0,
-    "asteroid": 0,
+    "trojan": 1,
+    "asteroid": 10,
     "comet": 0,
-    "irregular": 1
+    "irregular": 2
   },
   "system_distribution": {
     "forge": 3,
     "signal": 7,
     "mind": 8
   },
-  "class_accuracy": 0.167,
+  "class_accuracy": 0.5,
   "recall": {
     "at_1": 0.5,
     "at_5": 0.5
   },
   "score": {
-    "mean": 3.655,
-    "std": 11.939,
+    "mean": 3.405,
+    "std": 11.786,
     "min": 0,
     "max": 51.331,
     "n": 18
   },
   "physics": {
     "mass": {
-      "mean": 0.692,
-      "std": 0.105,
-      "min": 0.483,
-      "max": 0.835,
+      "mean": 0.314,
+      "std": 0.145,
+      "min": 0.053,
+      "max": 0.549,
       "n": 18
     },
     "scope": {
-      "mean": 0.727,
-      "std": 0.126,
-      "min": 0.536,
-      "max": 0.903,
+      "mean": 0.577,
+      "std": 0.17,
+      "min": 0.333,
+      "max": 0.85,
       "n": 18
     },
     "independence": {
-      "mean": 0.928,
-      "std": 0.082,
-      "min": 0.723,
-      "max": 1,
+      "mean": 0.866,
+      "std": 0.095,
+      "min": 0.637,
+      "max": 0.988,
       "n": 18
     },
     "cross_domain": {
@@ -79,10 +79,10 @@
   },
   "optical": {
     "wavelength": {
-      "mean": 602.444,
-      "std": 36.441,
-      "min": 497,
-      "max": 646,
+      "mean": 585.833,
+      "std": 35.861,
+      "min": 499,
+      "max": 631,
       "n": 18
     },
     "polarization": {
@@ -93,10 +93,10 @@
       "n": 18
     },
     "amplitude": {
-      "mean": 0.692,
-      "std": 0.105,
-      "min": 0.483,
-      "max": 0.835,
+      "mean": 0.313,
+      "std": 0.144,
+      "min": 0.053,
+      "max": 0.549,
       "n": 18
     },
     "phase": {
@@ -108,13 +108,13 @@
     }
   },
   "discrimination": {
-    "mass": 0.352,
-    "scope": 0.367,
-    "independence": 0.277,
+    "mass": 0.496,
+    "scope": 0.517,
+    "independence": 0.351,
     "cross_domain": 0.631,
     "fragmentation": 0.62,
     "drag": 0.473,
     "dep_ratio": 0.514
   },
-  "generated_at": "2026-05-07T15:12:48.957Z"
+  "generated_at": "2026-05-07T16:42:32.254Z"
 }
