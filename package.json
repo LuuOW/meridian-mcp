@@ -1,6 +1,6 @@
 {
   "name": "meridian-skills-mcp",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Self-contained MCP for the Meridian orbital skill router (stdio + HTTP/Streamable transports — Grok / ChatGPT / Claude compatible). Generates candidate skills with Llama-3.3-70B (via GitHub Models) and ranks them with a local orbital classifier (planet/moon/trojan/asteroid/comet/irregular). No backend required.",
   "type": "module",
   "bin": {
