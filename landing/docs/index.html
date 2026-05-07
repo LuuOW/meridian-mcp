@@ -42,6 +42,7 @@
     <a href="#pipeline">Pipeline</a>
     <a href="#mcp-tool">MCP tool</a>
     <a href="#browser-endpoint">Browser endpoint</a>
+    <a href="#online-learning">Online learning</a>
     <a href="#response">Response shape</a>
   </div>
   <div class="sidebar-section">
@@ -300,6 +301,65 @@ claude mcp add meridian meridian-mcp \
     status: <code>403</code> for a non-allowlisted Origin,
     <code>500</code> if the operator's PAT secret is missing,
     <code>502</code> for upstream LLM failure.
+  </p>
+
+  <h2 id="online-learning">Online learning</h2>
+  <p>
+    The browser endpoint <code>/v1/route</code> applies a fitted-correction layer on top of
+    the heuristic ranking. The correction is trained by a separate POST endpoint that
+    front-ends fire whenever a user engages a skill (clicks a planet in
+    <a href="https://lens.ask-meridian.uk">Lens</a>, opens a detail panel in the
+    <a href="/miniapp/">miniapp</a>, etc.). Constant per-request cost (~1 ms), no batch
+    training, no GPU, no local execution.
+  </p>
+
+  <p><strong>POST <code>/v1/feedback</code></strong></p>
+  <pre><code class="lang-bash">curl -X POST https://mcp.ask-meridian.uk/v1/feedback \
+  -H 'Origin: https://ask-meridian.uk' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "query":       "rate limit a public API",
+    "selected":    [ /* same shape as /v1/route's selected[] */ ],
+    "chosen_slug": "redis-token-bucket",
+    "action":      "click"
+  }'</code></pre>
+  <p>
+    Each POST runs one pairwise-ranking SGD step (logistic ranking loss over (chosen,
+    every-other) pairs, lr 0.02, L2 0.001) against a 24-feature vector per skill: 8 physics
+    scalars, 6 class one-hot, 3 star-system one-hot, 3 token-hit features, route_score
+    normalised by batch max, rank position, has-parent, habitable-zone. The fitted
+    correction multiplies <code>route_score</code> by <code>1 + tanh(K · w·x)</code> —
+    bounded to [0, 2] so no individual skill can be silently boosted beyond 2× heuristic.
+  </p>
+
+  <p><strong>action</strong> values: <code>click</code>, <code>detail_open</code>,
+    <code>copy</code>, <code>thumbs_up</code>, <code>bootstrap</code> all train (positive
+    signal). <code>dismiss</code> is recorded but does not update weights — avoids
+    penalising candidates the user simply didn't have time to look at.</p>
+
+  <p><strong>GET <code>/v1/model-info</code></strong> — read-only model state for dashboards
+    and the eval cron:</p>
+  <pre><code class="lang-bash">curl https://mcp.ask-meridian.uk/v1/model-info
+# {
+#   "version": "v1",
+#   "n_updates": 64,
+#   "n_pairs":   1213,
+#   "cold_start": false,
+#   "updated_at": "2026-05-07T17:47:14.815Z"
+# }</code></pre>
+
+  <p>
+    The MCP tool path (<code>/mcp</code>, OAuth 2.1 + PKCE) does <strong>not</strong> apply
+    the fitted correction. External connector hosts (Grok, ChatGPT, Claude.ai) get the
+    deterministic heuristic ranking so per-call behaviour is reproducible. Only the
+    first-party browser endpoint <code>/v1/route</code> learns from feedback.
+  </p>
+
+  <p>
+    For the full story — including the calibration panel that surfaced the bug and the
+    two textbook physics frameworks (Vallado CRTBP, Sears &amp; Zemansky spectral) we tried
+    and abandoned — see the blog post:
+    <a href="/blog/orbital-classifier-online-learning/"><em>From 17% to 81%</em></a>.
   </p>
 
   <h2 id="response">Response shape</h2>

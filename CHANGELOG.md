@@ -1,5 +1,73 @@
 # Changelog
 
+## [2.2.0] — 2026-05-07
+
+**Classifier learning loop — every browser engagement is now a pairwise-ranking SGD step on top of the heuristic. The orbital classifier improves from real user clicks without any local training.**
+
+### Added
+
+- **Online SGD layer** in `cf-worker/online_learning.mjs` — feature extraction
+  (24-dim vector per skill: 8 physics scalars + 6 class one-hot + 3 star-system
+  one-hot + 4 token-hit + 4 ranking features), pairwise-ranking SGD with
+  logistic loss + L2 shrinkage, KV-backed weights blob.
+- **`POST /v1/feedback`** endpoint on the worker. Front-ends
+  (lens, miniapp, photon, vision-lab) POST `{query, selected[], chosen_slug, action}`.
+  Worker pulls weights, runs one SGD step against (chosen, every-other) pairs,
+  writes back. Constant-time per request (~1 ms). Origin-allowlisted same as `/v1/route`.
+- **`GET /v1/model-info`** — read-only model state for dashboards + the
+  eval cron. Returns `{version, n_updates, n_pairs, cold_start, updated_at}`.
+- **Fitted correction in `/v1/route`** — `final_score = heuristic × (1 + tanh(K · w·x))`,
+  bounded to [0, 2]. Cold start (`w = 0`, multiplier = 1) means day-1
+  deployments use pure heuristic; weights drift as feedback accumulates.
+  The OAuth-gated `/mcp` endpoint stays heuristic-only for connector determinism.
+- **`scripts/calibrate-classifier.mjs`** + a baseline panel + four simulation
+  scripts (`simulate-classifier-v2.mjs` / `crtbp` / `spectral` / `v2-with-crtbp`)
+  that produced the v2 retune. CRTBP and spectral were diagnostic-only —
+  documented in the [blog post](https://ask-meridian.uk/blog/orbital-classifier-online-learning/).
+- **`scripts/eval-against-public-data.mjs`** — runs v2 against `shawhin/tool-use-finetuning`
+  via the HF datasets-server (no auth). Recall@1 = 0.810, recall@5 = 0.952.
+  Two baselines: trivial token-overlap = 0.714, random = 0.095.
+- **`.github/workflows/classifier-bootstrap.yml`** — cron every 3 days,
+  feeds labelled examples from the HF benchmark into `/v1/feedback` so the
+  fitted weights train without organic traffic.
+- **`.github/workflows/classifier-health.yml`** — cron Mondays, re-runs the
+  benchmark and writes `landing/healthz.json` with current recall + model state.
+  Drift catches regressions automatically.
+
+### Changed
+
+- `mcp/_lib/orbital.mjs` — formula updates validated by the simulation
+  pipeline before any production change:
+  - `mass`: log-scaled across realistic LLM body lengths [200, 3000] chars
+    and [3, 12] keywords. Was saturating at ~0.95 because Llama-3.3-70B
+    emits longer/denser bodies than the formula was tuned for.
+  - `scope`: drop the 0.25 floor; saturation cap moves from kws/14 → kws/12.
+  - `planet_score`: switch from product to `min(mass, scope, indep)^1.5`.
+    A deficit on any single axis now disqualifies planet (anchor-skill
+    semantics: "strong on every dimension," not "strong on average").
+  - `asteroid_score`: threshold 0.4 → 0.55 to match the new mass distribution.
+  - `wavelength`: replace mass-dominated formula (clustered at 600 nm) with
+    a two-axis `redPull − bluePull` so the full visible band is reachable.
+
+  Calibration panel: class accuracy 0.167 → 0.500, 4 classes used (was 2),
+  mass + scope discrimination both recovered above 0.5.
+
+### Reframed
+
+- Public-eval finding: against `shawhin/tool-use-finetuning` (21 single-tool
+  rows), the v2 classifier hits **0.810 recall@1, 0.952 recall@5** — 8.5×
+  above random, 10pp above trivial token-overlap. The synthetic 18-skill
+  panel is harder than real-world tool routing (designed to stress-test class
+  boundaries); production is much closer to 81% than to 50%.
+
+### Deprecated
+
+- `/api/orbital-route` references swept from `landing/style.css`,
+  the orbital-classifier blog post, and miniapp file headers. That endpoint
+  hasn't existed since the Cloudflare Pages Function was retired in 1.x;
+  canonical paths are `/mcp` (OAuth, connector hosts) and `/v1/route`
+  (browser, first-party Meridian sub-properties).
+
 ## [2.1.0] — 2026-05-07
 
 **Remote MCP variants — Streamable HTTP transports for hosts that need a
