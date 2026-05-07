@@ -1,6 +1,8 @@
 // /miniapp interactive demo
-// Calls /api/orbital-route — fully dynamic: LLM generates skills,
-// open-domain orbital classifier assigns celestial classes.
+// Calls the live Meridian MCP at mcp.ask-meridian.uk/v1/route — fully
+// dynamic: Llama-3.3-70B generates fresh skill candidates per task,
+// the deterministic orbital classifier ranks them server-side, the
+// browser renders the result.
 import { MiniGalaxy } from './mini-galaxy.js'
 import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
 import { renderPhysicsPanel } from './physics-panel.js'
@@ -16,8 +18,8 @@ const taskInput      = $('taskInput')
 const askBtn         = $('askBtn')
 const arBtn          = $('arBtn')
 
-// Routing now runs entirely in-browser against the static _skills.json
-// corpus — no LLM provider, no quota, no model selector.
+// Routing goes to mcp.ask-meridian.uk/v1/route. The endpoint is
+// operator-paid and Origin-restricted to ask-meridian.uk + sub-properties.
 const ROUTE_LIMIT = 5
 const resultsSection = $('resultsSection')
 const resultsList    = $('resultsList')
