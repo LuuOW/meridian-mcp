@@ -17,7 +17,8 @@
 // connected → llm_calling → classifying → done sequence so the UI
 // doesn't freeze for 5–15 s.
 
-const ROUTE_ENDPOINT = 'https://mcp.ask-meridian.uk/v1/route'
+const ROUTE_ENDPOINT    = 'https://mcp.ask-meridian.uk/v1/route'
+const FEEDBACK_ENDPOINT = 'https://mcp.ask-meridian.uk/v1/feedback'
 const TIMEOUT_MS = 60_000
 
 async function postRoute(task, limit, signal) {
@@ -76,4 +77,31 @@ export async function routeTaskStream(
   for (const s of result.skills) onSkill(s)
   onProgress({ stage: 'done', count: result.skills.length })
   return result
+}
+
+// Fire-and-forget /v1/feedback POST. The worker uses these to drive
+// online SGD on top of the orbital classifier — every skill the user
+// engages with is one pairwise-ranking step. Never throws or blocks
+// the UI; failures log at warn level.
+export function sendFeedback({ task, skills, chosenSlug, action = 'click' }) {
+  if (!task || !Array.isArray(skills) || !chosenSlug) return
+  try {
+    fetch(FEEDBACK_ENDPOINT, {
+      method:  'POST',
+      headers: { 'content-type': 'application/json' },
+      body:    JSON.stringify({
+        query:        task,
+        // The worker re-uses the same shape /v1/route returns. The
+        // miniapp aliased `selected → skills` on the way in (api.js
+        // line ~50), so we send `selected` back to match the worker's
+        // schema.
+        selected:     skills,
+        chosen_slug:  chosenSlug,
+        action,
+      }),
+      keepalive: true,
+    }).catch(e => console.warn('[meridian] feedback failed:', e?.message || e))
+  } catch (e) {
+    console.warn('[meridian] feedback fire failed:', e?.message || e)
+  }
 }

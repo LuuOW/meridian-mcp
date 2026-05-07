@@ -6,7 +6,7 @@
 import { MiniGalaxy } from './mini-galaxy.js'
 import { startAR, stopAR, unlockAR, isLocked } from './ar-mode.js'
 import { renderPhysicsPanel } from './physics-panel.js'
-import { routeTaskStream } from './api.js'
+import { routeTaskStream, sendFeedback } from './api.js'
 import { escapeHTML, renderMarkdown } from './_md.js'
 import { initBurgerNav, loadVersionBadge } from '/nav.js'
 
@@ -40,6 +40,10 @@ const panelBack   = $('skillPanelBackdrop')
 
 // Stash latest results so the side panel has access to per-skill metadata
 let latestSelected = []
+// The task string that produced `latestSelected` — kept in lockstep so
+// /v1/feedback can replay the exact (query, candidates) tuple when a
+// user clicks a skill card. Cleared on every new routing call.
+let latestTask = ''
 
 // Single-flight guard for routing — prevents AR from queueing concurrent calls
 // (each is ~45s and burns Workers AI neurons). Only ONE route call may be
@@ -103,6 +107,7 @@ askBtn.addEventListener('click', async () => {
     '<p class="routing-progress" id="streamProgress">connecting to orbital router…</p>' +
     '</li>'
   resultsMeta.textContent = ''
+  latestTask = task
   latestSelected = []
   closePanel()
 
@@ -191,6 +196,17 @@ function renderMeta(summary) {
 function openPanel(slug) {
   const skill = latestSelected.find(s => s.slug === slug)
   if (!skill) return
+
+  // Implicit positive label — user opened this skill's detail panel.
+  // Fire-and-forget; failures don't block the UI.
+  if (latestTask && latestSelected.length >= 2) {
+    sendFeedback({
+      task:       latestTask,
+      skills:     latestSelected,
+      chosenSlug: slug,
+      action:     'detail_open',
+    })
+  }
 
   panelTitle.textContent = skill.slug
 
