@@ -1,0 +1,548 @@
+{
+  "t1_length_perturbation": {
+    "flips": {
+      "0.5x": 7,
+      "2x": 10,
+      "4x": 13
+    },
+    "total": 54,
+    "detail": [
+      {
+        "slug": "agentic-eval-harness",
+        "factor": 0.5,
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "distributed-task-queue",
+        "factor": 0.5,
+        "was": "planet",
+        "now": "irregular"
+      },
+      {
+        "slug": "growth-experiment-stack",
+        "factor": 0.5,
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "queue-config-companion",
+        "factor": 0.5,
+        "was": "trojan",
+        "now": "asteroid"
+      },
+      {
+        "slug": "cross-language-fallback-router",
+        "factor": 0.5,
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "signal-mind-translator",
+        "factor": 0.5,
+        "was": "irregular",
+        "now": "asteroid"
+      },
+      {
+        "slug": "forge-signal-incident-router",
+        "factor": 0.5,
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "edge-case-prompt-collector",
+        "factor": 2,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "eval-result-cache",
+        "factor": 2,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "eval-judge-rubric",
+        "factor": 2,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "queue-config-companion",
+        "factor": 2,
+        "was": "trojan",
+        "now": "planet"
+      },
+      {
+        "slug": "experiment-cohort-tagger",
+        "factor": 2,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "subject-line-tester",
+        "factor": 2,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "embedding-cosine-debug",
+        "factor": 2,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "rare-arch-image-builder",
+        "factor": 2,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "forge-mind-bridge",
+        "factor": 2,
+        "was": "irregular",
+        "now": "planet"
+      },
+      {
+        "slug": "signal-mind-translator",
+        "factor": 2,
+        "was": "irregular",
+        "now": "planet"
+      },
+      {
+        "slug": "edge-case-prompt-collector",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "eval-result-cache",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "queue-job-mirror",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "experiment-event-buffer",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "eval-judge-rubric",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "queue-config-companion",
+        "factor": 4,
+        "was": "trojan",
+        "now": "planet"
+      },
+      {
+        "slug": "experiment-cohort-tagger",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "json-pretty-print",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "irregular"
+      },
+      {
+        "slug": "subject-line-tester",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "embedding-cosine-debug",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "rare-arch-image-builder",
+        "factor": 4,
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "forge-mind-bridge",
+        "factor": 4,
+        "was": "irregular",
+        "now": "planet"
+      },
+      {
+        "slug": "signal-mind-translator",
+        "factor": 4,
+        "was": "irregular",
+        "now": "planet"
+      }
+    ],
+    "flip_rate": 0.556
+  },
+  "t2_keyword_perturbation": {
+    "flips": {
+      "half": 7,
+      "double": 9,
+      "none": 13,
+      "flooded": 17
+    },
+    "total_per_case": 18,
+    "detail": [
+      {
+        "slug": "agentic-eval-harness",
+        "case": "half",
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "distributed-task-queue",
+        "case": "half",
+        "was": "planet",
+        "now": "irregular"
+      },
+      {
+        "slug": "eval-result-cache",
+        "case": "half",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "queue-job-mirror",
+        "case": "half",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "cross-language-fallback-router",
+        "case": "half",
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "signal-mind-translator",
+        "case": "half",
+        "was": "irregular",
+        "now": "asteroid"
+      },
+      {
+        "slug": "forge-signal-incident-router",
+        "case": "half",
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "edge-case-prompt-collector",
+        "case": "double",
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "eval-result-cache",
+        "case": "double",
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "eval-judge-rubric",
+        "case": "double",
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "queue-config-companion",
+        "case": "double",
+        "was": "trojan",
+        "now": "planet"
+      },
+      {
+        "slug": "experiment-cohort-tagger",
+        "case": "double",
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "embedding-cosine-debug",
+        "case": "double",
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "rare-arch-image-builder",
+        "case": "double",
+        "was": "asteroid",
+        "now": "planet"
+      },
+      {
+        "slug": "forge-mind-bridge",
+        "case": "double",
+        "was": "irregular",
+        "now": "planet"
+      },
+      {
+        "slug": "signal-mind-translator",
+        "case": "double",
+        "was": "irregular",
+        "now": "planet"
+      },
+      {
+        "slug": "agentic-eval-harness",
+        "case": "none",
+        "was": "planet",
+        "now": "asteroid"
+      },
+      {
+        "slug": "distributed-task-queue",
+        "case": "none",
+        "was": "planet",
+        "now": "irregular"
+      },
+      {
+        "slug": "growth-experiment-stack",
+        "case": "none",
+        "was": "planet",
+        "now": "irregular"
+      },
+      {
+        "slug": "queue-job-mirror",
+        "case": "none",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "experiment-event-buffer",
+        "case": "none",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "experiment-cohort-tagger",
+        "case": "none",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "subject-line-tester",
+        "case": "none",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "embedding-cosine-debug",
+        "case": "none",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "cross-language-fallback-router",
+        "case": "none",
+        "was": "planet",
+        "now": "trojan"
+      },
+      {
+        "slug": "rare-arch-image-builder",
+        "case": "none",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "edge-case-prompt-collector",
+        "case": "none",
+        "was": "asteroid",
+        "now": "trojan"
+      },
+      {
+        "slug": "signal-mind-translator",
+        "case": "none",
+        "was": "irregular",
+        "now": "asteroid"
+      },
+      {
+        "slug": "forge-signal-incident-router",
+        "case": "none",
+        "was": "planet",
+        "now": "trojan"
+      },
+      {
+        "slug": "agentic-eval-harness",
+        "case": "flooded",
+        "was": "planet",
+        "now": "trojan"
+      }
+    ],
+    "flip_rate": 0.639
+  },
+  "t3_sibling_sensitivity": {
+    "flips": 2,
+    "total": 18,
+    "detail": [
+      {
+        "slug": "queue-config-companion",
+        "in_panel": "trojan",
+        "alone": "asteroid"
+      },
+      {
+        "slug": "forge-signal-incident-router",
+        "in_panel": "planet",
+        "alone": "asteroid"
+      }
+    ],
+    "flip_rate": 0.111
+  },
+  "t4_adversarial": {
+    "errors": [],
+    "summary": [
+      {
+        "slug": "code-only-body",
+        "class": "asteroid",
+        "score": 8.5
+      },
+      {
+        "slug": "all-caps-body",
+        "class": "asteroid",
+        "score": 0.85
+      },
+      {
+        "slug": "empty-body",
+        "class": "planet",
+        "score": 0
+      },
+      {
+        "slug": "one-word-body",
+        "class": "asteroid",
+        "score": 0
+      },
+      {
+        "slug": "huge-body",
+        "class": "planet",
+        "score": 0
+      },
+      {
+        "slug": "thirty-keywords",
+        "class": "asteroid",
+        "score": 0
+      },
+      {
+        "slug": "non-english-body",
+        "class": "asteroid",
+        "score": 0
+      },
+      {
+        "slug": "symbols-noise",
+        "class": "asteroid",
+        "score": 0
+      }
+    ],
+    "n": 8
+  },
+  "t5_confusion": {
+    "matrix": {
+      "planet": {
+        "planet": 3,
+        "moon": 0,
+        "trojan": 0,
+        "asteroid": 0,
+        "comet": 0,
+        "irregular": 0
+      },
+      "moon": {
+        "planet": 0,
+        "moon": 0,
+        "trojan": 0,
+        "asteroid": 3,
+        "comet": 0,
+        "irregular": 0
+      },
+      "trojan": {
+        "planet": 0,
+        "moon": 0,
+        "trojan": 1,
+        "asteroid": 2,
+        "comet": 0,
+        "irregular": 0
+      },
+      "asteroid": {
+        "planet": 0,
+        "moon": 0,
+        "trojan": 0,
+        "asteroid": 3,
+        "comet": 0,
+        "irregular": 0
+      },
+      "comet": {
+        "planet": 1,
+        "moon": 0,
+        "trojan": 0,
+        "asteroid": 2,
+        "comet": 0,
+        "irregular": 0
+      },
+      "irregular": {
+        "planet": 1,
+        "moon": 0,
+        "trojan": 0,
+        "asteroid": 0,
+        "comet": 0,
+        "irregular": 2
+      }
+    },
+    "accuracy": 0.5
+  },
+  "t6_candidate_jitter": {
+    "mean_jaccard": 0.944,
+    "n_runs": 18,
+    "instability_examples": [
+      {
+        "dropped": "agentic-eval-harness",
+        "baseline": [
+          "edge-case-prompt-collector",
+          "distributed-task-queue"
+        ],
+        "new_top": [
+          "edge-case-prompt-collector",
+          "distributed-task-queue",
+          "growth-experiment-stack"
+        ],
+        "jaccard": 0.667
+      },
+      {
+        "dropped": "distributed-task-queue",
+        "baseline": [
+          "agentic-eval-harness",
+          "edge-case-prompt-collector"
+        ],
+        "new_top": [
+          "agentic-eval-harness",
+          "edge-case-prompt-collector",
+          "growth-experiment-stack"
+        ],
+        "jaccard": 0.667
+      },
+      {
+        "dropped": "edge-case-prompt-collector",
+        "baseline": [
+          "agentic-eval-harness",
+          "distributed-task-queue"
+        ],
+        "new_top": [
+          "agentic-eval-harness",
+          "distributed-task-queue",
+          "growth-experiment-stack"
+        ],
+        "jaccard": 0.667
+      }
+    ]
+  },
+  "fails": [],
+  "generated_at": "2026-05-07T22:18:39.303Z"
+}
