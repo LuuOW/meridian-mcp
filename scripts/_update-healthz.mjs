@@ -20,7 +20,7 @@ const out = {
     recall_at_1_random:    evalRes.recall.random.at_1,
     recall_at_1_ci_95:     evalRes.recall_ci_95?.v2?.at_1   || null,
     recall_at_5_ci_95:     evalRes.recall_ci_95?.v2?.at_5   || null,
-    bootstrap_resamples:   evalRes.bootstrap_resamples       || null,
+    ci_method:             evalRes.ci_method                 || 'wilson',
     dataset:               evalRes.dataset,
     n_eval:                evalRes.n_eval,
     evaluated_at:          evalRes.generated_at,

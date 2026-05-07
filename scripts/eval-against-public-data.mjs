@@ -174,30 +174,31 @@ for (const ex of evalRows) {
   })
 }
 
-// ── Bootstrap 95% CI (Bell & Glasstone §1.6e style: Monte Carlo for
-//    expectation values from a small sample). Resample the per-row
-//    hit indicators with replacement and recompute mean recall, B times.
-//    The 2.5/97.5 percentiles of that distribution give a 95% CI.
-const B = 10_000
-function bootstrapCI(arr, B = 10_000, ci = 0.95) {
+// ── 95% Wilson score interval (closed-form, frequentist) ──────────
+//    For binomial proportions, Wilson achieves nominal coverage at
+//    n=21 across all p ∈ [0.5, 0.95] (verified by simulate-ci-methods.mjs:
+//    bootstrap had only 66% coverage at p=0.95 — under-covers at the
+//    extremes; jackknife same problem). Wilson costs zero compute, is
+//    well-calibrated, and is the textbook choice for proportions.
+function wilsonCI(arr, z = 1.96) {
   const n = arr.length
   if (!n) return { mean: 0, lo: 0, hi: 0 }
-  const samples = new Float64Array(B)
-  for (let b = 0; b < B; b++) {
-    let s = 0
-    for (let i = 0; i < n; i++) s += arr[(Math.random() * n) | 0]
-    samples[b] = s / n
+  const k = arr.reduce((s, v) => s + v, 0)
+  const p = k / n
+  const z2 = z * z
+  const denom = 1 + z2 / n
+  const center = (p + z2 / (2 * n)) / denom
+  const margin = (z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / denom
+  return {
+    mean: +p.toFixed(4),
+    lo:   +Math.max(0, center - margin).toFixed(4),
+    hi:   +Math.min(1, center + margin).toFixed(4),
   }
-  samples.sort()
-  const loIdx = Math.floor(B * (1 - ci) / 2)
-  const hiIdx = Math.floor(B * (1 + ci) / 2) - 1
-  const mean = arr.reduce((s, v) => s + v, 0) / n
-  return { mean: +mean.toFixed(4), lo: +samples[loIdx].toFixed(4), hi: +samples[hiIdx].toFixed(4) }
 }
 const ci = {
-  v2:      { at_1: bootstrapCI(hits.v2_h1, B),  at_5: bootstrapCI(hits.v2_h5, B)  },
-  trivial: { at_1: bootstrapCI(hits.trv_h1, B), at_5: bootstrapCI(hits.trv_h5, B) },
-  random:  { at_1: bootstrapCI(hits.rnd_h1, B), at_5: bootstrapCI(hits.rnd_h5, B) },
+  v2:      { at_1: wilsonCI(hits.v2_h1),  at_5: wilsonCI(hits.v2_h5)  },
+  trivial: { at_1: wilsonCI(hits.trv_h1), at_5: wilsonCI(hits.trv_h5) },
+  random:  { at_1: wilsonCI(hits.rnd_h1), at_5: wilsonCI(hits.rnd_h5) },
 }
 
 const N = evalRows.length
@@ -227,7 +228,7 @@ if (JSON_MODE) {
       random:  { at_1: results.random.hits1 / N,  at_5: results.random.hits5 / N  },
     },
     recall_ci_95: ci,
-    bootstrap_resamples: B,
+    ci_method: 'wilson',
     by_type: byType,
     generated_at: new Date().toISOString(),
   }, null, 2) + '\n')
@@ -236,7 +237,7 @@ if (JSON_MODE) {
 
 function fmtCI(c) { return `${c.mean.toFixed(3)} [${c.lo.toFixed(3)}, ${c.hi.toFixed(3)}]` }
 
-console.log(`\nRECALL@1   point [95% CI from ${B.toLocaleString()} bootstrap resamples]   ·   RECALL@${TOP_K}`)
+console.log(`\nRECALL@1   point [95% Wilson CI]   ·   RECALL@${TOP_K}`)
 console.log(`  v2 classifier   ${fmtCI(ci.v2.at_1)}   ${fmtCI(ci.v2.at_5)}`)
 console.log(`  trivial overlap ${fmtCI(ci.trivial.at_1)}   ${fmtCI(ci.trivial.at_5)}`)
 console.log(`  random          ${fmtCI(ci.random.at_1)}   ${fmtCI(ci.random.at_5)}`)
@@ -278,8 +279,8 @@ if (!v2_clear_above_random) {
   console.log('  • v2 unambiguously beats trivial token-overlap (CI separation).')
   console.log('  • Reading: heuristics carry signal even after accounting for sample noise.')
 } else if (v2_lead_overlap) {
-  console.log('  • v2 leads on point estimate but CIs overlap with trivial.')
-  console.log(`  • Reading: with n=${N} the bootstrap can't separate them. Need more labelled rows`)
+  console.log('  • v2 leads on point estimate but Wilson CIs overlap with trivial.')
+  console.log(`  • Reading: with n=${N} we can't statistically separate them. Need more labelled rows`)
   console.log('    to confirm the lead is real, not a small-sample artefact.')
 } else {
   console.log('  • v2 ≈ trivial on point estimate. Heuristics at ceiling on this dataset.')

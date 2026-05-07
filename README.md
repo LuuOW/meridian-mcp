@@ -139,7 +139,7 @@ user click → /v1/feedback → KV → SGD step → updated weights → next /v1
 
 Read-only model state: `GET https://mcp.ask-meridian.uk/v1/model-info`.
 
-Full architecture + the calibration journey that produced this design (the planet-bias bug, the two textbook physics frameworks we tried and abandoned, the v2 retune, the 81% recall@1 [95% CI 62%, 95%] finding on real labelled data): [blog post](https://ask-meridian.uk/blog/orbital-classifier-online-learning/).
+Full architecture + the calibration journey that produced this design (the planet-bias bug, the two textbook physics frameworks we tried and abandoned, the v2 retune, the 81% recall@1 [95% Wilson CI 60%, 92%] finding on real labelled data): [blog post](https://ask-meridian.uk/blog/orbital-classifier-online-learning/).
 
 ## License
 

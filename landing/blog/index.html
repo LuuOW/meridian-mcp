@@ -84,7 +84,7 @@
         </a>
       </h2>
       <p style="margin: 0; color: var(--text-muted);">
-        A skill-routing classifier had a planet bias — 17 of 18 panel skills got classified as <code>planet</code>. We tried two textbook physics frameworks (Vallado's CRTBP, Sears &amp; Zemansky's spectral classification), neither beat heuristics. Retuned heuristics hit 50% on the panel, then 81% [95% CI 62%, 95%] on real labelled data. Then we wired an online-SGD loop on top so the classifier improves from every user click — with constant per-request cost and zero local training.
+        A skill-routing classifier had a planet bias — 17 of 18 panel skills got classified as <code>planet</code>. We tried two textbook physics frameworks (Vallado's CRTBP, Sears &amp; Zemansky's spectral classification), neither beat heuristics. Retuned heuristics hit 50% on the panel, then 81% [95% Wilson CI 60%, 92%] on real labelled data. Then we wired an online-SGD loop on top so the classifier improves from every user click — with constant per-request cost and zero local training.
       </p>
     </article>
 
