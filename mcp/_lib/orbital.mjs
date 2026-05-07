@@ -28,9 +28,21 @@ export function physicsOf(skill, sibTokens) {
   const kwSet = new Set(kws)
   const tokens = uniq(tokenize(`${desc} ${body} ${kws.join(' ')}`))
 
-  const bodyLen = body.length
-  const massRaw = (Math.log10(Math.max(50, bodyLen)) - 1.7) * 0.35 + Math.min(0.4, kws.length / 15)
-  const mass = clamp(massRaw)
+  // mass — log-scaled across realistic LLM body lengths [200, 3000]
+  // chars and [3, 12] keywords. The earlier formula
+  // ((log10(bodyLen) − 1.7) × 0.35 + min(0.4, kws/15)) was tuned to
+  // shorter bodies and saturated near 1.0 for everything Llama-3.3-70B
+  // emits today. Renormalising recovers discrimination on the mass axis
+  // (calibration panel: 0.35 → 0.50 dynamic range) and stops the
+  // planet-bias spillover into class scoring (panel: 17/18 → 5/18 planets).
+  const BODY_LO = 200, BODY_HI = 3000
+  const KW_LO   = 3,   KW_HI   = 12
+  const lenN = clamp(
+    (Math.log10(Math.max(50, body.length)) - Math.log10(BODY_LO)) /
+    (Math.log10(BODY_HI) - Math.log10(BODY_LO)),
+  )
+  const kwN  = clamp((kws.length - KW_LO) / (KW_HI - KW_LO))
+  const mass = clamp(0.6 * lenN + 0.4 * kwN)
 
   const sysAffinity = {}
   for (const [sys, terms] of Object.entries(SYSTEM_TERMS)) {
@@ -48,7 +60,10 @@ export function physicsOf(skill, sibTokens) {
   const top2 = sysVec.slice().sort((a, b) => b - a)
   const lagrange_potential = clamp(Math.min(top2[0], top2[1]) * 1.4)
 
-  const scope = clamp(0.25 + Math.min(0.5, kws.length / 14) + cross_domain * 0.25)
+  // scope — drop the 0.25 floor (was inflating every input above the
+  // moon/asteroid moon-sub-0.5-independence threshold). Saturation
+  // moves from kws/14 → kws/12 to widen the usable band.
+  const scope = clamp(Math.min(0.7, kws.length / 12) + cross_domain * 0.3)
 
   let bestTokSim = 0, bestKwSim = 0
   for (const sib of sibTokens) {
@@ -88,8 +103,18 @@ export function physicsOf(skill, sibTokens) {
   const slugHash        = hashStr(skill.slug || '')
   const mean_anomaly    = r3(((slugHash % 1000) / 1000) * 2 * Math.PI)
 
-  const wavelength      = Math.round(Math.max(380, Math.min(750,
-    380 + mass * 370 - drag * 100 - cross_domain * 50)))
+  // wavelength — heavy + isolated → red end; cross-domain + drag →
+  // blue end. The previous formula (380 + mass·370 − drag·100 −
+  // cross_domain·50) was monotonically dominated by mass and clustered
+  // at 600 nm because mass·370 ≥ 110 made the deep-violet band
+  // structurally unreachable. Two-axis pull recovers the full visible
+  // band on extreme inputs while leaving "average" skills mid-band.
+  const redPull  = 0.55 * mass + 0.25 * independence + 0.10 * lagrange_potential
+  const bluePull = 0.55 * cross_domain + 0.30 * fragmentation + 0.20 * drag
+  const wavelength = Math.round(clamp(
+    380 + 370 * (0.5 + 0.55 * (redPull - bluePull)),
+    380, 750,
+  ))
   const polarization    = r3(clamp(1 - fragmentation, 0, 1))
   const amplitude       = r3(mass)
   const phaseHash       = hashStr(`${skill.slug || ''}|${(body || '').slice(0, 64)}`)
@@ -110,12 +135,21 @@ export function physicsOf(skill, sibTokens) {
 export { CLASS_BOOST, SYSTEM_TERMS }
 
 export function classOf(p, hasParentInSet) {
-  const planet_score   = p.mass * p.scope * p.independence
+  // Planet uses min(mass, scope, independence)^1.5 instead of the
+  // product. The product let two strong axes drown out a missing one
+  // (a long body with sparse keywords still beat planet's 0.4 floor);
+  // min penalises the deficit, which is what "anchor skill" actually
+  // means semantically — strong on every dimension, not just on average.
+  const planet_score   = Math.min(p.mass, p.scope, p.independence) ** 1.5
   const moon_score     = Math.max(0, 0.5 - p.independence) * 2
                          * (hasParentInSet ? 1 : 0.4)
                          * (1 - 0.5 * p.mass)
   const trojan_score   = p.dep_ratio * (hasParentInSet ? 1 : 0.5) * (1 - p.fragmentation)
-  const asteroid_score = Math.max(0, 0.4 - p.mass) * 2.5 * p.scope * p.independence
+  // Asteroid threshold raised from 0.4 → 0.55 to match the new (lower-
+  // saturation) mass distribution. Without this, niche/small skills
+  // never cleared the threshold because mass had drifted up across
+  // the whole panel under the old saturation.
+  const asteroid_score = Math.max(0, 0.55 - p.mass) * 2.5 * p.scope * p.independence
   const comet_score    = p.drag * p.cross_domain * (1 - p.dep_ratio)
   const irregular_score= p.cross_domain * p.fragmentation * 0.85
 
