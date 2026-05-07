@@ -5,7 +5,7 @@
 
 import { orbitalClassify } from './orbital.mjs'
 
-export const PKG_VERSION = '2.2.0'
+export const PKG_VERSION = '2.2.1'
 
 // Workers don't expose `process` by default — read defensively so this
 // module imports cleanly in CF Workers, Deno, Bun, and plain browsers.

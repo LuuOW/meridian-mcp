@@ -153,6 +153,7 @@
         <div class="key-label">on real data</div>
         <div class="key-figure">81%</div>
         <div style="font-size: 12px; color: var(--text-muted);">recall@1, public benchmark</div>
+        <div style="font-size: 11px; color: var(--text-faint); margin-top: 4px;">95% CI [62%, 95%]  ·  n=21</div>
       </div>
       <div class="stat-card">
         <div class="key-label">online learning</div>
@@ -381,7 +382,7 @@ const HILL_R = Math.cbrt(M_STAR / 3)            // Hill sphere
   </p>
 
   <div class="chart-frame">
-    <svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Recall on labelled benchmark">
+    <svg viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Recall on labelled benchmark with bootstrap CIs">
       <style>
         .bar3 { fill: #38bdf8; }
         .bar3b { fill: #f59e0b; }
@@ -413,22 +414,34 @@ const HILL_R = Math.cbrt(M_STAR / 3)            // Hill sphere
         <text x="351" y="138" class="lbl3">0.857</text>
 
         <text x="0"   y="180" class="ax3">v2 beats random by 8.5×, trivial overlap by 10pp on @1</text>
+        <text x="0"   y="208" class="ax3" font-style="italic">95% bootstrap CI (n=21, 10,000 resamples):</text>
+        <text x="0"   y="226" class="ax3">recall@1   v2 [0.619, 0.952] · trivial [0.524, 0.905] · random [0.000, 0.286]</text>
+        <text x="0"   y="244" class="ax3">recall@5   v2 [0.857, 1.000] · trivial [0.714, 1.000]</text>
       </g>
     </svg>
-    <p class="chart-caption">Real labelled tool-routing data — first positive result on external evaluation.</p>
+    <p class="chart-caption">Real labelled tool-routing data — first positive result on external evaluation. CIs added in the v2.2.1 deploy.</p>
   </div>
 
   <p>
-    <strong>81% recall@1, 95% recall@5.</strong> 8.5× above the random baseline (~9.5%
-    expected on ~20 candidates) and 10 percentage points above a 5-line token-overlap
-    baseline. This is a much better number than the synthetic-panel score, which means the
-    panel was harder than real-world tool routing — exactly what a stress test is supposed
-    to do.
+    <strong>81% recall@1 [95% CI 62%, 95%], 95% recall@5 [86%, 100%].</strong> 8.5× above the
+    random baseline (~9.5% expected on ~20 candidates) and 10 percentage points above a
+    5-line token-overlap baseline on point estimate. This is a much better number than the
+    synthetic-panel score, which means the panel was harder than real-world tool routing —
+    exactly what a stress test is supposed to do.
   </p>
 
   <p>
     The panel had been overstating the bug. The classifier was always doing real work on
     real inputs; it just lost its margin of error on intentionally-adversarial fixtures.
+  </p>
+
+  <p>
+    Honest caveat from a follow-up bootstrap (Bell &amp; Glasstone §1.6e — Monte Carlo for
+    expectation values from a small sample): with n=21, v2's r@1 CI is [0.62, 0.95] and the
+    trivial token-overlap baseline's is [0.52, 0.90]. They overlap. v2 unambiguously beats
+    the random floor (whose upper bound is 0.29) but the 10-percentage-point lead over
+    trivial is not statistically separable at 95% from this sample. More labelled rows would
+    confirm whether the lead is real — that's what the bootstrap CI is asking for.
   </p>
 
   <h2>Closing the loop: online SGD without a training run</h2>

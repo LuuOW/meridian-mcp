@@ -1,5 +1,44 @@
 # Changelog
 
+## [2.2.1] — 2026-05-07
+
+**Honest error bars on the published recall numbers — bootstrap 95% CI from 10,000 resamples (Bell & Glasstone §1.6e Monte Carlo for expectation values from a small sample).**
+
+### Added
+
+- **`scripts/eval-against-public-data.mjs`** now computes 95% bootstrap CI on
+  recall@1 and recall@5 for v2, trivial baseline, and random. 10,000 resamples
+  with replacement on the n=21 labelled rows.
+- **Healthz JSON** now records `recall_at_1_ci_95` and `recall_at_5_ci_95`
+  (lo/hi/mean) so the weekly cron tracks regression on the *lower bound*, not
+  just the point estimate.
+- **`scripts/stress-test-classifier.mjs`** + baseline JSON — 6 stress tests
+  (length-perturb, keyword-perturb, sibling-isolation, adversarial inputs,
+  confusion matrix, candidate-set jitter) with regression bounds.
+- **`scripts/simulate-classifier-breit-wigner.mjs`** + **`simulate-classifier-branching.mjs`** —
+  two more diagnostic-only physics-framing receipts (Bell & Glasstone §8.1
+  resonance + §8.2b decay channels). Both confirmed: textbook physics doesn't
+  improve the SKILL/TASK → physics-vector encoding bottleneck. Same pattern as
+  CRTBP / spectral / v2+CRTBP.
+
+### Changed
+
+- **Verdict logic** in the eval script now uses CI separation (lower-bound vs
+  upper-bound) instead of raw hit-count diff. With n=21 a 2-hit lead means
+  nothing, so the old "v2 beat trivial by 2 hits" verdict was overconfident.
+- **Blog post + landing copy + README** now cite `81% [95% CI 62%, 95%]`
+  instead of bare `81%`. Honest framing: v2 unambiguously beats random
+  (random's upper bound is 29%), but its CI overlaps with trivial's
+  ([0.52, 0.90]) — we cannot claim a 10pp lead is real until we have more
+  labelled rows.
+
+### Findings
+
+- v2 r@1 = 0.810 [0.619, 0.952]
+- v2 r@5 = 0.952 [0.857, 1.000]
+- trivial r@1 = 0.714 [0.524, 0.905]   — overlaps with v2 CI
+- random r@1 = 0.143 [0.000, 0.286]    — clearly below v2's lower bound
+
 ## [2.2.0] — 2026-05-07
 
 **Classifier learning loop — every browser engagement is now a pairwise-ranking SGD step on top of the heuristic. The orbital classifier improves from real user clicks without any local training.**
