@@ -10,7 +10,7 @@
 import { readdirSync, statSync }              from 'node:fs'
 import { join, dirname }                       from 'node:path'
 import { fileURLToPath }                       from 'node:url'
-import { orbitalClassify }                     from '../landing/functions/api/_orbital.js'
+import { orbitalClassify }                     from '../mcp/_lib/orbital.mjs'
 import { readSkill, keywordsOf }               from '../src/skill-md.mjs'
 
 const __dirname  = dirname(fileURLToPath(import.meta.url))
