@@ -67,12 +67,16 @@ async function postFeedback(query, ranked, chosen_slug) {
   // out the worker — first attempt may hit a stale build returning
   // 502/503 for a few seconds.
   const payload = JSON.stringify({ query, selected: ranked, chosen_slug, action: 'bootstrap' })
+  // Cloudflare Bot Fight Mode flags GitHub Actions runners by TLS
+  // fingerprint. A browser-y UA helps in some cases; doesn't fix
+  // fingerprinting but cuts down on naive UA-string blocks.
+  const headers = {
+    'content-type': 'application/json',
+    'origin':       FEEDBACK_ORIGIN,
+    'user-agent':   'Mozilla/5.0 (compatible; meridian-bootstrap/1.0)',
+  }
   for (let attempt = 0; attempt < 4; attempt++) {
-    const res = await fetch(FEEDBACK_URL, {
-      method:  'POST',
-      headers: { 'content-type': 'application/json', 'origin': FEEDBACK_ORIGIN },
-      body:    payload,
-    })
+    const res = await fetch(FEEDBACK_URL, { method: 'POST', headers, body: payload })
     if (res.ok || res.status < 500) {
       return { ok: res.ok, status: res.status, body: await res.json().catch(() => ({})) }
     }
