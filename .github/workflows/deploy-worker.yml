@@ -56,7 +56,11 @@ jobs:
       - name: Smoke-test the live URL
         run: |
           set -e
-          curl -fsS https://mcp.ask-meridian.uk/healthz | tee /dev/null | grep -q '^ok$'
-          curl -fsS https://mcp.ask-meridian.uk/.well-known/oauth-authorization-server \
+          # CF Bot Fight Mode blocks default curl UAs from GH-runner
+          # IPs with 403 — send a browser-y UA so the verification
+          # actually reaches the Worker.
+          UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) deploy-smoke/1.0'
+          curl -fsS -A "$UA" https://mcp.ask-meridian.uk/healthz | grep -q '^ok$'
+          curl -fsS -A "$UA" https://mcp.ask-meridian.uk/.well-known/oauth-authorization-server \
             | grep -q '"authorization_endpoint":"https://mcp.ask-meridian.uk/authorize"'
           echo "smoke ok"
