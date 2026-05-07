@@ -41,6 +41,29 @@ const TOKEN_TTL_SEC   = 60 * 60     // access-token lifetime (1 h)
 const KV_CODE_PREFIX  = 'code:'
 const KV_TOKEN_PREFIX = 'tok:'
 
+// Connector icon — the same orbital glyph used on ask-meridian.uk's
+// favicon, served at /favicon.svg, /icon.svg, /logo.svg so any client
+// that fingerprints the connector by domain (Grok, ChatGPT, Claude.ai,
+// browsers) finds it. Also referenced from OAuth AS metadata via
+// `logo_uri` and from MCP serverInfo via `_meta.iconUrl`.
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#c4b5fd" stop-opacity="0.95"/>
+      <stop offset="55%"  stop-color="#7c3aed" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#0a0d14"/>
+  <circle cx="32" cy="32" r="22" fill="none" stroke="#a78bfa" stroke-width="2.5" opacity="0.85"/>
+  <circle cx="32" cy="32" r="14" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.5" stroke-dasharray="2 2"/>
+  <circle cx="32" cy="32" r="9"  fill="url(#halo)"/>
+  <circle cx="32" cy="32" r="3"  fill="#fef3c7"/>
+  <circle cx="54" cy="22" r="2.2" fill="#7dd3fc" opacity="0.85"/>
+  <circle cx="14" cy="44" r="1.6" fill="#6ee7b7" opacity="0.85"/>
+</svg>`
+const ICON_URL = `${ISSUER}/icon.svg`
+
 const CORS = {
   'access-control-allow-origin':   '*',
   'access-control-allow-methods':  'GET, POST, DELETE, OPTIONS',
@@ -105,6 +128,11 @@ function discoveryAS() {
     code_challenge_methods_supported:        ['S256'],
     token_endpoint_auth_methods_supported:   ['none'],
     scopes_supported:        [SUPPORTED_SCOPE],
+    // Hints that connector hosts use to render the brand:
+    service_documentation:   'https://ask-meridian.uk/docs/',
+    op_policy_uri:           'https://ask-meridian.uk/',
+    op_tos_uri:              'https://ask-meridian.uk/',
+    logo_uri:                ICON_URL,
   }
 }
 
@@ -114,6 +142,9 @@ function discoveryProtectedResource() {
     authorization_servers: [ISSUER],
     scopes_supported: [SUPPORTED_SCOPE],
     bearer_methods_supported: ['header'],
+    resource_documentation:  'https://ask-meridian.uk/docs/',
+    resource_name:           'Meridian Skills',
+    resource_logo_uri:       ICON_URL,
   }
 }
 
@@ -128,6 +159,7 @@ function renderAuthorizePage(params) {
 <html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Authorize Meridian Skills MCP</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   :root { color-scheme: dark }
   body { background:#0b0d12; color:#e6eaf2; font:14px/1.5 ui-sans-serif, system-ui, sans-serif; margin:0; padding:0; min-height:100vh; display:grid; place-items:center }
@@ -277,7 +309,17 @@ function bearerOf(req) {
 // ─── /mcp handler ──────────────────────────────────────────────────
 function buildMcpServer(githubToken, env) {
   const server = new Server(
-    { name: 'meridian-skills', version: PKG_VERSION },
+    {
+      name: 'meridian-skills',
+      version: PKG_VERSION,
+      // _meta is the MCP convention for arbitrary metadata; clients
+      // that surface a connector icon (e.g. Grok, Claude.ai) often
+      // pull it from here. Harmless on clients that don't read it.
+      _meta: {
+        iconUrl:    ICON_URL,
+        websiteUrl: 'https://ask-meridian.uk',
+      },
+    },
     { capabilities: { tools: {} } },
   )
 
@@ -349,6 +391,26 @@ export default {
 
     if (url.pathname === '/' && request.method === 'GET')
       return textResponse(`Meridian Skills MCP v${PKG_VERSION} — POST /mcp with bearer token. https://ask-meridian.uk\n`)
+
+    // Icon endpoints — served from the SVG embedded above. Multiple
+    // paths because different connector hosts probe different ones.
+    if (request.method === 'GET' && (
+        url.pathname === '/favicon.svg' ||
+        url.pathname === '/icon.svg'    ||
+        url.pathname === '/logo.svg')) {
+      return new Response(ICON_SVG, {
+        status: 200,
+        headers: {
+          'content-type': 'image/svg+xml',
+          'cache-control': 'public, max-age=86400',
+          ...CORS,
+        },
+      })
+    }
+    // Some clients/browsers probe /favicon.ico — redirect to the SVG.
+    if (request.method === 'GET' && url.pathname === '/favicon.ico') {
+      return Response.redirect(`${ISSUER}/favicon.svg`, 301)
+    }
 
     if (url.pathname === '/.well-known/oauth-authorization-server')
       return jsonResponse(discoveryAS())
