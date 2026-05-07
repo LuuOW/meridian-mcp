@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Meridian as a Grok connector — orbital skill routing inside Grok — Meridian Blog</title>
+<meta name="description" content="Wiring the Meridian orbital skill router into Grok via custom MCP connector + OAuth 2.1 + PKCE. The architecture, the OAuth values to paste, and why the auth flow has zero PAT pasting for end users.">
+<meta property="og:title" content="Meridian as a Grok connector — orbital skill routing inside Grok">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/grok-meridian-orbital-connector/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/grok-meridian-orbital-connector/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .cta-card { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px; padding: 24px; margin: 36px 0; }
+  .cta-card h3 { margin: 0 0 8px; }
+  .conn-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin: 24px 0; display: flex; gap: 18px; align-items: center; }
+  .conn-card img { width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; }
+  .conn-card .conn-name { font-weight: 600; font-size: 18px; }
+  .conn-card .conn-tag { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<a href="/products/build-your-own-mcp/" class="promo-strip">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Showcase</summary>
+      <a href="/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Skill orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to skills</span>
+      </a>
+      <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Resources</summary>
+      <a href="/#products">Products</a>
+      <a href="/blog/" class="current">Blog</a>
+      <a href="https://docs.ask-meridian.uk">Docs</a>
+      <a href="/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/lens">GitHub · lens</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-07 · 5 min read · new</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      Meridian as a Grok connector — orbital skill routing inside Grok
+    </h1>
+
+    <div class="conn-card">
+      <img src="https://mcp.ask-meridian.uk/icon.svg" alt="Meridian icon" width="56" height="56">
+      <div>
+        <div class="conn-name">Meridian Skills · custom MCP connector</div>
+        <div class="conn-tag"><code>https://mcp.ask-meridian.uk/mcp</code> · OAuth 2.1 + PKCE · zero install</div>
+      </div>
+    </div>
+
+    <p>
+      Grok shipped <a href="https://docs.x.ai/grok/connectors">custom MCP connectors</a>:
+      paste an MCP server URL, complete an OAuth dance, and Grok auto-discovers
+      whatever tools the server exposes. We just wired
+      <a href="https://ask-meridian.uk">Meridian</a>'s orbital skill router into it.
+    </p>
+
+    <p>
+      One tool: <code>route_task(task)</code>. Ask Grok something like
+      <em>"route a task to ranked skills: build a presence indicator over WebSocket
+      with reconnection and per-room rate limiting"</em>. Grok calls Meridian, which
+      asks Llama-3.3-70B to author 5 candidate skills, runs them through the orbital
+      classifier, and returns ranked entries — each with a celestial class
+      (planet/moon/trojan/asteroid/comet/irregular), a parent skill, a star-system
+      affinity, and a one-line decision rule. Grok lifts the markdown bodies straight
+      into its context window.
+    </p>
+
+    <p>The two interesting bits: <strong>how the auth works</strong> (zero PAT
+       pasting for end users), and <strong>why the URL even exists</strong> when
+       the rest of Meridian is github-only.</p>
+
+    <h2>The auth flow — single button, no GitHub jargon</h2>
+
+    <p>
+      Most remote MCP setups in 2026 ask the user to "paste your fine-grained PAT
+      with <code>Models: read</code> permission". That's fine for developers; for a
+      Grok user trying to add a skill router to their chat, it's a wall.
+    </p>
+
+    <p>
+      The Meridian connector flips this. Grok hits our authorization endpoint
+      with a standard OAuth 2.1 + PKCE handshake. The user sees:
+    </p>
+
+    <pre><code>┌──────────────────────────────────────────┐
+│  🪐                                       │
+│  Authorize <strong>grok</strong> to use Meridian       │
+│                                          │
+│  Meridian routes your task to the most   │
+│  relevant AI skills. Click below and     │
+│  grok will be able to call:              │
+│   • route_task — ranks candidate skills  │
+│                                          │
+│  ┌────────────────────────────────────┐  │
+│  │             Authorize              │  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘</code></pre>
+
+    <p>
+      One click. No PAT field. No "go to github.com/settings/tokens and create a
+      fine-grained one with the Models permission". The Cloudflare Worker holds a
+      single GitHub Models PAT in a secret and uses it for every inference call —
+      operator-pays, like Notion's MCP or Linear's MCP. The user's identity inside
+      Grok is enough.
+    </p>
+
+    <p>The mechanics:</p>
+
+    <pre><code>Grok                Meridian Worker         GitHub Models
+ │                       │                       │
+ │── /authorize ────────▶│                       │
+ │  ?code_challenge=…    │ (HTML "Authorize")    │
+ │◀── 302 ?code=… ───────│                       │
+ │                       │                       │
+ │── /token ────────────▶│ verify PKCE,          │
+ │  code_verifier=…      │ issue opaque token    │
+ │◀── access_token ──────│ (KV, 1h TTL)          │
+ │                       │                       │
+ │── /mcp tools/call ───▶│                       │
+ │  Bearer &lt;token&gt;        │── Authorization: ────▶│
+ │                       │   Bearer &lt;OUR PAT&gt;     │
+ │                       │◀── candidate skills ──│
+ │                       │ orbital classify (~5ms)│
+ │◀── ranked skills ─────│                       │</code></pre>
+
+    <p>
+      The access token is a 32-byte opaque random string. It's just a marker in
+      Workers KV that says "this caller completed the OAuth flow." The actual
+      GitHub PAT lives in the Worker secret, never in the token, never in a JWT,
+      never in transit beyond <code>worker → models.github.ai</code>.
+    </p>
+
+    <p>
+      For each call, the Worker:
+    </p>
+    <ol>
+      <li>Looks up the bearer in KV (~1 ms)</li>
+      <li>If found, uses <code>MERIDIAN_GITHUB_TOKEN</code> from the Worker
+        secret to call <code>models.github.ai/inference/chat/completions</code></li>
+      <li>Runs the bundled orbital classifier on the LLM's 5 candidate skills (~5 ms,
+        same JS as the browser miniapp)</li>
+      <li>Returns ranked markdown</li>
+    </ol>
+
+    <h2>Why a hosted URL exists at all</h2>
+
+    <p>
+      Meridian's stdio MCP (<code>npm install -g meridian-skills-mcp</code>) is
+      the primary product — works in Claude Code, Cursor, Windsurf, Goose, every
+      stdio-speaking client. But Grok, ChatGPT custom MCPs, and Claude.ai
+      connectors don't spawn processes. They want a URL.
+    </p>
+
+    <p>
+      We tried github-only hosting. GitHub doesn't host servers. Pages serves static
+      files; Actions runs CI; Codespaces auto-stops. There's no GitHub product that
+      receives a <code>POST /mcp</code> over HTTPS and forwards to GitHub Models on
+      behalf of an authenticated caller. So the connector URL needs a runtime
+      somewhere.
+    </p>
+
+    <p>
+      Cloudflare Workers became the smallest possible "somewhere": ~250 lines of
+      pure-fetch JavaScript, no Dockerfile, no VM, no cold start, free tier covers
+      thousands of users. The orbital classifier itself runs unchanged — same JS
+      file as the npm package, same JS file as the browser miniapp. Only the
+      transport adapter is CF-specific.
+    </p>
+
+    <p>
+      <em>Updates ship via GitHub:</em> every push to <code>main</code> that touches
+      <code>cf-worker/**</code> or <code>mcp/_lib/**</code> triggers a workflow
+      (<a href="https://github.com/LuuOW/meridian-mcp/blob/main/.github/workflows/deploy-worker.yml"><code>.github/workflows/deploy-worker.yml</code></a>)
+      that runs <code>wrangler deploy</code>. So even though the runtime lives on
+      Cloudflare, the operational surface is just GitHub — code, image, deploy
+      events, observability all flow through the repo.
+    </p>
+
+    <h2>How to add it to Grok yourself</h2>
+
+    <p>
+      In Grok's "Add custom connector" dialog, paste:
+    </p>
+
+    <table>
+      <thead><tr><th>Field</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Server URL</td><td><code>https://mcp.ask-meridian.uk/mcp</code></td></tr>
+        <tr><td>Authorization endpoint</td><td><code>https://mcp.ask-meridian.uk/authorize</code></td></tr>
+        <tr><td>Token endpoint</td><td><code>https://mcp.ask-meridian.uk/token</code></td></tr>
+        <tr><td>Client ID</td><td><code>grok</code></td></tr>
+        <tr><td>Client secret</td><td><em>(empty)</em></td></tr>
+        <tr><td>Token auth method</td><td><code>none</code> &nbsp;(PKCE only)</td></tr>
+        <tr><td>Scopes</td><td><code>route_task</code></td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      Grok stores the connector, shows an <em>Authorize</em> button, you click it,
+      see the single-button page, click <em>Authorize</em>, you're back in Grok.
+      <code>route_task</code> appears in the tool list.
+    </p>
+
+    <p>
+      Same URL works in <strong>ChatGPT custom MCPs</strong> and
+      <strong>Claude.ai connectors</strong> — the OAuth dance is standard,
+      the MCP transport is standard. One Worker, three host integrations.
+    </p>
+
+    <h2>What to ask</h2>
+
+    <p>
+      The router shines when the question is concrete enough that "skills" makes
+      sense as a unit:
+    </p>
+
+    <ul>
+      <li><em>"Route a task: deduplicate millions of fuzzy address records before geocoding."</em></li>
+      <li><em>"Find skills for shipping a Stripe-billed MCP server with per-key quotas."</em></li>
+      <li><em>"What skills should I load to retro-fit observability into a Lambda monolith?"</em></li>
+    </ul>
+
+    <p>
+      You'll get back 2–5 ranked entries with full markdown bodies, decision rules,
+      and class assignments — usually a planet (the anchor skill), one or two
+      moons/trojans (parent-bound companions), and occasionally an irregular if the
+      task spans multiple star systems. Lift the bodies into context, follow the
+      <em>Workflow</em> sections.
+    </p>
+
+    <h2>Source</h2>
+
+    <p>
+      Worker code:
+      <a href="https://github.com/LuuOW/meridian-mcp/tree/main/cf-worker">github.com/LuuOW/meridian-mcp/tree/main/cf-worker</a>.
+      Shared classifier core:
+      <a href="https://github.com/LuuOW/meridian-mcp/tree/main/mcp/_lib">mcp/_lib</a>.
+      The npm package
+      (<a href="https://www.npmjs.com/package/meridian-skills-mcp">meridian-skills-mcp</a>)
+      ships both stdio and Node-HTTP variants, so you can self-host if you'd
+      rather control the credential.
+    </p>
+
+    <div class="cta-card">
+      <h3>Want the same plumbing for your own MCP?</h3>
+      <p style="margin: 8px 0 16px;">
+        The full guide ships every line: stdio + Streamable HTTP transports, OAuth
+        2.1 + PKCE on Cloudflare Workers, KV-backed auth codes, GitHub Actions
+        auto-deploy, and the connector branding hooks (logo_uri, _meta.iconUrl,
+        favicon endpoints). $29 on Gumroad.
+      </p>
+      <a href="/products/build-your-own-mcp/" class="btn btn-primary">
+        Build Your Own MCP Server — $29 →
+      </a>
+    </div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>
