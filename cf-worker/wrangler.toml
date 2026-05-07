@@ -1,0 +1,35 @@
+# Cloudflare Worker config for the remote MCP variant.
+#
+# Deploy:
+#   wrangler deploy
+#
+# Set the optional secrets (only when running in shared-key gateway mode):
+#   wrangler secret put GATEWAY_TOKEN
+#   wrangler secret put MERIDIAN_GITHUB_TOKEN
+#
+# In default pass-through mode no secrets are needed — every request
+# carries its own GitHub PAT in the Authorization header and the Worker
+# forwards it to GitHub Models.
+
+name = "meridian-mcp"
+main = "worker.mjs"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The main domain `ask-meridian.uk` is on Cloudflare; this binds the
+# Worker to a subdomain on that zone. Custom-domain routes don't take
+# paths or wildcards — the Worker handles every request to that host.
+routes = [
+  { pattern = "mcp.ask-meridian.uk", custom_domain = true },
+]
+
+# Helpful when debugging in the dashboard.
+[observability]
+enabled = true
+
+# OAuth: short-lived auth codes + opaque access tokens. Workers KV is
+# the cheapest persistence with TTL semantics — auth codes expire in
+# 60 s, access tokens in 1 h. Free tier (100k reads/day) is plenty.
+[[kv_namespaces]]
+binding = "MCP_OAUTH"
+id      = "7746c84cd1dc4641ba7db2fee426b78b"

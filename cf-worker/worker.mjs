@@ -1,0 +1,371 @@
+// Meridian Skills MCP — Cloudflare Worker (remote / Streamable HTTP).
+//
+// Implements OAuth 2.1 + PKCE so connector hosts that require an
+// authorization-code flow (Grok, ChatGPT custom MCP, Claude.ai
+// connectors) can authenticate.
+//
+// Auth model: operator-pays. The Worker holds a single GitHub PAT in
+// the MERIDIAN_GITHUB_TOKEN secret and uses it for every inference
+// call. End users see a one-click *Authorize Meridian* page — no PAT
+// pasting, no GitHub jargon. The OAuth flow exists purely to satisfy
+// connector hosts that require it; the issued access tokens are
+// random opaque identifiers (32 bytes) and carry no upstream
+// credential.
+//
+// Endpoints
+//   GET  /                              — version banner
+//   GET  /healthz                       — liveness
+//   GET  /.well-known/oauth-authorization-server
+//                                       — RFC 8414 metadata so clients auto-discover
+//   GET  /.well-known/oauth-protected-resource
+//                                       — RFC 9728 metadata pointing /mcp at the AS
+//   GET  /authorize?…                   — HTML form (paste GitHub PAT)
+//   POST /authorize                     — form post, issues auth code, 302 to redirect_uri
+//   POST /token                         — auth-code → access_token (PKCE verified)
+//   POST /mcp                           — JSON-RPC over Streamable HTTP (bearer auth)
+//
+
+import { Server }                                 from '@modelcontextprotocol/sdk/server/index.js'
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js'
+
+import { PKG_VERSION, TOOLS, routeTask } from '../mcp/_lib/core.mjs'
+
+const ISSUER          = 'https://mcp.ask-meridian.uk'
+const SUPPORTED_SCOPE = 'route_task'
+const CODE_TTL_SEC    = 60          // auth code lifetime
+const TOKEN_TTL_SEC   = 60 * 60     // access-token lifetime (1 h)
+const KV_CODE_PREFIX  = 'code:'
+const KV_TOKEN_PREFIX = 'tok:'
+
+const CORS = {
+  'access-control-allow-origin':   '*',
+  'access-control-allow-methods':  'GET, POST, DELETE, OPTIONS',
+  'access-control-allow-headers':  'authorization, content-type, mcp-session-id, mcp-protocol-version, last-event-id',
+  'access-control-expose-headers': 'mcp-session-id, www-authenticate',
+  'access-control-max-age':        '86400',
+}
+
+// ─── small helpers ─────────────────────────────────────────────────
+function b64urlFromBytes(bytes) {
+  let s = ''
+  for (const b of bytes) s += String.fromCharCode(b)
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function randomToken(bytes = 32) {
+  const buf = new Uint8Array(bytes)
+  crypto.getRandomValues(buf)
+  return b64urlFromBytes(buf)
+}
+
+async function sha256B64url(text) {
+  const buf = new TextEncoder().encode(text)
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', buf))
+  return b64urlFromBytes(hash)
+}
+
+function jsonResponse(obj, init = {}) {
+  return new Response(JSON.stringify(obj), {
+    status: init.status || 200,
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store', ...CORS, ...(init.headers || {}) },
+  })
+}
+
+function htmlResponse(body, init = {}) {
+  return new Response(body, {
+    status: init.status || 200,
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', ...CORS },
+  })
+}
+
+function textResponse(body, init = {}) {
+  return new Response(body, {
+    status: init.status || 200,
+    headers: { 'content-type': 'text/plain; charset=utf-8', ...CORS },
+  })
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]))
+}
+
+// ─── OAuth: discovery metadata ─────────────────────────────────────
+function discoveryAS() {
+  return {
+    issuer: ISSUER,
+    authorization_endpoint: `${ISSUER}/authorize`,
+    token_endpoint:         `${ISSUER}/token`,
+    response_types_supported: ['code'],
+    grant_types_supported:    ['authorization_code'],
+    code_challenge_methods_supported:        ['S256'],
+    token_endpoint_auth_methods_supported:   ['none'],
+    scopes_supported:        [SUPPORTED_SCOPE],
+  }
+}
+
+function discoveryProtectedResource() {
+  return {
+    resource: `${ISSUER}/mcp`,
+    authorization_servers: [ISSUER],
+    scopes_supported: [SUPPORTED_SCOPE],
+    bearer_methods_supported: ['header'],
+  }
+}
+
+// ─── /authorize ────────────────────────────────────────────────────
+const AUTH_PARAMS = ['response_type','client_id','redirect_uri','scope','state','code_challenge','code_challenge_method']
+
+function renderAuthorizePage(params) {
+  const hidden = AUTH_PARAMS.map(k =>
+    `<input type="hidden" name="${k}" value="${escapeHtml(params.get(k) || '')}">`).join('')
+  const client = escapeHtml(params.get('client_id') || 'your AI host')
+  return `<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Authorize Meridian Skills MCP</title>
+<style>
+  :root { color-scheme: dark }
+  body { background:#0b0d12; color:#e6eaf2; font:14px/1.5 ui-sans-serif, system-ui, sans-serif; margin:0; padding:0; min-height:100vh; display:grid; place-items:center }
+  .card { width:min(440px, calc(100vw - 32px)); background:#10131a; border:1px solid #1b2030; border-radius:14px; padding:28px 28px 24px; box-shadow:0 24px 60px rgba(0,0,0,.4) }
+  .logo { font-size:24px; margin-bottom:14px }
+  h1 { font-size:18px; font-weight:600; margin:0 0 6px }
+  p  { color:#94a0b8; margin:0 0 14px }
+  ul { color:#94a0b8; padding-left:18px; margin:0 0 18px }
+  ul li { margin:4px 0 }
+  button { margin-top:6px; width:100%; background:#5b8cff; color:#0b0d12; border:0; border-radius:8px; padding:12px; font-weight:600; font-size:14px; cursor:pointer }
+  button:hover { background:#7aa3ff }
+  .meta { margin-top:16px; color:#6c7790; font-size:11.5px; line-height:1.55 }
+  a { color:#7aa3ff; text-decoration:none } a:hover { text-decoration:underline }
+  code { background:#0b0d12; padding:1px 5px; border-radius:4px; border:1px solid #1b2030; font-size:12px }
+  strong.client { color:#e6eaf2 }
+</style>
+</head><body>
+  <form class="card" method="POST" action="/authorize">
+    ${hidden}
+    <div class="logo">🪐</div>
+    <h1>Authorize <strong class="client">${client}</strong> to use Meridian</h1>
+    <p>Meridian routes your task to the most relevant AI skills. Click below and ${client} will be able to call:</p>
+    <ul>
+      <li><code>route_task</code> &mdash; ranks candidate skills for a query</li>
+    </ul>
+    <button type="submit">Authorize</button>
+    <div class="meta">
+      Hosted at <a href="https://ask-meridian.uk" target="_blank">ask-meridian.uk</a>. Inference runs on <a href="https://github.com/marketplace/models" target="_blank">GitHub Models</a>. The connection lasts 1&nbsp;hour and can be revoked at any time by reauthorizing.
+    </div>
+  </form>
+</body></html>`
+}
+
+async function handleAuthorizeGet(url) {
+  // Validate the bare minimum so the form post can succeed.
+  const params = url.searchParams
+  const required = ['response_type','client_id','redirect_uri','code_challenge','code_challenge_method']
+  for (const k of required) {
+    if (!params.get(k)) return textResponse(`missing ${k}`, { status: 400 })
+  }
+  if (params.get('response_type') !== 'code')           return textResponse('only response_type=code is supported', { status: 400 })
+  if (params.get('code_challenge_method') !== 'S256')   return textResponse('only code_challenge_method=S256 is supported', { status: 400 })
+  return htmlResponse(renderAuthorizePage(params))
+}
+
+async function handleAuthorizePost(req, env) {
+  let form
+  try { form = await req.formData() }
+  catch { return textResponse('expected form-encoded body', { status: 400 }) }
+
+  const get = (k) => form.get(k) ? String(form.get(k)) : ''
+  const redirect_uri   = get('redirect_uri')
+  const code_challenge = get('code_challenge')
+  const code_method    = get('code_challenge_method')
+  const scope          = get('scope') || SUPPORTED_SCOPE
+  const state          = get('state')
+
+  if (!redirect_uri || !code_challenge || code_method !== 'S256') {
+    return textResponse('invalid OAuth params', { status: 400 })
+  }
+
+  const code = randomToken(32)
+  await env.MCP_OAUTH.put(KV_CODE_PREFIX + code,
+    JSON.stringify({ code_challenge, redirect_uri, scope }),
+    { expirationTtl: CODE_TTL_SEC })
+
+  // 302 back to the connector's redirect_uri.
+  const dest = new URL(redirect_uri)
+  dest.searchParams.set('code', code)
+  if (state) dest.searchParams.set('state', state)
+  return new Response(null, { status: 302, headers: { 'location': dest.toString(), ...CORS } })
+}
+
+// ─── /token ────────────────────────────────────────────────────────
+async function handleTokenPost(req, env) {
+  let form
+  try { form = await req.formData() }
+  catch {
+    // Some clients send JSON to /token. Be permissive.
+    try {
+      const body = await req.clone().json()
+      form = new Map(Object.entries(body))
+      form.get = (k) => form instanceof Map ? form.get(k) : null
+    } catch { return jsonResponse({ error: 'invalid_request', error_description: 'expected form or JSON body' }, { status: 400 }) }
+  }
+  const get = (k) => form.get(k) ? String(form.get(k)) : ''
+
+  if (get('grant_type') !== 'authorization_code') {
+    return jsonResponse({ error: 'unsupported_grant_type' }, { status: 400 })
+  }
+  const code           = get('code')
+  const code_verifier  = get('code_verifier')
+  const redirect_uri   = get('redirect_uri')
+  if (!code || !code_verifier) {
+    return jsonResponse({ error: 'invalid_request', error_description: 'code and code_verifier required' }, { status: 400 })
+  }
+
+  const stored = await env.MCP_OAUTH.get(KV_CODE_PREFIX + code, 'json')
+  if (!stored) {
+    return jsonResponse({ error: 'invalid_grant', error_description: 'auth code unknown or expired' }, { status: 400 })
+  }
+  // Single-use: delete immediately.
+  await env.MCP_OAUTH.delete(KV_CODE_PREFIX + code)
+
+  const expected = await sha256B64url(code_verifier)
+  if (expected !== stored.code_challenge) {
+    return jsonResponse({ error: 'invalid_grant', error_description: 'PKCE verification failed' }, { status: 400 })
+  }
+  if (redirect_uri && redirect_uri !== stored.redirect_uri) {
+    return jsonResponse({ error: 'invalid_grant', error_description: 'redirect_uri mismatch' }, { status: 400 })
+  }
+
+  // Issue an opaque access token. The token is just a validity
+  // marker — the upstream PAT lives in the Worker secret, not in KV.
+  const access_token = randomToken(32)
+  await env.MCP_OAUTH.put(KV_TOKEN_PREFIX + access_token,
+    JSON.stringify({ scope: stored.scope, issued_at: Date.now() }),
+    { expirationTtl: TOKEN_TTL_SEC })
+
+  return jsonResponse({
+    access_token,
+    token_type: 'Bearer',
+    expires_in: TOKEN_TTL_SEC,
+    scope: stored.scope || SUPPORTED_SCOPE,
+  })
+}
+
+// ─── bearer → PAT resolver (used by /mcp) ─────────────────────────
+// All inference uses the operator's MERIDIAN_GITHUB_TOKEN secret. The
+// bearer token is only a marker that says "this caller completed the
+// OAuth dance" — it's not a credential carrier.
+async function resolveBearer(bearer, env) {
+  if (!bearer) return { error: 'missing Authorization: Bearer <access-token>' }
+  const stored = await env.MCP_OAUTH.get(KV_TOKEN_PREFIX + bearer, 'json')
+  if (!stored) return { error: 'invalid or expired access token' }
+  if (!env.MERIDIAN_GITHUB_TOKEN) return { error: 'server misconfigured: MERIDIAN_GITHUB_TOKEN secret unset' }
+  return { token: env.MERIDIAN_GITHUB_TOKEN }
+}
+
+function bearerOf(req) {
+  const h = req.headers.get('authorization')
+  if (!h) return null
+  const m = /^Bearer\s+(.+)$/i.exec(h.trim())
+  return m ? m[1].trim() : null
+}
+
+// ─── /mcp handler ──────────────────────────────────────────────────
+function buildMcpServer(githubToken, env) {
+  const server = new Server(
+    { name: 'meridian-skills', version: PKG_VERSION },
+    { capabilities: { tools: {} } },
+  )
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }))
+
+  server.setRequestHandler(CallToolRequestSchema, async (req) => {
+    const { name, arguments: args } = req.params
+    if (name !== 'route_task') {
+      return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true }
+    }
+    try {
+      const text = await routeTask({
+        task: args.task, limit: args.limit, token: githubToken,
+        opts: {
+          endpoint:   env.MERIDIAN_MODELS_ENDPOINT,
+          model:      env.MERIDIAN_MODEL,
+          timeoutMs:  env.MERIDIAN_TIMEOUT_MS  ? parseInt(env.MERIDIAN_TIMEOUT_MS, 10)  : undefined,
+          candidates: env.MERIDIAN_CANDIDATES  ? parseInt(env.MERIDIAN_CANDIDATES, 10)  : undefined,
+        },
+      })
+      return { content: [{ type: 'text', text }] }
+    } catch (e) {
+      return { content: [{ type: 'text', text: `Error: ${e.message || e}` }], isError: true }
+    }
+  })
+
+  return server
+}
+
+async function handleMcp(request, env) {
+  const bearer   = bearerOf(request)
+  const resolved = await resolveBearer(bearer, env)
+  if (resolved.error) {
+    // RFC 9728 / 6750: 401 with WWW-Authenticate so clients know which AS to use.
+    return new Response(
+      JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32001, message: resolved.error } }),
+      { status: 401, headers: {
+          'content-type': 'application/json',
+          'www-authenticate': `Bearer realm="meridian-mcp", resource_metadata="${ISSUER}/.well-known/oauth-protected-resource"`,
+          ...CORS,
+      } },
+    )
+  }
+
+  const server    = buildMcpServer(resolved.token, env)
+  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined })
+
+  try {
+    await server.connect(transport)
+    const res = await transport.handleRequest(request)
+    const headers = new Headers(res.headers)
+    for (const [k, v] of Object.entries(CORS)) headers.set(k, v)
+    return new Response(res.body, { status: res.status, headers })
+  } catch (e) {
+    return jsonResponse({ jsonrpc: '2.0', id: null, error: { code: -32603, message: `internal error: ${e.message || e}` } }, { status: 500 })
+  }
+}
+
+// ─── router ────────────────────────────────────────────────────────
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url)
+
+    if (request.method === 'OPTIONS')
+      return new Response(null, { status: 204, headers: CORS })
+
+    if (url.pathname === '/healthz')
+      return textResponse('ok')
+
+    if (url.pathname === '/' && request.method === 'GET')
+      return textResponse(`Meridian Skills MCP v${PKG_VERSION} — POST /mcp with bearer token. https://ask-meridian.uk\n`)
+
+    if (url.pathname === '/.well-known/oauth-authorization-server')
+      return jsonResponse(discoveryAS())
+    if (url.pathname === '/.well-known/oauth-protected-resource')
+      return jsonResponse(discoveryProtectedResource())
+
+    if (url.pathname === '/authorize' && request.method === 'GET')
+      return handleAuthorizeGet(url)
+    if (url.pathname === '/authorize' && request.method === 'POST')
+      return handleAuthorizePost(request, env)
+
+    if (url.pathname === '/token' && request.method === 'POST')
+      return handleTokenPost(request, env)
+
+    if (url.pathname === '/mcp')
+      return handleMcp(request, env)
+
+    return textResponse('not found', { status: 404 })
+  },
+}
