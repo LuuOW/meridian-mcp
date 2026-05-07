@@ -61,20 +61,25 @@ async function postFeedback(query, ranked, chosen_slug) {
   // Worker's /v1/feedback expects the same `selected` shape /v1/route
   // returns. orbitalClassify already produces that shape modulo the
   // wrapper, so we pass the ranked array directly.
-  const res = await fetch(FEEDBACK_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'origin':       FEEDBACK_ORIGIN,
-    },
-    body: JSON.stringify({
-      query,
-      selected: ranked,
-      chosen_slug,
-      action: 'bootstrap',
-    }),
-  })
-  return { ok: res.ok, status: res.status, body: await res.json().catch(() => ({})) }
+  //
+  // Retry-on-5xx with exponential backoff handles the race when the
+  // bootstrap workflow fires on the same push that's still rolling
+  // out the worker — first attempt may hit a stale build returning
+  // 502/503 for a few seconds.
+  const payload = JSON.stringify({ query, selected: ranked, chosen_slug, action: 'bootstrap' })
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(FEEDBACK_URL, {
+      method:  'POST',
+      headers: { 'content-type': 'application/json', 'origin': FEEDBACK_ORIGIN },
+      body:    payload,
+    })
+    if (res.ok || res.status < 500) {
+      return { ok: res.ok, status: res.status, body: await res.json().catch(() => ({})) }
+    }
+    // 5xx — wait + retry. 1s, 2s, 4s.
+    await new Promise(r => setTimeout(r, 1000 * 2 ** attempt))
+  }
+  return { ok: false, status: 599, body: { error: 'gave up after 4 retries' } }
 }
 
 const rows = await fetchRows()

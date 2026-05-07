@@ -51,35 +51,7 @@ jobs:
           cat /tmp/model.json
 
       - name: Update landing/healthz.json
-        run: |
-          node <<'NODE'
-          const fs   = require('node:fs')
-          const path = require('node:path')
-          const eval_ = JSON.parse(fs.readFileSync('/tmp/eval.json', 'utf8'))
-          const model = JSON.parse(fs.readFileSync('/tmp/model.json', 'utf8'))
-          const out = {
-            ok: true,
-            classifier: {
-              recall_at_1:        eval_.recall.v2.at_1,
-              recall_at_5:        eval_.recall.v2.at_5,
-              recall_at_1_baseline: eval_.recall.trivial.at_1,
-              dataset:            eval_.dataset,
-              n_eval:             eval_.n_eval,
-              evaluated_at:       eval_.generated_at,
-            },
-            model: {
-              version:    model.version    || null,
-              n_updates:  model.n_updates  || 0,
-              n_pairs:    model.n_pairs    || 0,
-              cold_start: model.cold_start ?? true,
-              updated_at: model.updated_at || null,
-            },
-            built_at: new Date().toISOString(),
-          }
-          const target = path.join('landing', 'healthz.json')
-          fs.writeFileSync(target, JSON.stringify(out, null, 2) + '\n')
-          console.log('wrote', target)
-          NODE
+        run: node scripts/_update-healthz.mjs
 
       - name: Commit and push
         run: |
@@ -90,10 +62,14 @@ jobs:
             exit 0
           fi
           git add landing/healthz.json
+          recall1=$(jq -r '.classifier.recall_at_1' landing/healthz.json)
+          recall5=$(jq -r '.classifier.recall_at_5' landing/healthz.json)
+          n_upd=$(jq -r '.model.n_updates' landing/healthz.json)
           git commit -m "ci(classifier): refresh weekly health snapshot
 
-          recall@1 = $(node -e 'console.log(JSON.parse(require("fs").readFileSync("/tmp/eval.json")).recall.v2.at_1)')
-          recall@5 = $(node -e 'console.log(JSON.parse(require("fs").readFileSync("/tmp/eval.json")).recall.v2.at_5)')
+          recall@1 = ${recall1}
+          recall@5 = ${recall5}
+          model n_updates = ${n_upd}
 
           [skip ci]"
           git push
