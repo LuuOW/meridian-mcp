@@ -1,0 +1,120 @@
+{
+  "task": "design a public benchmark for tool-routing failures in LLM agents",
+  "panel_size": 18,
+  "class_distribution": {
+    "planet": 17,
+    "moon": 0,
+    "trojan": 0,
+    "asteroid": 0,
+    "comet": 0,
+    "irregular": 1
+  },
+  "system_distribution": {
+    "forge": 3,
+    "signal": 7,
+    "mind": 8
+  },
+  "class_accuracy": 0.167,
+  "recall": {
+    "at_1": 0.5,
+    "at_5": 0.5
+  },
+  "score": {
+    "mean": 3.655,
+    "std": 11.939,
+    "min": 0,
+    "max": 51.331,
+    "n": 18
+  },
+  "physics": {
+    "mass": {
+      "mean": 0.692,
+      "std": 0.105,
+      "min": 0.483,
+      "max": 0.835,
+      "n": 18
+    },
+    "scope": {
+      "mean": 0.727,
+      "std": 0.126,
+      "min": 0.536,
+      "max": 0.903,
+      "n": 18
+    },
+    "independence": {
+      "mean": 0.928,
+      "std": 0.082,
+      "min": 0.723,
+      "max": 1,
+      "n": 18
+    },
+    "cross_domain": {
+      "mean": 0.243,
+      "std": 0.275,
+      "min": 0,
+      "max": 0.631,
+      "n": 18
+    },
+    "fragmentation": {
+      "mean": 0.417,
+      "std": 0.178,
+      "min": 0.177,
+      "max": 0.797,
+      "n": 18
+    },
+    "drag": {
+      "mean": 0.212,
+      "std": 0.144,
+      "min": 0,
+      "max": 0.473,
+      "n": 18
+    },
+    "dep_ratio": {
+      "mean": 0.281,
+      "std": 0.148,
+      "min": 0.086,
+      "max": 0.6,
+      "n": 18
+    }
+  },
+  "optical": {
+    "wavelength": {
+      "mean": 602.444,
+      "std": 36.441,
+      "min": 497,
+      "max": 646,
+      "n": 18
+    },
+    "polarization": {
+      "mean": 0.583,
+      "std": 0.178,
+      "min": 0.203,
+      "max": 0.823,
+      "n": 18
+    },
+    "amplitude": {
+      "mean": 0.692,
+      "std": 0.105,
+      "min": 0.483,
+      "max": 0.835,
+      "n": 18
+    },
+    "phase": {
+      "mean": 3.352,
+      "std": 1.636,
+      "min": 0.71,
+      "max": 6.032,
+      "n": 18
+    }
+  },
+  "discrimination": {
+    "mass": 0.352,
+    "scope": 0.367,
+    "independence": 0.277,
+    "cross_domain": 0.631,
+    "fragmentation": 0.62,
+    "drag": 0.473,
+    "dep_ratio": 0.514
+  },
+  "generated_at": "2026-05-07T15:12:48.957Z"
+}
