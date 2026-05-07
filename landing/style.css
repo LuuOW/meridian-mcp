@@ -997,9 +997,9 @@ section.how, section.pricing, section.cta-final {
 }
 
 /* ── Shared routing-progress indicator ────────────────────────────────────
-   Used by anything streaming SSE events from /api/orbital-route. Same look
+   Used by anything calling mcp.ask-meridian.uk/v1/route — same affordance
    on both the main miniapp and the vision lab so users see one unified
-   "the router is working" affordance instead of surface-specific surprises. */
+   "the router is working" surface during the 5-15 s LLM call. */
 .routing-progress {
   display: inline-flex;
   align-items: center;

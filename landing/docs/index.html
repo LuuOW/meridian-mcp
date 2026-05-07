@@ -41,6 +41,7 @@
     <div class="section-title">Architecture</div>
     <a href="#pipeline">Pipeline</a>
     <a href="#mcp-tool">MCP tool</a>
+    <a href="#browser-endpoint">Browser endpoint</a>
     <a href="#response">Response shape</a>
   </div>
   <div class="sidebar-section">
@@ -201,10 +202,13 @@ claude mcp add meridian meridian-mcp \
         ranked array</code></pre>
 
   <p>
-    There is no HTTP endpoint to call from outside the MCP. If you want
-    routing without registering an MCP, use the
-    <a href="/miniapp/">browser miniapp</a> — same classifier, different
-    front-end.
+    Two ways to reach this pipeline. <strong>External AI clients</strong>
+    (Grok / ChatGPT / Claude.ai) register the OAuth-gated MCP at
+    <code>mcp.ask-meridian.uk/mcp</code> and call the
+    <code>route_task</code> tool — covered in the next section. <strong>First-party
+    browser front-ends</strong> (lens, the miniapp, Photon) skip OAuth
+    entirely and POST <code>mcp.ask-meridian.uk/v1/route</code> — covered
+    in <a href="#browser-endpoint">Browser endpoint</a> below.
   </p>
 
   <h2 id="mcp-tool">MCP tool</h2>
@@ -230,6 +234,73 @@ claude mcp add meridian meridian-mcp \
     <li><code>task too long</code> — over 800 chars.</li>
     <li><code>GitHub Models error</code> — token missing, rate limited, or upstream failure. Surfaced verbatim to the agent.</li>
   </ul>
+
+  <h2 id="browser-endpoint">Browser endpoint</h2>
+  <p>
+    First-party Meridian front-ends (the
+    <a href="/miniapp/">browser miniapp</a>,
+    <a href="https://lens.ask-meridian.uk">Lens</a>,
+    <a href="https://photon.ask-meridian.uk">Photon</a>)
+    skip the OAuth dance and POST
+    <code>mcp.ask-meridian.uk/v1/route</code> directly. The endpoint is
+    <strong>operator-paid</strong> — the Cloudflare Worker holds a single
+    GitHub PAT in a secret and uses it for every inference call — and
+    <strong>Origin-restricted</strong>, so only requests carrying an
+    allowlisted <code>Origin</code> header are accepted. There is no
+    auth header for the caller to manage; the server enforces both the
+    allowlist and the upstream credential.
+  </p>
+
+  <p>
+    Use this when you're shipping a browser app on an ask-meridian.uk
+    sub-property and want skill routing without making the user paste a
+    PAT or run an OAuth callback. Use <code>/mcp</code> instead when the
+    caller is an external connector host (Grok, ChatGPT, Claude.ai).
+  </p>
+
+  <p><strong>Allowlisted origins</strong></p>
+  <ul>
+    <li><code>https://ask-meridian.uk</code></li>
+    <li><code>https://lens.ask-meridian.uk</code></li>
+    <li><code>https://photon.ask-meridian.uk</code></li>
+  </ul>
+  <p>
+    Bring up a new sub-property by editing
+    <code>BROWSER_ORIGIN_ALLOWLIST</code> in
+    <a href="https://github.com/LuuOW/meridian-mcp/blob/main/cf-worker/worker.mjs">cf-worker/worker.mjs</a>
+    and pushing — the Worker re-deploys automatically.
+  </p>
+
+  <p><strong>Request</strong></p>
+  <pre><code class="lang-bash">curl -X POST https://mcp.ask-meridian.uk/v1/route \
+  -H 'Origin: https://ask-meridian.uk' \
+  -H 'Content-Type: application/json' \
+  -d '{"task": "rate limit a public API", "limit": 5}'</code></pre>
+
+  <p><strong>Response</strong></p>
+  <p>
+    Same pipeline as <code>route_task</code>, but returns the
+    <em>structured</em> classifier output (not the markdown wrapper) so
+    front-ends can render orbits, score bars, and per-skill physics
+    panels directly:
+  </p>
+  <pre><code class="lang-json">{
+  "task":                 "rate limit a public API",
+  "confidence":           "strong",
+  "top_score":            109.3,
+  "candidates_generated": 5,
+  "selected": [
+    /* same shape as the per-entry block in `Response shape` below */
+  ],
+  "timing": { "llm_ms": 4200, "classify_ms": 12, "total_ms": 4212 }
+}</code></pre>
+
+  <p>
+    Errors come back as <code>{ "error": "..." }</code> with a 4xx/5xx
+    status: <code>403</code> for a non-allowlisted Origin,
+    <code>500</code> if the operator's PAT secret is missing,
+    <code>502</code> for upstream LLM failure.
+  </p>
 
   <h2 id="response">Response shape</h2>
   <p>The MCP renders results as markdown for the agent. The underlying ranked entries look like:</p>
