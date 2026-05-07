@@ -85,12 +85,15 @@
     </h1>
 
     <div style="border:1px solid rgba(167,139,250,0.4);background:rgba(167,139,250,0.10);border-radius:10px;padding:14px 18px;margin:0 0 24px;font-size:14px;color:#ddd6fe">
-      <strong>Update 2026-05-06.</strong> The pipeline below is unchanged
+      <strong>Update 2026-05-07.</strong> The pipeline below is unchanged
       conceptually, but the LLM call now goes through <a href="https://github.com/marketplace/models" style="color:#ede9fe;text-decoration:underline">GitHub Models</a>
-      instead of Workers AI, and the orbital classifier ships bundled inside
-      the npm package — there is no <code>/api/orbital-route</code> endpoint
-      anymore. See <a href="/docs/" style="color:#ede9fe;text-decoration:underline">/docs/</a> for the
-      current architecture.
+      instead of Workers AI, and the classifier runs inside the live
+      MCP at <code>mcp.ask-meridian.uk</code>. External AI clients reach
+      it via the OAuth-gated <code>/mcp</code> endpoint; first-party
+      browser front-ends (the miniapp, Lens, Photon) skip OAuth and POST
+      <code>/v1/route</code> directly. See
+      <a href="/docs/#browser-endpoint" style="color:#ede9fe;text-decoration:underline">/docs/#browser-endpoint</a>
+      for the current architecture.
     </div>
 
     <p>

@@ -11,9 +11,13 @@
 //   - preset prompt chips, custom prompt input
 //   - Moondream2 primary, SmolVLM-500M fallback if Moondream load fails
 // Phase 3 composition:
-//   - "Find compatible skills" → POST /api/orbital-route with VLM answer
+//   - "Find compatible skills" → POST mcp.ask-meridian.uk/v1/route
+//     with the VLM answer; routing + orbital classification happen
+//     server-side in the Cloudflare Worker.
 //
-// All inference runs in the user's browser. The VM is uninvolved.
+// VLM inference still runs entirely in the user's browser. The VM is
+// uninvolved; only the routing call leaves the browser, and that call
+// goes to the operator-paid Meridian MCP, not to the user's machine.
 
 // transformers.js doesn't expose VLMs through the pipeline() abstraction —
 // you have to load the processor + model classes directly. This is the
