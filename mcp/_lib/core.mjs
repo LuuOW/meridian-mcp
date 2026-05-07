@@ -107,9 +107,11 @@ async function generateCandidates(task, n, { token, endpoint, model, timeoutMs }
   }
 }
 
-// Single entry point for both transports. Throws on bad input or LLM
-// failure; returns the formatted markdown text on success.
-export async function routeTask({ task, limit, token, opts = {} }) {
+// Structured pipeline. Returns the full result object so non-MCP
+// transports (e.g. the browser-facing /v1/route endpoint that serves
+// lens.ask-meridian.uk) can render orbits directly from the classifier
+// output without round-tripping through markdown formatting.
+export async function routeTaskJson({ task, limit, token, opts = {} }) {
   const t = (task || '').toString().trim()
   const lim = Math.max(1, Math.min(10, parseInt(limit, 10) || 5))
   if (!t)             throw new Error('task required')
@@ -134,14 +136,20 @@ export async function routeTask({ task, limit, token, opts = {} }) {
   const top_score  = top[0]?.route_score || 0
   const confidence = top_score >= 30 ? 'strong' : top_score >= 8 ? 'moderate' : 'weak'
 
-  return formatResult({
+  return {
     task: t,
     confidence,
     top_score,
     candidates_generated: candidates.length,
     selected: top,
     timing: { llm_ms: t1 - t0, classify_ms: t2 - t1, total_ms: t2 - t0 },
-  })
+  }
+}
+
+// MCP entry point — wraps routeTaskJson() in the markdown formatter
+// expected by the MCP tool-call response shape.
+export async function routeTask(args) {
+  return formatResult(await routeTaskJson(args))
 }
 
 function formatResult(r) {
