@@ -129,6 +129,8 @@ log(`Eval set: ${evalRows.length} rows  (dropped ${dropped} no-tool / malformed)
 
 const results = { v2: { hits1: 0, hits5: 0 }, trivial: { hits1: 0, hits5: 0 }, random: { hits1: 0, hits5: 0 } }
 const perRow  = []
+// Per-row hit indicators (0/1) — used by the bootstrap CI block below.
+const hits = { v2_h1: [], v2_h5: [], trv_h1: [], trv_h5: [], rnd_h1: [], rnd_h5: [] }
 
 for (const ex of evalRows) {
   // 1. v2 classifier — orbitalClassify ranks by route_score.
@@ -143,12 +145,22 @@ for (const ex of evalRows) {
   const rnd = randomRank(ex.skills)
   const rndRank = rnd.findIndex(r => r.slug === ex.label)
 
-  if (v2Rank === 0)            results.v2.hits1++
-  if (v2Rank >= 0 && v2Rank < TOP_K)    results.v2.hits5++
-  if (trvRank === 0)           results.trivial.hits1++
-  if (trvRank >= 0 && trvRank < TOP_K)  results.trivial.hits5++
-  if (rndRank === 0)           results.random.hits1++
-  if (rndRank >= 0 && rndRank < TOP_K)  results.random.hits5++
+  const v2_h1  = v2Rank  === 0 ? 1 : 0
+  const v2_h5  = v2Rank  >= 0 && v2Rank  < TOP_K ? 1 : 0
+  const trv_h1 = trvRank === 0 ? 1 : 0
+  const trv_h5 = trvRank >= 0 && trvRank < TOP_K ? 1 : 0
+  const rnd_h1 = rndRank === 0 ? 1 : 0
+  const rnd_h5 = rndRank >= 0 && rndRank < TOP_K ? 1 : 0
+
+  results.v2.hits1      += v2_h1
+  results.v2.hits5      += v2_h5
+  results.trivial.hits1 += trv_h1
+  results.trivial.hits5 += trv_h5
+  results.random.hits1  += rnd_h1
+  results.random.hits5  += rnd_h5
+  hits.v2_h1.push(v2_h1);   hits.v2_h5.push(v2_h5)
+  hits.trv_h1.push(trv_h1); hits.trv_h5.push(trv_h5)
+  hits.rnd_h1.push(rnd_h1); hits.rnd_h5.push(rnd_h5)
 
   perRow.push({
     query:    ex.query.slice(0, 70) + (ex.query.length > 70 ? '…' : ''),
@@ -160,6 +172,32 @@ for (const ex of evalRows) {
     type:     ex.type,
     nTools:   ex.skills.length,
   })
+}
+
+// ── Bootstrap 95% CI (Bell & Glasstone §1.6e style: Monte Carlo for
+//    expectation values from a small sample). Resample the per-row
+//    hit indicators with replacement and recompute mean recall, B times.
+//    The 2.5/97.5 percentiles of that distribution give a 95% CI.
+const B = 10_000
+function bootstrapCI(arr, B = 10_000, ci = 0.95) {
+  const n = arr.length
+  if (!n) return { mean: 0, lo: 0, hi: 0 }
+  const samples = new Float64Array(B)
+  for (let b = 0; b < B; b++) {
+    let s = 0
+    for (let i = 0; i < n; i++) s += arr[(Math.random() * n) | 0]
+    samples[b] = s / n
+  }
+  samples.sort()
+  const loIdx = Math.floor(B * (1 - ci) / 2)
+  const hiIdx = Math.floor(B * (1 + ci) / 2) - 1
+  const mean = arr.reduce((s, v) => s + v, 0) / n
+  return { mean: +mean.toFixed(4), lo: +samples[loIdx].toFixed(4), hi: +samples[hiIdx].toFixed(4) }
+}
+const ci = {
+  v2:      { at_1: bootstrapCI(hits.v2_h1, B),  at_5: bootstrapCI(hits.v2_h5, B)  },
+  trivial: { at_1: bootstrapCI(hits.trv_h1, B), at_5: bootstrapCI(hits.trv_h5, B) },
+  random:  { at_1: bootstrapCI(hits.rnd_h1, B), at_5: bootstrapCI(hits.rnd_h5, B) },
 }
 
 const N = evalRows.length
@@ -188,16 +226,20 @@ if (JSON_MODE) {
       trivial: { at_1: results.trivial.hits1 / N, at_5: results.trivial.hits5 / N },
       random:  { at_1: results.random.hits1 / N,  at_5: results.random.hits5 / N  },
     },
+    recall_ci_95: ci,
+    bootstrap_resamples: B,
     by_type: byType,
     generated_at: new Date().toISOString(),
   }, null, 2) + '\n')
   process.exit(0)
 }
 
-console.log(`\nRECALL@1                                   RECALL@${TOP_K}`)
-console.log(`  v2 classifier   ${results.v2.hits1}/${N} (${pct(results.v2.hits1)})            ${results.v2.hits5}/${N} (${pct(results.v2.hits5)})`)
-console.log(`  trivial overlap ${results.trivial.hits1}/${N} (${pct(results.trivial.hits1)})            ${results.trivial.hits5}/${N} (${pct(results.trivial.hits5)})`)
-console.log(`  random          ${results.random.hits1}/${N} (${pct(results.random.hits1)})            ${results.random.hits5}/${N} (${pct(results.random.hits5)})`)
+function fmtCI(c) { return `${c.mean.toFixed(3)} [${c.lo.toFixed(3)}, ${c.hi.toFixed(3)}]` }
+
+console.log(`\nRECALL@1   point [95% CI from ${B.toLocaleString()} bootstrap resamples]   ·   RECALL@${TOP_K}`)
+console.log(`  v2 classifier   ${fmtCI(ci.v2.at_1)}   ${fmtCI(ci.v2.at_5)}`)
+console.log(`  trivial overlap ${fmtCI(ci.trivial.at_1)}   ${fmtCI(ci.trivial.at_5)}`)
+console.log(`  random          ${fmtCI(ci.random.at_1)}   ${fmtCI(ci.random.at_5)}`)
 console.log(`\nAvg candidate tools per row: ${avgTools.toFixed(1)}  (random@1 expected ≈ ${(100 / avgTools).toFixed(1)}%)`)
 console.log('\nBY QUERY TYPE')
 for (const [t, s] of Object.entries(byType)) {
@@ -219,28 +261,26 @@ for (const r of perRow) {
 }
 console.log(`(${beats} total)`)
 
-// Verdict.
+// Verdict — uses CI separation, not raw counts. With n=21 the point
+// estimate has ~±19pp bootstrap error bars, so a 2-hit lead means
+// nothing.
 console.log('\nVERDICT')
-const v2Beat   = results.v2.hits1     > results.trivial.hits1 + 2
-const trvBeat  = results.trivial.hits1 > results.v2.hits1 + 2
-const both_at_floor = Math.abs(results.v2.hits1 - results.random.hits1) <= 2
-                   && Math.abs(results.trivial.hits1 - results.random.hits1) <= 2
-
-if (both_at_floor) {
-  console.log('  • Both v2 and trivial are at random-baseline floor.')
-  console.log('  • Reading: this dataset is too hard for either heuristic — labelled')
-  console.log('    fitting is the ONLY way to beat random.')
-} else if (trvBeat) {
-  console.log('  • Trivial token-overlap beat the v2 classifier.')
-  console.log('  • Reading: our classifier underperforms a 5-line baseline; the')
-  console.log('    classifier itself is the limit, not the data. Labelled data could')
-  console.log('    fit a much better classifier.')
-} else if (v2Beat) {
-  console.log('  • v2 classifier beat trivial token-overlap.')
-  console.log('  • Reading: heuristics carry real signal; labelled data could still')
-  console.log('    raise the ceiling further but is not strictly required.')
+const v2_clear_lead = ci.v2.at_1.lo  > ci.trivial.at_1.hi    // v2 lower > trv upper
+const trv_clear_lead = ci.trivial.at_1.lo > ci.v2.at_1.hi
+const v2_clear_above_random = ci.v2.at_1.lo > ci.random.at_1.hi
+const v2_lead_overlap = (ci.v2.at_1.mean > ci.trivial.at_1.mean) && !v2_clear_lead
+if (!v2_clear_above_random) {
+  console.log('  • v2 CI overlaps with random — heuristic carries no signal on this data.')
+} else if (trv_clear_lead) {
+  console.log('  • Trivial token-overlap unambiguously beats v2 (CI separation).')
+  console.log('  • Reading: classifier underperforms a 5-line baseline. Labelled fitting needed.')
+} else if (v2_clear_lead) {
+  console.log('  • v2 unambiguously beats trivial token-overlap (CI separation).')
+  console.log('  • Reading: heuristics carry signal even after accounting for sample noise.')
+} else if (v2_lead_overlap) {
+  console.log('  • v2 leads on point estimate but CIs overlap with trivial.')
+  console.log(`  • Reading: with n=${N} the bootstrap can't separate them. Need more labelled rows`)
+  console.log('    to confirm the lead is real, not a small-sample artefact.')
 } else {
-  console.log('  • v2 ≈ trivial ≈ noise.')
-  console.log('  • Reading: heuristics are at ceiling on this dataset. Either the')
-  console.log('    dataset is too noisy, or labels would help close the gap.')
+  console.log('  • v2 ≈ trivial on point estimate. Heuristics at ceiling on this dataset.')
 }
