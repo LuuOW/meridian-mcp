@@ -1,0 +1,37 @@
+name: Bootstrap classifier labels
+
+# Pulls labelled task→tool examples from a public dataset, classifies
+# the candidates with our orbital classifier (locally in this runner),
+# and POSTs each example to mcp.ask-meridian.uk/v1/feedback so the
+# Worker's online SGD trains on real human-validated data.
+#
+# No secrets needed — the worker accepts /v1/feedback with an
+# allowlisted Origin header (browser-style); the Action runner sets
+# Origin: https://ask-meridian.uk on the POST.
+#
+# Cron: every 3 days. Manual: workflow_dispatch.
+
+on:
+  schedule:
+    - cron: '0 7 */3 * *'   # 07:00 UTC, every 3 days
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/bootstrap-labels.mjs'
+      - '.github/workflows/classifier-bootstrap.yml'
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Run bootstrap labels
+        run: node scripts/bootstrap-labels.mjs
+        env:
+          MERIDIAN_FEEDBACK_URL:    https://mcp.ask-meridian.uk/v1/feedback
+          MERIDIAN_FEEDBACK_ORIGIN: https://ask-meridian.uk
