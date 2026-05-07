@@ -1,5 +1,40 @@
 # Changelog
 
+## [3.0.0] — 2026-05-07
+
+**Renamed: `meridian-skills-mcp` → `meridian-mcp`. Removed the "skills" framing across the prompt, code, branding, and npm name. The classifier was always domain-agnostic; the framing was a relic from the 0.x curated-corpus days.**
+
+### Why
+
+The orbital router classifies any candidate (tool, prompt, document, product) by its physics signature — it never required them to be AI-agent skills. But the LLM system prompt explicitly said `"You generate SKILL.md candidate documents for an AI agent's tool registry"`, biasing every candidate toward AI-agent-shaped capabilities. That bias was useful in 0.x when the corpus was a fixed 88-skill set; it's a constraint now.
+
+### Breaking changes
+
+- **npm package**: `meridian-skills-mcp` → **`meridian-mcp`**. The old package is deprecated; install the new one with `npm i -g meridian-mcp`. Binaries (`meridian-mcp`, `meridian-mcp-http`) are unchanged, so client configs (`claude mcp add meridian meridian-mcp`) keep working.
+- **MCP registry identity**: `io.github.LuuOW/meridian-skills` → `io.github.LuuOW/meridian-mcp`.
+- **MCP server name** in handshake: `"meridian-skills"` → `"meridian"`.
+- **LLM JSON output key**: `{"skills": [...]}` → `{"candidates": [...]}`. The parser falls back to `parsed.skills` if the LLM emits the legacy key, so older models still work.
+- **Tool description text** + **system prompt** no longer mention "skills" or "SKILL.md". The prompt now explicitly says "candidates can be tools, prompts, documents, products, or any routable entity".
+- **Front-end variable names**: `setSkills()` → `setCandidates()`, `appendSkillCard()` → `appendCandidateCard()`, `openSkillPanel()` → `openCandidatePanel()`, etc. Backwards-compat aliases retained on `sendFeedback({skills})` and `routeTaskStream({onSkill})` so old front-end code keeps working.
+- **DOM IDs** in miniapp / vision-lab HTML: `skillPanel*` → `candidatePanel*`, `labSkill*` → `labCandidate*`. Only matters if you wrote custom CSS targeting those IDs.
+
+### Unchanged
+
+- Hosted HTTP MCP at `https://mcp.ask-meridian.uk/mcp` — same URL, same OAuth, no client config changes for Grok / ChatGPT / Claude.ai connectors.
+- `route_task` tool name + JSON output shape (`selected[]`, `route_score`, `classification`).
+- Class names (`planet`, `moon`, `trojan`, `asteroid`, `comet`, `irregular`).
+- Star systems (`forge`, `signal`, `mind`).
+- Physics axes, env vars (`MERIDIAN_GITHUB_TOKEN`, etc.), HTTP paths.
+- `class_distribution`, online SGD weights, KV schema.
+
+### Migration
+
+For most users: `npm uninstall -g meridian-skills-mcp && npm install -g meridian-mcp`. No client-config changes needed.
+
+### Risk
+
+The prompt change can shift LLM output distribution — top-1 may move on borderline cases. The first health-cron run after deploy will record post-rename Wilson recall@1; expect ±5pp wobble. Bisect and revert if it drops materially.
+
 ## [2.2.2] — 2026-05-07
 
 **Bootstrap CI replaced with Wilson score interval — 2.2.1's bootstrap was under-covering at high p.**

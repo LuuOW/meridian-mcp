@@ -1,6 +1,6 @@
 // /miniapp interactive demo
 // Calls the live Meridian MCP at mcp.ask-meridian.uk/v1/route — fully
-// dynamic: Llama-3.3-70B generates fresh skill candidates per task,
+// dynamic: Llama-3.3-70B generates fresh candidate candidates per task,
 // the deterministic orbital classifier ranks them server-side, the
 // browser renders the result.
 import { MiniGalaxy } from './mini-galaxy.js'
@@ -30,19 +30,19 @@ const mode3dBtn        = $('mode3d')
 const arSection        = $('arSection')
 
 // Side panel
-const panel       = $('skillPanel')
-const panelTitle  = $('skillPanelTitle')
-const panelClass  = $('skillPanelClass')
-const panelWhy    = $('skillPanelWhy')
-const panelContent= $('skillPanelContent')
-const panelClose  = $('skillPanelClose')
-const panelBack   = $('skillPanelBackdrop')
+const panel       = $('candidatePanel')
+const panelTitle  = $('candidatePanelTitle')
+const panelClass  = $('candidatePanelClass')
+const panelWhy    = $('candidatePanelWhy')
+const panelContent= $('candidatePanelContent')
+const panelClose  = $('candidatePanelClose')
+const panelBack   = $('candidatePanelBackdrop')
 
-// Stash latest results so the side panel has access to per-skill metadata
+// Stash latest results so the side panel has access to per-candidate metadata
 let latestSelected = []
 // The task string that produced `latestSelected` — kept in lockstep so
 // /v1/feedback can replay the exact (query, candidates) tuple when a
-// user clicks a skill card. Cleared on every new routing call.
+// user clicks a candidate card. Cleared on every new routing call.
 let latestTask = ''
 
 // Single-flight guard for routing — prevents AR from queueing concurrent calls
@@ -98,7 +98,7 @@ askBtn.addEventListener('click', async () => {
   routingInFlight = true
   askBtn.disabled = true
   askBtn.setAttribute('aria-busy', 'true')
-  askBtn.textContent = 'Generating skills…'
+  askBtn.textContent = 'Generating candidates…'
   resultsSection.hidden = false
   resultsList.setAttribute('aria-busy', 'true')
   requestAnimationFrame(() => galaxy._resize())
@@ -120,21 +120,21 @@ askBtn.addEventListener('click', async () => {
           if (!el) return
           if (p.stage === 'connected')           el.textContent = 'connected · waiting for LLM…'
           else if (p.stage === 'cache_hit')      el.textContent = `cache hit (${p.cache_age_s}s old) — replaying`
-          else if (p.stage === 'cache_miss')     el.textContent = 'cache miss · authoring fresh skills…'
+          else if (p.stage === 'cache_miss')     el.textContent = 'cache miss · authoring fresh candidates…'
           else if (p.stage === 'llm_streaming_start') el.textContent = `LLM warming up (${p.model})…`
           else if (p.stage === 'llm_streaming')  el.textContent = `LLM writing… ${p.chars.toLocaleString()} chars · ${(p.ms / 1000).toFixed(1)}s`
           else if (p.stage === 'llm_calling')    el.textContent = `LLM running (${p.model})…`
           else if (p.stage === 'llm_complete')   el.textContent = `LLM done in ${(p.ms / 1000).toFixed(1)}s · classifying…`
-          else if (p.stage === 'rag_retrieved')  el.textContent = `RAG: ${p.matches} similar past skills (top score ${p.top_score})`
+          else if (p.stage === 'rag_retrieved')  el.textContent = `RAG: ${p.matches} similar past candidates (top score ${p.top_score})`
           else if (p.stage === 'classifying')    el.textContent = `classifying ${p.candidates_generated} candidates orbitally…`
           else if (p.stage === 'semantic_rerank') el.textContent = `semantic re-rank (${p.model})…`
         },
-        onSkill: (s) => {
-          // First skill arrival clears the placeholder.
+        onCandidate: (s) => {
+          // First candidate arrival clears the placeholder.
           if (!latestSelected.length) resultsList.innerHTML = ''
           latestSelected.push(s)
-          appendSkillCard(s)
-          galaxy.setSkills(latestSelected)
+          appendCandidateCard(s)
+          galaxy.setCandidates(latestSelected)
         },
       },
     )
@@ -147,7 +147,7 @@ askBtn.addEventListener('click', async () => {
   } finally {
     askBtn.disabled = false
     askBtn.removeAttribute('aria-busy')
-    askBtn.textContent = 'Find compatible skills →'
+    askBtn.textContent = 'Find compatible candidates →'
     resultsList.setAttribute('aria-busy', 'false')
     routingInFlight = false
     // If AR is open, surface the rescan affordance so the user can opt-in
@@ -156,7 +156,7 @@ askBtn.addEventListener('click', async () => {
   }
 })
 
-function appendSkillCard(s) {
+function appendCandidateCard(s) {
   const cls = s.classification?.class || ''
   const sys = s.classification?.star_system || ''
   const li = document.createElement('li')
@@ -178,12 +178,12 @@ function appendSkillCard(s) {
 function renderMeta(summary) {
   if (!summary) return
   if (!latestSelected.length) {
-    resultsList.innerHTML = '<li class="no-results">No skills matched. Try different wording or one of the examples.</li>'
+    resultsList.innerHTML = '<li class="no-results">No candidates matched. Try different wording or one of the examples.</li>'
     return
   }
   let meta = `<span class="conf-${summary.confidence}">${summary.confidence}</span> · ` +
              `top <strong>${summary.top_score.toFixed(1)}</strong> · ` +
-             `${latestSelected.length}/${summary.candidates_generated || latestSelected.length} skills`
+             `${latestSelected.length}/${summary.candidates_generated || latestSelected.length} candidates`
   if (summary.timing) {
     meta += ` · LLM ${summary.timing.llm_ms} ms + classify ${summary.timing.classify_ms} ms`
     if (summary.timing.embed_ms) meta += ` + embed ${summary.timing.embed_ms} ms`
@@ -194,37 +194,37 @@ function renderMeta(summary) {
 
 // SIDE PANEL --------------------------------------------------------------
 function openPanel(slug) {
-  const skill = latestSelected.find(s => s.slug === slug)
-  if (!skill) return
+  const candidate = latestSelected.find(s => s.slug === slug)
+  if (!candidate) return
 
-  // Implicit positive label — user opened this skill's detail panel.
+  // Implicit positive label — user opened this candidate's detail panel.
   // Fire-and-forget; failures don't block the UI.
   if (latestTask && latestSelected.length >= 2) {
     sendFeedback({
       task:       latestTask,
-      skills:     latestSelected,
+      candidates:     latestSelected,
       chosenSlug: slug,
       action:     'detail_open',
     })
   }
 
-  panelTitle.textContent = skill.slug
+  panelTitle.textContent = candidate.slug
 
-  const cls = skill.classification?.class || ''
+  const cls = candidate.classification?.class || ''
   panelClass.textContent = cls || ''
   panelClass.dataset.class = cls
   panelClass.style.display = cls ? 'inline-flex' : 'none'
 
-  panelWhy.innerHTML  = renderWhy(skill)
-  panelContent.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading skill…</p>'
+  panelWhy.innerHTML  = renderWhy(candidate)
+  panelContent.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Loading candidate…</p>'
 
   panel.hidden = false
   // tick to allow display change to apply before transition
   requestAnimationFrame(() => panel.setAttribute('aria-hidden', 'false'))
   document.body.style.overflow = 'hidden'
 
-  // Body — for fully-dynamic skills, render the LLM-generated content directly
-  panelContent.innerHTML = renderDynamicSkillBody(skill)
+  // Body — for fully-dynamic candidates, render the LLM-generated content directly
+  panelContent.innerHTML = renderDynamicCandidateBody(candidate)
 }
 
 function closePanel() {
@@ -236,9 +236,9 @@ panelClose.addEventListener('click', closePanel)
 panelBack.addEventListener('click',  closePanel)
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel() })
 
-function renderWhy(skill) {
-  const b   = skill.breakdown || {}
-  const cls = skill.classification || {}
+function renderWhy(candidate) {
+  const b   = candidate.breakdown || {}
+  const cls = candidate.classification || {}
 
   const pills = []
   if (cls.parent)              pills.push(`<span class="meta-pill">parent <em>${escapeHTML(cls.parent)}</em></span>`)
@@ -258,22 +258,22 @@ function renderWhy(skill) {
     : ''
 
   return `
-    ${renderPhysicsPanel(skill)}
+    ${renderPhysicsPanel(candidate)}
     ${pills.length ? `<div class="classification-meta">${pills.join('')}</div>` : ''}
     ${decisionRule}
   `
 }
 
-function renderDynamicSkillBody(skill) {
-  const kws = (skill.keywords || []).map(k => `<code>${escapeHTML(k)}</code>`).join(' ')
-  const body = skill.body
-    ? `<div class="skill-md">${renderMarkdown(skill.body)}</div>`
-    : `<p>${escapeHTML(skill.description || '')}</p>`
+function renderDynamicCandidateBody(candidate) {
+  const kws = (candidate.keywords || []).map(k => `<code>${escapeHTML(k)}</code>`).join(' ')
+  const body = candidate.body
+    ? `<div class="candidate-md">${renderMarkdown(candidate.body)}</div>`
+    : `<p>${escapeHTML(candidate.description || '')}</p>`
   return (
-    `<p class="skill-tagline">${escapeHTML(skill.description || '')}</p>` +
+    `<p class="candidate-tagline">${escapeHTML(candidate.description || '')}</p>` +
     body +
     (kws
-      ? `<div class="skill-keywords"><span class="kw-label">Keywords</span>${kws}</div>`
+      ? `<div class="candidate-keywords"><span class="kw-label">Keywords</span>${kws}</div>`
       : '')
   )
 }
@@ -335,8 +335,8 @@ arBtn.addEventListener('click', () => {
       // unlockAR() is called — either by the user clicking "scan again"
       // or by the routing call finishing in error.
       if (routingInFlight) return  // belt-and-suspenders
-      $('arStatus').textContent = `🎯 detected: ${className} — generating skills…`
-      taskInput.value = `What skills would help me interact with a ${className}?`
+      $('arStatus').textContent = `🎯 detected: ${className} — generating candidates…`
+      taskInput.value = `What candidates would help me interact with a ${className}?`
       askBtn.click()
     },
   }).catch(e => {

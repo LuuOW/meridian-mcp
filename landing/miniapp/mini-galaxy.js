@@ -1,6 +1,6 @@
 // mini-galaxy.js — small inline canvas above results.
 // Two modes: 2D (top-down orbital plane) and 3D (tilted perspective).
-// Persistent starfield + skill planets seeded from the latest /api/route response.
+// Persistent starfield + candidate planets seeded from the latest /api/route response.
 // Visual language adapted from the standalone galaxy viz (since retired).
 
 const RING_COLORS = [
@@ -80,7 +80,7 @@ export class MiniGalaxy {
     else                this.hintAlpha = 0
   }
 
-  setSkills(ranked) {
+  setCandidates(ranked) {
     const prev = new Map(this.planets.map(p => [p.slug, p]))
     const N    = Math.min(ranked.length, 7)
     this.planets = ranked.slice(0, N).map((r, i) => {

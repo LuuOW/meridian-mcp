@@ -194,9 +194,9 @@ function renderAuthorizePage(params) {
     ${hidden}
     <div class="logo">🪐</div>
     <h1>Authorize <strong class="client">${client}</strong> to use Meridian</h1>
-    <p>Meridian routes your task to the most relevant AI skills. Click below and ${client} will be able to call:</p>
+    <p>Meridian routes your task to the most relevant candidates. Click below and ${client} will be able to call:</p>
     <ul>
-      <li><code>route_task</code> &mdash; ranks candidate skills for a query</li>
+      <li><code>route_task</code> &mdash; ranks candidates for a query</li>
     </ul>
     <button type="submit">Authorize</button>
     <div class="meta">
@@ -323,7 +323,7 @@ function bearerOf(req) {
 function buildMcpServer(githubToken, env) {
   const server = new Server(
     {
-      name: 'meridian-skills',
+      name: 'meridian',
       version: PKG_VERSION,
       // _meta is the MCP convention for arbitrary metadata; clients
       // that surface a connector icon (e.g. Grok, Claude.ai) often
@@ -439,21 +439,21 @@ async function handleBrowserFeedback(request, env) {
   catch { return jsonResponse({ error: 'expected JSON body' }, { status: 400 }) }
 
   const action = body.action || 'click'
-  const skills = Array.isArray(body.selected) ? body.selected : []
-  if (action === 'dismiss' || !body.chosen_slug || skills.length < 2) {
+  const candidates = Array.isArray(body.selected) ? body.selected : []
+  if (action === 'dismiss' || !body.chosen_slug || candidates.length < 2) {
     // No training signal — record-only. We still return ok=true so
     // clients can fire-and-forget.
     return jsonResponse({ ok: true, applied: false, reason: 'no positive signal' })
   }
 
-  const chosenIdx = skills.findIndex(s => s.slug === body.chosen_slug)
+  const chosenIdx = candidates.findIndex(s => s.slug === body.chosen_slug)
   if (chosenIdx < 0) {
     return jsonResponse({ error: 'chosen_slug not in selected[]' }, { status: 400 })
   }
 
   try {
     const current = await loadWeights(env.MCP_OAUTH)
-    const next    = sgdUpdate(current, skills, chosenIdx)
+    const next    = sgdUpdate(current, candidates, chosenIdx)
     await saveWeights(env.MCP_OAUTH, next)
     return jsonResponse({
       ok:           true,
