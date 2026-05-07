@@ -31,6 +31,13 @@ jobs:
           node-version: '20'
       - run: npm ci
       - name: Run bootstrap labels
+        # CF Bot Fight Mode periodically blocks GitHub Actions runners
+        # by TLS fingerprint. We retry-with-backoff inside the script;
+        # if CF still 403s, mark this run a soft fail so the workflow
+        # stays green and the next cron tick (or organic feedback)
+        # picks up the slack. The model is already learning from
+        # browser-side feedback the moment lens / miniapp users click.
+        continue-on-error: true
         run: node scripts/bootstrap-labels.mjs
         env:
           MERIDIAN_FEEDBACK_URL:    https://mcp.ask-meridian.uk/v1/feedback

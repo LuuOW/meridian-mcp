@@ -99,8 +99,14 @@ function randomRank(skills) {
 }
 
 // ── Run ─────────────────────────────────────────────────────────────
+// In --json mode, every human-readable log goes to stderr so stdout
+// is pure parseable JSON. The CI workflow redirects stdout into a
+// file and parses it; mixed output breaks the parser.
+const JSON_MODE = process.argv.includes('--json')
+const log = JSON_MODE ? (...a) => console.error(...a) : (...a) => console.log(...a)
+
 const rows = await fetchRows()
-console.log(`Fetched ${rows.length} rows from ${DATASET} (${SPLIT})`)
+log(`Fetched ${rows.length} rows from ${DATASET} (${SPLIT})`)
 
 let evalRows = []
 let dropped = 0
@@ -119,7 +125,7 @@ for (const r of rows) {
     type:   r.query_type,   // 'easy' | 'hard'
   })
 }
-console.log(`Eval set: ${evalRows.length} rows  (dropped ${dropped} no-tool / malformed)`)
+log(`Eval set: ${evalRows.length} rows  (dropped ${dropped} no-tool / malformed)`)
 
 const results = { v2: { hits1: 0, hits5: 0 }, trivial: { hits1: 0, hits5: 0 }, random: { hits1: 0, hits5: 0 } }
 const perRow  = []
@@ -159,16 +165,10 @@ for (const ex of evalRows) {
 const N = evalRows.length
 function pct(n) { return (100 * n / N).toFixed(1) + '%' }
 
-console.log(`\nRECALL@1                                   RECALL@${TOP_K}`)
-console.log(`  v2 classifier   ${results.v2.hits1}/${N} (${pct(results.v2.hits1)})            ${results.v2.hits5}/${N} (${pct(results.v2.hits5)})`)
-console.log(`  trivial overlap ${results.trivial.hits1}/${N} (${pct(results.trivial.hits1)})            ${results.trivial.hits5}/${N} (${pct(results.trivial.hits5)})`)
-console.log(`  random          ${results.random.hits1}/${N} (${pct(results.random.hits1)})            ${results.random.hits5}/${N} (${pct(results.random.hits5)})`)
-
-// Average tools per row — random baseline expectation = 1/nTools_avg.
+// Compute aggregates needed by both --json and human modes. These
+// must come BEFORE the --json check so the JSON dump can include
+// them, but they don't print anything yet.
 const avgTools = perRow.reduce((s, r) => s + r.nTools, 0) / perRow.length
-console.log(`\nAvg candidate tools per row: ${avgTools.toFixed(1)}  (random@1 expected ≈ ${(100 / avgTools).toFixed(1)}%)`)
-
-// Per-type breakdown.
 const byType = {}
 for (const r of perRow) {
   byType[r.type] = byType[r.type] || { n: 0, v2_h1: 0, trv_h1: 0 }
@@ -176,6 +176,29 @@ for (const r of perRow) {
   if (r.v2_rank === 0)  byType[r.type].v2_h1++
   if (r.trv_rank === 0) byType[r.type].trv_h1++
 }
+
+// JSON mode: emit pure JSON to stdout, exit. Human mode falls
+// through to the formatted console output below.
+if (JSON_MODE) {
+  process.stdout.write(JSON.stringify({
+    dataset: DATASET, split: SPLIT, n_eval: N,
+    avg_candidates_per_row: +avgTools.toFixed(2),
+    recall: {
+      v2:      { at_1: results.v2.hits1 / N,      at_5: results.v2.hits5 / N      },
+      trivial: { at_1: results.trivial.hits1 / N, at_5: results.trivial.hits5 / N },
+      random:  { at_1: results.random.hits1 / N,  at_5: results.random.hits5 / N  },
+    },
+    by_type: byType,
+    generated_at: new Date().toISOString(),
+  }, null, 2) + '\n')
+  process.exit(0)
+}
+
+console.log(`\nRECALL@1                                   RECALL@${TOP_K}`)
+console.log(`  v2 classifier   ${results.v2.hits1}/${N} (${pct(results.v2.hits1)})            ${results.v2.hits5}/${N} (${pct(results.v2.hits5)})`)
+console.log(`  trivial overlap ${results.trivial.hits1}/${N} (${pct(results.trivial.hits1)})            ${results.trivial.hits5}/${N} (${pct(results.trivial.hits5)})`)
+console.log(`  random          ${results.random.hits1}/${N} (${pct(results.random.hits1)})            ${results.random.hits5}/${N} (${pct(results.random.hits5)})`)
+console.log(`\nAvg candidate tools per row: ${avgTools.toFixed(1)}  (random@1 expected ≈ ${(100 / avgTools).toFixed(1)}%)`)
 console.log('\nBY QUERY TYPE')
 for (const [t, s] of Object.entries(byType)) {
   console.log(`  ${t.padEnd(10)} n=${s.n}   v2@1 ${s.v2_h1}/${s.n} (${(100 * s.v2_h1 / s.n).toFixed(0)}%)   trivial@1 ${s.trv_h1}/${s.n} (${(100 * s.trv_h1 / s.n).toFixed(0)}%)`)
@@ -195,22 +218,6 @@ for (const r of perRow) {
   }
 }
 console.log(`(${beats} total)`)
-
-// JSON mode for CI consumption.
-if (process.argv.includes('--json')) {
-  console.log(JSON.stringify({
-    dataset: DATASET, split: SPLIT, n_eval: N,
-    avg_candidates_per_row: +avgTools.toFixed(2),
-    recall: {
-      v2:      { at_1: results.v2.hits1 / N,      at_5: results.v2.hits5 / N      },
-      trivial: { at_1: results.trivial.hits1 / N, at_5: results.trivial.hits5 / N },
-      random:  { at_1: results.random.hits1 / N,  at_5: results.random.hits5 / N  },
-    },
-    by_type: byType,
-    generated_at: new Date().toISOString(),
-  }, null, 2))
-  process.exit(0)
-}
 
 // Verdict.
 console.log('\nVERDICT')
