@@ -1,5 +1,45 @@
 # Changelog
 
+## [2.2.2] — 2026-05-07
+
+**Bootstrap CI replaced with Wilson score interval — 2.2.1's bootstrap was under-covering at high p.**
+
+### Findings
+
+A 5-method coverage simulation (`scripts/simulate-ci-methods.mjs`,
+5,000 trials × 5 true rates × 5 CI methods) revealed:
+
+| true p | bootstrap | wilson | clopper-pearson | jackknife | bayes |
+|---|---|---|---|---|---|
+| 0.50 | 0.921 | 0.918 | 0.971 | 0.918 | 0.971 |
+| 0.81 | 0.899 | **0.954** | 0.978 | 0.922 | 0.954 |
+| 0.95 | **0.666** | **0.981** | 0.981 | 0.665 | 0.915 |
+
+At the true rate where our recall@5 sits (p≈0.95), the bootstrap and
+jackknife CIs only contained the truth 66.6% / 66.5% of the time —
+both under-cover at extreme p. Wilson and Clopper-Pearson stayed at
+nominal 95% coverage across the whole range.
+
+### Changed
+
+- **`eval-against-public-data.mjs`** — replaced 10,000-resample
+  bootstrap with closed-form Wilson score interval. Zero compute,
+  better-calibrated coverage. Bootstrap kept in `simulate-ci-methods.mjs`
+  for comparison purposes.
+- **`_update-healthz.mjs`** — `bootstrap_resamples` field replaced
+  with `ci_method: "wilson"`.
+- **Blog post + landing copy + README** — recall now cited as
+  `81% [95% Wilson CI 60%, 92%]` (was `[62%, 95%]` from bootstrap).
+  recall@5 now `[77%, 99%]` (was `[86%, 100%]` — bootstrap was much
+  too narrow on the upper bound).
+
+### Lesson
+
+Monte Carlo is the universal numerical method — but for a binomial
+proportion `k/n`, an 18-line closed-form expression (Wilson 1927)
+has nominal coverage at zero compute. Don't reach for the universal
+hammer when a proportion is staring you in the face.
+
 ## [2.2.1] — 2026-05-07
 
 **Honest error bars on the published recall numbers — bootstrap 95% CI from 10,000 resamples (Bell & Glasstone §1.6e Monte Carlo for expectation values from a small sample).**
