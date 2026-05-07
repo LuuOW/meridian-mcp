@@ -1,4 +1,4 @@
-// Tests for the JS orbital classifier (landing/_lib/orbital.mjs, also bundled into mcp/_lib).
+// Tests for the JS orbital classifier (mcp/_lib/orbital.mjs — the single source of truth).
 // The Python classifier (skill_orbit.py) ships with the npm tarball and is
 // covered by the existing skills.test.mjs roundtrip. This file pins:
 //   1. Physics laws that must hold no matter how scoring is tuned
@@ -15,7 +15,7 @@ import assert from 'node:assert/strict'
 import {
   physicsOf, classOf, orbitalClassify,
   CLASS_BOOST, SYSTEM_TERMS,
-} from '../landing/_lib/orbital.mjs'
+} from '../mcp/_lib/orbital.mjs'
 
 const TAU = 2 * Math.PI
 
