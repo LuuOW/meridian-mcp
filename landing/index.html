@@ -142,15 +142,20 @@
       Llama-3.3-70B writes a fresh set of skills for every task. An open-domain orbital engine derives a physics
       signature for each one — mass, scope, cross-domain affinity, Lagrange potential — and classifies it into a celestial
       class (planet, moon, trojan, asteroid, comet, irregular). You get back a deterministically ranked list with a
-      decision rule per skill. Works with Claude Code, Cursor, Windsurf, or any MCP client.
+      decision rule per skill. Works with Claude Code, Cursor, Windsurf, Grok, ChatGPT, or any MCP client.
     </p>
     <div class="cta-row hero-cta">
       <a href="/miniapp/" class="btn btn-primary" style="view-transition-name: cta-primary">Try it live →</a>
       <a href="https://docs.ask-meridian.uk#install" class="btn btn-ghost">Install in 30 seconds</a>
+      <a href="/docs/#grok" class="btn btn-ghost">Add to Grok →</a>
     </div>
 
-    <pre class="hero-snippet"><code>npm install -g meridian-skills-mcp
-claude mcp add meridian meridian-mcp</code></pre>
+    <pre class="hero-snippet"><code># local: Claude Code, Cursor, Windsurf
+npm install -g meridian-skills-mcp
+claude mcp add meridian meridian-mcp
+
+# remote: Grok / ChatGPT (paste in connector setup)
+https://mcp.ask-meridian.uk/mcp</code></pre>
   </section>
 
   <section class="stats" aria-label="By the numbers">

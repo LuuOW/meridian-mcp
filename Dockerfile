@@ -33,7 +33,7 @@ FROM node:20-alpine
 # Install the published package globally so the binaries
 # `meridian-mcp` and `meridian-mcp-http` resolve on $PATH the same way
 # they do for an `npm i -g` user.
-RUN npm install -g meridian-skills-mcp@2.0.0
+RUN npm install -g meridian-skills-mcp@2.1.0
 
 ENV MCP_MODE=stdio
 ENV PORT=3333

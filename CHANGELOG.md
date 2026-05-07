@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.1.0] — 2026-05-07
+
+**Remote MCP variants — Streamable HTTP transports for hosts that need a
+server URL (Grok connectors, ChatGPT custom MCPs, Claude.ai connectors).
+Stdio entrypoint unchanged; existing `meridian-mcp` users see no
+breakage.**
+
+### Added
+- `mcp/_lib/core.mjs` — shared LLM-call + classify + format core,
+  callable from both transports. Token is per-call (no longer env-only),
+  so the HTTP variant can pass through bearer tokens or use a server
+  PAT. `process.env`-tolerant for runtimes without `process` (Workers,
+  browsers).
+- `mcp/http.mjs` + `meridian-mcp-http` bin — Node Streamable-HTTP server
+  for self-hosters. Stateless, bearer-pass-through by default, optional
+  shared-key gateway mode.
+- `cf-worker/` — hosted variant at **`https://mcp.ask-meridian.uk/mcp`**
+  with full OAuth 2.1 + PKCE flow, KV-backed opaque access tokens, and
+  a one-click authorize page. Operator-pays auth model: the Worker
+  holds a single `MERIDIAN_GITHUB_TOKEN` secret and uses it for every
+  inference call so end users see no GitHub jargon.
+- Connector icon served at `/favicon.svg`, `/icon.svg`, `/logo.svg` and
+  advertised via `logo_uri` in OAuth AS metadata + `_meta.iconUrl` in
+  MCP serverInfo so connector hosts can render the brand.
+- `.github/workflows/deploy-worker.yml` — auto-deploys the Worker on
+  every push to `main` that touches `cf-worker/**` or `mcp/_lib/**`.
+- Docker mode toggle: `MCP_MODE=http` runs the Node HTTP server instead
+  of stdio.
+
+### Changed
+- `mcp/index.mjs` (stdio) refactored to delegate to `_lib/core.mjs`.
+  No behavior change.
+- README: new "Use as a Grok connector" section with the OAuth values.
+
 ## [2.0.0] — 2026-05-06
 
 **Self-contained MCP. The Cloudflare backend was retired during the GitHub

@@ -61,42 +61,103 @@
 
   <h1 id="overview">Meridian documentation</h1>
   <p class="lead">
-    Meridian is a self-contained stdio MCP for AI agents. It generates
-    candidate skills with an LLM, then ranks them with a local
+    Meridian is a skill router for AI agents — local <strong>stdio MCP</strong>
+    for Claude Code/Cursor/Windsurf, hosted <strong>remote MCP</strong>
+    at <code>mcp.ask-meridian.uk</code> for Grok/ChatGPT/Claude.ai. It
+    generates candidate skills with an LLM, then ranks them with a local
     <strong>orbital classifier</strong> that assigns each one a celestial
-    class (planet · moon · trojan · asteroid · comet · irregular). No
-    backend, no server, no Python — the npm package ships everything it
-    needs and runs entirely in your agent's process.
+    class (planet · moon · trojan · asteroid · comet · irregular).
   </p>
 
   <h2 id="install">Install</h2>
 
-  <h3>1. MCP for Claude Code, Cursor, Windsurf, etc.</h3>
+  <h3>1. Stdio MCP — Claude Code, Cursor, Windsurf, Goose, Continue</h3>
   <pre><code class="lang-bash">npm install -g meridian-skills-mcp
 claude mcp add meridian meridian-mcp \
   -e MERIDIAN_GITHUB_TOKEN=ghp_yourTokenHere</code></pre>
   <p>
-    Same install works in Cursor, Windsurf, Goose, Continue, and any
-    client that speaks stdio MCP. The package is one Node entrypoint plus
-    the bundled orbital classifier — no native deps.
+    Same install works in any client that speaks stdio MCP. The package
+    is one Node entrypoint plus the bundled orbital classifier — no
+    native deps.
   </p>
 
-  <h3>2. Get a GitHub Models token</h3>
+  <h3>2. Remote MCP — Grok, ChatGPT, Claude.ai connectors</h3>
   <p>
-    The MCP calls <a href="https://github.com/marketplace/models">GitHub Models</a>
-    to generate the candidate skills. Create a fine-grained PAT at
+    Pick the host below, paste the URL, no install required.
+    Full step-by-step in the <a href="#grok">Grok connector</a>
+    section.
+  </p>
+  <pre><code class="lang-text">https://mcp.ask-meridian.uk/mcp</code></pre>
+
+  <h3>3. Get a GitHub Models token <em>(stdio install only)</em></h3>
+  <p>
+    The stdio MCP calls <a href="https://github.com/marketplace/models">GitHub Models</a>
+    using your own PAT. Create a fine-grained one at
     <a href="https://github.com/settings/tokens?type=beta">github.com/settings/tokens</a>
     with <strong>account permissions → Models: Read</strong>. That single
     permission is enough; the token sees nothing else on your account.
     Pass it as <code>MERIDIAN_GITHUB_TOKEN</code> (or <code>GITHUB_TOKEN</code>).
   </p>
+  <p>
+    The remote variant (<code>mcp.ask-meridian.uk</code>) handles its
+    own GitHub Models auth — connector users never see a PAT.
+  </p>
 
-  <h3>3. Browser miniapp (no install)</h3>
+  <h3>4. Browser miniapp (no install)</h3>
   <p>
     Open <a href="/miniapp/">ask-meridian.uk/miniapp</a>. Type a task or
     hit <code>📷 Scan an object</code> to use real-time camera object
     detection as the input. Same orbital classifier, runs in-browser,
     routes against the bundled 88-skill corpus.
+  </p>
+
+  <h2 id="grok">Grok connector setup</h2>
+  <p>
+    Grok's <em>"Add custom connector"</em> dialog takes an MCP server
+    URL plus four OAuth fields. Paste these:
+  </p>
+
+  <table>
+    <thead><tr><th>Field</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Server URL</td><td><code>https://mcp.ask-meridian.uk/mcp</code></td></tr>
+      <tr><td>Authorization endpoint</td><td><code>https://mcp.ask-meridian.uk/authorize</code></td></tr>
+      <tr><td>Token endpoint</td><td><code>https://mcp.ask-meridian.uk/token</code></td></tr>
+      <tr><td>Client ID</td><td><code>grok</code></td></tr>
+      <tr><td>Client secret</td><td><em>(empty)</em></td></tr>
+      <tr><td>Token auth method</td><td><code>none</code> &nbsp;(PKCE only)</td></tr>
+      <tr><td>Scopes</td><td><code>route_task</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>The flow:</p>
+  <ol>
+    <li>Grok stores the connector and shows an <strong>Authorize</strong> button.</li>
+    <li>Clicking it opens
+      <a href="https://mcp.ask-meridian.uk/authorize">mcp.ask-meridian.uk/authorize</a>
+      in a new tab — a single-button confirmation page. No PAT pasting,
+      no GitHub jargon.</li>
+    <li>You click <em>Authorize</em>, the page 302s back to Grok with a
+      one-time auth code, Grok exchanges it at <code>/token</code> with PKCE
+      verification, and gets a 1-hour Bearer back.</li>
+    <li><code>route_task</code> appears in Grok's tools list. Ask
+      something like <em>"route a task to ranked skills: build a
+      WebSocket-backed presence indicator"</em> and Grok invokes it.</li>
+  </ol>
+
+  <p>
+    The hosted Worker uses an operator-pays auth model: it holds a single
+    GitHub Models PAT and uses it for every inference call, so connector
+    users see zero credential prompts. Tokens expire after 1 h and can be
+    re-authorized at any time. Same URL works in
+    <strong>ChatGPT custom MCPs</strong> and <strong>Claude.ai connectors</strong>
+    — they speak the same MCP Streamable-HTTP + OAuth 2.1 spec.
+  </p>
+
+  <p>
+    Source: <a href="https://github.com/LuuOW/meridian-mcp/tree/main/cf-worker">cf-worker/</a>
+    in the npm repo. ~250 lines, runs on Cloudflare Workers, deploys
+    automatically on every push to <code>main</code>.
   </p>
 
   <h2 id="quickstart">Quickstart</h2>

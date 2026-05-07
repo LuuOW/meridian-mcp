@@ -24,42 +24,47 @@ export MERIDIAN_GITHUB_TOKEN=github_pat_...
 
 (The MCP also picks up plain `GITHUB_TOKEN` if you have one already in your environment.)
 
-## Use as a Grok connector (or ChatGPT custom MCP)
+## Use as a Grok connector
 
-Grok connectors (`docs.x.ai/grok/connectors`) and the ChatGPT MCP integration both ask for an **MCP server URL** + a bearer token — they can't spawn a stdio process. Run the HTTP variant for that:
+A hosted Streamable-HTTP variant lives at **`https://mcp.ask-meridian.uk/mcp`** with full OAuth 2.1 + PKCE so it slots into any host that requires a connector URL — Grok's custom MCP connectors, ChatGPT custom MCPs, Claude.ai connectors. No npm install, no PAT entry from your side, no infra.
 
-```bash
-# anywhere Node 20+ runs (Fly, Render, Docker, your own VPS)
-npx -y meridian-skills-mcp meridian-mcp-http
-# → listening on http://0.0.0.0:3333/mcp · auth=pass-through · v2.0.0
-```
-
-Or via Docker:
-
-```bash
-docker run --rm -p 3333:3333 -e MCP_MODE=http \
-  ghcr.io/luuow/meridian-skills-mcp:latest
-```
-
-Then point Grok/ChatGPT at:
+In Grok's "Add custom connector" dialog, paste these:
 
 | Field | Value |
 |---|---|
-| Server URL | `https://your-host.example.com/mcp` |
-| Authorization | `Bearer github_pat_…` *(your `Models: read` PAT)* |
+| **Server URL** | `https://mcp.ask-meridian.uk/mcp` |
+| **Authorization endpoint** | `https://mcp.ask-meridian.uk/authorize` |
+| **Token endpoint** | `https://mcp.ask-meridian.uk/token` |
+| **Client ID** | `grok` |
+| **Client secret** | *(empty)* |
+| **Token auth method** | `none` (PKCE only) |
+| **Scopes** | `route_task` |
 
-**Auth model — pass-through (default).** The bearer token in the `Authorization` header *is* the user's GitHub PAT. The server passes it straight through to GitHub Models for that user's call. No shared inference cost, no user database, no credentials at rest on the server. Each user configures the connector with their own PAT.
+When you click "Authorize" in Grok, it opens [`/authorize`](https://mcp.ask-meridian.uk/authorize) — a one-click confirmation page (no PAT pasting, no GitHub jargon). Inference runs against [GitHub Models](https://github.com/marketplace/models) using the operator's PAT, so end users see zero friction. Tokens last 1 hour and can be reauthorized any time.
 
-**Auth model — shared gateway (optional).** If you'd rather operate it as a service with one fixed key, set both:
+The same URL works for **ChatGPT custom MCPs** and **Claude.ai connectors** — they speak the same MCP Streamable HTTP + OAuth 2.1 spec.
+
+### Self-hosting the HTTP variant
+
+If you'd rather operate your own remote MCP, the package ships a Node binary:
 
 ```bash
-MERIDIAN_GATEWAY_TOKEN=secret-shared-token   # what users pass as the bearer
-MERIDIAN_GITHUB_TOKEN=github_pat_…           # what the server uses for inference
+npx -y meridian-skills-mcp meridian-mcp-http
+# → listening on http://0.0.0.0:3333/mcp · auth=pass-through · v2.1.0
 ```
 
-In this mode the operator pays the inference and rotates the gateway token.
+Or via Docker (`MCP_MODE=http` flips the entrypoint):
 
-The HTTP transport is **stateless** (`sessionIdGenerator: undefined`) and uses the SDK's `StreamableHTTPServerTransport` — fully compliant with the MCP Streamable HTTP spec, including SSE upgrade for streamed responses if a client requests it.
+```bash
+docker run --rm -p 3333:3333 -e MCP_MODE=http meridian-skills-mcp
+```
+
+Auth modes:
+
+- **Pass-through (default).** Each call's `Authorization: Bearer …` is forwarded to GitHub Models. Users bring their own PAT.
+- **Shared gateway.** Set `MERIDIAN_GATEWAY_TOKEN` (what callers pass) + `MERIDIAN_GITHUB_TOKEN` (what the server uses for inference).
+
+The hosted Worker variant additionally implements OAuth 2.1 + PKCE; the Node binary is bearer-only (suitable for stdio→HTTP bridges and tools like `curl`).
 
 ## What it does
 
