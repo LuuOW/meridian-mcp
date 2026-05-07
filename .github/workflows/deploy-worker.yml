@@ -3,11 +3,14 @@ name: Deploy CF Worker
 # Pushes to main that touch the Worker or its shared library deploy
 # meridian-mcp to Cloudflare and bind it to https://mcp.ask-meridian.uk.
 #
-# Required secrets:
-#   CLOUDFLARE_API_TOKEN  — scoped token with Workers Scripts: Edit,
-#     Workers KV Storage: Edit, Account Settings: Read, Zone: Read.
-#     Already configured on this repo from earlier setup.
-#   CLOUDFLARE_ACCOUNT_ID — your CF account ID.
+# Required secrets (legacy global-key auth — covers all account ops):
+#   CLOUDFLARE_API_KEY     — global API key.
+#   CLOUDFLARE_EMAIL       — account email matching the key.
+#   CLOUDFLARE_ACCOUNT_ID  — CF account ID.
+#
+# The pre-existing scoped CLOUDFLARE_API_TOKEN secret didn't have
+# Workers Scripts: Edit perms; switching to the global key keeps the
+# deploy unblocked. Replace with a scoped token later for least-priv.
 #
 # The Worker secret MERIDIAN_GITHUB_TOKEN is set out-of-band via
 # `wrangler secret put` — secrets are persisted per-Worker and survive
@@ -46,7 +49,8 @@ jobs:
         run: npx --yes wrangler@4 deploy
         working-directory: cf-worker
         env:
-          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_KEY:    ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL:      ${{ secrets.CLOUDFLARE_EMAIL }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Smoke-test the live URL
