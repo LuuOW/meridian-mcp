@@ -32,7 +32,17 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 
-import { PKG_VERSION, TOOLS, routeTask } from '../mcp/_lib/core.mjs'
+import { PKG_VERSION, TOOLS, routeTask, routeTaskJson } from '../mcp/_lib/core.mjs'
+
+// Origins allowed to call the unauthenticated browser endpoint
+// (POST /v1/route). The MCP `/mcp` endpoint still requires OAuth and
+// is unaffected. This list is exact-match (host + scheme); add more
+// here when bringing up a new Meridian sub-property.
+const BROWSER_ORIGIN_ALLOWLIST = new Set([
+  'https://lens.ask-meridian.uk',
+  'https://ask-meridian.uk',
+  'https://photon.ask-meridian.uk',
+])
 
 const ISSUER          = 'https://mcp.ask-meridian.uk'
 const SUPPORTED_SCOPE = 'route_task'
@@ -349,6 +359,42 @@ function buildMcpServer(githubToken, env) {
   return server
 }
 
+// Browser-facing route. Same operator-pays model as the OAuth-gated
+// /mcp endpoint, but skips the OAuth dance for first-party Meridian
+// front-ends (lens, the marketing site, etc.) — Origin is
+// allowlisted, the request is rejected otherwise. Returns the
+// structured classifier output so callers can render orbits.
+async function handleBrowserRoute(request, env) {
+  const origin = request.headers.get('origin') || ''
+  if (!BROWSER_ORIGIN_ALLOWLIST.has(origin)) {
+    return jsonResponse({ error: 'origin not allowed', origin }, { status: 403 })
+  }
+  if (!env.MERIDIAN_GITHUB_TOKEN) {
+    return jsonResponse({ error: 'server misconfigured: MERIDIAN_GITHUB_TOKEN secret unset' }, { status: 500 })
+  }
+
+  let body
+  try { body = await request.json() }
+  catch { return jsonResponse({ error: 'expected JSON body' }, { status: 400 }) }
+
+  try {
+    const result = await routeTaskJson({
+      task:  body.task,
+      limit: body.limit,
+      token: env.MERIDIAN_GITHUB_TOKEN,
+      opts: {
+        endpoint:   env.MERIDIAN_MODELS_ENDPOINT,
+        model:      env.MERIDIAN_MODEL,
+        timeoutMs:  env.MERIDIAN_TIMEOUT_MS  ? parseInt(env.MERIDIAN_TIMEOUT_MS, 10)  : undefined,
+        candidates: env.MERIDIAN_CANDIDATES  ? parseInt(env.MERIDIAN_CANDIDATES, 10)  : undefined,
+      },
+    })
+    return jsonResponse(result)
+  } catch (e) {
+    return jsonResponse({ error: e.message || String(e) }, { status: 502 })
+  }
+}
+
 async function handleMcp(request, env) {
   const bearer   = bearerOf(request)
   const resolved = await resolveBearer(bearer, env)
@@ -427,6 +473,9 @@ export default {
 
     if (url.pathname === '/mcp')
       return handleMcp(request, env)
+
+    if (url.pathname === '/v1/route' && request.method === 'POST')
+      return handleBrowserRoute(request, env)
 
     return textResponse('not found', { status: 404 })
   },
