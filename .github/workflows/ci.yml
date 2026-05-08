@@ -23,5 +23,9 @@ jobs:
       # works on both Node 20 and 22.
       - run: node --test tests/*.test.mjs
         env:
+          # Legacy 0.x env vars — gate the historical Python-classifier
+          # tests in tests/skills.test.mjs and tests/skill-md.test.mjs.
+          # Active 2.x/3.x runtime (mcp/_lib + cf-worker) does not read
+          # them. Kept here so the legacy tests keep skipping cleanly.
           MERIDIAN_SKILLS_ROOT: ${{ github.workspace }}/skills
           MERIDIAN_SKILL_ORBIT: /dev/null
