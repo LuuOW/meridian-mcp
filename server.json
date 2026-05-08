@@ -10,7 +10,7 @@
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "meridian-mcp",
+      "identifier": "meridian-orbital",
       "version": "3.0.0",
       "transport": {
         "type": "stdio"

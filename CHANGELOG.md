@@ -2,7 +2,7 @@
 
 ## [3.0.0] — 2026-05-07
 
-**Renamed: `meridian-skills-mcp` → `meridian-mcp`. Removed the "skills" framing across the prompt, code, branding, and npm name. The classifier was always domain-agnostic; the framing was a relic from the 0.x curated-corpus days.**
+**Renamed: `meridian-skills-mcp` → `meridian-orbital`. Removed the "skills" framing across the prompt, code, branding, and npm name. The classifier was always domain-agnostic; the framing was a relic from the 0.x curated-corpus days.**
 
 ### Why
 
@@ -10,7 +10,7 @@ The orbital router classifies any candidate (tool, prompt, document, product) by
 
 ### Breaking changes
 
-- **npm package**: `meridian-skills-mcp` → **`meridian-mcp`**. The old package is deprecated; install the new one with `npm i -g meridian-mcp`. Binaries (`meridian-mcp`, `meridian-mcp-http`) are unchanged, so client configs (`claude mcp add meridian meridian-mcp`) keep working.
+- **npm package**: `meridian-skills-mcp` → **`meridian-orbital`**. The old package is deprecated; install the new one with `npm i -g meridian-orbital`. Binaries (`meridian-mcp`, `meridian-mcp-http`) are unchanged, so client configs (`claude mcp add meridian meridian-mcp`) keep working.
 - **MCP registry identity**: `io.github.LuuOW/meridian-skills` → `io.github.LuuOW/meridian-mcp`.
 - **MCP server name** in handshake: `"meridian-skills"` → `"meridian"`.
 - **LLM JSON output key**: `{"skills": [...]}` → `{"candidates": [...]}`. The parser falls back to `parsed.skills` if the LLM emits the legacy key, so older models still work.
@@ -29,7 +29,7 @@ The orbital router classifies any candidate (tool, prompt, document, product) by
 
 ### Migration
 
-For most users: `npm uninstall -g meridian-skills-mcp && npm install -g meridian-mcp`. No client-config changes needed.
+For most users: `npm uninstall -g meridian-skills-mcp && npm install -g meridian-orbital`. No client-config changes needed.
 
 ### Risk
 

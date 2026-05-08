@@ -61,8 +61,8 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@luuow'
       - run: npm ci --omit=dev
-      - name: Re-scope name to @luuow/meridian-mcp
-        run: npm pkg set name=@luuow/meridian-mcp
+      - name: Re-scope name to @luuow/meridian-orbital
+        run: npm pkg set name=@luuow/meridian-orbital
       - name: Publish to GitHub Packages
         run: npm publish
         env:
