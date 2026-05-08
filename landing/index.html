@@ -170,13 +170,7 @@
     <span id="heroVersion" class="eyebrow" data-loading>MCP server · v1.0.0</span>
     <h1 class="hero-title">Dynamic task routing<br><span class="grad">via orbital mechanics.</span></h1>
     <p class="lead hero-lead">
-      Per request, an LLM (Llama-3.3-70B via GitHub Models' free tier) emits <em>N</em> candidate routing entries — slug,
-      description, keywords, markdown body. A deterministic classifier extracts an 11-dimensional physics signature from
-      each candidate's content alone (no curated lookup): mass <code>m</code> (log-scaled body length × keyword count),
-      scope <code>s</code>, independence <code>i</code>, cross-domain affinity <code>c<sub>d</sub></code> (token-domain
-      entropy across three "star systems" — forge / signal / mind), fragmentation <code>f</code>, drag <code>δ</code>,
-      dep_ratio <code>d<sub>r</sub></code> (max sibling Jaccard on tokens and keywords), Lagrange potential, plus orbital
-      parameters (semi-major axis, eccentricity, inclination, mean anomaly).
+      An LLM writes <em>N</em> candidates per task. A deterministic classifier picks one of six celestial classes by argmax.
     </p>
 
     <div class="math-block" data-label="celestial body class — argmax over six scoring rules">
@@ -194,12 +188,6 @@
       </div>
     </div>
 
-    <p class="lead hero-lead">
-      Output: a deterministically ranked list with <code>route_score</code>, full classification, and decision rule per
-      candidate. Wire format: Model Context Protocol over stdio or Streamable HTTP. The browser endpoint additionally
-      multiplies <code>route_score</code> by <code>1 + tanh(K · w·x)</code>, a bounded fitted correction layer trained
-      online from real engagement clicks.
-    </p>
     <div class="cta-row hero-cta">
       <a href="/miniapp/" class="btn btn-primary" style="view-transition-name: cta-primary">Try it live →</a>
       <a href="/docs/#install" class="btn btn-ghost">Install in 30 seconds</a>
