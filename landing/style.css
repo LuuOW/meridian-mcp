@@ -559,7 +559,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
    preference). Strip glows and gradients in favour of solid borders. */
 @media (forced-colors: active) {
   .feature, .step, .plan, .lock-card, .ask-card,
-  .skill-panel-body, .ar-stage, .mini-galaxy-frame, .ar-pill {
+  .candidate-panel-body, .ar-stage, .mini-galaxy-frame, .ar-pill {
     border: 2px solid CanvasText !important;
     background: Canvas !important;
   }

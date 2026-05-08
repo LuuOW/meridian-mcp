@@ -2,7 +2,22 @@
 
 **Dynamic task routing via orbital mechanics. Domain-agnostic — candidates can be tools, prompts, documents, products, or any routable entity.**
 
-Self-contained MCP — stdio for local hosts (Claude Code, Cursor, Windsurf…) and Streamable HTTP for remote connectors (Grok, ChatGPT custom MCP, anything that takes a server URL). Generates candidates with Llama-3.3-70B (via [GitHub Models](https://github.com/marketplace/models)) and ranks them with a local orbital classifier into celestial body classes (`planet`, `moon`, `trojan`, `asteroid`, `comet`, `irregular`).
+Per request, an LLM (Llama-3.3-70B via [GitHub Models](https://github.com/marketplace/models)' free tier) emits *N* candidate routing entries. A deterministic classifier extracts an 11-dimensional physics signature from each candidate's content alone — no curated lookup: `mass` (log-scaled body length × keyword count), `scope`, `independence`, `cross_domain` affinity (token-domain entropy across three star systems), `fragmentation`, `drag`, `dep_ratio` (max sibling Jaccard), `lagrange_potential`, plus orbital parameters. Six per-class scoring rules assign a celestial body class by argmax: `planet`, `moon`, `trojan`, `asteroid`, `comet`, or `irregular`.
+
+The class-scoring rules:
+
+```
+score_planet    = min(mass, scope, independence)^1.5
+score_moon      = 2 · max(0, ½ - independence) · 𝟙[parent] · (1 - mass/2)
+score_trojan    = dep_ratio · 𝟙[parent] · (1 - fragmentation)
+score_asteroid  = 2.5 · max(0, 0.55 - mass) · scope · independence
+score_comet     = drag · cross_domain · (1 - dep_ratio)
+score_irregular = 0.85 · cross_domain · fragmentation
+
+class(p) = argmax_c score_c(p)
+```
+
+Output: a deterministically ranked list with `route_score`, full classification, and decision rule per candidate. Wire format: Model Context Protocol over stdio or Streamable HTTP. Stdio shim is ~5 KB. Tested with Claude Code, Cursor, Windsurf, Goose, Continue, Grok custom connectors, ChatGPT custom MCPs, and Claude.ai connectors.
 
 [![npm](https://img.shields.io/npm/v/meridian-orbital.svg)](https://www.npmjs.com/package/meridian-orbital)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
