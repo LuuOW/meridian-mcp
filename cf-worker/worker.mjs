@@ -1,4 +1,4 @@
-// Meridian Skills MCP — Cloudflare Worker (remote / Streamable HTTP).
+// Meridian MCP — Cloudflare Worker (orbital task router) (remote / Streamable HTTP).
 //
 // Implements OAuth 2.1 + PKCE so connector hosts that require an
 // authorization-code flow (Grok, ChatGPT custom MCP, Claude.ai
@@ -156,7 +156,7 @@ function discoveryProtectedResource() {
     scopes_supported: [SUPPORTED_SCOPE],
     bearer_methods_supported: ['header'],
     resource_documentation:  'https://ask-meridian.uk/docs/',
-    resource_name:           'Meridian Skills',
+    resource_name:           'Meridian MCP',
     resource_logo_uri:       ICON_URL,
   }
 }
@@ -171,7 +171,7 @@ function renderAuthorizePage(params) {
   return `<!doctype html>
 <html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Authorize Meridian Skills MCP</title>
+<title>Authorize Meridian MCP</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   :root { color-scheme: dark }
@@ -508,7 +508,7 @@ export default {
       return textResponse('ok')
 
     if (url.pathname === '/' && request.method === 'GET')
-      return textResponse(`Meridian Skills MCP v${PKG_VERSION} — POST /mcp with bearer token. https://ask-meridian.uk\n`)
+      return textResponse(`Meridian MCP v — POST /mcp with bearer token. https://ask-meridian.uk\n`)
 
     // Icon endpoints — served from the SVG embedded above. Multiple
     // paths because different connector hosts probe different ones.
