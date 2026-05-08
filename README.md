@@ -4,15 +4,15 @@
 
 Self-contained MCP — stdio for local hosts (Claude Code, Cursor, Windsurf…) and Streamable HTTP for remote connectors (Grok, ChatGPT custom MCP, anything that takes a server URL). Generates candidates with Llama-3.3-70B (via [GitHub Models](https://github.com/marketplace/models)) and ranks them with a local orbital classifier into celestial body classes (`planet`, `moon`, `trojan`, `asteroid`, `comet`, `irregular`).
 
-[![npm](https://img.shields.io/npm/v/meridian-mcp.svg)](https://www.npmjs.com/package/meridian-mcp)
+[![npm](https://img.shields.io/npm/v/meridian-orbital.svg)](https://www.npmjs.com/package/meridian-orbital)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **3.0 — renamed from `meridian-skills-mcp`.** The classifier was always domain-agnostic; the "skills" framing biased the LLM prompt toward AI-agent capabilities. v3 drops that framing across the prompt, code, branding, and npm name. Migration: `npm i -g meridian-mcp` (the old package is deprecated; both binaries are still named `meridian-mcp` / `meridian-mcp-http` so client configs keep working). The hosted HTTP MCP at `mcp.ask-meridian.uk/mcp` continues to work — URL unchanged.
+> **3.0 — renamed from `meridian-skills-mcp`.** The classifier was always domain-agnostic; the "skills" framing biased the LLM prompt toward AI-agent capabilities. v3 drops that framing across the prompt, code, branding, and npm name. Migration: `npm i -g meridian-orbital` (the old package is deprecated; both binaries are still named `meridian-mcp` / `meridian-mcp-http` so client configs keep working). The hosted HTTP MCP at `mcp.ask-meridian.uk/mcp` continues to work — URL unchanged.
 
 ## Install (stdio — Claude Code / Cursor / Windsurf)
 
 ```bash
-npm install -g meridian-mcp
+npm install -g meridian-orbital
 claude mcp add meridian meridian-mcp
 ```
 
@@ -51,14 +51,14 @@ The same URL works for **ChatGPT custom MCPs** and **Claude.ai connectors** — 
 If you'd rather operate your own remote MCP, the package ships a Node binary:
 
 ```bash
-npx -y meridian-mcp meridian-mcp-http
+npx -y meridian-orbital meridian-mcp-http
 # → listening on http://0.0.0.0:3333/mcp · auth=pass-through · v2.1.0
 ```
 
 Or via Docker (`MCP_MODE=http` flips the entrypoint):
 
 ```bash
-docker run --rm -p 3333:3333 -e MCP_MODE=http meridian-mcp
+docker run --rm -p 3333:3333 -e MCP_MODE=http meridian-orbital
 ```
 
 Auth modes:
