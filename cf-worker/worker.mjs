@@ -49,8 +49,8 @@ const BROWSER_ORIGIN_ALLOWLIST = new Set([
 
 const ISSUER          = 'https://mcp.ask-meridian.uk'
 const SUPPORTED_SCOPE = 'route_task'
-const CODE_TTL_SEC    = 60          // auth code lifetime
-const TOKEN_TTL_SEC   = 60 * 60     // access-token lifetime (1 h)
+const CODE_TTL_SEC    = 5 * 60          // 5 min — covers connector backends that don't redeem instantly
+const TOKEN_TTL_SEC   = 7 * 24 * 60 * 60 // 7 days — avoid re-OAuth churn within a single Grok session/week
 const KV_CODE_PREFIX  = 'code:'
 const KV_TOKEN_PREFIX = 'tok:'
 
@@ -270,7 +270,16 @@ async function handleTokenPost(req, env) {
     return jsonResponse({ error: 'invalid_request', error_description: 'code and code_verifier required' }, { status: 400 })
   }
 
-  const stored = await env.MCP_OAUTH.get(KV_CODE_PREFIX + code, 'json')
+  // CF KV is eventually consistent across edges. The /authorize POST may have
+  // landed at one edge (LATAM if user clicked from Argentina) while /token lands
+  // at a US edge (where Grok's backend lives). Retry briefly so propagation
+  // catches up — without this, Grok sees invalid_grant and re-prompts.
+  let stored = null
+  for (const wait of [0, 250, 500, 1000, 2000]) {
+    if (wait) await new Promise(r => setTimeout(r, wait))
+    stored = await env.MCP_OAUTH.get(KV_CODE_PREFIX + code, 'json')
+    if (stored) break
+  }
   if (!stored) {
     return jsonResponse({ error: 'invalid_grant', error_description: 'auth code unknown or expired' }, { status: 400 })
   }
@@ -306,7 +315,14 @@ async function handleTokenPost(req, env) {
 // OAuth dance" — it's not a credential carrier.
 async function resolveBearer(bearer, env) {
   if (!bearer) return { error: 'missing Authorization: Bearer <access-token>' }
-  const stored = await env.MCP_OAUTH.get(KV_TOKEN_PREFIX + bearer, 'json')
+  // Same edge-propagation issue as in /token: a token issued at edge A may
+  // hit /mcp at edge B before KV catches up. Retry briefly.
+  let stored = null
+  for (const wait of [0, 250, 500, 1000]) {
+    if (wait) await new Promise(r => setTimeout(r, wait))
+    stored = await env.MCP_OAUTH.get(KV_TOKEN_PREFIX + bearer, 'json')
+    if (stored) break
+  }
   if (!stored) return { error: 'invalid or expired access token' }
   if (!env.MERIDIAN_GITHUB_TOKEN) return { error: 'server misconfigured: MERIDIAN_GITHUB_TOKEN secret unset' }
   return { token: env.MERIDIAN_GITHUB_TOKEN }
