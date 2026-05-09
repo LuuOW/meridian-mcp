@@ -13,37 +13,6 @@
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
-<style>
-  /* KaTeX math callout — same vocabulary as the blog post */
-  .math-block {
-    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
-    border: 1px solid rgba(139,92,246,0.38);
-    border-radius: 12px;
-    padding: 30px 24px 22px;
-    margin: 26px 0;
-    position: relative;
-    overflow-x: auto;
-  }
-  .math-block::before {
-    content: attr(data-label);
-    position: absolute; top: 10px; left: 16px;
-    font-family: var(--font-mono); font-size: 10px;
-    letter-spacing: 0.16em; text-transform: uppercase;
-    color: #c4b5fd; opacity: 0.85;
-  }
-  .math-block .katex-display { margin: 0; }
-  .math-legend {
-    margin-top: 14px; padding-top: 14px;
-    border-top: 1px dashed rgba(139,92,246,0.20);
-    font-family: var(--font-mono); font-size: 12px;
-    color: var(--text-faint); line-height: 1.7;
-  }
-  .math-legend code { background: rgba(167,139,250,0.10); padding: 1px 5px; border-radius: 4px; color: #c4b5fd; }
-  .hero-lead .katex { font-size: 1.02em; }
-</style>
 
 <!-- Speculation Rules: prerender same-origin destinations on a 200ms hover.
      Cheap perceived-latency win — clicking "Try it live" or "Vision Lab" lands
@@ -172,21 +141,6 @@
     <p class="lead hero-lead">
       An LLM writes <em>N</em> candidates per task. A deterministic classifier picks one of six celestial classes by argmax.
     </p>
-
-    <div class="math-block" data-label="celestial body class — argmax over six scoring rules">
-      $$\begin{aligned}
-      \mathrm{score}_{\mathrm{planet}}    \;&=\; \min(m,\, s,\, i)^{1.5} \\[2pt]
-      \mathrm{score}_{\mathrm{moon}}      \;&=\; 2 \cdot \max\!\bigl(0,\; \tfrac{1}{2} - i\bigr) \cdot \mathbb{1}_{\mathrm{parent}} \cdot \bigl(1 - \tfrac{m}{2}\bigr) \\[2pt]
-      \mathrm{score}_{\mathrm{trojan}}    \;&=\; d_r \cdot \mathbb{1}_{\mathrm{parent}} \cdot (1 - f) \\[2pt]
-      \mathrm{score}_{\mathrm{asteroid}}  \;&=\; 2.5 \cdot \max\!\bigl(0,\; 0.55 - m\bigr) \cdot s \cdot i \\[2pt]
-      \mathrm{score}_{\mathrm{comet}}     \;&=\; \delta \cdot c_d \cdot (1 - d_r) \\[2pt]
-      \mathrm{score}_{\mathrm{irregular}} \;&=\; 0.85 \cdot c_d \cdot f \\[6pt]
-      \mathrm{class}(\mathbf{p}) \;&=\; \arg\max_{c}\; \mathrm{score}_c(\mathbf{p})
-      \end{aligned}$$
-      <div class="math-legend">
-        <code>m</code> mass · <code>s</code> scope · <code>i</code> independence · <code>c<sub>d</sub></code> cross-domain affinity · <code>f</code> fragmentation · <code>δ</code> drag · <code>d<sub>r</sub></code> dep_ratio · <code>𝟙<sub>parent</sub></code> indicator that the candidate has a parent in the sibling set.
-      </div>
-    </div>
 
     <div class="cta-row hero-cta">
       <a href="/miniapp/" class="btn btn-primary" style="view-transition-name: cta-primary">Try it live →</a>
