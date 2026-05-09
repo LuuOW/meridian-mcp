@@ -12,7 +12,7 @@
 <meta property="og:url" content="https://ask-meridian.uk">
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260509">
+<link rel="stylesheet" href="/style.css?v=20260509b">
 
 <!-- Speculation Rules: prerender same-origin destinations on a 200ms hover.
      Cheap perceived-latency win — clicking "Try it live" or "Vision Lab" lands
@@ -62,10 +62,6 @@
 
 <a href="#main" class="skip-link">Skip to main content</a>
 
-<!-- Top promo strip — links to the new products section below. -->
-<a href="#products" class="promo-strip">
-  📘 New · <strong>Build Your Own MCP Server</strong> ($29) + <strong>10 Production-Ready MCP Servers</strong> ($49) · <span class="promo-strip-cta">See products ↓</span>
-</a>
 
 <nav class="nav" aria-label="Primary">
   <a href="/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
@@ -99,7 +95,6 @@
 
     <details class="nav-group">
       <summary class="nav-section">Resources</summary>
-      <a href="/#products">Products</a>
       <a href="/blog/">Blog</a>
       <a href="/docs/">Docs</a>
       <a href="/#pricing">Pricing</a>
@@ -246,78 +241,6 @@
   </section>
 
   <!-- ── PRODUCTS ────────────────────────────────────────────────────── -->
-  <section class="products" id="products">
-    <h2>Build production MCP infra</h2>
-    <p class="lead">Two opinionated, fast-shipping bundles for shipping your own MCP server in 2026. Same author. Same stack as ask-meridian.uk.</p>
-
-    <div class="products-grid">
-
-      <article class="product-card" style="--card-bg-image: url('/img/products/byomcp-cover.jpg');">
-        <h3><a href="/products/build-your-own-mcp/">Build Your Own MCP Server With Auth + Billing</a></h3>
-        <p class="product-tagline">In 30 minutes — same stack that powers ask-meridian.uk</p>
-        <ul class="product-features">
-          <li>60-page no-fluff guide (HTML + Markdown source)</li>
-          <li>Working Cloudflare Worker template (TypeScript)</li>
-          <li>Stripe webhook + API-key issuance + per-key quotas</li>
-          <li>npm-publishable stdio shim template</li>
-          <li>SSE streaming + Vectorize RAG + AI Gateway wiring</li>
-          <li>MCP Registry submission walkthrough</li>
-          <li>MIT-licensed code, commercial-use OK</li>
-        </ul>
-        <div class="product-foot">
-          <span class="product-price">$29</span>
-          <div class="product-buy-row">
-            <button class="btn btn-primary product-buy-direct" data-slug="build-your-own-mcp">Buy now → instant download</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="product-card" style="--card-bg-image: url('/img/products/pack-cover.jpg');">
-        <h3><a href="/products/mcp-server-pack/">MCP Server Pack — 10 Production-Ready MCP Servers</a></h3>
-        <p class="product-tagline">Drop-in MCP servers for Claude Code, Cursor, Cline, Windsurf</p>
-        <ul class="product-features">
-          <li><code>calc</code> — math + unit conversion</li>
-          <li><code>time</code> — date/time/timezone (now/parse/format/diff/ago/tz)</li>
-          <li><code>fs-search</code> — grep/find/tree on local files</li>
-          <li><code>hn-search</code> + <code>arxiv</code> + <code>wikipedia</code></li>
-          <li><code>regex</code> + <code>json-tools</code> + <code>markdown-tools</code></li>
-          <li><code>dns-tools</code> — lookup/reverse/MX/TXT</li>
-          <li>Install script + unified Claude Code config snippet</li>
-        </ul>
-        <div class="product-foot">
-          <span class="product-price">$49</span>
-          <div class="product-buy-row">
-            <button class="btn btn-primary product-buy-direct" data-slug="mcp-server-pack">Buy now → instant download</button>
-          </div>
-        </div>
-      </article>
-
-    </div>
-
-    <script>
-      // One-time digital purchase flow — Stripe Payment Links, generated
-      // once via Stripe API and pinned here. No backend; the click
-      // navigates directly to Stripe-hosted checkout.
-      const PRODUCT_LINKS = {
-        'build-your-own-mcp': 'https://buy.stripe.com/fZu8wR7JrfXZeAD2kl7ok01',
-        'mcp-server-pack':    'https://buy.stripe.com/fZu6oJ6Fn8vx3VZ7EF7ok02',
-      }
-      document.querySelectorAll('.product-buy-direct').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const url = PRODUCT_LINKS[btn.dataset.slug]
-          if (!url) { alert('No payment link for ' + btn.dataset.slug); return }
-          btn.disabled = true
-          btn.textContent = 'Redirecting to Stripe…'
-          location.href = url
-        })
-      })
-    </script>
-
-    <p class="products-foot">
-      💸 Want both? The bundle pricing is in the works — for now, both at <strong>$78 total</strong>.
-      Free public samples on GitHub: <a href="https://github.com/LuuOW/build-your-own-mcp">build-your-own-mcp</a> · <a href="https://github.com/LuuOW/mcp-server-pack">mcp-server-pack</a>.
-    </p>
-  </section>
 
   <section class="how">
     <h2>How it works</h2>
@@ -342,51 +265,52 @@
 
   <section class="pricing" id="pricing">
     <h2>Pricing</h2>
-    <p class="lead">Free tier always available. Paid plans lift the per-IP cap and give you a personal monthly budget.</p>
+    <p class="lead">Try a public MCP free. Get one of the catalog MCPs deployed for you. Or have a custom MCP built around your stack.</p>
 
     <div class="plans">
       <div class="plan">
-        <div class="plan-name">Free</div>
+        <div class="plan-name">Public MCP</div>
         <div class="plan-price">$0<span>/mo</span></div>
         <ul class="plan-features">
+          <li>Use the public Meridian endpoint</li>
           <li>5 calls / day per IP (best-effort)</li>
-          <li>Same router, same models</li>
-          <li>No API key required</li>
+          <li>No account or API key required</li>
           <li>MIT-licensed npm client</li>
         </ul>
-        <a href="/docs/#install" class="btn btn-ghost btn-block">Install the MCP</a>
+        <a href="/docs/#grok" class="btn btn-ghost btn-block">Connect it</a>
       </div>
 
       <div class="plan plan-featured">
         <div class="plan-tag">Most popular</div>
-        <div class="plan-name">Pro</div>
+        <div class="plan-name">1 MCP</div>
         <div class="plan-price">$29<span>/mo</span></div>
         <ul class="plan-features">
-          <li>10,000 tool calls / month</li>
-          <li>Personal API key, hashed server-side</li>
-          <li><code>X-Meridian-Calls-Remaining</code> header</li>
+          <li>One MCP from the catalog, deployed for you</li>
+          <li>Choose: Meridian / Finance / Pharmacy / future</li>
+          <li>Your subdomain, OAuth + PKCE, KV-backed</li>
+          <li>Maintenance + version bumps included</li>
           <li>Cancel anytime via Stripe portal</li>
         </ul>
-        <button class="btn btn-primary btn-block" data-plan="pro" data-checkout aria-label="Subscribe to Pro plan, twenty-nine US dollars per month">Subscribe — $29/mo</button>
+        <button class="btn btn-primary btn-block" data-plan="pro" data-checkout aria-label="Subscribe to 1 MCP plan, twenty-nine US dollars per month">Subscribe — $29/mo</button>
       </div>
 
       <div class="plan">
-        <div class="plan-name">Team</div>
+        <div class="plan-name">Custom Enterprise MCP</div>
         <div class="plan-price">$149<span>/mo</span></div>
         <ul class="plan-features">
-          <li>100,000 tool calls / month</li>
-          <li>5× the Pro budget</li>
-          <li>Per-key quota tracking</li>
-          <li>Email support</li>
+          <li>Bespoke MCP built around your stack</li>
+          <li>Your tools, your auth, your data sources</li>
+          <li>Architecture review + 1-month build-in support</li>
+          <li>Hosted on your infra or ours</li>
+          <li>Direct email support</li>
         </ul>
-        <button class="btn btn-ghost btn-block" data-plan="team" data-checkout aria-label="Subscribe to Team plan, one hundred forty-nine US dollars per month">Subscribe — $149/mo</button>
+        <button class="btn btn-ghost btn-block" data-plan="team" data-checkout aria-label="Subscribe to Custom Enterprise MCP plan, one hundred forty-nine US dollars per month">Subscribe — $149/mo</button>
       </div>
     </div>
 
     <p class="pricing-note">
-      Billing handled by Stripe — no card data ever touches our infrastructure.
-      Your API key is shown once on checkout success, stored hashed (SHA-256) on our side.
-      Lost it? <a href="mailto:lucas.kempe@icloud.com?subject=Meridian%20key%20rotation">Email us</a> for rotation.
+      Billing via Stripe — no card data on our infrastructure.
+      Need something specific that doesn't fit the catalog? <a href="mailto:lucas.kempe@icloud.com?subject=Custom%20MCP%20enquiry">Email me</a> directly and we'll scope it.
     </p>
   </section>
 
