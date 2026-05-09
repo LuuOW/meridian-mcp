@@ -205,6 +205,31 @@ claude mcp add meridian meridian-mcp
 https://mcp.ask-meridian.uk/mcp</code></pre>
   </section>
 
+  <!-- ── FLEET ───────────────────────────────────────────────────────── -->
+  <!-- Promoted up from below Features so visitors see the multi-MCP reality
+       immediately, not Meridian-as-the-whole-site. -->
+  <section class="products" aria-label="MCP fleet" style="padding-top: 24px">
+    <h2 style="font-size: 22px; margin: 0 0 6px;">Three live MCPs on this domain</h2>
+    <p class="lead" style="margin: 0 0 20px; font-size: 14px; color: var(--text-muted);">Different problems, same OAuth + PKCE shape. Each links to its source.</p>
+    <div class="features" style="margin-top: 0">
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">◎</div>
+        <h3>mcp.ask-meridian.uk</h3>
+        <p><strong>Meridian</strong> — task → orbital classification. The flagship. Operator-pays GitHub Models inference + an online-learning Wilson-CI ranker. <a href="/docs/">Docs</a>.</p>
+      </article>
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">◇</div>
+        <h3>money.ask-meridian.uk</h3>
+        <p><strong>Finance</strong> — single-tenant balance MCP locked behind a WebAuthn passkey. Reads Binance through a Bright Data → Fly bridge to bypass the AR geo-block. <a href="https://github.com/LuuOW/finance-mcp">Source</a> · <a href="/blog/finance-mcp-binance-fly-bright-data/">Blog</a>.</p>
+      </article>
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">💊</div>
+        <h3>botica.ask-meridian.uk</h3>
+        <p><strong>Pharmacy</strong> — Argentine pharmacy cart MCP. Anonymous-cart over the public VTEX API; <code>/checkout/cart/add</code> URL hand-off because reCAPTCHA Enterprise locked us out of server-side login. <a href="https://github.com/LuuOW/pharmacy-mcp">Source</a> · <a href="/blog/pharmacy-mcp-recaptcha-origin-pivot/">Blog</a>.</p>
+      </article>
+    </div>
+  </section>
+
   <section class="stats" aria-label="By the numbers">
     <div class="stat">
       <div class="stat-num">5</div>
@@ -242,23 +267,28 @@ https://mcp.ask-meridian.uk/mcp</code></pre>
     </article>
   </section>
 
-  <!-- ── FLEET ───────────────────────────────────────────────────────── -->
-  <section class="features" aria-label="MCP fleet" style="margin-top: 8px">
-    <article class="feature">
-      <div class="feature-icon" aria-hidden="true">◎</div>
-      <h3>mcp.ask-meridian.uk</h3>
-      <p><strong>Meridian</strong> — task → orbital classification. The flagship. Operator-pays GitHub Models inference + an online-learning Wilson-CI ranker. <a href="/docs/">Docs</a>.</p>
-    </article>
-    <article class="feature">
-      <div class="feature-icon" aria-hidden="true">◇</div>
-      <h3>money.ask-meridian.uk</h3>
-      <p><strong>Finance</strong> — portfolio + balance MCP locked to one user via WebAuthn passkey. Reads Binance through a Bright Data → Fly bridge to bypass the geo-block; MercadoPago + Coinbase planned. <a href="https://github.com/LuuOW/finance-mcp">Source</a>.</p>
-    </article>
-    <article class="feature">
-      <div class="feature-icon" aria-hidden="true">💊</div>
-      <h3>botica.ask-meridian.uk</h3>
-      <p><strong>Pharmacy</strong> — Argentine pharmacy cart MCP. Anonymous-cart over the public VTEX API; checkout hand-off via <code>/checkout/cart/add</code> URL because reCAPTCHA Enterprise locked us out of server-side login. <a href="https://github.com/LuuOW/pharmacy-mcp">Source</a>.</p>
-    </article>
+  <!-- ── RECENT WRITING ──────────────────────────────────────────────── -->
+  <section class="products" aria-label="Recent writing" style="padding-top: 24px">
+    <h2 style="font-size: 22px; margin: 0 0 6px;">Recent writing</h2>
+    <p class="lead" style="margin: 0 0 20px; font-size: 14px; color: var(--text-muted);">Field notes on building each piece of the fleet.</p>
+    <div class="features" style="margin-top: 0">
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">💊</div>
+        <h3 style="font-size: 16px;"><a href="/blog/pharmacy-mcp-recaptcha-origin-pivot/" style="color: var(--text); text-decoration: none;">AI agents vs. reCAPTCHA Enterprise</a></h3>
+        <p style="font-size: 13.5px; color: var(--text-muted);">VTEX returned <code>200 {}</code> after we forwarded a real captcha token. Hostname enforcement on the consumer side. The pivot to anonymous cart + URL hand-off ships ~95% of the value without a headless browser.</p>
+      </article>
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">◇</div>
+        <h3 style="font-size: 16px;"><a href="/blog/finance-mcp-binance-fly-bright-data/" style="color: var(--text); text-decoration: none;">Grok ↔ Binance through Fly + Bright Data</a></h3>
+        <p style="font-size: 13.5px; color: var(--text-muted);">Three layers, each solving exactly one problem. WebAuthn at the door, Cloudflare Worker in the middle, Fly proxy through Bright Data's static AR residential IP at the egress. ~$16/month all in.</p>
+      </article>
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">◎</div>
+        <h3 style="font-size: 16px;"><a href="/blog/orbital-classifier-online-learning/" style="color: var(--text); text-decoration: none;">From 17% to 81% — calibrating an orbital classifier</a></h3>
+        <p style="font-size: 13.5px; color: var(--text-muted);">A skill-routing classifier had a planet bias. Two textbook frameworks failed. Retuned heuristics hit 81% [Wilson 60%–92%]. Online SGD on top so it improves from every click.</p>
+      </article>
+    </div>
+    <p style="margin-top: 20px; font-size: 13.5px; color: var(--text-muted);"><a href="/blog/" style="color: #7aa3ff;">All posts →</a></p>
   </section>
 
   <!-- ── PRODUCTS ────────────────────────────────────────────────────── -->
