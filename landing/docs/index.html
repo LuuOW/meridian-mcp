@@ -141,35 +141,108 @@ claude mcp add meridian meridian-mcp \
   </h2>
   <p>
     Grok's <em>"Add custom connector"</em> dialog takes an MCP server
-    URL plus four OAuth fields. Paste these:
+    URL plus four OAuth fields. Pick which MCP from the fleet you want
+    to add — the values below update accordingly:
   </p>
 
-  <table>
+  <style>
+    .mcp-picker {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      background: var(--bg-card, #10131a);
+      border: 1px solid var(--border, #1b2030);
+      border-radius: 12px; padding: 6px;
+      margin: 18px 0;
+    }
+    .mcp-picker button {
+      flex: 1; min-width: 140px;
+      background: transparent; color: var(--text-muted, #94a0b8);
+      border: 1px solid transparent; border-radius: 8px;
+      padding: 10px 14px; font: inherit; font-size: 13px;
+      cursor: pointer; transition: background 120ms, color 120ms, border-color 120ms;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .mcp-picker button:hover { color: var(--text, #e6eaf2); }
+    .mcp-picker button[aria-selected="true"] {
+      background: rgba(139,92,246,0.14);
+      color: var(--text, #e6eaf2);
+      border-color: rgba(139,92,246,0.4);
+    }
+    .mcp-picker button .mcp-emoji { font-size: 16px; }
+    .mcp-tag {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 12px; color: var(--text-faint, #6c7790);
+      margin: -8px 0 14px; padding-left: 4px;
+    }
+  </style>
+
+  <div class="mcp-picker" role="tablist" aria-label="MCP fleet picker">
+    <button type="button" role="tab" data-mcp="meridian" aria-selected="true"><span class="mcp-emoji">◎</span> Meridian</button>
+    <button type="button" role="tab" data-mcp="money"    aria-selected="false"><span class="mcp-emoji">◇</span> Finance</button>
+    <button type="button" role="tab" data-mcp="botica"   aria-selected="false"><span class="mcp-emoji">💊</span> Pharmacy</button>
+  </div>
+  <div class="mcp-tag" id="mcpTag">Task → orbital classification. <code>route_task</code> tool.</div>
+
+  <table id="grokConfigTable">
     <thead><tr><th>Field</th><th>Value</th></tr></thead>
     <tbody>
-      <tr><td>Server URL</td><td><code>https://mcp.ask-meridian.uk/mcp</code></td></tr>
-      <tr><td>Authorization endpoint</td><td><code>https://mcp.ask-meridian.uk/authorize</code></td></tr>
-      <tr><td>Token endpoint</td><td><code>https://mcp.ask-meridian.uk/token</code></td></tr>
-      <tr><td>Client ID</td><td><code>grok</code></td></tr>
-      <tr><td>Client secret</td><td><em>(empty)</em></td></tr>
-      <tr><td>Token auth method</td><td><code>none</code> &nbsp;(PKCE only)</td></tr>
-      <tr><td>Scopes</td><td><code>route_task</code></td></tr>
+      <tr><td>Server URL</td>            <td><code data-field="server">https://mcp.ask-meridian.uk/mcp</code></td></tr>
+      <tr><td>Authorization endpoint</td><td><code data-field="auth">https://mcp.ask-meridian.uk/authorize</code></td></tr>
+      <tr><td>Token endpoint</td>        <td><code data-field="token">https://mcp.ask-meridian.uk/token</code></td></tr>
+      <tr><td>Client ID</td>             <td><code data-field="clientId">grok</code></td></tr>
+      <tr><td>Client secret</td>         <td><em>(empty)</em></td></tr>
+      <tr><td>Token auth method</td>     <td><code>none</code> &nbsp;(PKCE only)</td></tr>
+      <tr><td>Scopes</td>                <td><code data-field="scope">route_task</code></td></tr>
     </tbody>
   </table>
 
-  <p>The flow:</p>
+  <script>
+    (() => {
+      const CONFIGS = {
+        meridian: { host: 'mcp.ask-meridian.uk',    scope: 'route_task',    clientId: 'grok',
+                    tag: 'Task → orbital classification. <code>route_task</code> tool.' },
+        money:    { host: 'money.ask-meridian.uk',  scope: 'read',          clientId: 'grok',
+                    tag: 'Single-tenant balance MCP. WebAuthn-bootstrapped — only the device that registered first can authorize.' },
+        botica:   { host: 'botica.ask-meridian.uk', scope: 'pharmacy_cart', clientId: 'grok',
+                    tag: 'Anonymous-cart pharmacy MCP. <code>prepare_checkout</code> emits a <code>/checkout/cart/add</code> URL for the browser hand-off.' },
+      }
+      const $ = (s) => document.querySelector(s)
+      const $$ = (s) => document.querySelectorAll(s)
+      function apply(key) {
+        const c = CONFIGS[key]; if (!c) return
+        $('[data-field=server]').textContent   = `https://${c.host}/mcp`
+        $('[data-field=auth]').textContent     = `https://${c.host}/authorize`
+        $('[data-field=token]').textContent    = `https://${c.host}/token`
+        $('[data-field=scope]').textContent    = c.scope
+        $('[data-field=clientId]').textContent = c.clientId
+        $('#mcpTag').innerHTML                 = c.tag
+        const auth = $('#grokAuthLink')
+        if (auth) {
+          auth.href        = `https://${c.host}/authorize`
+          auth.textContent = `${c.host}/authorize`
+        }
+        $$('.mcp-picker button').forEach(b =>
+          b.setAttribute('aria-selected', String(b.dataset.mcp === key)))
+      }
+      $$('.mcp-picker button').forEach(b =>
+        b.addEventListener('click', () => apply(b.dataset.mcp)))
+    })()
+  </script>
+
+  <p>The flow (same for any MCP in the fleet):</p>
   <ol>
     <li>Grok stores the connector and shows an <strong>Authorize</strong> button.</li>
     <li>Clicking it opens
-      <a href="https://mcp.ask-meridian.uk/authorize">mcp.ask-meridian.uk/authorize</a>
+      <a id="grokAuthLink" href="https://mcp.ask-meridian.uk/authorize">mcp.ask-meridian.uk/authorize</a>
       in a new tab — a single-button confirmation page. No PAT pasting,
       no GitHub jargon.</li>
     <li>You click <em>Authorize</em>, the page 302s back to Grok with a
       one-time auth code, Grok exchanges it at <code>/token</code> with PKCE
-      verification, and gets a 1-hour Bearer back.</li>
-    <li><code>route_task</code> appears in Grok's tools list. Ask
-      something like <em>"route a task to ranked candidates: build a
-      WebSocket-backed presence indicator"</em> and Grok invokes it.</li>
+      verification, and gets a Bearer back (TTL: 1 h for Meridian, 7 d
+      for Finance &amp; Pharmacy).</li>
+    <li>The MCP's tools appear in Grok's tools list. For Meridian it's
+      <code>route_task</code>; for Pharmacy it's <code>search_products</code> /
+      <code>add_to_cart</code> / <code>prepare_checkout</code> + 8 more; for
+      Finance it's the read-only balance + portfolio surface.</li>
   </ol>
 
   <p>
