@@ -90,6 +90,32 @@
 </nav>
 
 <main id="main" class="hero-wrap">
+
+  <!-- ── FLEET ───────────────────────────────────────────────────────── -->
+  <!-- Above the hero: visitors see all three live MCPs before the
+       Meridian-flagship pitch. -->
+  <section class="products" aria-label="MCP fleet" style="padding-top: 32px; padding-bottom: 8px;">
+    <h2 style="font-size: 22px; margin: 0 0 6px;">Three live MCPs on this domain</h2>
+    <p class="lead" style="margin: 0 0 20px; font-size: 14px; color: var(--text-muted);">Different problems, same OAuth + PKCE shape. Each links to its source.</p>
+    <div class="features" style="margin-top: 0">
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">◎</div>
+        <h3>mcp.ask-meridian.uk</h3>
+        <p><strong>Meridian</strong> — task → orbital classification. The flagship. Operator-pays GitHub Models inference + an online-learning Wilson-CI ranker. <a href="/docs/">Docs</a>.</p>
+      </article>
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">◇</div>
+        <h3>money.ask-meridian.uk</h3>
+        <p><strong>Finance</strong> — single-tenant balance MCP locked behind a WebAuthn passkey. Reads Binance through a Bright Data → Fly bridge to bypass the AR geo-block. <a href="https://github.com/LuuOW/finance-mcp">Source</a> · <a href="/blog/finance-mcp-binance-fly-bright-data/">Blog</a>.</p>
+      </article>
+      <article class="feature">
+        <div class="feature-icon" aria-hidden="true">💊</div>
+        <h3>botica.ask-meridian.uk</h3>
+        <p><strong>Pharmacy</strong> — Argentine pharmacy cart MCP. Anonymous-cart over the public VTEX API; <code>/checkout/cart/add</code> URL hand-off because reCAPTCHA Enterprise locked us out of server-side login. <a href="https://github.com/LuuOW/pharmacy-mcp">Source</a> · <a href="/blog/pharmacy-mcp-recaptcha-origin-pivot/">Blog</a>.</p>
+      </article>
+    </div>
+  </section>
+
   <section class="hero">
     <!-- Decorative orbital mechanics diagram, positioned behind the hero text.
          SMIL animation works in every modern browser without requiring JS or
@@ -144,43 +170,10 @@
 
     <div class="cta-row hero-cta">
       <a href="/miniapp/" class="btn btn-primary" style="view-transition-name: cta-primary">Try it live →</a>
-      <a href="/docs/#install" class="btn btn-ghost">Install in 30 seconds</a>
       <a href="/docs/#grok" class="btn btn-ghost" style="display: inline-flex; align-items: center; gap: 8px;">
         <img src="/img/brand/grok/Grok_Logomark_Light.svg" alt="" width="18" height="18" style="vertical-align: -3px;">
         Add to Grok →
       </a>
-    </div>
-
-    <pre class="hero-snippet"><code># local: Claude Code, Cursor, Windsurf
-npm install -g meridian-orbital
-claude mcp add meridian meridian-mcp
-
-# remote: Grok / ChatGPT (paste in connector setup)
-https://mcp.ask-meridian.uk/mcp</code></pre>
-  </section>
-
-  <!-- ── FLEET ───────────────────────────────────────────────────────── -->
-  <!-- Promoted up from below Features so visitors see the multi-MCP reality
-       immediately, not Meridian-as-the-whole-site. -->
-  <section class="products" aria-label="MCP fleet" style="padding-top: 24px">
-    <h2 style="font-size: 22px; margin: 0 0 6px;">Three live MCPs on this domain</h2>
-    <p class="lead" style="margin: 0 0 20px; font-size: 14px; color: var(--text-muted);">Different problems, same OAuth + PKCE shape. Each links to its source.</p>
-    <div class="features" style="margin-top: 0">
-      <article class="feature">
-        <div class="feature-icon" aria-hidden="true">◎</div>
-        <h3>mcp.ask-meridian.uk</h3>
-        <p><strong>Meridian</strong> — task → orbital classification. The flagship. Operator-pays GitHub Models inference + an online-learning Wilson-CI ranker. <a href="/docs/">Docs</a>.</p>
-      </article>
-      <article class="feature">
-        <div class="feature-icon" aria-hidden="true">◇</div>
-        <h3>money.ask-meridian.uk</h3>
-        <p><strong>Finance</strong> — single-tenant balance MCP locked behind a WebAuthn passkey. Reads Binance through a Bright Data → Fly bridge to bypass the AR geo-block. <a href="https://github.com/LuuOW/finance-mcp">Source</a> · <a href="/blog/finance-mcp-binance-fly-bright-data/">Blog</a>.</p>
-      </article>
-      <article class="feature">
-        <div class="feature-icon" aria-hidden="true">💊</div>
-        <h3>botica.ask-meridian.uk</h3>
-        <p><strong>Pharmacy</strong> — Argentine pharmacy cart MCP. Anonymous-cart over the public VTEX API; <code>/checkout/cart/add</code> URL hand-off because reCAPTCHA Enterprise locked us out of server-side login. <a href="https://github.com/LuuOW/pharmacy-mcp">Source</a> · <a href="/blog/pharmacy-mcp-recaptcha-origin-pivot/">Blog</a>.</p>
-      </article>
     </div>
   </section>
 
