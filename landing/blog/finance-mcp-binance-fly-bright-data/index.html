@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey — Meridian Blog</title>
+<meta name="description" content="Building a single-tenant finance MCP that lets Grok read my Binance balance from a country Binance geo-blocks. WebAuthn at the door, Cloudflare Workers in the middle, a tiny Fly proxy through Bright Data's static residential IP at the edge.">
+<meta property="og:title" content="AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey">
+<meta property="og:description" content="The architecture of a one-user finance MCP — three layers, each solving exactly one problem.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .stack { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin: 22px 0; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65; color: var(--text-muted); white-space: pre; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<a href="/products/build-your-own-mcp/" class="promo-strip">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <details class="nav-group" open>
+      <summary class="nav-section">Resources</summary>
+      <a href="/#products">Products</a>
+      <a href="/blog/" class="current">Blog</a>
+      <a href="/docs/">Docs</a>
+      <a href="/#pricing">Pricing</a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/finance-mcp">GitHub · finance-mcp</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+    </details>
+  </div>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-09 · 10 min read · new</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey
+    </h1>
+
+    <p class="lead" style="font-size: 17px; color: var(--text-muted);">
+      I want to ask Grok "what's my USDT?" from my phone, get a real number back, and have nobody-but-me ever be able to ask the same thing of the same MCP. Three layers, each solving exactly one problem: WebAuthn at the door, Cloudflare for the public surface, a small Fly proxy through Bright Data at the egress so a country-blocked exchange thinks it's hearing from a perfectly normal Argentine residential IP.
+    </p>
+
+    <h2>What it does, today</h2>
+
+    <p>
+      The MCP at <code>money.ask-meridian.uk</code> is a one-user vault. Tools live behind OAuth 2.1 + PKCE; OAuth itself is gated by a WebAuthn passkey tap. The current tool surface is intentionally read-only and small — balance and portfolio queries — because the trust model has to be solid before signing transactions ever lives upstream of the chat box.
+    </p>
+
+    <p>
+      Tomorrow's tools (planned, not yet wired): <code>get_mp_balance()</code> for MercadoPago, <code>get_coinbase_holdings()</code>, eventually <code>prepare_withdraw_usdc()</code> that drafts a withdrawal a human still has to confirm. The architecture below is the foundation those build on.
+    </p>
+
+    <h2>The stack</h2>
+
+    <div class="stack">
+   ┌──────────────┐         ┌──────────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+   │     Grok     │  OAuth  │ money.ask-meridian.uk│  HTTPS  │ binance-proxy   │ CONNECT │  Bright Data    │
+   │  (any host)  │ ──────► │  Cloudflare Worker   │ ──────► │  on Fly.io      │ ──────► │  static AR IP   │ ──► api.binance.com
+   └──────────────┘         └──────────────────────┘         └─────────────────┘         └─────────────────┘
+                                      │
+                                      └─ KV: passkey credentials, OAuth state, idempotent cart
+    </div>
+
+    <p>
+      Each box solves one problem; none of them try to do more.
+    </p>
+
+    <h2>Layer 1 — WebAuthn at the door</h2>
+
+    <p>
+      A finance MCP can't have a shared secret you paste into Grok. The chat-side LLM is a black box; whatever you give it, you've given to whoever runs the LLM. The trust boundary has to be a browser session <em>I</em> control, with a key the LLM literally can't see.
+    </p>
+
+    <p>
+      The bootstrap is a one-time dance:
+    </p>
+
+    <ol>
+      <li>
+        <strong>Mint a registration link</strong> — I POST to <code>/admin/create-registration-link</code> with my <code>X-Admin-Secret</code> header. Returns a URL like <code>money.ask-meridian.uk/register/&lt;random-token&gt;</code> valid for one hour.
+      </li>
+      <li>
+        <strong>Register the passkey</strong> — I open that URL on the device that should own the key, the browser prompts for biometric, the public key is stored in KV, and the registration link self-destructs (KV entry deleted).
+      </li>
+      <li>
+        <strong>Wire up Grok</strong> — paste the MCP URL into Grok's connector settings. Grok discovers OAuth via <code>.well-known/oauth-authorization-server</code>, redirects me to <code>/authorize</code>, which renders a single passkey login page. One Touch ID tap, OAuth code emitted, Grok exchanges it for a bearer.
+      </li>
+    </ol>
+
+    <p>
+      After that, daily use is just chat. Grok holds the bearer (TTL 7 days), I never see another passkey prompt unless I revoke. The MCP enforces single-tenant: one <code>USER_ID</code> in env, all challenges keyed to that user, registration endpoint refuses additional passkeys after the first one is bound.
+    </p>
+
+    <p>
+      All of this is implemented with <a href="https://www.npmjs.com/package/@simplewebauthn/server">@simplewebauthn/server</a> on the worker — there's no CF-specific WebAuthn primitive, just the standard library running in the worker runtime via <code>nodejs_compat</code>. Passkey storage is one KV entry per credential, ~250 bytes each.
+    </p>
+
+    <h2>Layer 2 — the Cloudflare Worker</h2>
+
+    <p>
+      The worker is the public face. Its responsibilities are exactly:
+    </p>
+
+    <ul>
+      <li>OAuth 2.1 + PKCE issuer (mirrors the Meridian and pharmacy MCP shape).</li>
+      <li>WebAuthn registration + login endpoints.</li>
+      <li>The MCP <code>/mcp</code> JSON-RPC endpoint with bearer validation.</li>
+      <li>Tool dispatch — small switch on tool name, calls into per-exchange clients.</li>
+    </ul>
+
+    <p>
+      It deliberately doesn't talk to Binance directly. Two reasons. First, Binance geo-blocks Argentina at the API level — requests from CF edge IPs in LATAM get a CloudFront 451 long before reaching anything useful. Second, even if I worked around that, every CF edge has a different IP — Binance's "whitelist this IP for this API key" policy needs <em>one fixed IP forever</em>. CF Workers' egress IPs aren't fixed.
+    </p>
+
+    <p>
+      So the worker delegates egress to layer 3.
+    </p>
+
+    <h2>Layer 3 — the Fly proxy through Bright Data</h2>
+
+    <p>
+      <a href="https://github.com/LuuOW/binance-proxy">binance-proxy</a> is ~120 lines of Node.js running on Fly.io. It does two things: forward signed requests from the worker to Binance, and route every outbound connection through a Bright Data static-residential proxy with sticky sessions. The result: every request to <code>api.binance.com</code> arrives from the same Argentine residential IP — <code>89.32.132.226</code>, in my case — which is whitelisted on my Binance API key.
+    </p>
+
+    <pre><code>import { HttpsProxyAgent } from "https-proxy-agent"
+
+const BD_URL  = `http://${BD_USER}:${BD_PASS}@brd.superproxy.io:33335`
+const agent   = new HttpsProxyAgent(BD_URL)
+
+// Forwards GET /fapi/v1/klines etc. through the BD agent
+const r = await fetch("https://api.binance.com" + req.url, {
+  method: req.method,
+  headers: filterHeaders(req.headers),  // strip Fly-* and X-Forwarded-*
+  body:    req.body,
+  agent,
+})</code></pre>
+
+    <p>
+      The <code>filterHeaders</code> step is critical and easy to miss. Fly inserts <code>Fly-*</code> and <code>X-Forwarded-*</code> headers into every request — leak those through to Binance and CloudFront blocks the whole connection with a 403. The fix is an allowlist: <code>x-mbx-apikey</code>, <code>content-type</code>, <code>content-length</code>, <code>user-agent</code>. Anything else, drop.
+    </p>
+
+    <p>
+      Bright Data's "sticky session" is the bit that gives us a single IP forever. The proxy username carries a session id (<code>brd-customer-...-zone-...-session-&lt;id&gt;</code>); BD pins a single egress IP to that session for as long as you keep using it. Whitelist that one IP on the Binance key and you're set.
+    </p>
+
+    <h2>HMAC signing in the worker</h2>
+
+    <p>
+      Binance's authenticated endpoints want an HMAC-SHA256 signature over the query string, with the API secret as the key. CF Workers don't have Node's <code>crypto</code> module, but they do have Web Crypto, which is enough:
+    </p>
+
+    <pre><code>async function hmacSha256Hex(secret: string, message: string): Promise&lt;string&gt; {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    &#123; name: "HMAC", hash: "SHA-256" &#125;,
+    false,
+    ["sign"]
+  )
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message))
+  return [...new Uint8Array(sig)]
+    .map(b =&gt; b.toString(16).padStart(2, "0"))
+    .join("")
+}</code></pre>
+
+    <p>
+      The signed query is appended as <code>&signature=...</code>, the request goes through the Fly proxy, Binance verifies the HMAC against the API key, and you get JSON back.
+    </p>
+
+    <h2>What it doesn't do (yet)</h2>
+
+    <ul>
+      <li><strong>Trading actions.</strong> Read-only is the safe place to start. Order placement is gated behind a "draft, then human-confirms" pattern: <code>prepare_market_buy(...)</code> returns a structured plan with the calculated size, fees, and slippage band; a separate <code>confirm_order(plan_id)</code> tool requires a passkey-fresh OAuth bearer to actually execute.</li>
+      <li><strong>MercadoPago integration.</strong> MercadoPago's API uses access tokens that don't have geo issues, but <em>do</em> need a different sliver of OAuth dance for first-time setup. Adding their balance endpoint is half a day of work, mostly token-refresh logic.</li>
+      <li><strong>Coinbase / Kraken / etc.</strong> Same shape as Binance — exchange client class, route through the proxy if needed (Coinbase doesn't geo-block AR), HMAC where applicable.</li>
+    </ul>
+
+    <h2>Why three layers instead of two</h2>
+
+    <p>
+      You could imagine a simpler stack: Grok talks to a Fly worker directly, the Fly worker handles auth + Bright Data + Binance. One process. Less plumbing.
+    </p>
+
+    <p>
+      The reason I split is that each of the three layers has a different operational profile. The worker is hot, free, scales horizontally, has KV and is on the global edge — ideal for the auth-heavy public surface. The Fly proxy needs an attached static IP and a long-lived TCP connection to Bright Data — Workers can't currently do CONNECT-based proxy chaining cleanly. Bright Data only sells in their own product. Putting all three in one process means the worker is paying CF Workers' constraints on outbound proxy support that it doesn't need to pay.
+    </p>
+
+    <p>
+      And honestly: the boundary at the worker / Fly seam is the place where I want to be able to swap implementations. Bright Data not delivering? Try Smartproxy, or a self-managed VPS in AR. The split lets me swap layer 3 without touching auth or tools.
+    </p>
+
+    <h2>Costs</h2>
+
+    <table>
+      <tr><th>Layer</th><th>Service</th><th>Monthly</th></tr>
+      <tr><td>Worker + KV + custom domain</td><td>Cloudflare</td><td>$0 (free tier)</td></tr>
+      <tr><td>Fly proxy</td><td>Fly.io 1× shared-cpu-1x, 256MB</td><td>~$0–2 (free trial covers it)</td></tr>
+      <tr><td>Bright Data static residential</td><td>BD's smallest tier</td><td>~$15</td></tr>
+      <tr><td>Domain (ask-meridian.uk)</td><td>Cloudflare Registrar</td><td>~$0.80</td></tr>
+    </table>
+
+    <p>
+      ~$16/mo for a single-user finance MCP across two exchanges. Substantially less than I'd spend on a single trade with Binance's sloppier UI.
+    </p>
+
+    <h2>Source</h2>
+
+    <ul>
+      <li><a href="https://github.com/LuuOW/finance-mcp">github.com/LuuOW/finance-mcp</a> — worker, OAuth, WebAuthn, Binance client</li>
+      <li><a href="https://github.com/LuuOW/binance-proxy">github.com/LuuOW/binance-proxy</a> — Fly + Bright Data bridge</li>
+      <li><a href="/blog/grok-meridian-orbital-connector/">Earlier post on the OAuth + connector flow</a> — same auth shape as this MCP</li>
+    </ul>
+
+    <p>
+      Up next: the actual <code>get_balance</code> tool surface, plus the design notes on the "draft then confirm" pattern for trading actions. The architecture is in place; what's left is wiring tools onto it carefully.
+    </p>
+
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/finance-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>
