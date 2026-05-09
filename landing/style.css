@@ -62,6 +62,61 @@ html, body {
   font-family: var(--font-body); font-size: 15px; line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
+/* Stacking context for the .bg-telemetry layer at z-index: -1. Without
+   this, a negative-z-index child would slip below the body's gradient. */
+body { position: relative; isolation: isolate; }
+
+/* ── decorative background telemetry ───────────────────────────────── */
+.bg-telemetry {
+  position: fixed; inset: 0; z-index: -1;
+  pointer-events: none; overflow: hidden;
+  font-family: var(--font-mono, ui-monospace, 'SF Mono', Menlo, monospace);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  contain: strict;
+  will-change: transform;
+}
+.bg-tel-group {
+  position: absolute;
+  display: grid;
+  grid-template-columns: max-content max-content;
+  column-gap: 22px; row-gap: 4px;
+  white-space: nowrap;
+}
+.bg-tel-orbital {
+  top: 14vh; left: 3vw;
+  animation: bg-tel-drift-a 28s ease-in-out infinite alternate;
+}
+.bg-tel-optical {
+  bottom: 16vh; right: 4vw;
+  animation: bg-tel-drift-b 35s ease-in-out infinite alternate;
+}
+.bg-tel-title {
+  grid-column: 1 / -1;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.22em;
+  color: rgba(167, 139, 250, 0.42);
+  margin-bottom: 6px;
+}
+.bg-telemetry .k { color: rgba(148, 163, 184, 0.32); font-weight: 400; }
+.bg-telemetry .v { color: rgba(125, 211, 192, 0.48); font-weight: 500; text-align: right; }
+
+@keyframes bg-tel-drift-a {
+  0%   { transform: translate3d(0, 0, 0);     opacity: 0.55; }
+  50%  { transform: translate3d(8px, -6px, 0); opacity: 0.85; }
+  100% { transform: translate3d(-4px, 8px, 0); opacity: 0.65; }
+}
+@keyframes bg-tel-drift-b {
+  0%   { transform: translate3d(0, 0, 0);      opacity: 0.60; }
+  50%  { transform: translate3d(-6px, 8px, 0);  opacity: 0.40; }
+  100% { transform: translate3d(4px, -10px, 0); opacity: 0.78; }
+}
+
+@media (max-width: 720px) {
+  .bg-telemetry { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-tel-orbital, .bg-tel-optical { animation: none; }
+}
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 code, pre { font-family: var(--font-mono); }
