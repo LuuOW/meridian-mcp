@@ -77,7 +77,31 @@
 
   <section style="padding: 0 0 72px;">
     <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-07 · 10 min read · new</div>
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-09 · 11 min read · new</div>
+      <h2 style="margin: 8px 0 12px; font-size: 22px;">
+        <a href="/blog/pharmacy-mcp-recaptcha-origin-pivot/" style="color: var(--text); text-decoration: none;">
+          AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships
+        </a>
+      </h2>
+      <p style="margin: 0; color: var(--text-muted);">
+        I tried to make Grok run my pharmacy errands end-to-end. The plan: search → cart → automated checkout, all chat-driven. The wall: VTEX's reCAPTCHA Enterprise enforces hostname binding server-side — your worker forwards a real captcha token, Google reports the origin doesn't match the site key, VTEX silently drops the email and returns <code>200 &#123;&#125;</code>. The pivot: anonymous cart in-worker + a <code>/checkout/cart/add</code> URL hand-off to the user's browser. Ships ~95% of the value without a Browserbase-class headless browser.
+      </p>
+    </article>
+
+    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-09 · 10 min read · new</div>
+      <h2 style="margin: 8px 0 12px; font-size: 22px;">
+        <a href="/blog/finance-mcp-binance-fly-bright-data/" style="color: var(--text); text-decoration: none;">
+          AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey
+        </a>
+      </h2>
+      <p style="margin: 0; color: var(--text-muted);">
+        A single-tenant finance MCP that lets Grok read my Binance balance from a country Binance geo-blocks. Three layers, each solving exactly one problem: WebAuthn at the door (passkey-bootstrapped OAuth, single-user), Cloudflare Workers in the middle (auth + tools + KV), a tiny Fly proxy through Bright Data's static-residential AR IP at the edge so Binance's whitelist hears from one fixed IP forever. ~$16/month all in.
+      </p>
+    </article>
+
+    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-07 · 10 min read</div>
       <h2 style="margin: 8px 0 12px; font-size: 22px;">
         <a href="/blog/orbital-classifier-online-learning/" style="color: var(--text); text-decoration: none;">
           From 17% to 81% — calibrating an orbital skill classifier with simulations and online SGD
