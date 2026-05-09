@@ -1088,6 +1088,24 @@ section.how, section.pricing, section.cta-final {
   text-align: left;
   margin-bottom: 24px;
 }
+/* Three-column variant for the fleet section. Falls back to 2 cols on
+   tablet, 1 col on mobile. Reuses .product-card styling underneath. */
+.fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  text-align: left;
+}
+@media (max-width: 1000px) { .fleet-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .fleet-grid { grid-template-columns: 1fr; } }
+
+/* Fleet variant of product-card: shorter, subtler since cards are
+   smaller and we have three side-by-side. */
+.fleet-grid .product-card { padding: 22px 22px; }
+.fleet-grid .product-card .product-emoji { font-size: 26px; margin-bottom: 6px; }
+.fleet-grid .product-card h3 { font-size: 15px; font-family: var(--font-mono, ui-monospace, monospace); letter-spacing: -0.01em; }
+.fleet-grid .product-card .product-tagline { margin-bottom: 0; font-style: normal; line-height: 1.55; }
+
 .product-card {
   position: relative;
   background: var(--bg-card);
