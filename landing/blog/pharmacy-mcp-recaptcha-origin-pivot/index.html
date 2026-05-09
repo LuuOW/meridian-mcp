@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships — Meridian Blog</title>
+<meta name="description" content="I tried to make Grok run my pharmacy errands end-to-end. Then I met VTEX's reCAPTCHA Enterprise hostname enforcement. Here's what worked, what didn't, and the cart-builder pattern that ships ~95% of the value without a headless browser.">
+<meta property="og:title" content="AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships">
+<meta property="og:description" content="What you actually run into when you try to put an AI agent between yourself and a real Argentine VTEX storefront.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+</style>
+</head>
+<body>
+
+<a href="/products/build-your-own-mcp/" class="promo-strip">
+  📘 New · <strong>Build Your Own MCP Server With Auth + Billing</strong> — the same stack that powers this site, in a 60-page guide · <span class="promo-strip-cta">$29 →</span>
+</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <details class="nav-group" open>
+      <summary class="nav-section">Resources</summary>
+      <a href="/#products">Products</a>
+      <a href="/blog/" class="current">Blog</a>
+      <a href="/docs/">Docs</a>
+      <a href="/#pricing">Pricing</a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/pharmacy-mcp">GitHub · pharmacy-mcp</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+    </details>
+  </div>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-09 · 11 min read · new</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships
+    </h1>
+
+    <p class="lead" style="font-size: 17px; color: var(--text-muted);">
+      The pitch was simple: tell Grok what I need, it places the order at my local pharmacy. The path to "simple" took a week. This is what I learned about reCAPTCHA Enterprise hostname enforcement, why VTEX silently drops your request when the captcha came from the wrong origin, and the architecture I shipped that gets ~95% of the value without ever beating Google.
+    </p>
+
+    <h2>The setup</h2>
+
+    <p>
+      <a href="https://www.farmaciasdelpueblo.com.ar">Farmacias del Pueblo</a> is the Argentine pharmacy chain I order from. Their site runs on <a href="https://vtex.com">VTEX</a>, the LATAM-dominant e-commerce platform. VTEX exposes a public, well-documented JSON API for catalog and cart — that part was a gift. I wired up a Cloudflare Worker MCP with eleven tools (search, browse, cart CRUD, shipping quotes), bound it to <code>botica.ask-meridian.uk</code>, and started planning the auth layer.
+    </p>
+
+    <p>
+      Endpoint table for the curious — these all work without authentication and were my evidence the hard part would be auth, not data:
+    </p>
+
+    <table>
+      <tr><th>Flow</th><th>Endpoint</th><th>Verified</th></tr>
+      <tr><td>Search products</td><td><code>GET /api/catalog_system/pub/products/search/&lt;term&gt;</code></td><td>3 SKUs returned for "pañales"</td></tr>
+      <tr><td>Category tree</td><td><code>GET /api/catalog_system/pub/category/tree/3</code></td><td>14 root categories</td></tr>
+      <tr><td>Create anonymous cart</td><td><code>POST /api/checkout/pub/orderForm</code></td><td>orderFormId returned</td></tr>
+      <tr><td>Add SKU to cart</td><td><code>POST /api/checkout/pub/orderForm/&lt;id&gt;/items</code></td><td>cart populates with prices and installment options</td></tr>
+    </table>
+
+    <p>
+      So far so good. The trouble starts when you try to make the worker authenticate as a user — i.e., have the MCP run errands "as me" instead of as an anonymous shopper.
+    </p>
+
+    <h2>VTEX login is gated by reCAPTCHA Enterprise on every endpoint</h2>
+
+    <p>
+      VTEX offers two passwordless flows on this tenant: <code>classic</code> (email + password) and <code>accesskey</code> (passwordless 6-digit code via email). I tried classic first — the password I had was generated by 1Password, formatted like <code>nekdo3-xidkow-ciQduc</code>. Five attempts later, all returning <code>WrongCredentials</code>, I started to suspect something other than a typo:
+    </p>
+
+    <pre><code>$ curl -s "https://www.farmaciasdelpueblo.com.ar/api/vtexid/pub/authentication/start"
+showClassicAuthentication: True
+showAccessKeyAuthentication: True
+oauthProviders: ['Google']</code></pre>
+
+    <p>
+      Then I noticed the reCAPTCHA script tag in the page source:
+    </p>
+
+    <pre><code>&lt;script src="https://www.google.com/recaptcha/enterprise.js?render=6LdV7CIpAAAAAPUrHXWlFArQ5hSiNQJk6Ja-vcYM"&gt;</code></pre>
+
+    <p>
+      And the bundle that handles the login form:
+    </p>
+
+    <pre><code>vtex.react-vtexid@4.70.0,
+  useSendAccessKey, useLogInWithAccessKey, useLogInWithPassword, RecaptchaProvider</code></pre>
+
+    <p>
+      The <code>RecaptchaProvider</code> wraps every authentication hook. So both classic password and access-key flows expect a fresh reCAPTCHA Enterprise token on each call. My <code>WrongCredentials</code> response was ambiguous — it could mean "wrong password" or "captcha missing/invalid"; VTEX deliberately collapses both into the same error message.
+    </p>
+
+    <h2>The clever-looking trick</h2>
+
+    <p>
+      reCAPTCHA Enterprise v3 is unsolvable server-side — it's score-based, browser-fingerprint-bound, with ~2 minute token TTLs. But I don't need to solve it server-side: I just need a fresh token, generated wherever Google is willing to issue one. The architecture I drew on the napkin:
+    </p>
+
+    <ol>
+      <li>The worker serves a small static page at <code>/login</code> that loads <code>https://www.google.com/recaptcha/enterprise.js?render=&lt;site-key&gt;</code>.</li>
+      <li>The user types their email, the page calls <code>grecaptcha.enterprise.execute(SITE_KEY, &#123;action: 'login'&#125;)</code>, gets a token.</li>
+      <li>Token + email get POSTed to the worker.</li>
+      <li>Worker forwards to VTEX's <code>/api/vtexid/pub/authentication/accesskey/send</code> with the token in the body.</li>
+      <li>VTEX queues the email. Code lands at the user's inbox.</li>
+      <li>User pastes the code, page generates another captcha token, worker validates, gets a <code>VtexIdclientAutCookie</code>.</li>
+      <li>Cookie is bound to the worker's IP — not the user's. The worker can use it indefinitely. Cron refreshes it via <code>/api/vtexid/refreshtoken/webstore</code> before expiry.</li>
+    </ol>
+
+    <p>
+      The interesting part is the IP-binding asymmetry: VTEX binds the cookie to whoever <em>made the auth request</em>, not to "the user". When the worker is the one calling validate, the resulting cookie is the worker's. You only need the browser as a captcha-token-generator; you don't need it for any session traffic afterwards.
+    </p>
+
+    <p>
+      I shipped this. Pushed the worker, configured DNS, wired Grok's connector. Two clicks: the OAuth dance into Grok, then the access-key dance for VTEX. The page said <strong>✓ Code sent. Check your inbox.</strong>
+    </p>
+
+    <p>
+      Nothing arrived.
+    </p>
+
+    <h2>The diagnostic</h2>
+
+    <p>
+      I had instrumented the <code>/api/auth/send</code> handler with structured logs. Tailing the worker while clicking the button gave me this:
+    </p>
+
+    <pre><code>[auth/send] email=lucas.kempe@icloud.com recaptcha_len=2233
+[auth/send] start: token_len=64 accessKey=true
+[auth/send] vtex_status=200 vtex_body="{}"</code></pre>
+
+    <p>
+      The browser <em>did</em> generate a token (2233 chars — real reCAPTCHA Enterprise output, not a stub). The worker <em>did</em> forward it. VTEX <em>did</em> respond <code>200</code>. But the body was empty <code>{}</code> and no email was queued.
+    </p>
+
+    <p>
+      That's the textbook signature of <strong>server-side hostname enforcement</strong>. When VTEX's backend received the token, it called Google's <code>assessments.create</code> endpoint to verify it. Google's response includes the <em>hostname of the page that generated the token</em> — in this case, <code>botica.ask-meridian.uk</code>. The pharmacy's reCAPTCHA Enterprise admin has <code>www.farmaciasdelpueblo.com.ar</code> as its allowed domain. VTEX checked, didn't match, dropped the email queue, and returned a polite <code>200 {}</code> so attackers couldn't infer which step failed.
+    </p>
+
+    <div class="callout">
+      <strong>The trap:</strong> reCAPTCHA Enterprise tokens are issued by Google's JS regardless of origin — the script will happily generate a token from any page. Hostname enforcement happens on the consumer's side, when they verify the token. Many tutorials skip past this distinction. If you're proxying captcha-gated APIs and getting silent drops, this is almost certainly your problem.
+    </div>
+
+    <h2>What I'd need to actually beat this</h2>
+
+    <p>
+      Three options, all of them more complex than the original plan:
+    </p>
+
+    <ul>
+      <li><strong>A real browser running on the pharmacy's own origin.</strong> Browserbase ($10–30/mo) or a Playwright sidecar on Fly (~$5/mo + maintenance). The browser navigates to <code>https://www.farmaciasdelpueblo.com.ar/login</code>, runs the access-key flow as a human would, captures the <code>VtexIdclientAutCookie</code>, ships it back to the worker. The cookie's IP-binding now matches the cloud browser's IP, not mine. Maintenance: when VTEX's site rotates anything, you fix it in the headless browser script.</li>
+      <li><strong>Captcha-solving service</strong> (2captcha, anticaptcha). $2–3 per 1000 solves, ~30s latency, mediocre reliability for v3 score-based — they often return tokens with low scores that VTEX still rejects. And the hostname problem persists; the solver's IP is also wrong.</li>
+      <li><strong>Manual captcha relay</strong> — the user copies a fresh <code>grecaptcha.execute()</code> output from the pharmacy site's console into the MCP within 2 minutes, every login. Works once. Doesn't scale.</li>
+    </ul>
+
+    <p>
+      None of these are right for a pharmacy MCP I'd use weekly-ish from my phone. So I pivoted.
+    </p>
+
+    <h2>The pivot: anonymous cart + URL hand-off</h2>
+
+    <p>
+      VTEX has a public <em>cart hand-off URL</em>:
+    </p>
+
+    <pre><code>https://www.farmaciasdelpueblo.com.ar/checkout/cart/add?sku=10105&qty=2&seller=1&sku=10996&qty=1&seller=1&redirect=true&sc=1</code></pre>
+
+    <p>
+      When you open this URL in your logged-in browser, VTEX appends those SKUs to your existing cart and routes you to checkout. So the architecture became:
+    </p>
+
+    <ol>
+      <li>The worker keeps an <em>anonymous</em> orderForm in KV. All cart tools (<code>view_cart</code>, <code>add_to_cart</code>, <code>remove_from_cart</code>, etc.) operate on it without authentication.</li>
+      <li>Search, browse, recommend, "what did I buy last month" — all chat-driven, headless.</li>
+      <li><code>prepare_checkout</code> reads the orderForm items and emits a <code>/checkout/cart/add</code> URL with all SKUs and quantities.</li>
+      <li>I open the URL in my browser. Items append to my real cart. I'm already logged in (my browser, my captcha, my saved cards). I tap <em>Pagar</em>.</li>
+    </ol>
+
+    <p>
+      What the AI loses: <em>nothing observable from my POV</em>. The "fully automated" version still required tapping the 3-D Secure prompt that AR banks throw on first use after a fresh session — there was always going to be a tap. The AI part of the workflow (search, recommend, build cart over multiple chat sessions) all happens upstream of payment, and that part is fully automated.
+    </p>
+
+    <h2>The eleven tools</h2>
+
+    <table>
+      <tr><th>Tool</th><th>What it does</th></tr>
+      <tr><td><code>search_products</code></td><td>Search the catalog (Spanish queries work best)</td></tr>
+      <tr><td><code>get_categories</code></td><td>14-node category tree</td></tr>
+      <tr><td><code>browse_category</code></td><td>Page through products in a category</td></tr>
+      <tr><td><code>view_cart</code></td><td>Items, totals, shipping options, payment systems</td></tr>
+      <tr><td><code>add_to_cart</code></td><td>Add a SKU by id from search</td></tr>
+      <tr><td><code>remove_from_cart</code></td><td>Remove by index</td></tr>
+      <tr><td><code>update_cart_item</code></td><td>Change quantity (0 removes)</td></tr>
+      <tr><td><code>clear_cart</code></td><td>Drop the stored orderForm — start fresh</td></tr>
+      <tr><td><code>set_shipping_address</code></td><td>Set ZIP for delivery quote</td></tr>
+      <tr><td><code>get_shipping_options</code></td><td>List delivery options + prices</td></tr>
+      <tr><td><code>prepare_checkout</code></td><td>Emit the <code>/checkout/cart/add</code> URL for the browser hand-off</td></tr>
+    </table>
+
+    <h2>What's still in the codebase but dormant</h2>
+
+    <p>
+      I left the captcha-mediated login plumbing in the repo on purpose: <code>/login</code>, <code>/api/auth/send</code>, <code>/api/auth/validate</code>, the JS in <code>login.html</code>, the cron-based session refresher, and the four VTEX auth functions in <code>vtex.mjs</code>. They wired up correctly. They're shaped right for VTEX's REST auth. They just can't pass the hostname check from a Cloudflare Worker.
+    </p>
+
+    <p>
+      The day I want to upgrade to Browserbase mode (because, say, I want a weekly recurring order to fire while I sleep), the consumer side is already in place. I just need to add an <code>/api/auth/import-cookie</code> endpoint that accepts a freshly-minted <code>VtexIdclientAutCookie</code> from the headless browser and writes it to KV. Everything else cascades.
+    </p>
+
+    <h2>Lessons</h2>
+
+    <ul>
+      <li><strong>Start with empirical recon, not architecture diagrams.</strong> I burned a day designing a flow that turned out to be impossible. Five minutes of inspecting the page bundle would have shown me <code>RecaptchaProvider</code> wraps every auth hook. I would have started from "anonymous cart + hand-off" and saved the rest.</li>
+      <li><strong>200 OK is not "the API did what you asked."</strong> When you're proxying behind anti-abuse infrastructure, treat ambiguous successes as failures and instrument them. The empty-body 200 is intentional — it's a feature of the security model, not a bug in your code.</li>
+      <li><strong>"Fully automated" was never the right goal here.</strong> Argentine 3-D Secure means there was always going to be a manual confirmation tap on first use after a fresh session. The hand-off pattern keeps that tap exactly where it already worked, and gives you the AI value upstream.</li>
+      <li><strong>Keep the dormant code.</strong> The path I couldn't take today is the same path I might want tomorrow. Deleting working-but-blocked plumbing is a footgun.</li>
+    </ul>
+
+    <p>
+      Source at <a href="https://github.com/LuuOW/pharmacy-mcp">github.com/LuuOW/pharmacy-mcp</a>. Live at <a href="https://botica.ask-meridian.uk">botica.ask-meridian.uk</a>. The MCP endpoint at <code>botica.ask-meridian.uk/mcp</code> connects to Grok / Claude / ChatGPT via OAuth 2.1 + PKCE — same shape as the Meridian connector covered in <a href="/blog/grok-meridian-orbital-connector/">an earlier post</a>.
+    </p>
+
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>
