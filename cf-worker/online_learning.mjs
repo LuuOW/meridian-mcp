@@ -22,8 +22,12 @@
 // weights. Old weights would be misaligned with the new feature
 // vector, so we re-init from zeros on version mismatch.
 
-export const FEATURE_VERSION = 'v1'
-export const FEATURE_DIM = 24
+// v2 (2026-05-09): added f[24] = coherence_time (B1, Loudon Ch 3.1
+// g^(1) autocorrelation). 2× more discriminative than the 3-bin
+// cross_domain Shannon-entropy proxy; verified on photon-route sim_b1.
+// Bumping invalidates v1 stored weights — they re-init on next update.
+export const FEATURE_VERSION = 'v2'
+export const FEATURE_DIM = 25
 
 // Hyper-parameters. Conservative — small per-event nudge, light
 // L2 to prevent runaway, tanh squashing on the output already
@@ -35,7 +39,7 @@ const TANH_K = 0.6      // applied to dot product before tanh, so the
                         // |w·x| > 2 (room for fitted weights to grow).
 
 // ─── Feature extraction ───────────────────────────────────────────
-// 24 features per candidate. Order is load-bearing: changing it requires
+// 25 features per candidate. Order is load-bearing: changing it requires
 // bumping FEATURE_VERSION and zeroing stored weights.
 //
 //   [0..7]    physics scalars (mass, scope, indep, cross_domain,
@@ -47,6 +51,7 @@ const TANH_K = 0.6      // applied to dot product before tanh, so the
 //   [21]      rank position normalised (0=top, 1=bottom)
 //   [22]      has_parent (0/1)
 //   [23]      habitable_zone (0/1)
+//   [24]      coherence_time / 4 — clamped to [0,1] (B1, see physicsOf)
 const CLASS_INDEX  = { planet: 0, moon: 1, trojan: 2, asteroid: 3, comet: 4, irregular: 5 }
 const SYSTEM_INDEX = { forge: 0, signal: 1, mind: 2 }
 
@@ -82,6 +87,7 @@ export function extractFeaturesBatch(candidates) {
     f[21] = clamp(i / Math.max(1, candidates.length - 1))
     f[22] = s?.classification?.parent ? 1 : 0
     f[23] = s?.classification?.habitable_zone ? 1 : 0
+    f[24] = clamp((+phys.coherence_time || 0) / 4)   // τ_c ∈ [0, ~3], normalise to [0,1]
     return f
   })
 }

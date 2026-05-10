@@ -339,3 +339,30 @@ test('snapshot: archetype classes resolve to valid celestial bodies', () => {
   assert.ok(['planet','trojan'].includes(docker),
     `docker fixture should be planet or trojan, got ${docker}`)
 })
+
+// ── B1: g^(1) coherence_time ────────────────────────────────────────────
+test('coherence_time present, non-negative, and bounded', () => {
+  const out = orbitalClassify([planet_like, asteroid_like, cross_domain_like], '')
+  for (const row of out) {
+    const tc = row.classification.physics.coherence_time
+    assert.equal(typeof tc, 'number', `${row.slug} coherence_time should be number`)
+    assert.ok(tc >= 0,    `${row.slug} coherence_time=${tc} must be ≥ 0`)
+    assert.ok(tc <= 8,    `${row.slug} coherence_time=${tc} must be ≤ window=8`)
+  }
+})
+
+test('coherence_time discriminates across different fixture shapes', () => {
+  // τ_c is the squared sum of g^(1)(τ) over short lags τ ∈ [1, window).
+  // It captures short-range token repetition — its value depends on the
+  // *distribution of repeat distances*, not just total repetition count.
+  // Different fixture shapes should produce different τ_c values; the test
+  // asserts non-degeneracy (the feature isn't a constant) without
+  // prescribing a specific ordering.
+  const out = orbitalClassify(
+    [planet_like, moon_like, asteroid_like, cross_domain_like], '',
+  )
+  const tcs = out.map(r => r.classification.physics.coherence_time)
+  const distinct = new Set(tcs.map(t => t.toFixed(6))).size
+  assert.ok(distinct >= 3,
+    `τ_c should differ across fixtures, got ${tcs} (${distinct} distinct values)`)
+})
