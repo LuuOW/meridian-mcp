@@ -66,18 +66,22 @@ def pull_psp_fields() -> bool:
 def pull_jwst_trappist1() -> bool:
     from astroquery.mast import Observations
 
-    # Resolver-driven cone search — robust against per-proposal target_name variants
-    obs = Observations.query_object(JWST_TARGET, radius="0.02 deg")
-    print(f"[JWST] cone search returned {len(obs)} rows")
+    # Native combined call: SIMBAD name resolution + cone search + collection filter
+    obs = Observations.query_criteria(
+        objectname=JWST_TARGET,
+        radius="0.02 deg",
+        obs_collection="JWST",
+    )
+    print(f"[JWST] JWST observations near {JWST_TARGET}: {len(obs)} rows")
     if len(obs) == 0:
-        print(f"[JWST] resolver found no objects near {JWST_TARGET}", file=sys.stderr)
+        print("[JWST] no JWST observations in cone", file=sys.stderr)
         return False
 
-    mask = (obs["obs_collection"] == "JWST") & (obs["dataproduct_type"] == "spectrum")
-    obs = obs[mask]
-    print(f"[JWST] after JWST+spectrum filter: {len(obs)} rows")
-    if len(obs) == 0:
-        return False
+    print(
+        f"[JWST] dataproduct_type distribution: "
+        f"{ {str(t): int((obs['dataproduct_type'] == t).sum()) for t in set(obs['dataproduct_type'])} }"
+    )
+    print(f"[JWST] sample obs_id: {[str(r['obs_id']) for r in obs[:3]]}")
 
     obs = obs[:JWST_OBS_CAP]
     products = Observations.get_product_list(obs)
@@ -86,15 +90,12 @@ def pull_jwst_trappist1() -> bool:
         productType="SCIENCE",
         extension="x1d.fits",
     )
+    print(f"[JWST] x1d science products: {len(filtered)}")
     if len(filtered) == 0:
-        print("[JWST] no x1d products in slice", file=sys.stderr)
         return False
 
     filtered = filtered[:JWST_FILE_CAP]
-    manifest = Observations.download_products(
-        filtered,
-        download_dir=str(JWST_OUT),
-    )
+    manifest = Observations.download_products(filtered, download_dir=str(JWST_OUT))
     print(f"[JWST] downloaded {len(manifest)} files to {JWST_OUT}")
     return True
 
