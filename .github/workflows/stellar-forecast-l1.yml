@@ -1,0 +1,30 @@
+name: stellar-forecast-l1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forecast-l1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: stellar/requirements-archetypes.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r stellar/requirements-archetypes.txt
+
+      - name: Compute HelioCast L1 forecast
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python stellar/forecast_l1.py
