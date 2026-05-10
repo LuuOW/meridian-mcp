@@ -163,7 +163,7 @@ def push_to_hub() -> None:
         repo_id=REPO_ID,
         repo_type="dataset",
         token=token,
-        commit_message=f"batch: psp {PSP_TRANGE[0]} + jwst {JWST_TARGET}",
+        commit_message=f"batch: psp E20-E24 multi-perihelion + jwst {JWST_TARGET}",
     )
     print(f"[HF] uploaded {WORK} to https://huggingface.co/datasets/{REPO_ID}")
 
