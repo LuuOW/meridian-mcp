@@ -1,0 +1,127 @@
+<svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff5b8"/>
+      <stop offset="0.4" stop-color="#ffb060" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ff5a3c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#04050a"/>
+      <stop offset="0.55" stop-color="#0a0e1a"/>
+      <stop offset="1" stop-color="#0a0a18"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3a8dde" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#3a8dde" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3a8dde" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+
+  <!-- starfield -->
+  <g fill="#cdd2db" opacity="0.65">
+    <circle cx="180" cy="160" r="1.4"/>
+    <circle cx="240" cy="380" r="1"/>
+    <circle cx="80" cy="540" r="1.2"/>
+    <circle cx="380" cy="220" r="0.8"/>
+    <circle cx="510" cy="160" r="1.5"/>
+    <circle cx="640" cy="320" r="0.9"/>
+    <circle cx="730" cy="100" r="1"/>
+    <circle cx="900" cy="220" r="1.3"/>
+    <circle cx="1180" cy="180" r="1"/>
+    <circle cx="1380" cy="160" r="0.9"/>
+    <circle cx="1500" cy="280" r="1.2"/>
+    <circle cx="1690" cy="180" r="1"/>
+    <circle cx="1810" cy="320" r="1.4"/>
+    <circle cx="1860" cy="540" r="1"/>
+    <circle cx="1700" cy="700" r="0.8"/>
+    <circle cx="1500" cy="900" r="1"/>
+    <circle cx="1280" cy="940" r="0.9"/>
+    <circle cx="1080" cy="980" r="1.3"/>
+    <circle cx="800" cy="900" r="0.9"/>
+    <circle cx="600" cy="940" r="1"/>
+    <circle cx="320" cy="900" r="1.2"/>
+    <circle cx="120" cy="780" r="1"/>
+  </g>
+
+  <!-- sun -->
+  <circle cx="290" cy="540" r="240" fill="url(#sun)"/>
+  <circle cx="290" cy="540" r="92" fill="#ffe082"/>
+
+  <!-- elliptical orbits — perihelia near sun, aphelia far -->
+  <g fill="none" stroke="url(#orbit)" stroke-width="1.2" opacity="0.85">
+    <ellipse cx="690" cy="540" rx="540" ry="180"/>
+    <ellipse cx="730" cy="540" rx="640" ry="120"/>
+    <ellipse cx="610" cy="540" rx="440" ry="240"/>
+  </g>
+
+  <!-- spacecraft dots on orbits (representing E20-E24) -->
+  <g>
+    <circle cx="295" cy="540" r="6" fill="#ffd680"/>
+    <circle cx="510" cy="500" r="5" fill="#3a8dde"/>
+    <circle cx="980" cy="600" r="5" fill="#3a8dde"/>
+    <circle cx="1230" cy="540" r="5" fill="#3a8dde"/>
+    <circle cx="1100" cy="430" r="5" fill="#3a8dde"/>
+  </g>
+
+  <!-- READ-AND-SHIP tag -->
+  <rect x="900" y="180" width="240" height="32" rx="4" fill="none" stroke="#34d399" stroke-width="1.5"/>
+  <text x="1020" y="202" text-anchor="middle" fill="#34d399" font-family="ui-monospace, SF Mono, Monaco, monospace" font-size="14" letter-spacing="3">VALIDATED · GATE-2 PASS</text>
+
+  <!-- main headline -->
+  <text x="900" y="320" fill="#f0f2f6" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="76" font-weight="700">Stellar Harvest-Forecast</text>
+  <text x="900" y="380" fill="#a5b4fc" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="34" font-weight="400">From magnetic noise to a 48-hour forecast.</text>
+
+  <!-- hero callouts -->
+  <g font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif">
+    <rect x="900" y="460" width="220" height="120" rx="10" fill="#0c0e12" stroke="#3a3e47"/>
+    <text x="1010" y="500" text-anchor="middle" fill="#9aa0a6" font-size="13" letter-spacing="2">MAE vs PERSISTENCE</text>
+    <text x="1010" y="555" text-anchor="middle" fill="#3a8dde" font-size="56" font-weight="700">+35%</text>
+
+    <rect x="1140" y="460" width="220" height="120" rx="10" fill="#0c0e12" stroke="#3a3e47"/>
+    <text x="1250" y="500" text-anchor="middle" fill="#9aa0a6" font-size="13" letter-spacing="2">MAE vs FIXED-MEAN</text>
+    <text x="1250" y="555" text-anchor="middle" fill="#3a8dde" font-size="56" font-weight="700">+34%</text>
+
+    <rect x="1380" y="460" width="220" height="120" rx="10" fill="#0c0e12" stroke="#3a3e47"/>
+    <text x="1490" y="500" text-anchor="middle" fill="#9aa0a6" font-size="13" letter-spacing="2">HORIZON</text>
+    <text x="1490" y="555" text-anchor="middle" fill="#1cab5d" font-size="56" font-weight="700">48h</text>
+  </g>
+
+  <!-- pipeline grid -->
+  <g font-family="ui-monospace, SF Mono, Monaco, monospace" font-size="12" letter-spacing="2">
+    <text x="900" y="700" fill="#9aa0a6">PIPELINE</text>
+
+    <g transform="translate(900, 730)">
+      <rect width="180" height="64" rx="6" fill="#0c0e12" stroke="#3a3e47"/>
+      <text x="90" y="28" text-anchor="middle" fill="#cdd2db" font-size="11">PSP MAGNETOMETER</text>
+      <text x="90" y="48" text-anchor="middle" fill="#3a8dde" font-size="14">5 perihelia</text>
+    </g>
+
+    <g transform="translate(1100, 730)">
+      <rect width="180" height="64" rx="6" fill="#0c0e12" stroke="#3a3e47"/>
+      <text x="90" y="28" text-anchor="middle" fill="#cdd2db" font-size="11">FEATURE 5-VECTOR</text>
+      <text x="90" y="48" text-anchor="middle" fill="#3a8dde" font-size="14">λ φ p a τ_c</text>
+    </g>
+
+    <g transform="translate(1300, 730)">
+      <rect width="180" height="64" rx="6" fill="#0c0e12" stroke="#3a3e47"/>
+      <text x="90" y="28" text-anchor="middle" fill="#cdd2db" font-size="11">ARCHETYPE</text>
+      <text x="90" y="48" text-anchor="middle" fill="#3a8dde" font-size="14">GMM k=6</text>
+    </g>
+
+    <g transform="translate(1500, 730)">
+      <rect width="180" height="64" rx="6" fill="#0c0e12" stroke="#3a3e47"/>
+      <text x="90" y="28" text-anchor="middle" fill="#cdd2db" font-size="11">SPECIALIST</text>
+      <text x="90" y="48" text-anchor="middle" fill="#1cab5d" font-size="14">drift @ 48h</text>
+    </g>
+
+    <line x1="1080" y1="762" x2="1100" y2="762" stroke="#3a3e47" stroke-width="2"/>
+    <line x1="1280" y1="762" x2="1300" y2="762" stroke="#3a3e47" stroke-width="2"/>
+    <line x1="1480" y1="762" x2="1500" y2="762" stroke="#3a3e47" stroke-width="2"/>
+  </g>
+
+  <!-- footer line -->
+  <text x="900" y="900" fill="#9aa0a6" font-family="ui-monospace, SF Mono, Monaco, monospace" font-size="14" letter-spacing="3">PSP · JWST · TRAPPIST-1 · WASP-39 · WASP-96 · HF Dataset · open</text>
+  <text x="900" y="930" fill="#5b6172" font-family="ui-monospace, SF Mono, Monaco, monospace" font-size="12" letter-spacing="3">ASK-MERIDIAN.UK / BLOG / STELLAR-HARVEST-FORECAST</text>
+</svg>
