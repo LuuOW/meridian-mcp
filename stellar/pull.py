@@ -81,19 +81,35 @@ def pull_jwst_trappist1() -> bool:
         f"[JWST] dataproduct_type distribution: "
         f"{ {str(t): int((obs['dataproduct_type'] == t).sum()) for t in set(obs['dataproduct_type'])} }"
     )
-    print(f"[JWST] sample obs_id: {[str(r['obs_id']) for r in obs[:3]]}")
+
+    # Imaging exposures don't produce 1D extracted spectra — drop them up front so
+    # the per-observation cap doesn't spend its slots on imaging-only entries.
+    obs = obs[obs["dataproduct_type"] != "image"]
+    print(f"[JWST] non-image observations: {len(obs)}")
+    if len(obs) == 0:
+        return False
 
     obs = obs[:JWST_OBS_CAP]
     products = Observations.get_product_list(obs)
-    # JWST timeseries (e.g. exoplanet transits) yield _x1dints.fits per-integration
-    # extracted spectra; single-pointing spectroscopy yields _x1d.fits. Accept both.
+    print(f"[JWST] products in capped slice: {len(products)}")
+
+    # MAST defaults filter_products to MRP-only, which strips per-integration x1d
+    # outputs from JWST timeseries listings. Disable to see everything.
     filtered = Observations.filter_products(
         products,
         productType="SCIENCE",
         extension=["x1dints.fits", "x1d.fits"],
+        mrp_only=False,
     )
     print(f"[JWST] x1d/x1dints science products: {len(filtered)}")
     if len(filtered) == 0:
+        suffixes = {}
+        for p in products:
+            fn = str(p.get("productFilename", ""))
+            key = fn.rsplit("_", 1)[-1] if "_" in fn else fn
+            suffixes[key] = suffixes.get(key, 0) + 1
+        top = sorted(suffixes.items(), key=lambda kv: -kv[1])[:8]
+        print(f"[JWST] product suffix histogram (top 8): {top}", file=sys.stderr)
         return False
 
     filtered = filtered[:JWST_FILE_CAP]
