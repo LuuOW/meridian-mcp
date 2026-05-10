@@ -145,15 +145,15 @@ def main() -> int:
         "assignment_distribution": rows["assigned_archetype"].value_counts().sort_index().to_dict(),
         "max_distance_z": float(nearest_dist.max()),
         "median_distance_z": float(np.median(nearest_dist)),
-        "instrument_order_to_archetype": (
-            rows.groupby(["target", "order"])["assigned_archetype"]
-                .agg(lambda s: int(s.mode().iloc[0])).to_dict()
-        ),
+        "instrument_order_to_archetype": [
+            {"target": str(t), "order": int(o), "archetype": int(a.mode().iloc[0])}
+            for (t, o), a in rows.groupby(["target", "order"])["assigned_archetype"]
+        ],
         "chosen_horizon_hours": chosen_h,
     }
     # A reasonable Gate-3 sensibility check: distinct (target, order) pairs
     # should not all collapse onto the same archetype.
-    distinct_assignments = set(int(v) for v in gate_3["instrument_order_to_archetype"].values())
+    distinct_assignments = set(item["archetype"] for item in gate_3["instrument_order_to_archetype"])
     gate_3["distinct_archetypes_used"] = len(distinct_assignments)
     gate_3["sensible_diversity_pass"] = bool(len(distinct_assignments) >= 2)
     print(f"\n[stage-7] distinct archetypes used across (target, order): {gate_3['distinct_archetypes_used']}")
