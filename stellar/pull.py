@@ -42,9 +42,9 @@ PSP_DATE_RANGES = [
     ["2025-02-01", "2025-02-02"],
 ]
 
-JWST_TARGET = "TRAPPIST-1"
-JWST_OBS_CAP = 3
-JWST_FILE_CAP = 5
+JWST_TARGETS = ["TRAPPIST-1", "WASP-39", "WASP-96"]
+JWST_OBS_CAP_PER_TARGET = 2
+JWST_FILE_CAP_PER_TARGET = 3
 
 REPO_ID = "luuow/meridian-stellar-cache"
 
@@ -94,61 +94,53 @@ def pull_psp_fields() -> bool:
     return written > 0
 
 
-def pull_jwst_trappist1() -> bool:
+def pull_jwst_target(target: str) -> bool:
     from astroquery.mast import Observations
 
-    # calib_level=3 targets Level 3 combined / extracted observation entries —
-    # the ones whose primary product is _x1dints.fits / _x1d.fits. Level 1/2
-    # entries (uncal, rate, cal) are filed separately and don't carry x1d.
     obs = Observations.query_criteria(
-        objectname=JWST_TARGET,
+        objectname=target,
         radius="0.02 deg",
         obs_collection="JWST",
         calib_level=3,
     )
-    print(f"[JWST] L3 JWST observations near {JWST_TARGET}: {len(obs)} rows")
+    print(f"[JWST] {target}: L3 observations = {len(obs)}")
     if len(obs) == 0:
-        print("[JWST] no L3 observations in cone", file=sys.stderr)
         return False
 
-    print(
-        f"[JWST] dataproduct_type distribution: "
-        f"{ {str(t): int((obs['dataproduct_type'] == t).sum()) for t in set(obs['dataproduct_type'])} }"
-    )
-
-    # Drop imaging — even at L3, MIRI imaging mosaics yield no x1d.
     obs = obs[obs["dataproduct_type"] != "image"]
-    print(f"[JWST] non-image L3 observations: {len(obs)}")
+    print(f"[JWST] {target}: non-image L3 = {len(obs)}")
     if len(obs) == 0:
         return False
 
-    obs = obs[:JWST_OBS_CAP]
+    obs = obs[:JWST_OBS_CAP_PER_TARGET]
     products = Observations.get_product_list(obs)
-    print(f"[JWST] products in capped slice: {len(products)}")
-
-    # MAST defaults filter_products to MRP-only, which strips per-integration x1d
-    # outputs from JWST timeseries listings. Disable to see everything.
     filtered = Observations.filter_products(
         products,
         productType="SCIENCE",
         extension=["x1dints.fits", "x1d.fits"],
         mrp_only=False,
     )
-    print(f"[JWST] x1d/x1dints science products: {len(filtered)}")
+    print(f"[JWST] {target}: x1d/x1dints products = {len(filtered)}")
     if len(filtered) == 0:
-        suffixes = {}
-        for p in products:
-            fn = str(p.get("productFilename", ""))
-            key = fn.rsplit("_", 1)[-1] if "_" in fn else fn
-            suffixes[key] = suffixes.get(key, 0) + 1
-        top = sorted(suffixes.items(), key=lambda kv: -kv[1])[:8]
-        print(f"[JWST] product suffix histogram (top 8): {top}", file=sys.stderr)
         return False
 
-    filtered = filtered[:JWST_FILE_CAP]
-    manifest = Observations.download_products(filtered, download_dir=str(JWST_OUT))
-    print(f"[JWST] downloaded {len(manifest)} files to {JWST_OUT}")
+    filtered = filtered[:JWST_FILE_CAP_PER_TARGET]
+    target_dir = JWST_OUT / target.replace(" ", "_").replace("/", "_")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    manifest = Observations.download_products(filtered, download_dir=str(target_dir))
+    print(f"[JWST] {target}: downloaded {len(manifest)} files")
     return True
+
+
+def pull_jwst() -> bool:
+    any_success = False
+    for target in JWST_TARGETS:
+        try:
+            if pull_jwst_target(target):
+                any_success = True
+        except Exception as e:
+            print(f"[JWST] {target} failed: {e}", file=sys.stderr)
+    return any_success
 
 
 def push_to_hub() -> None:
@@ -163,7 +155,7 @@ def push_to_hub() -> None:
         repo_id=REPO_ID,
         repo_type="dataset",
         token=token,
-        commit_message=f"batch: psp E20-E24 multi-perihelion + jwst {JWST_TARGET}",
+        commit_message=f"batch: psp E20-E24 multi-perihelion + jwst {','.join(JWST_TARGETS)}",
     )
     print(f"[HF] uploaded {WORK} to https://huggingface.co/datasets/{REPO_ID}")
 
@@ -183,7 +175,7 @@ def main() -> int:
     except Exception as e:
         print(f"[PSP] failed: {e}", file=sys.stderr)
     try:
-        jwst_ok = pull_jwst_trappist1()
+        jwst_ok = pull_jwst()
     except Exception as e:
         print(f"[JWST] failed: {e}", file=sys.stderr)
 
