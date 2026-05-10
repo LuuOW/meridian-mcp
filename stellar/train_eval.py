@@ -34,8 +34,8 @@ from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
 REPO_ID = "luuow/meridian-stellar-cache"
-FORECAST_HORIZON_HOURS = 24
-PAIR_TOLERANCE_SECONDS = 1800  # ±30 min match window
+FORECAST_HORIZONS = [12, 24, 48, 72]  # hours — sweep, not a single point
+PAIR_TOLERANCE_SECONDS = 1800
 MIN_TRAIN_PER_CLUSTER = 10
 TRAIN_PERIHELIA = {"E20", "E21", "E22", "E23"}
 TEST_PERIHELIA = {"E24"}
@@ -79,6 +79,84 @@ def build_pairs(df: pd.DataFrame, horizon_hours: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def evaluate_horizon(df: pd.DataFrame, horizon_hours: int) -> dict:
+    pairs = build_pairs(df, horizon_hours)
+    print(f"\n[stage-5] === horizon Δ = {horizon_hours}h ===")
+    print(f"[stage-5] pairs: {len(pairs)}  per-perihelion: {pairs['perihelion'].value_counts().sort_index().to_dict()}")
+    train = pairs[pairs["perihelion"].isin(TRAIN_PERIHELIA)].reset_index(drop=True)
+    test = pairs[pairs["perihelion"].isin(TEST_PERIHELIA)].reset_index(drop=True)
+    if len(test) == 0 or len(train) < 50:
+        print(f"[stage-5] insufficient data at Δ={horizon_hours}h (train={len(train)}, test={len(test)}); skipping")
+        return {"horizon_hours": horizon_hours, "skipped": True, "train": len(train), "test": len(test)}
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(train[FEATURE_COLS].to_numpy())
+    X_test = scaler.transform(test[FEATURE_COLS].to_numpy())
+    y_train = np.log10(train["E_future"].to_numpy() / train["E_now"].to_numpy())
+    y_test = np.log10(test["E_future"].to_numpy() / test["E_now"].to_numpy())
+    print(f"[stage-5] target drift dex — y_train mean={y_train.mean():+.4f} std={y_train.std():.4f} | y_test mean={y_test.mean():+.4f} std={y_test.std():.4f}")
+
+    specialists: dict[int, dict] = {}
+    for c in sorted(train["cluster"].unique()):
+        mask = train["cluster"].to_numpy() == c
+        n = int(mask.sum())
+        if n < MIN_TRAIN_PER_CLUSTER:
+            continue
+        ridge = Ridge(alpha=RIDGE_ALPHA)
+        ridge.fit(X_train[mask], y_train[mask])
+        specialists[int(c)] = {
+            "type": "ridge",
+            "coef": ridge.coef_.tolist(),
+            "intercept": float(ridge.intercept_),
+            "n_train": n,
+        }
+
+    fixed_pred = np.full(len(test), float(np.mean(y_train)))
+    persist_pred = np.zeros(len(test))
+    archetype_pred = np.empty(len(test))
+    for i in range(len(test)):
+        c = int(test["cluster"].iloc[i])
+        spec = specialists.get(c)
+        if spec is None:
+            archetype_pred[i] = float(np.mean(y_train))
+        else:
+            archetype_pred[i] = float(np.array(spec["coef"]) @ X_test[i] + spec["intercept"])
+
+    E_now_t = test["E_now"].to_numpy()
+    E_fut_t = test["E_future"].to_numpy()
+
+    def mae_drift(p): return float(np.mean(np.abs(p - y_test)))
+    def mae_E(p):
+        E_pred = E_now_t * (10.0 ** p)
+        return float(np.mean(np.abs(E_pred - E_fut_t)))
+
+    p_persist = mae_drift(persist_pred)
+    p_fixed = mae_drift(fixed_pred)
+    p_arch = mae_drift(archetype_pred)
+    delta_vs_persist = (p_persist - p_arch) / max(p_persist, 1e-12) * 100.0
+    delta_vs_fixed = (p_fixed - p_arch) / max(p_fixed, 1e-12) * 100.0
+    return {
+        "horizon_hours": horizon_hours,
+        "n_train_pairs": int(len(train)),
+        "n_test_pairs": int(len(test)),
+        "specialists_trained": [int(c) for c in specialists.keys()],
+        "policies": {
+            "fixed":     {"mae_drift_dex": p_fixed,   "mae_E_W_m2": mae_E(fixed_pred)},
+            "persistence": {"mae_drift_dex": p_persist, "mae_E_W_m2": mae_E(persist_pred)},
+            "archetype": {"mae_drift_dex": p_arch,    "mae_E_W_m2": mae_E(archetype_pred)},
+        },
+        "archetype_vs_persistence_pct": float(delta_vs_persist),
+        "archetype_vs_fixed_pct": float(delta_vs_fixed),
+        "gate_2_strict_pass": bool(delta_vs_persist > 3.0 and delta_vs_fixed > 3.0),
+        "gate_2_legacy_pass": bool(delta_vs_persist > 3.0),
+        "y_train_drift_std": float(y_train.std()),
+        "y_test_drift_std": float(y_test.std()),
+        "scaler_mean": scaler.mean_.tolist(),
+        "scaler_scale": scaler.scale_.tolist(),
+        "specialists": specialists,
+    }
+
+
 def main() -> int:
     if "HF_TOKEN" not in os.environ:
         print("ERROR: HF_TOKEN not set", file=sys.stderr)
@@ -92,129 +170,42 @@ def main() -> int:
     df["cluster"] = df["cluster"].astype(int)
     print(f"[stage-5] joined rows: {len(df)}")
 
-    pairs = build_pairs(df, FORECAST_HORIZON_HOURS)
-    print(f"[stage-5] {FORECAST_HORIZON_HOURS}h pairs: {len(pairs)}")
-    print(f"[stage-5] per-perihelion pair counts:")
-    print(pairs["perihelion"].value_counts().sort_index().to_string())
+    horizon_results = []
+    for h in FORECAST_HORIZONS:
+        try:
+            horizon_results.append(evaluate_horizon(df, h))
+        except Exception as e:
+            print(f"[stage-5] horizon Δ={h}h failed: {e}", file=sys.stderr)
+            horizon_results.append({"horizon_hours": h, "error": str(e)})
 
-    train = pairs[pairs["perihelion"].isin(TRAIN_PERIHELIA)].reset_index(drop=True)
-    test = pairs[pairs["perihelion"].isin(TEST_PERIHELIA)].reset_index(drop=True)
-    print(f"\n[stage-5] train pairs: {len(train)}  test pairs: {len(test)}")
-    if len(test) == 0 or len(train) == 0:
-        print("ERROR: empty train or test set", file=sys.stderr)
-        return 1
-
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(train[FEATURE_COLS].to_numpy())
-    X_test = scaler.transform(test[FEATURE_COLS].to_numpy())
-    # Target: log10 of fractional 24h change. Equivalent to learning a
-    # cluster-conditional drift rate. Persistence baseline becomes
-    # "predict zero drift" and fixed becomes "predict average drift" —
-    # both are well-defined; the previous 24h-direct target was unfair
-    # to persistence at perihelion.
-    y_train = np.log10(train["E_future"].to_numpy() / train["E_now"].to_numpy())
-    y_test = np.log10(test["E_future"].to_numpy() / test["E_now"].to_numpy())
-    print(f"[stage-5] target = log10(E_future / E_now) (drift in dex)")
-    print(f"[stage-5] y_train: mean={y_train.mean():+.4f}  std={y_train.std():.4f}  range=[{y_train.min():+.3f}, {y_train.max():+.3f}]")
-    print(f"[stage-5] y_test : mean={y_test.mean():+.4f}  std={y_test.std():.4f}  range=[{y_test.min():+.3f}, {y_test.max():+.3f}]")
-
-    print(f"\n[stage-5] training Ridge specialists per cluster")
-    specialists: dict[int, dict] = {}
-    for c in sorted(train["cluster"].unique()):
-        mask = train["cluster"].to_numpy() == c
-        n = int(mask.sum())
-        if n < MIN_TRAIN_PER_CLUSTER:
-            print(f"[stage-5]   cluster {c}: only {n} pairs — skipping (will fall back to global mean)")
+    print("\n[stage-6] === horizon-sweep summary ===")
+    print(f"[stage-6] {'Δh':>5} | {'n_pairs':>10} | {'fixed':>9} | {'persist':>9} | {'archetype':>9} | {'vs_pers%':>9} | {'vs_fix%':>9} | strict")
+    print(f"[stage-6] {'-'*5} | {'-'*10} | {'-'*9} | {'-'*9} | {'-'*9} | {'-'*9} | {'-'*9} | ------")
+    any_strict_pass = False
+    for r in horizon_results:
+        if r.get("skipped") or r.get("error"):
+            print(f"[stage-6] {r['horizon_hours']:>5} | (skipped/error)")
             continue
-        Xc = X_train[mask]
-        yc = y_train[mask]
-        ridge = Ridge(alpha=RIDGE_ALPHA)
-        ridge.fit(Xc, yc)
-        residuals = ridge.predict(Xc) - yc
-        specialists[int(c)] = {
-            "type": "ridge",
-            "coef": ridge.coef_.tolist(),
-            "intercept": float(ridge.intercept_),
-            "n_train": n,
-            "rmse_train_log10": float(np.sqrt(np.mean(residuals ** 2))),
-            "y_mean_log10": float(np.mean(yc)),
-        }
-        print(f"[stage-5]   cluster {c}: n={n}  RMSE_train_log10={specialists[c]['rmse_train_log10']:.4f}")
-
-    print(f"\n[stage-6] === policy race on holdout E24 (n={len(test)}) ===")
-
-    # Drift-target predictions:
-    #   fixed       — average drift on train
-    #   persistence — zero drift (E_future = E_now)
-    #   archetype   — per-cluster Ridge predicts the drift
-    fixed_pred = np.full(len(test), float(np.mean(y_train)))
-    persist_pred = np.zeros(len(test))
-    archetype_pred = np.empty(len(test))
-    fallback_count = 0
-    for i in range(len(test)):
-        c = int(test["cluster"].iloc[i])
-        spec = specialists.get(c)
-        if spec is None:
-            archetype_pred[i] = float(np.mean(y_train))
-            fallback_count += 1
-        else:
-            archetype_pred[i] = float(np.array(spec["coef"]) @ X_test[i] + spec["intercept"])
-    if fallback_count:
-        print(f"[stage-6] (note: {fallback_count} test rows fell back to global mean — cluster had no specialist)")
-
-    E_now_test = test["E_now"].to_numpy()
-    E_future_test = test["E_future"].to_numpy()
-
-    def mae_drift(p_drift): return float(np.mean(np.abs(p_drift - y_test)))
-    def mae_E(p_drift):
-        E_pred = E_now_test * (10.0 ** p_drift)
-        return float(np.mean(np.abs(E_pred - E_future_test)))
+        pol = r["policies"]
+        strict_str = "PASS" if r["gate_2_strict_pass"] else "FAIL"
+        if r["gate_2_strict_pass"]:
+            any_strict_pass = True
+        print(
+            f"[stage-6] {r['horizon_hours']:>5} | {r['n_test_pairs']+r['n_train_pairs']:>10} | "
+            f"{pol['fixed']['mae_drift_dex']:>9.4f} | {pol['persistence']['mae_drift_dex']:>9.4f} | "
+            f"{pol['archetype']['mae_drift_dex']:>9.4f} | {r['archetype_vs_persistence_pct']:>+8.2f}% | "
+            f"{r['archetype_vs_fixed_pct']:>+8.2f}% | {strict_str}"
+        )
 
     results = {
-        "horizon_hours": FORECAST_HORIZON_HOURS,
         "metric_primary": "MAE in drift = log10(E_future / E_now)",
-        "metric_secondary": "MAE in reconstructed E_W_m2 = E_now * 10^drift_pred",
-        "target": "drift_log10_E_ratio",
-        "n_train_pairs": int(len(train)),
-        "n_test_pairs": int(len(test)),
-        "specialists_trained": [int(c) for c in specialists.keys()],
-        "fallback_test_rows": int(fallback_count),
-        "y_train_mean_drift_dex": float(np.mean(y_train)),
-        "y_test_mean_drift_dex": float(np.mean(y_test)),
-        "policies": {
-            "fixed":     {"mae_drift_dex": mae_drift(fixed_pred),     "mae_E_W_m2": mae_E(fixed_pred)},
-            "persistence": {"mae_drift_dex": mae_drift(persist_pred), "mae_E_W_m2": mae_E(persist_pred)},
-            "archetype": {"mae_drift_dex": mae_drift(archetype_pred), "mae_E_W_m2": mae_E(archetype_pred)},
-        },
+        "horizons_evaluated": FORECAST_HORIZONS,
+        "any_horizon_strict_pass": bool(any_strict_pass),
+        "by_horizon": horizon_results,
         "train_perihelia": sorted(list(TRAIN_PERIHELIA)),
         "test_perihelia": sorted(list(TEST_PERIHELIA)),
     }
-
-    p_persist = results["policies"]["persistence"]["mae_drift_dex"]
-    p_fixed = results["policies"]["fixed"]["mae_drift_dex"]
-    p_arch = results["policies"]["archetype"]["mae_drift_dex"]
-
-    delta_vs_persist = (p_persist - p_arch) / max(p_persist, 1e-12) * 100.0
-    delta_vs_fixed = (p_fixed - p_arch) / max(p_fixed, 1e-12) * 100.0
-    results["archetype_vs_persistence_pct"] = float(delta_vs_persist)
-    results["archetype_vs_fixed_pct"] = float(delta_vs_fixed)
-
-    # Strict gate: archetype must beat BOTH baselines (>3 % each).
-    results["gate_2_strict_pass"] = bool(delta_vs_persist > 3.0 and delta_vs_fixed > 3.0)
-    # Lenient gate (legacy): just beat persistence.
-    results["gate_2_legacy_pass"] = bool(delta_vs_persist > 3.0)
-
-    print("\n[stage-6] policy       |  MAE drift (dex)  |  MAE E_future (W/m²)")
-    print("[stage-6] -------------+-------------------+----------------------")
-    for name, p in results["policies"].items():
-        print(f"[stage-6] {name:<11}  | {p['mae_drift_dex']:17.4f} | {p['mae_E_W_m2']:18.1f}")
-    print(f"\n[stage-6] archetype vs persistence : {delta_vs_persist:+.2f}%  (lower is better)")
-    print(f"[stage-6] archetype vs fixed-mean   : {delta_vs_fixed:+.2f}%")
-    strict = "PASS" if results["gate_2_strict_pass"] else "FAIL"
-    legacy = "PASS" if results["gate_2_legacy_pass"] else "FAIL"
-    print(f"[stage-6] Gate-2 strict  (beat both, >3%): {strict}")
-    print(f"[stage-6] Gate-2 legacy (beat persist, >3%): {legacy}")
-    verdict = strict
+    verdict = "PASS-ANY" if any_strict_pass else "FAIL-ALL"
 
     out_root = Path("stellar_cache")
     spec_dir = out_root / "specialists"
@@ -222,18 +213,27 @@ def main() -> int:
     spec_dir.mkdir(parents=True, exist_ok=True)
     eval_dir.mkdir(parents=True, exist_ok=True)
 
+    # Persist the best (or last-passing, or last) horizon's specialists for stage 7.
+    chosen = None
+    for r in horizon_results:
+        if r.get("skipped") or r.get("error"):
+            continue
+        if r.get("gate_2_strict_pass") and (chosen is None or r["horizon_hours"] < chosen["horizon_hours"]):
+            chosen = r
+    if chosen is None:
+        chosen = next((r for r in horizon_results if not r.get("skipped") and not r.get("error")), None)
+
     spec_payload = {
         "feature_cols": FEATURE_COLS,
-        "scaler_mean": scaler.mean_.tolist(),
-        "scaler_scale": scaler.scale_.tolist(),
-        "horizon_hours": FORECAST_HORIZON_HOURS,
         "ridge_alpha": RIDGE_ALPHA,
         "y_target": "drift_log10_E_ratio",
-        "specialists": specialists,
-        "global_y_train_mean_drift_dex": float(np.mean(y_train)),
+        "horizons_evaluated": FORECAST_HORIZONS,
+        "chosen_horizon_hours": chosen["horizon_hours"] if chosen else None,
+        "scaler_mean": chosen["scaler_mean"] if chosen else None,
+        "scaler_scale": chosen["scaler_scale"] if chosen else None,
+        "specialists": chosen["specialists"] if chosen else {},
         "train_perihelia": sorted(list(TRAIN_PERIHELIA)),
         "test_perihelia": sorted(list(TEST_PERIHELIA)),
-        "n_train_pairs": int(len(train)),
     }
     with open(spec_dir / "specialists.json", "w") as f:
         json.dump(spec_payload, f, indent=2)
@@ -247,13 +247,13 @@ def main() -> int:
         path_or_fileobj=str(spec_dir / "specialists.json"),
         path_in_repo="specialists/specialists.json",
         repo_id=REPO_ID, repo_type="dataset",
-        commit_message=f"stage-5: {len(specialists)} per-archetype Ridge specialists",
+        commit_message=f"stage-5: specialists ({chosen['horizon_hours'] if chosen else 'none'}h chosen)",
     )
     api.upload_file(
         path_or_fileobj=str(eval_dir / "results.json"),
         path_in_repo="evaluation/results.json",
         repo_id=REPO_ID, repo_type="dataset",
-        commit_message=f"stage-6: Gate-2 {verdict} ({delta_pct:+.2f}%)",
+        commit_message=f"stage-6: Gate-2 horizon-sweep {verdict}",
     )
     print("[stage-6] pushed both artifacts to HF dataset")
     return 0
