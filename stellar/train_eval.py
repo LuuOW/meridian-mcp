@@ -107,8 +107,16 @@ def main() -> int:
     scaler = StandardScaler()
     X_train = scaler.fit_transform(train[FEATURE_COLS].to_numpy())
     X_test = scaler.transform(test[FEATURE_COLS].to_numpy())
-    y_train = np.log10(train["E_future"].to_numpy())
-    y_test = np.log10(test["E_future"].to_numpy())
+    # Target: log10 of fractional 24h change. Equivalent to learning a
+    # cluster-conditional drift rate. Persistence baseline becomes
+    # "predict zero drift" and fixed becomes "predict average drift" —
+    # both are well-defined; the previous 24h-direct target was unfair
+    # to persistence at perihelion.
+    y_train = np.log10(train["E_future"].to_numpy() / train["E_now"].to_numpy())
+    y_test = np.log10(test["E_future"].to_numpy() / test["E_now"].to_numpy())
+    print(f"[stage-5] target = log10(E_future / E_now) (drift in dex)")
+    print(f"[stage-5] y_train: mean={y_train.mean():+.4f}  std={y_train.std():.4f}  range=[{y_train.min():+.3f}, {y_train.max():+.3f}]")
+    print(f"[stage-5] y_test : mean={y_test.mean():+.4f}  std={y_test.std():.4f}  range=[{y_test.min():+.3f}, {y_test.max():+.3f}]")
 
     print(f"\n[stage-5] training Ridge specialists per cluster")
     specialists: dict[int, dict] = {}
@@ -135,8 +143,12 @@ def main() -> int:
 
     print(f"\n[stage-6] === policy race on holdout E24 (n={len(test)}) ===")
 
+    # Drift-target predictions:
+    #   fixed       — average drift on train
+    #   persistence — zero drift (E_future = E_now)
+    #   archetype   — per-cluster Ridge predicts the drift
     fixed_pred = np.full(len(test), float(np.mean(y_train)))
-    persist_pred = np.log10(test["E_now"].to_numpy())
+    persist_pred = np.zeros(len(test))
     archetype_pred = np.empty(len(test))
     fallback_count = 0
     for i in range(len(test)):
@@ -150,38 +162,59 @@ def main() -> int:
     if fallback_count:
         print(f"[stage-6] (note: {fallback_count} test rows fell back to global mean — cluster had no specialist)")
 
-    def mae_log(p): return float(np.mean(np.abs(p - y_test)))
-    def mae_lin(p): return float(np.mean(np.abs(10 ** p - 10 ** y_test)))
+    E_now_test = test["E_now"].to_numpy()
+    E_future_test = test["E_future"].to_numpy()
+
+    def mae_drift(p_drift): return float(np.mean(np.abs(p_drift - y_test)))
+    def mae_E(p_drift):
+        E_pred = E_now_test * (10.0 ** p_drift)
+        return float(np.mean(np.abs(E_pred - E_future_test)))
 
     results = {
         "horizon_hours": FORECAST_HORIZON_HOURS,
-        "metric_primary": "MAE in log10(E_W_m2)",
+        "metric_primary": "MAE in drift = log10(E_future / E_now)",
+        "metric_secondary": "MAE in reconstructed E_W_m2 = E_now * 10^drift_pred",
+        "target": "drift_log10_E_ratio",
         "n_train_pairs": int(len(train)),
         "n_test_pairs": int(len(test)),
         "specialists_trained": [int(c) for c in specialists.keys()],
         "fallback_test_rows": int(fallback_count),
+        "y_train_mean_drift_dex": float(np.mean(y_train)),
+        "y_test_mean_drift_dex": float(np.mean(y_test)),
         "policies": {
-            "fixed":     {"mae_log10": mae_log(fixed_pred),     "mae_W_m2": mae_lin(fixed_pred)},
-            "persistence": {"mae_log10": mae_log(persist_pred), "mae_W_m2": mae_lin(persist_pred)},
-            "archetype": {"mae_log10": mae_log(archetype_pred), "mae_W_m2": mae_lin(archetype_pred)},
+            "fixed":     {"mae_drift_dex": mae_drift(fixed_pred),     "mae_E_W_m2": mae_E(fixed_pred)},
+            "persistence": {"mae_drift_dex": mae_drift(persist_pred), "mae_E_W_m2": mae_E(persist_pred)},
+            "archetype": {"mae_drift_dex": mae_drift(archetype_pred), "mae_E_W_m2": mae_E(archetype_pred)},
         },
         "train_perihelia": sorted(list(TRAIN_PERIHELIA)),
         "test_perihelia": sorted(list(TEST_PERIHELIA)),
     }
 
-    p_persist = results["policies"]["persistence"]["mae_log10"]
-    p_arch = results["policies"]["archetype"]["mae_log10"]
-    delta_pct = (p_persist - p_arch) / max(p_persist, 1e-12) * 100.0
-    results["archetype_vs_persistence_pct"] = float(delta_pct)
-    results["gate_2_pass"] = bool(delta_pct > 3.0)
+    p_persist = results["policies"]["persistence"]["mae_drift_dex"]
+    p_fixed = results["policies"]["fixed"]["mae_drift_dex"]
+    p_arch = results["policies"]["archetype"]["mae_drift_dex"]
 
-    print("\n[stage-6] policy   |   MAE log10   |   MAE W/m²")
-    print("[stage-6] ---------+---------------+--------------")
+    delta_vs_persist = (p_persist - p_arch) / max(p_persist, 1e-12) * 100.0
+    delta_vs_fixed = (p_fixed - p_arch) / max(p_fixed, 1e-12) * 100.0
+    results["archetype_vs_persistence_pct"] = float(delta_vs_persist)
+    results["archetype_vs_fixed_pct"] = float(delta_vs_fixed)
+
+    # Strict gate: archetype must beat BOTH baselines (>3 % each).
+    results["gate_2_strict_pass"] = bool(delta_vs_persist > 3.0 and delta_vs_fixed > 3.0)
+    # Lenient gate (legacy): just beat persistence.
+    results["gate_2_legacy_pass"] = bool(delta_vs_persist > 3.0)
+
+    print("\n[stage-6] policy       |  MAE drift (dex)  |  MAE E_future (W/m²)")
+    print("[stage-6] -------------+-------------------+----------------------")
     for name, p in results["policies"].items():
-        print(f"[stage-6] {name:<8} | {p['mae_log10']:13.4f} | {p['mae_W_m2']:13.1f}")
-    print(f"\n[stage-6] archetype vs persistence: {delta_pct:+.2f}% improvement in MAE log10")
-    verdict = "PASS" if results["gate_2_pass"] else "FAIL"
-    print(f"[stage-6] Gate-2 (>3% improvement): {verdict}")
+        print(f"[stage-6] {name:<11}  | {p['mae_drift_dex']:17.4f} | {p['mae_E_W_m2']:18.1f}")
+    print(f"\n[stage-6] archetype vs persistence : {delta_vs_persist:+.2f}%  (lower is better)")
+    print(f"[stage-6] archetype vs fixed-mean   : {delta_vs_fixed:+.2f}%")
+    strict = "PASS" if results["gate_2_strict_pass"] else "FAIL"
+    legacy = "PASS" if results["gate_2_legacy_pass"] else "FAIL"
+    print(f"[stage-6] Gate-2 strict  (beat both, >3%): {strict}")
+    print(f"[stage-6] Gate-2 legacy (beat persist, >3%): {legacy}")
+    verdict = strict
 
     out_root = Path("stellar_cache")
     spec_dir = out_root / "specialists"
@@ -195,9 +228,9 @@ def main() -> int:
         "scaler_scale": scaler.scale_.tolist(),
         "horizon_hours": FORECAST_HORIZON_HOURS,
         "ridge_alpha": RIDGE_ALPHA,
-        "y_target": "log10_E_harvest_W_m2",
+        "y_target": "drift_log10_E_ratio",
         "specialists": specialists,
-        "global_y_train_mean_log10": float(np.mean(y_train)),
+        "global_y_train_mean_drift_dex": float(np.mean(y_train)),
         "train_perihelia": sorted(list(TRAIN_PERIHELIA)),
         "test_perihelia": sorted(list(TEST_PERIHELIA)),
         "n_train_pairs": int(len(train)),
