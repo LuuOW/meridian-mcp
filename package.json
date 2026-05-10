@@ -1,6 +1,6 @@
 {
   "name": "meridian-orbital",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Self-contained MCP — orbital task router with online-learning classifier (stdio + HTTP/Streamable transports — Grok / ChatGPT / Claude compatible). Generates candidates with Llama-3.3-70B (via GitHub Models) and ranks them via a local orbital classifier (planet/moon/trojan/asteroid/comet/irregular). Domain-agnostic — candidates can be tools, prompts, documents, products. No backend required.",
   "type": "module",
   "bin": {

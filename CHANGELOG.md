@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.1.0] — 2026-05-09
+
+**B1 — added `coherence_time` (g^(1)-style autocorrelation) to the physics signature.**
+
+### Why
+
+Loudon, *Quantum Theory of Light* Ch 3.1 defines the first-order coherence function `g^(1)(τ)` whose decay over short lags `τ` measures the local "repetition pattern" of a chaotic source. Treating each candidate's ordered token sequence as a chaotic stream gives a one-scalar feature `τ_c = Σ_{τ≥1}|g^(1)(τ)|²` that captures short-range token-stream structure the existing `cross_domain` (3-bin Shannon entropy over forge/signal/mind term hits) is blind to. Photon-route's B1 simulation (`space/sim_b1_g1_coherence.py`) measured τ_c **2× more discriminative** (CV 2.06 vs 0.99) than the cross_domain proxy across forge/signal/mind plus narrow/broad scattered archetypes — and specifically distinguishes pairs the 3-bin entropy collapses to identical values (focused-forge vs focused-mind both = 0.000, but τ_c gives 0.190 vs 0.139).
+
+### What's new
+
+- `physicsOf()` now returns `coherence_time` alongside the seven existing scalars. Computed from the ordered (non-uniq'd) token stream of `description + body + keywords` over a window of 8 short lags.
+- `cf-worker/online_learning.mjs`: `FEATURE_VERSION` bumped `v1` → `v2`; `FEATURE_DIM` 24 → 25 with `f[24] = clamp(coherence_time / 4)` as the new feature. Old v1 weights re-init on next feedback POST.
+- Two new tests in `tests/orbital.test.mjs` pinning bounds + non-degeneracy of τ_c.
+
+### Not breaking
+
+- All seven prior physics scalars unchanged. Existing `classOf()`, `decisionRule()`, ranking math, and downstream consumers are untouched. The change is purely additive in the JS classifier.
+- Worker-side: stored weights are versioned, so the bump silently re-inits without runtime errors.
+
 ## [3.0.0] — 2026-05-07
 
 **Renamed: `meridian-skills-mcp` → `meridian-orbital`. Removed the "skills" framing across the prompt, code, branding, and npm name. The classifier was always domain-agnostic; the framing was a relic from the 0.x curated-corpus days.**
