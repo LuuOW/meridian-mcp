@@ -28,3 +28,8 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python stellar/features_psp.py
+
+      - name: Compute JWST features
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python stellar/features_jwst.py
