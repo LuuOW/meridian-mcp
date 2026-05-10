@@ -27,7 +27,7 @@ JWST_TARGET = "TRAPPIST-1"
 JWST_OBS_CAP = 3
 JWST_FILE_CAP = 5
 
-REPO_ID = "LuuOW/meridian-stellar-cache"
+REPO_ID = "luuow/meridian-stellar-cache"
 
 
 def pull_psp_fields() -> bool:
@@ -66,13 +66,17 @@ def pull_psp_fields() -> bool:
 def pull_jwst_trappist1() -> bool:
     from astroquery.mast import Observations
 
-    obs = Observations.query_criteria(
-        target_name=JWST_TARGET,
-        obs_collection="JWST",
-        dataproduct_type="spectrum",
-    )
+    # Resolver-driven cone search — robust against per-proposal target_name variants
+    obs = Observations.query_object(JWST_TARGET, radius="0.02 deg")
+    print(f"[JWST] cone search returned {len(obs)} rows")
     if len(obs) == 0:
-        print(f"[JWST] no observations for {JWST_TARGET}", file=sys.stderr)
+        print(f"[JWST] resolver found no objects near {JWST_TARGET}", file=sys.stderr)
+        return False
+
+    mask = (obs["obs_collection"] == "JWST") & (obs["dataproduct_type"] == "spectrum")
+    obs = obs[mask]
+    print(f"[JWST] after JWST+spectrum filter: {len(obs)} rows")
+    if len(obs) == 0:
         return False
 
     obs = obs[:JWST_OBS_CAP]

@@ -11,7 +11,7 @@ No local disk involvement.
 GitHub Actions (workflow_dispatch + weekly cron)
    ├── pyspedas        → PSP CDF, downsampled to Parquet
    ├── astroquery.mast → JWST x1d calibrated spectra
-   └── huggingface_hub → push to LuuOW/meridian-stellar-cache
+   └── huggingface_hub → push to luuow/meridian-stellar-cache
 ```
 
 ## First-pull scope
