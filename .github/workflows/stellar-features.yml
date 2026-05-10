@@ -1,0 +1,30 @@
+name: stellar-features
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  features-psp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: stellar/requirements-features.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r stellar/requirements-features.txt
+
+      - name: Compute PSP features
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python stellar/features_psp.py
