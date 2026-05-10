@@ -91,14 +91,18 @@ def main() -> int:
 
     parker_path = grab("parker/connection.parquet", token)
     labels_path = grab("archetypes/labels.parquet", token)
+    harvest_path = grab("harvest/E_truth.parquet", token)
     specialists_path = grab("specialists/specialists.json", token)
 
     parker = pd.read_parquet(parker_path)
     labels = pd.read_parquet(labels_path)
+    harvest = pd.read_parquet(harvest_path)[["win_start", "perihelion"]]
     specialists = json.loads(Path(specialists_path).read_text())
 
     parker["win_start"] = pd.to_datetime(parker["win_start"]).dt.tz_localize(None)
     labels["win_start"] = pd.to_datetime(labels["win_start"]).dt.tz_localize(None)
+    harvest["win_start"] = pd.to_datetime(harvest["win_start"]).dt.tz_localize(None)
+    labels = labels.merge(harvest, on="win_start", how="left")
 
     df = parker.merge(
         labels[["win_start", "cluster"] + specialists["feature_cols"]],
