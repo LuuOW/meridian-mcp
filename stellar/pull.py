@@ -22,7 +22,26 @@ WORK = Path("stellar_cache")
 PSP_OUT = WORK / "psp"
 JWST_OUT = WORK / "jwst"
 
-PSP_TRANGE = ["2024-09-30", "2024-10-01"]
+# Multi-perihelion PSP plan: 5-day windows spanning E20–E24 plus cruise samples.
+# Each range gets pyspedas-downloaded, then split per UTC day into one Parquet
+# file. The download is idempotent — re-running overwrites the same paths.
+PSP_DATE_RANGES = [
+    # E20 perihelion (2024-06-30, ~6.0 R_sun)
+    ["2024-06-28", "2024-07-03"],
+    # E21 perihelion (2024-09-30, ~9.86 R_sun) — already in cache, will overwrite
+    ["2024-09-28", "2024-10-03"],
+    # E22 perihelion (2024-12-24)
+    ["2024-12-22", "2024-12-27"],
+    # E23 perihelion (2025-03-22)
+    ["2025-03-20", "2025-03-25"],
+    # E24 perihelion (2025-06-19)
+    ["2025-06-17", "2025-06-22"],
+    # Cruise / quiet baselines for archetype contrast
+    ["2024-08-15", "2024-08-16"],
+    ["2024-11-10", "2024-11-11"],
+    ["2025-02-01", "2025-02-02"],
+]
+
 JWST_TARGET = "TRAPPIST-1"
 JWST_OBS_CAP = 3
 JWST_FILE_CAP = 5
@@ -31,36 +50,48 @@ REPO_ID = "luuow/meridian-stellar-cache"
 
 
 def pull_psp_fields() -> bool:
+    """Pull each configured PSP range, split per UTC day, write one Parquet/day."""
     import pyspedas
-    from pytplot import get_data
+    from pytplot import get_data, del_data
     import pandas as pd
 
-    pyspedas.psp.fields(
-        trange=PSP_TRANGE,
-        datatype="mag_rtn_4_per_cycle",
-        level="l2",
-        time_clip=True,
-        notplot=False,
-    )
-
     var = "psp_fld_l2_mag_RTN_4_Sa_per_Cyc"
-    data = get_data(var)
-    if data is None:
-        print(f"[PSP] variable {var!r} returned no data", file=sys.stderr)
-        return False
+    written = 0
 
-    df = pd.DataFrame(
-        {
-            "time": pd.to_datetime(data.times, unit="s"),
-            "B_R": data.y[:, 0],
-            "B_T": data.y[:, 1],
-            "B_N": data.y[:, 2],
-        }
-    )
-    out = PSP_OUT / f"fields_mag_rtn_{PSP_TRANGE[0]}.parquet"
-    df.to_parquet(out, compression="snappy")
-    print(f"[PSP] wrote {out} ({len(df)} rows)")
-    return True
+    for trange in PSP_DATE_RANGES:
+        try:
+            del_data("*")  # clear pytplot state between ranges
+            pyspedas.psp.fields(
+                trange=trange,
+                datatype="mag_rtn_4_per_cycle",
+                level="l2",
+                time_clip=True,
+                notplot=False,
+            )
+            data = get_data(var)
+            if data is None:
+                print(f"[PSP] {trange[0]}..{trange[1]}: no data", file=sys.stderr)
+                continue
+            df = pd.DataFrame(
+                {
+                    "time": pd.to_datetime(data.times, unit="s"),
+                    "B_R": data.y[:, 0],
+                    "B_T": data.y[:, 1],
+                    "B_N": data.y[:, 2],
+                }
+            )
+            for day, group in df.groupby(df["time"].dt.date):
+                if len(group) < 1000:
+                    continue
+                out = PSP_OUT / f"fields_mag_rtn_{day.isoformat()}.parquet"
+                group.to_parquet(out, compression="snappy")
+                written += 1
+                print(f"[PSP] wrote {out} ({len(group)} rows)")
+        except Exception as e:
+            print(f"[PSP] range {trange} failed: {e}", file=sys.stderr)
+
+    print(f"[PSP] total daily files written: {written}")
+    return written > 0
 
 
 def pull_jwst_trappist1() -> bool:
