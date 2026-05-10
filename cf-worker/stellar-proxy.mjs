@@ -25,8 +25,12 @@ const PREFIX = "/stellar";
 export default {
   async fetch(req) {
     const url = new URL(req.url);
-    const path = url.pathname === "/" ? "/" : url.pathname;
-    const target = `${ORIGIN}${PREFIX}${path === "/" ? "/" : path}${url.search}`;
+    // Only the bare root maps into the /stellar/ subdirectory. Everything else
+    // passes through to the apex unprefixed so shared assets (img, style.css,
+    // nav.js, favicon, blog/) resolve at their real location instead of 404ing
+    // under /stellar/.
+    const path = url.pathname === "/" ? `${PREFIX}/` : url.pathname;
+    const target = `${ORIGIN}${path}${url.search}`;
 
     const upstream = await fetch(target, {
       method: req.method,
