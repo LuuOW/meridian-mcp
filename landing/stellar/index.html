@@ -77,6 +77,18 @@
     <div class="stat-card"><div class="key-label">gate-2 strict</div><div class="key-figure pass" id="stat-gate" style="font-size: 32px;">PASS</div><div class="key-label">archetype &gt; both baselines</div></div>
   </div>
 
+  <section class="panel" id="heliocast-panel">
+    <h2>HelioCast — Earth-PSP Parker-spiral forecast</h2>
+    <p class="sub">PSP only constrains the future Earth wind state when wind sampled at PSP would advect to L1. That requires Parker-spiral connection (φ_PSP − φ_Earth ≈ Ω·(r_E − r_PSP) / v_sw). Outside connection windows the forecast goes silent.</p>
+    <div class="stat-grid" id="heliocast-stats">
+      <div class="stat-card"><div class="key-label">connected windows</div><div class="key-figure" id="hc-frac">—</div><div class="key-label">of cached perihelia</div></div>
+      <div class="stat-card"><div class="key-label">median lead</div><div class="key-figure" id="hc-lead">—</div><div class="key-label">PSP → L1 advection (h)</div></div>
+      <div class="stat-card"><div class="key-label">archetype persistence</div><div class="key-figure" id="hc-persist">—</div><div class="key-label">over 80h advection</div></div>
+      <div class="stat-card"><div class="key-label">v_sw assumed</div><div class="key-figure" id="hc-vsw">—</div><div class="key-label">km/s</div></div>
+    </div>
+    <div id="heliocast-card" class="loading" style="margin-top: 8px;">loading latest connected forecast…</div>
+  </section>
+
   <section class="panel">
     <h2>① Horizon sweep</h2>
     <p class="sub">Three policies × four forecast horizons. Archetype-routing only beats the baselines at 48h and 72h.</p>
@@ -204,6 +216,59 @@
     }
   }
   loadResults();
+
+  async function loadHelioCast() {
+    try {
+      const [statusR, forecastR] = await Promise.all([
+        fetch(`${HF_BASE}/parker/status.json`, { cache: "no-store" }),
+        fetch(`${HF_BASE}/parker/forecast_l1_latest.json`, { cache: "no-store" }),
+      ]);
+      if (!statusR.ok || !forecastR.ok) throw new Error(`HF ${statusR.status}/${forecastR.status}`);
+      const status = await statusR.json();
+      const forecast = await forecastR.json();
+
+      const fracPct = (status.fraction_connected * 100).toFixed(1) + "%";
+      document.getElementById("hc-frac").textContent = fracPct;
+      document.getElementById("hc-lead").textContent =
+        status.median_advection_lead_hours.toFixed(1) + "h";
+      const pPersist = forecast.archetype_persistence_eval &&
+        forecast.archetype_persistence_eval.p_same_label;
+      document.getElementById("hc-persist").textContent =
+        pPersist ? (pPersist * 100).toFixed(0) + "%" : "—";
+      document.getElementById("hc-vsw").textContent = status.v_sw_km_s + "";
+
+      const card = document.getElementById("heliocast-card");
+      card.classList.remove("loading");
+      const latest = forecast.latest_connected;
+      if (!latest || latest.status === "no_connection_in_cache") {
+        card.innerHTML = `<div class="chart-frame"><strong>No Parker-connected windows in cached data.</strong> ` +
+          `HelioCast remains silent until PSP and Earth share a Parker-spiral footpoint within ±${status.tolerance_deg}°.</div>`;
+        return;
+      }
+      const eta = new Date(latest.L1_arrival_eta).toUTCString();
+      const winStart = new Date(latest.win_start).toUTCString();
+      const drift = latest.predicted_drift_dex;
+      card.innerHTML = `
+        <div class="chart-frame" style="font-family: var(--font-mono); font-size: 13px; line-height: 1.7;">
+          <strong>Latest connected forecast (perihelion ${latest.perihelion})</strong><br>
+          PSP window: ${winStart}<br>
+          PSP at r = ${latest.psp_r_au.toFixed(3)} AU,
+          residual to Parker offset = ${latest.connection_residual_deg.toFixed(1)}°<br>
+          Advection lead time: ${latest.advection_lead_hours.toFixed(1)} h<br>
+          L1 arrival ETA: <strong>${eta}</strong><br>
+          Current archetype: <strong>${latest.current_archetype ?? "—"}</strong>
+          → expected at L1 (persistence): <strong>${latest.expected_archetype_at_L1 ?? "—"}</strong><br>
+          Drift forecast (regime stability): ${drift !== null ? drift.toFixed(3) + " dex" : "—"} at +${latest.chosen_horizon_hours}h
+        </div>
+        <p class="sub" style="margin-top: 12px;">
+          Caveats: ${forecast.caveats.map(c => `<span style="opacity:0.85;">${c}</span>`).join("<br>")}
+        </p>`;
+    } catch (e) {
+      const card = document.getElementById("heliocast-card");
+      if (card) card.textContent = "(HelioCast artifacts not yet on HF — run the stellar-parker + stellar-forecast-l1 workflows)";
+    }
+  }
+  loadHelioCast();
 </script>
 <script src="/nav.js"></script>
 </body>
