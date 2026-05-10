@@ -1,0 +1,10 @@
+name = "stellar-proxy"
+main = "stellar-proxy.mjs"
+compatibility_date = "2026-05-10"
+
+# Route bound to the subdomain. DNS CNAME `stellar` must already exist.
+# routes = [
+#   { pattern = "stellar.ask-meridian.uk/*", custom_domain = true }
+# ]
+# (Uncomment the routes block once the DNS CNAME is set up. Run
+#  `wrangler deploy --config wrangler.stellar.toml`.)
