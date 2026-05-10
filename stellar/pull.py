@@ -66,15 +66,18 @@ def pull_psp_fields() -> bool:
 def pull_jwst_trappist1() -> bool:
     from astroquery.mast import Observations
 
-    # Native combined call: SIMBAD name resolution + cone search + collection filter
+    # calib_level=3 targets Level 3 combined / extracted observation entries —
+    # the ones whose primary product is _x1dints.fits / _x1d.fits. Level 1/2
+    # entries (uncal, rate, cal) are filed separately and don't carry x1d.
     obs = Observations.query_criteria(
         objectname=JWST_TARGET,
         radius="0.02 deg",
         obs_collection="JWST",
+        calib_level=3,
     )
-    print(f"[JWST] JWST observations near {JWST_TARGET}: {len(obs)} rows")
+    print(f"[JWST] L3 JWST observations near {JWST_TARGET}: {len(obs)} rows")
     if len(obs) == 0:
-        print("[JWST] no JWST observations in cone", file=sys.stderr)
+        print("[JWST] no L3 observations in cone", file=sys.stderr)
         return False
 
     print(
@@ -82,10 +85,9 @@ def pull_jwst_trappist1() -> bool:
         f"{ {str(t): int((obs['dataproduct_type'] == t).sum()) for t in set(obs['dataproduct_type'])} }"
     )
 
-    # Imaging exposures don't produce 1D extracted spectra — drop them up front so
-    # the per-observation cap doesn't spend its slots on imaging-only entries.
+    # Drop imaging — even at L3, MIRI imaging mosaics yield no x1d.
     obs = obs[obs["dataproduct_type"] != "image"]
-    print(f"[JWST] non-image observations: {len(obs)}")
+    print(f"[JWST] non-image L3 observations: {len(obs)}")
     if len(obs) == 0:
         return False
 
