@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Reading Loudon to improve a router: nine experiments, one ship — Meridian Blog</title>
+<meta name="description" content="Read Loudon's Quantum Theory of Light end-to-end to mine ideas for photon-route + meridian. Ten experiments grounded in Ch 3, 5, 6, 9. Eight came back negative or decorative. One — a g^(1) coherence-time feature — shipped to production in meridian@3.1.0 with 2× the discrimination of what it replaced. Honest accounting with all the numbers.">
+<meta property="og:title" content="Reading Loudon to improve a router: nine experiments, one ship">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260509f">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .key-figure { font-size: 56px; line-height: 1; font-weight: 700; color: var(--accent, #a78bfa); font-family: var(--font-mono); margin: 8px 0; }
+  .key-label  { font-size: 12px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin: 24px 0; }
+  .stat-card  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+
+  .verdict-row { display: grid; grid-template-columns: 28px 1fr; align-items: start; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .verdict-row:last-child { border-bottom: none; }
+  .verdict-icon { font-size: 18px; line-height: 24px; text-align: center; }
+  .verdict-pos { color: #34d399; }
+  .verdict-neg { color: #f87171; }
+  .verdict-meh { color: #fbbf24; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    opacity: 0.85;
+  }
+  .math-block .katex-display { margin: 0; }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+
+  .chart-frame { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 24px 0; }
+  .chart-frame svg { display: block; max-width: 100%; height: auto; }
+  .chart-caption { font-size: 12px; color: var(--text-faint); margin-top: 10px; text-align: center; font-family: var(--font-mono); letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+    <details class="nav-group" open>
+      <summary class="nav-section">Showcase</summary>
+      <a href="/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="/blog/" class="current">Blog</a>
+      <a href="/docs/">Docs</a>
+      <a href="/#pricing">Pricing</a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/lens">GitHub · lens</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+</nav>
+
+<article class="article-body">
+  <header style="padding-top: 64px;">
+    <p class="article-meta">2026-05-09 · 12 min read · new</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">Reading Loudon to improve a router: nine experiments, one ship</h1>
+    <p class="lead">
+      I read Rodney Loudon's <em>The Quantum Theory of Light</em> end-to-end to mine
+      ideas for two projects — photon-route (CV photonic retrieval) and meridian
+      (the orbital task router behind <code>mcp.ask-meridian.uk</code>). Ten experiments
+      grounded in chapters 3, 5, 6, and 9. Eight came back negative or decorative.
+      One — a <code>g<sup>(1)</sup></code> coherence-time feature — shipped to
+      production in <code>meridian-orbital@3.1.0</code> with 2× the discrimination of
+      the proxy it replaced. Here's the honest accounting, with every number.
+    </p>
+  </header>
+
+  <section>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="key-label">items planned</div>
+        <div class="key-figure">10</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Loudon-grounded</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">items resolved</div>
+        <div class="key-figure">8/10</div>
+        <div style="font-size: 12px; color: var(--text-muted);">empirical answer</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">items shipped</div>
+        <div class="key-figure">1/10</div>
+        <div style="font-size: 12px; color: var(--text-muted);">live in production</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">discrimination lift</div>
+        <div class="key-figure">+108%</div>
+        <div style="font-size: 12px; color: var(--text-muted);">τ<sub>c</sub> vs cross_domain</div>
+      </div>
+    </div>
+  </section>
+
+  <h2>The plan: ten Loudon-grounded experiments</h2>
+
+  <p>
+    The hypothesis was simple enough. Both projects already used quantum-optics
+    <em>vocabulary</em> — meridian's classifier names a candidate's "physics signature"
+    after orbital and optical scalars; photon-route literally encodes text into a
+    Strawberry Fields program. The question: would Loudon's actual <em>physics</em> —
+    the math behind coherence functions, photon-number distributions, parametric
+    down-conversion — translate into measurable retrieval / classification gains?
+  </p>
+
+  <p>
+    I drafted ten items split across two tracks (A = photon-route's CV photonic
+    retrieval; B = meridian's orbital classifier):
+  </p>
+
+  <table>
+    <thead><tr><th>Item</th><th>Loudon section</th><th>Hypothesis</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A1</strong></td><td>Ch 5.3</td><td>Train per-word photonic params (replacing SHA-init)</td></tr>
+      <tr><td><strong>A2</strong></td><td>Ch 6.4</td><td>Add g<sup>(2)</sup>(0) photon bunching as a ranking feature</td></tr>
+      <tr><td><strong>A3-Simple</strong></td><td>Ch 6.10</td><td>Score by photon-number distribution (direct-detection metric) instead of Gaussian fidelity</td></tr>
+      <tr><td><strong>A3-Real</strong></td><td>Ch 9.4 + 6.10</td><td>PNR-conditioned non-Gaussian heralded states (escape Gaussian-classical equivalence)</td></tr>
+      <tr><td><strong>A4</strong></td><td>—</td><td>Build real eval set (20 arxiv quant-ph + held-out splits)</td></tr>
+      <tr><td>squeezing ablation</td><td>Ch 5.4</td><td>Test whether the squeezing layer specifically pays</td></tr>
+      <tr><td><strong>B1</strong></td><td>Ch 3.1</td><td>Replace 3-bin entropy with g<sup>(1)</sup> coherence time τ<sub>c</sub></td></tr>
+      <tr><td><strong>B2</strong></td><td>Ch 6.4</td><td>g<sup>(2)</sup>(0) classifier reframe (planet/comet/asteroid)</td></tr>
+      <tr><td><strong>B3</strong></td><td>—</td><td>Promote optical features into the SGD feature vector</td></tr>
+      <tr><td><strong>B4</strong></td><td>Ch 6.8</td><td>HOM-dip indistinguishability for parent-child detection</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Each item had a specific quantitative test before any code change. Most also had
+    a self-contained simulation grounding it before commit. The discipline mattered
+    more than I expected — every "obvious" idea that <em>felt</em> like it should
+    work either matched the math (rare) or broke against it (common).
+  </p>
+
+  <h2>The negatives — what didn't work and why</h2>
+
+  <h3>The Dgate-only path is mathematically a Gaussian RBF kernel</h3>
+
+  <p>
+    Loudon eq 5.3.4 — the squared inner product of two coherent states:
+  </p>
+
+  <div class="math-block" data-label="Loudon eq 5.3.4">
+    \[
+      |\langle \beta | \alpha \rangle|^2 = \exp(-|\alpha - \beta|^2)
+    \]
+  </div>
+
+  <p>
+    Or equivalently: the Gaussian-state fidelity between two displaced vacua reduces
+    to <code>exp(-‖Δμ‖² / (2ℏ))</code>. A simulation against <code>thewalrus.quantum.fidelity</code>
+    confirmed it to 6 decimal places on a 2D <code>(Δq, Δp)</code> grid. The
+    consequence: <strong>without trained squeezing, photon-route's encoder is
+    mathematically equivalent to an RBF kernel on its learned word-displacement
+    vectors</strong>. It's a Word2Vec-shaped retrieval system in expensive clothing.
+  </p>
+
+  <h3>Squeezing was decorative</h3>
+
+  <p>
+    Five-split sweep, paired (full − no_squeeze) test nDCG@10:
+  </p>
+
+  <table>
+    <thead><tr><th>Seed</th><th>Full</th><th>No-squeeze</th><th>Δ</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>0.908</td><td>0.908</td><td>+0.000</td></tr>
+      <tr><td>2</td><td>0.572</td><td>0.750</td><td>−0.178</td></tr>
+      <tr><td>3</td><td>1.000</td><td>0.908</td><td>+0.092</td></tr>
+      <tr><td>4</td><td>0.783</td><td>0.733</td><td>+0.050</td></tr>
+      <tr><td>5</td><td>0.687</td><td>0.589</td><td>+0.098</td></tr>
+      <tr><td><strong>mean</strong></td><td><strong>0.790 ± 0.170</strong></td><td><strong>0.778 ± 0.130</strong></td><td><strong>+0.013 ± 0.114</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    The mean diff is well within noise. Worse: the no-squeeze model has half the
+    trainable photonic params and a 2.5× <em>smaller</em> train-test gap (0.06 vs
+    0.15) at equal test performance. By Occam, no-squeeze is strictly better.
+    The "photonic" part of photon-route earns its name only in the metaphor.
+  </p>
+
+  <h3>Photon-number metric is strictly less information than Gaussian fidelity</h3>
+
+  <p>
+    A3-Simple replaced Gaussian-state fidelity with a Bhattacharyya coefficient over
+    the joint photon-number distribution <code>P(n₀, n₁)</code> the state induces —
+    "what direct detection actually sees." Same trained encoder, both metrics evaluated
+    head-to-head on the held-out queries:
+  </p>
+
+  <table>
+    <thead><tr><th>Encoder</th><th>Gaussian fidelity</th><th>Photon-number BC</th><th>Δ</th></tr></thead>
+    <tbody>
+      <tr><td>full (squeezing on)</td><td>0.790</td><td>0.589</td><td>−0.201 ± 0.246</td></tr>
+      <tr><td>no-squeeze</td><td>0.777</td><td>0.477</td><td>−0.301 ± 0.182</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Photon-number distribution is a marginal of <code>(μ, σ)</code> — strictly less
+    information. So for a Gaussian-state encoder, the marginal-aware metric loses
+    by 25–40%. The metric isn't the bottleneck. The encoder is.
+  </p>
+
+  <h3>Non-Gaussian heralded states didn't survive the eval scale either</h3>
+
+  <p>
+    A3-Real was the last serious shot at "photon-route's photonic structure pays."
+    Architecture: 2-mode (signal + ancilla) cutoff-D Fock-basis encoder, a learned
+    two-mode-squeezing gate entangling them, ancilla projected onto |1⟩ to herald
+    a non-Gaussian state on the signal mode. With herald=1 the heralded state has
+    Wigner-negative regions — the Gaussian-classical-simulability barrier is genuinely
+    crossed. Same five-split sweep:
+  </p>
+
+  <table>
+    <thead><tr><th>Architecture</th><th>Test nDCG@10</th></tr></thead>
+    <tbody>
+      <tr><td>non-Gaussian (herald = 1)</td><td>0.574 ± 0.235</td></tr>
+      <tr><td>Gaussian (herald = 0, ablation)</td><td>0.619 ± 0.052</td></tr>
+      <tr><td><strong>paired (non-Gaussian − Gaussian)</strong></td><td><strong>Δ = −0.045 ± 0.219</strong></td></tr>
+      <tr><td>SBERT-photon Gaussian (no Fock truncation)</td><td>0.790 ± 0.170</td></tr>
+      <tr><td>raw SBERT (no training)</td><td>0.385</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Not only does heralding fail to add signal — it doubles the split-to-split
+    variance (0.235 vs 0.052) and even the Gaussian Fock path costs 0.17 nDCG@10
+    vs the non-Fock Gaussian baseline because cutoff = 6 isn't enough dynamic range
+    for the displacement-squeezing combinations the trainer wants. At this corpus
+    scale (20 docs / 26 queries), Loudon's non-Gaussian machinery doesn't get to
+    defend itself.
+  </p>
+
+  <p>
+    That's four straight negatives for the photon-route track. The <em>only</em>
+    reason photon-route still beats raw SBERT (+103% nDCG@10) is the 384-dim
+    learned linear projection feeding into the Gaussian RBF. That's a normal dense
+    retrieval trick wearing a photonic hat.
+  </p>
+
+  <h2>The win: g<sup>(1)</sup> coherence time as a classifier feature</h2>
+
+  <p>
+    Loudon Ch 3.1.3 defines the first-order coherence function of a chaotic source:
+  </p>
+
+  <div class="math-block" data-label="Loudon eq 3.1.3 (discrete-time analog)">
+    \[
+      g^{(1)}(\tau) = \frac{\langle E^*(t)\, E(t+\tau)\rangle}{\langle |E(t)|^2 \rangle}
+      \quad\Longrightarrow\quad
+      \tau_c = \sum_{\tau=1}^{W-1} |g^{(1)}(\tau)|^2
+    \]
+  </div>
+
+  <p>
+    For a chaotic light source, <code>|g<sup>(1)</sup>(τ)|</code> decays
+    exponentially over a coherence time <code>τ<sub>c</sub></code>. Treat each
+    candidate's ordered token sequence as a chaotic stream where each unique
+    token is a wavetrain at a distinct frequency, and you get a one-scalar feature
+    that captures short-range token-stream structure. Implementation, in
+    <code>mcp/_lib/orbital.mjs</code>:
+  </p>
+
+  <pre><code>function coherence_time(orderedTokens, window = 8) {
+  const n = orderedTokens.length
+  if (n &lt; 2) return 0
+  let tau_c = 0
+  const W = Math.min(window, n)
+  for (let tau = 1; tau &lt; W; tau++) {
+    let matches = 0
+    for (let i = 0; i &lt; n - tau; i++) {
+      if (orderedTokens[i] === orderedTokens[i + tau]) matches++
+    }
+    const gtau = matches / n
+    tau_c += gtau * gtau
+  }
+  return tau_c
+}</code></pre>
+
+  <p>
+    The hypothesis: this beats meridian's existing <code>cross_domain</code> proxy —
+    a 3-bin Shannon entropy over <code>{forge, signal, mind}</code> term hits — at
+    discriminating across candidate shapes. The discrimination test, run on 9
+    archetypes (focused single-system, cross-system, scattered, narrow, broad):
+  </p>
+
+  <table>
+    <thead><tr><th>Feature</th><th>Mean</th><th>Std</th><th>Coefficient of variation</th></tr></thead>
+    <tbody>
+      <tr><td>cross_domain (3-bin entropy)</td><td>0.40</td><td>0.39</td><td>0.99</td></tr>
+      <tr><td><strong>τ<sub>c</sub> (g<sup>(1)</sup>)</strong></td><td><strong>0.36</strong></td><td><strong>0.73</strong></td><td><strong>2.06</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>2.08× more discriminative.</strong> And the win isn't just on aggregate —
+    cross_domain literally collapses focused-forge (0.000) and focused-mind (0.000)
+    to identical values. τ<sub>c</sub> separates them at 0.190 vs 0.139 because
+    different vocabularies have different short-range repetition patterns.
+  </p>
+
+  <div class="chart-frame">
+    <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coefficient of variation: cross_domain 0.99 vs coherence_time 2.06">
+      <style>
+        .bar1   { fill: #475569; }
+        .bar2   { fill: #a78bfa; }
+        .barlbl { font: 600 14px var(--font-mono, ui-monospace, monospace); fill: #ddd6fe; }
+        .axis   { font: 12px var(--font-mono, ui-monospace, monospace); fill: #cbd5e1; }
+        .title  { font: 600 14px var(--font-mono, ui-monospace, monospace); fill: #ddd6fe; }
+      </style>
+      <text x="20" y="22" class="title">DISCRIMINATION (CV = std / mean) — higher is better</text>
+      <g transform="translate(160, 60)">
+        <text x="-12" y="22" class="axis" text-anchor="end">cross_domain (3-bin entropy)</text>
+        <rect x="0" y="6" width="220" height="32" class="bar1"/>
+        <text x="232" y="28" class="barlbl">0.99</text>
+
+        <text x="-12" y="80" class="axis" text-anchor="end">τ_c  (g^(1) coherence time)</text>
+        <rect x="0" y="64" width="455" height="32" class="bar2"/>
+        <text x="467" y="86" class="barlbl">2.06</text>
+
+        <text x="0" y="160" class="axis">+108% lift  ·  9 archetypes  ·  full sim in space/sim_b1_g1_coherence.py</text>
+      </g>
+    </svg>
+    <p class="chart-caption">photon-route B1 simulation, May 2026</p>
+  </div>
+
+  <p>
+    Inside meridian's worker, the change is additive — a new physics scalar alongside
+    the seven existing ones, plus an entry at <code>f[24]</code> in the SGD feature
+    vector. The version bump (<code>FEATURE_VERSION v1 → v2</code>) silently
+    re-initialises the stored online weights via the existing version-mismatch path,
+    so production didn't need a manual reset. <strong>Whether this 108% feature-level
+    discrimination translates to better routing accuracy is an empirical question
+    the SGD layer answers over the next few hundred user clicks</strong> — it has
+    to learn that the new feature is informative before it weights it.
+  </p>
+
+  <h2>Final accounting — every item, every verdict</h2>
+
+  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin: 24px 0;">
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-pos">●</div>
+      <div><strong>A1 — train v2 params</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 5.3]</span><br>
+        <span style="color:var(--text-muted)">Trained SBERT-photon Gaussian: <strong>+103%</strong> over raw SBERT (0.79 vs 0.39 nDCG@10). Real win, but the gain is the linear projection, not the photonic gates.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-neg">○</div>
+      <div><strong>A2 — g<sup>(2)</sup> ranking</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 6.4]</span><br>
+        <span style="color:var(--text-muted)">Subsumed by A3-Simple's negative result (photon-number metric &lt; Gaussian fidelity).</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-neg">○</div>
+      <div><strong>A3-Simple — photon-number metric</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 6.10]</span><br>
+        <span style="color:var(--text-muted)">Loses by 25–40% to Gaussian fidelity on the same trained encoder. Marginal &lt; full state.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-neg">○</div>
+      <div><strong>A3-Real — PNR non-Gaussian</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 9.4 + 6.10]</span><br>
+        <span style="color:var(--text-muted)">Δ = −0.045 ± 0.219 vs Gaussian. Heralded states are non-Gaussian but the trainer can't use them at this eval scale.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-pos">●</div>
+      <div><strong>A4 — eval set</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[infra]</span><br>
+        <span style="color:var(--text-muted)">26 queries × 20 docs (arxiv quant-ph) with title-as-query expansion. BM25 + SBERT baselines as permanent comparison artifacts. Unblocks every A item.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-neg">○</div>
+      <div><strong>squeezing ablation</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 5.4]</span><br>
+        <span style="color:var(--text-muted)">Decorative. Mean Δ +0.013 ± 0.114, no-squeeze model has half the params and 2.5× smaller train-test gap.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-pos">●</div>
+      <div><strong>B1 — coherence_time</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 3.1]</span> &nbsp;<span style="color:#34d399;font-size:11px;letter-spacing:0.1em;">SHIPPED</span><br>
+        <span style="color:var(--text-muted)">CV 0.99 → 2.06 (+108%). Live in <code>meridian-orbital@3.1.0</code> on npm + <code>mcp.ask-meridian.uk</code>.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-meh">◐</div>
+      <div><strong>B2 — g<sup>(2)</sup> classifier</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 6.4]</span><br>
+        <span style="color:var(--text-muted)">Carries signal, but synthetic-data thresholds don't transfer — needs calibration on real route_task output. Parked.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-neg">○</div>
+      <div><strong>B3 — optical features in SGD</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[infra]</span><br>
+        <span style="color:var(--text-muted)">Blocked on real feedback data. Cheap to implement; expensive to validate.</span>
+      </div>
+    </div>
+    <div class="verdict-row">
+      <div class="verdict-icon verdict-neg">○</div>
+      <div><strong>B4 — HOM-dip parents</strong> &nbsp;<span style="color:var(--text-faint);font-size:12px">[Ch 6.8]</span><br>
+        <span style="color:var(--text-muted)">Inherits the Gaussian-classical-equivalence ceiling A3-Real ran into. Skipped.</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Two takeaways for anyone mining a textbook for production code</h2>
+
+  <ol>
+    <li>
+      <strong>Sim before you commit.</strong> Every "obvious" Loudon idea I had a strong
+      intuition about — squeezing must add information, photon-number distribution must
+      be more semantically grounded, non-Gaussian states must escape the classical limit —
+      survived contact with a 50-line Python sim only sometimes. The good ones still
+      shipped. The bad ones died in <code>/tmp</code> instead of in production.
+    </li>
+    <li>
+      <strong>Negative results are the cheap-to-publish part of physics-grounded
+      engineering.</strong> Eight of ten experiments came back null. None of those
+      were wasted: they each ruled out a path so the remaining items got more
+      attention. Memory of which Loudon chapter doesn't pay is itself a deliverable.
+    </li>
+  </ol>
+
+  <p>
+    The actual deliverable in production is small: one new feature, ten lines of
+    JS, +108% on a discrimination metric, and an empirical question the worker is
+    answering live as users click candidates. The textbook hasn't paid yet at the
+    routing-accuracy level — it might, it might not. But it's the kind of question
+    that's now answerable with telemetry instead of speculation, which is where
+    you want to be.
+  </p>
+
+  <p>
+    Source:
+    <a href="https://github.com/LuuOW/photon-route">github.com/LuuOW/photon-route</a>
+    (sims, baselines, Fock-basis trainer, the four cloud sweeps),
+    <a href="https://github.com/LuuOW/meridian-mcp">github.com/LuuOW/meridian-mcp</a>
+    (commit <code>f3d9fb9</code>, tag <code>v3.1.0</code>),
+    <a href="https://www.npmjs.com/package/meridian-orbital"><code>meridian-orbital</code> on npm</a>.
+  </p>
+
+  <div style="margin: 48px 0; padding: 24px; background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px;">
+    <h3 style="margin: 0 0 8px;">Inspect the live signature</h3>
+    <p style="margin: 0;">
+      Every <code>POST /v1/route</code> response on <code>mcp.ask-meridian.uk</code>
+      now returns a <code>coherence_time</code> field inside each candidate's
+      <code>physics</code> block. The browser miniapp at
+      <a href="/miniapp/"><code>/miniapp/</code></a> exercises it on every routing
+      query — and trains the online layer with each candidate you click.
+    </p>
+  </div>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — orbital task router with online learning. <a href="/blog/">More posts</a> · <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a> · <a href="/docs/">Docs</a></p>
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('burgerBtn'), menu = document.getElementById('navMenu')
+    if (!btn || !menu) return
+    btn.addEventListener('click', function () {
+      var open = menu.classList.toggle('open')
+      btn.setAttribute('aria-expanded', String(open))
+    })
+  })()
+</script>
+
+</body>
+</html>
