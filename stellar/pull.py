@@ -85,12 +85,14 @@ def pull_jwst_trappist1() -> bool:
 
     obs = obs[:JWST_OBS_CAP]
     products = Observations.get_product_list(obs)
+    # JWST timeseries (e.g. exoplanet transits) yield _x1dints.fits per-integration
+    # extracted spectra; single-pointing spectroscopy yields _x1d.fits. Accept both.
     filtered = Observations.filter_products(
         products,
         productType="SCIENCE",
-        extension="x1d.fits",
+        extension=["x1dints.fits", "x1d.fits"],
     )
-    print(f"[JWST] x1d science products: {len(filtered)}")
+    print(f"[JWST] x1d/x1dints science products: {len(filtered)}")
     if len(filtered) == 0:
         return False
 
