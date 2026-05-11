@@ -290,6 +290,8 @@ def main() -> int:
     print(f"[stage-4] wrote {len(coincidences)} JWST-coincidences + "
           f"{len(probe_coincidences)} probe-coincidences to {out_dir}")
 
+    probe_matched = (probe_coincidences[probe_coincidences["matched"]]
+                       if not probe_coincidences.empty else pd.DataFrame())
     summary = {
         "v_sw_km_s": V_SW_KM_PER_SEC,
         "lon_tolerance_deg": LON_TOLERANCE_DEG,
@@ -308,6 +310,14 @@ def main() -> int:
                                .to_dict(orient="records")),
         "median_match_score": (None if coincidences.empty else
                                 float(coincidences["match_score"].median())),
+        "n_probe_pairs_candidate": int(len(probe_coincidences)),
+        "n_probe_pairs_matched": int(len(probe_matched)),
+        "probe_pairs_by_pair": (
+            {} if probe_matched.empty else
+            probe_matched.groupby(["source_spacecraft", "target_spacecraft"])
+            .size().reset_index(name="n").to_dict(orient="records")),
+        "median_probe_match_score": (None if probe_matched.empty else
+                                       float(probe_matched["match_score"].median())),
     }
     summary_path = out_dir / f"coincidences_summary_{PERIHELION}.json"
     summary_path.write_text(json.dumps(summary, indent=2, default=str))
@@ -317,6 +327,7 @@ def main() -> int:
     push_folder(api, REPO_ID, out_dir, "events",
                  f"stage-4: coincidences + summary {PERIHELION}",
                  allow_patterns=[f"coincidences_{PERIHELION}.parquet",
+                                  f"probe_coincidences_{PERIHELION}.parquet",
                                   f"coincidences_summary_{PERIHELION}.json"])
     print(f"[stage-4] pushed events/ coincidences for {PERIHELION} as one commit")
     return 0
