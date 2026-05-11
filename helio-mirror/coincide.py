@@ -210,11 +210,12 @@ def main() -> int:
     summary_path.write_text(json.dumps(summary, indent=2, default=str))
     print(f"[stage-4] wrote summary: {summary}")
 
-    push(api, out_path, f"events/coincidences_{PERIHELION}.parquet",
-         f"stage-4: PSP event × JWST observation coincidences {PERIHELION}")
-    push(api, summary_path, f"events/coincidences_summary_{PERIHELION}.json",
-         f"stage-4: coincidence summary {PERIHELION}")
-    print("[stage-4] done.")
+    from hf_push import push_folder
+    push_folder(api, REPO_ID, out_dir, "events",
+                 f"stage-4: coincidences + summary {PERIHELION}",
+                 allow_patterns=[f"coincidences_{PERIHELION}.parquet",
+                                  f"coincidences_summary_{PERIHELION}.json"])
+    print(f"[stage-4] pushed events/ coincidences for {PERIHELION} as one commit")
     return 0
 
 
