@@ -568,6 +568,17 @@ def _main_inner(token: str, api: HfApi, gate) -> int:
     t_start, t_stop = PERIHELIA[PERIHELION]
     print(f"[helio-mirror stage-1] perihelion={PERIHELION} window={t_start} → {t_stop}")
 
+    # Selective bucket pull. HELIO_PULL_BUCKETS=all (default) runs every
+    # bucket; specify comma-separated subset to skip slow buckets when
+    # only one source changed. Useful for iterating on plasma loaders
+    # without re-pulling JWST + PSP + ephemeris each cycle.
+    buckets_env = os.environ.get("HELIO_PULL_BUCKETS", "all").strip().lower()
+    if buckets_env in ("", "all"):
+        wanted = {"psp", "probes", "plasma", "ephemeris", "jwst"}
+    else:
+        wanted = {b.strip() for b in buckets_env.split(",")}
+    print(f"[helio-mirror stage-1] buckets: {sorted(wanted)}")
+
     try:
         create_repo(repo_id=REPO_ID, repo_type="dataset", token=token,
                      exist_ok=True, private=False)
@@ -578,29 +589,37 @@ def _main_inner(token: str, api: HfApi, gate) -> int:
     out = Path("helio_cache")
     out.mkdir(parents=True, exist_ok=True)
 
-    psp_ok = pull_psp(api, t_start, t_stop, out)
-    probes_ok = pull_probes(api, t_start, t_stop, out, SPACECRAFT_DEFAULT)
-    plasma_ok = pull_plasma(api, t_start, t_stop, out, SPACECRAFT_DEFAULT)
-    eph_ok = pull_ephemeris(api, t_start, t_stop, out, EPHEMERIS_BODIES_DEFAULT)
-    jwst_ok = pull_jwst(api, out, JWST_BODIES_DEFAULT, t_start, t_stop)
+    psp_ok = pull_psp(api, t_start, t_stop, out) if "psp" in wanted else False
+    probes_ok = pull_probes(api, t_start, t_stop, out, SPACECRAFT_DEFAULT) if "probes" in wanted else False
+    plasma_ok = pull_plasma(api, t_start, t_stop, out, SPACECRAFT_DEFAULT) if "plasma" in wanted else False
+    eph_ok = pull_ephemeris(api, t_start, t_stop, out, EPHEMERIS_BODIES_DEFAULT) if "ephemeris" in wanted else False
+    jwst_ok = pull_jwst(api, out, JWST_BODIES_DEFAULT, t_start, t_stop) if "jwst" in wanted else False
 
     print("\n[helio-mirror] stage-1 done.")
-    print(f"  PSP:       {'OK' if psp_ok else 'FAIL'}")
-    print(f"  HSO probes:{'OK' if probes_ok else 'FAIL'}")
-    print(f"  Plasma:    {'OK' if plasma_ok else 'FAIL'}")
-    print(f"  Ephemeris: {'OK' if eph_ok else 'FAIL'}")
-    print(f"  JWST:      {'OK' if jwst_ok else 'FAIL'}")
+    def label(b: str, ok: bool) -> str:
+        return f"{'OK' if ok else 'FAIL'}" if b in wanted else "skipped"
+    print(f"  PSP:       {label('psp', psp_ok)}")
+    print(f"  HSO probes:{label('probes', probes_ok)}")
+    print(f"  Plasma:    {label('plasma', plasma_ok)}")
+    print(f"  Ephemeris: {label('ephemeris', eph_ok)}")
+    print(f"  JWST:      {label('jwst', jwst_ok)}")
     gate.notes = {
+        "buckets_requested": sorted(wanted),
         "psp": bool(psp_ok), "probes": bool(probes_ok),
         "plasma": bool(plasma_ok),
         "ephemeris": bool(eph_ok), "jwst": bool(jwst_ok),
     }
-    n_ok = sum([psp_ok, probes_ok, plasma_ok, eph_ok, jwst_ok])
-    gate.n_inputs = 5  # the five pull buckets (incl. plasma)
+    n_requested = len(wanted)
+    n_ok = sum([psp_ok and "psp" in wanted,
+                 probes_ok and "probes" in wanted,
+                 plasma_ok and "plasma" in wanted,
+                 eph_ok and "ephemeris" in wanted,
+                 jwst_ok and "jwst" in wanted])
+    gate.n_inputs = n_requested
     gate.n_outputs = int(n_ok)
     if n_ok == 0:
         gate.ok = False
-        gate.reason = "all pull buckets failed"
+        gate.reason = f"all {n_requested} requested buckets failed"
         return 1
     return 0
 
