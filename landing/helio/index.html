@@ -132,6 +132,9 @@
     <label class="area-input">collector m²
       <input id="area" type="number" min="1" max="1000000" step="100" value="1000">
     </label>
+    <label class="area-input" id="perihelion-picker-wrap" style="display:none;">perihelion
+      <select id="perihelion-picker" class="search" style="min-width:90px;padding:4px 8px;"></select>
+    </label>
     <button id="toggle-kwh-glow" class="toggle active">brightness ∝ kWh</button>
     <button id="toggle-log" class="toggle active">log scale</button>
     <button id="toggle-labels" class="toggle active">labels</button>
@@ -680,31 +683,59 @@ function renderList() {
   }
 }
 
+async function renderForecast(data) {
+  forecastData = data;
+  document.getElementById("raw-json").textContent = JSON.stringify(forecastData, null, 2);
+  document.getElementById("meta-line").textContent =
+    `live · ${forecastData.model || "—"} · ${forecastData.horizon_hours}h horizon · ${fmtTs(forecastData.generated_at)}`;
+  const cm = document.getElementById("caveats-mount");
+  cm.innerHTML = "";
+  for (const c of (forecastData.caveats || [])) {
+    const li = document.createElement("li"); li.textContent = c; cm.appendChild(li);
+  }
+  document.getElementById("hero-bodies").textContent = Object.keys(forecastData.bodies || {}).length;
+  document.getElementById("hero-bodies-sub").innerHTML = `perihelion <strong>${forecastData.perihelion}</strong> · PSP at <span id="hero-psp-r">${forecastData.psp?.r_au?.toFixed(3) ?? "—"}</span> AU`;
+  placeBodies();
+  renderList();
+  const bodies = Object.keys(forecastData.bodies || {});
+  if (bodies.length) selectBody(bodies[0]);
+}
+
+async function fetchPerihelion(tag) {
+  // Try latest_{P}.json first, fall back to latest.json if not yet emitted.
+  for (const path of [`forecast/latest_${tag}.json`, "forecast/latest.json"]) {
+    const r = await fetch(`${HF_BASE}/${path}`, { cache: "no-store" });
+    if (r.ok) return r.json();
+  }
+  throw new Error("no forecast JSON available");
+}
+
 async function loadAll() {
   try {
-    const r = await fetch(`${HF_BASE}/forecast/latest.json`, { cache: "no-store" });
-    if (!r.ok) throw new Error("HF " + r.status);
-    forecastData = await r.json();
-    document.getElementById("raw-json").textContent = JSON.stringify(forecastData, null, 2);
-    document.getElementById("meta-line").textContent =
-      `live · ${forecastData.model || "—"} · ${forecastData.horizon_hours}h horizon · ${fmtTs(forecastData.generated_at)}`;
-    const cm = document.getElementById("caveats-mount");
-    cm.innerHTML = "";
-    for (const c of (forecastData.caveats || [])) {
-      const li = document.createElement("li"); li.textContent = c; cm.appendChild(li);
-    }
-    document.getElementById("hero-bodies").textContent = Object.keys(forecastData.bodies || {}).length;
-    document.getElementById("hero-bodies-sub").innerHTML = `perihelion <strong>${forecastData.perihelion}</strong> · PSP at <span id="hero-psp-r">${forecastData.psp?.r_au.toFixed(3) ?? "—"}</span> AU`;
-    placeBodies();
-    renderList();
-    const bodies = Object.keys(forecastData.bodies || {});
-    if (bodies.length) selectBody(bodies[0]);
+    const data = await fetchPerihelion("__current__");  // miss → fall back to latest.json
+    await renderForecast(data);
   } catch (e) {
     document.getElementById("raw-json").textContent = "(forecast/latest.json not yet on HF: " + e.message + ")";
     document.getElementById("card-mount").innerHTML = `<div class="empty">no forecast on HF yet — run the helio-mirror workflows</div>`;
   }
   try {
     const s = await (await fetch(`${HF_BASE}/forecast/dataset_status.json`, { cache: "no-store" })).json();
+    // Populate the perihelion picker with whatever perihelia have a forecast
+    const processed = s.perihelia_processed || [];
+    if (processed.length > 1 && forecastData) {
+      const picker = document.getElementById("perihelion-picker");
+      const wrap = document.getElementById("perihelion-picker-wrap");
+      picker.innerHTML = processed.map(p => `<option value="${p}"${p === forecastData.perihelion ? " selected" : ""}>${p}</option>`).join("");
+      wrap.style.display = "";
+      picker.onchange = async (ev) => {
+        try {
+          const data = await fetchPerihelion(ev.target.value);
+          await renderForecast(data);
+        } catch (err) {
+          console.warn("perihelion switch failed:", err);
+        }
+      };
+    }
     const m = document.getElementById("status-mount"); m.classList.remove("empty");
     const ppp = s.probes_per_perihelion || {};
     const probeRows = Object.entries(ppp)
