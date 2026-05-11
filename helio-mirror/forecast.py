@@ -264,6 +264,7 @@ def main() -> int:
 
     probe_pairs_by_pair: list[dict] = []
     median_probe_match_score: float | None = None
+    probes_load_status: dict | None = None
     try:
         files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
         sum_name = f"events/coincidences_summary_{PERIHELION}.json"
@@ -273,8 +274,14 @@ def main() -> int:
             sdata = json.loads(Path(sp).read_text())
             probe_pairs_by_pair = sdata.get("probe_pairs_by_pair") or []
             median_probe_match_score = sdata.get("median_probe_match_score")
+        stat_name = f"status/probes_status_{PERIHELION}.json"
+        if stat_name in files:
+            stp = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                                    filename=stat_name, token=token)
+            probes_load_status = json.loads(Path(stp).read_text())
     except Exception as e:
-        print(f"[stage-6] coincidences_summary load skipped: {e}", file=sys.stderr)
+        print(f"[stage-6] coincidences_summary/probes_status load skipped: {e}",
+              file=sys.stderr)
 
     latest = {
         "perihelion": PERIHELION,
@@ -289,6 +296,7 @@ def main() -> int:
         "n_probe_coincidences_matched": n_probe_matched,
         "probe_pairs_by_pair": probe_pairs_by_pair,
         "median_probe_match_score": median_probe_match_score,
+        "probes_load_status": probes_load_status,
         "bodies": {},
         "caveats": [
             "Forecast is per-body persistence × geometric r² correction; ML residual applied when a per-body specialist is trained.",
