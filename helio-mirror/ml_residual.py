@@ -34,6 +34,8 @@ from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
+from gates import Gate
+
 REPO_ID = "luuow/meridian-helio-mirror"
 MIN_TRAIN_PER_BODY = int(os.environ.get("ML_MIN_TRAIN_PER_BODY", "10"))
 INTERVAL_HOURS_LO = float(os.environ.get("ML_INTERVAL_LO_H", "12"))
@@ -110,20 +112,64 @@ def build_pairs(irr: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+HELD_OUT_FRAC = float(os.environ.get("ML_HELD_OUT_FRAC", "0.2"))
+MIN_TEST_PER_BODY = int(os.environ.get("ML_MIN_TEST_PER_BODY", "3"))
+
+
 def train_per_body(pairs: pd.DataFrame) -> dict:
+    """Chronologically held-out split per body: oldest 80% train, newest 20%
+    test. Without this we'd report train MAE only, which is overoptimistic —
+    same trap that bit the photon-route project (train nDCG 0.747 → holdout
+    0.071).
+
+    Skill metric: (baseline_mae_holdout − model_mae_holdout) / baseline_mae_holdout.
+    Positive = model beats persistence; negative = persistence wins (gate ML).
+    """
     specialists: dict[str, dict] = {}
     insufficient: list[dict] = []
     for body, g in pairs.groupby("body"):
-        if len(g) < MIN_TRAIN_PER_BODY:
-            insufficient.append({"body": body, "n_pairs": int(len(g))})
+        n = len(g)
+        if n < MIN_TRAIN_PER_BODY:
+            insufficient.append({"body": body, "n_pairs": int(n),
+                                  "reason": f"<{MIN_TRAIN_PER_BODY} pairs"})
             continue
-        X = g[FEATURE_COLS].to_numpy()
-        y = g["residual_log10"].to_numpy()
-        scaler = StandardScaler().fit(X)
-        Xz = scaler.transform(X)
-        model = Ridge(alpha=RIDGE_ALPHA).fit(Xz, y)
-        y_pred = model.predict(Xz)
-        residual_residual = y - y_pred
+        # Chronological split — never random split time series.
+        g_sorted = g.sort_values("anchor_ts").reset_index(drop=True)
+        n_test = max(MIN_TEST_PER_BODY, int(round(n * HELD_OUT_FRAC)))
+        if n_test >= n:
+            insufficient.append({"body": body, "n_pairs": int(n),
+                                  "reason": "test set would consume all pairs"})
+            continue
+        n_train = n - n_test
+        if n_train < MIN_TRAIN_PER_BODY:
+            insufficient.append({"body": body, "n_pairs": int(n),
+                                  "reason": f"after held-out split, train < {MIN_TRAIN_PER_BODY}"})
+            continue
+        train_df = g_sorted.iloc[:n_train]
+        test_df = g_sorted.iloc[n_train:]
+        X_tr = train_df[FEATURE_COLS].to_numpy()
+        y_tr = train_df["residual_log10"].to_numpy()
+        X_te = test_df[FEATURE_COLS].to_numpy()
+        y_te = test_df["residual_log10"].to_numpy()
+        scaler = StandardScaler().fit(X_tr)
+        model = Ridge(alpha=RIDGE_ALPHA).fit(scaler.transform(X_tr), y_tr)
+        pred_tr = model.predict(scaler.transform(X_tr))
+        pred_te = model.predict(scaler.transform(X_te))
+        train_mae = float(np.mean(np.abs(y_tr - pred_tr)))
+        test_mae = float(np.mean(np.abs(y_te - pred_te)))
+        baseline_train_mae = float(np.mean(np.abs(y_tr)))   # predict residual=0 = persistence
+        baseline_test_mae = float(np.mean(np.abs(y_te)))
+        skill = ((baseline_test_mae - test_mae) / baseline_test_mae
+                  if baseline_test_mae > 1e-9 else 0.0)
+        if skill < 0:
+            insufficient.append({"body": body, "n_pairs": int(n),
+                                  "reason": f"holdout skill {skill:+.3f} (Ridge worse than persistence)",
+                                  "train_mae": train_mae, "test_mae": test_mae,
+                                  "baseline_test_mae": baseline_test_mae})
+            print(f"[stage-6b] {body}: GATED — Ridge skill {skill:+.3f} on holdout "
+                  f"(train_mae {train_mae:.4f}, test_mae {test_mae:.4f}, "
+                  f"baseline_test_mae {baseline_test_mae:.4f})")
+            continue
         specialists[body] = {
             "type": "ridge",
             "feature_cols": FEATURE_COLS,
@@ -132,10 +178,16 @@ def train_per_body(pairs: pd.DataFrame) -> dict:
             "coef": model.coef_.tolist(),
             "intercept": float(model.intercept_),
             "alpha": RIDGE_ALPHA,
-            "n_train": int(len(g)),
-            "train_mae_log10": float(np.mean(np.abs(residual_residual))),
-            "baseline_mae_log10": float(np.mean(np.abs(y))),
+            "n_train": int(n_train),
+            "n_test": int(n_test),
+            "train_mae_log10": train_mae,
+            "test_mae_log10": test_mae,
+            "baseline_train_mae_log10": baseline_train_mae,
+            "baseline_test_mae_log10": baseline_test_mae,
+            "holdout_skill": skill,
         }
+        print(f"[stage-6b] {body}: trained on {n_train}, tested on {n_test} — "
+              f"skill {skill:+.3f} (test_mae {test_mae:.4f} vs persistence {baseline_test_mae:.4f})")
     return {"specialists": specialists, "insufficient_data": insufficient}
 
 
@@ -146,9 +198,17 @@ def main() -> int:
     token = os.environ["HF_TOKEN"]
     api = HfApi(token=token)
 
+    with Gate("ml_residual", "ALL", REPO_ID, api=api) as gate:
+        rc = _main_inner(token, api, gate)
+    return rc
+
+
+def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     irr = load_all_irradiance(token)
     if irr.empty:
         print("[stage-6b] no irradiance data — run earlier stages first", file=sys.stderr)
+        gate.ok = False
+        gate.reason = "no irradiance data"
         return 1
     print(f"[stage-6b] loaded {len(irr)} irradiance rows across "
           f"{irr['body'].nunique()} bodies / {irr['source_perihelion'].nunique()} perihelia")
@@ -169,6 +229,7 @@ def main() -> int:
             "status": "trained" if outcome["specialists"] else "gated_insufficient_data",
             "min_train_per_body": MIN_TRAIN_PER_BODY,
             "interval_hours": [INTERVAL_HOURS_LO, INTERVAL_HOURS_HI],
+            "held_out_frac": HELD_OUT_FRAC,
             "n_pairs_total": int(len(pairs)),
             "n_irradiance_rows": int(len(irr)),
             "feature_cols": FEATURE_COLS,
@@ -177,7 +238,20 @@ def main() -> int:
             "pairs_per_body": pairs.groupby("body").size().to_dict(),
         }
     print(json.dumps({k: v for k, v in result.items() if k != "specialists"}, indent=2, default=str))
-    print(f"trained bodies: {list(result.get('specialists', {}).keys())}")
+    print(f"trained bodies (positive holdout skill): {list(result.get('specialists', {}).keys())}")
+    gate.n_inputs = int(len(irr))
+    gate.n_outputs = int(len(result.get("specialists") or {}))
+    gate.notes = {
+        "status": result.get("status"),
+        "n_pairs_total": int(len(pairs)),
+        "n_bodies_trained": int(len(result.get("specialists") or {})),
+        "median_skill": (
+            float(np.median([s["holdout_skill"]
+                              for s in (result.get("specialists") or {}).values()]))
+            if result.get("specialists") else None),
+    }
+    if not result.get("specialists"):
+        gate.reason = f"no body passed holdout skill gate ({result.get('status')})"
 
     out_dir = Path("helio_cache/forecast")
     out_dir.mkdir(parents=True, exist_ok=True)
