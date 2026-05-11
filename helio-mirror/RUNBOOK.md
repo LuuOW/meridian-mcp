@@ -26,6 +26,25 @@ parallel uploads to the same dataset).
 
 Use this after a stage-level patch (e.g., a feature change in `detect.py`).
 
+### Stage 1.5 — plasma speed (v_sw)
+
+```bash
+gh workflow run helio-mirror-pull.yml -R LuuOW/meridian-mcp -f perihelion=E20
+```
+
+Plasma data is now pulled as a 5th bucket inside `pull.py` alongside
+PSP/HSO-probes/ephemeris/JWST. Output: `plasma/{sc}_speed_{P}.parquet`
+with `[time, v_sw_km_s]`. Loaders are best-effort per spacecraft — when
+a mission's plasma instrument has gaps (PSP/SWEAP-SPI at deep perihelia,
+DSCOVR/FC outages), the missing v_sw at that source falls back to
+`V_SW_KM_PER_SEC = 400` constant in `coincide.py`'s spiral calculation.
+
+The point of having real v_sw is to align the Parker-spiral lon
+prediction with reality — a fast solar wind day at 700 km/s wraps half
+as much as the 400-constant model assumes, and many "should-have-matched"
+coincidences were getting rejected by the lon-tol check at the wrong
+predicted lon.
+
 ### Train the ML residual layer
 
 ```bash
