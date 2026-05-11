@@ -592,6 +592,9 @@ function selectBody(name) {
       <div class="num">${fmtKwh(dailyKwh)}</div>
       <div class="lbl">kWh / m² · next 24 h</div>
       <div class="sec">peak hour ${fmtKwh(peakKwh)} kWh/m²/h · r ≈ ${b.anchor_r_au.toFixed(3)} AU</div>
+      ${b.expected_in_band_W_m2_at_body != null
+        ? `<div class="sec" style="color:#1cab5d;">in-band JWST filter (${b.filter}): ${b.expected_in_band_W_m2_at_body.toFixed(3)} W/m² <span class="pill ok" style="margin-left:6px;">zp-calibrated</span></div>`
+        : ""}
     </div>
     <div class="now-grid">
       <div class="now-card"><div class="now-num">${fmtNum(b.anchor_r_au, 3)}</div><div class="now-lbl">r (AU)</div></div>

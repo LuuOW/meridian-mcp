@@ -320,6 +320,15 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
             "phase_angle_deg": float(last["phase_angle_deg"]),
             "delta_au": float(last["delta_au"]),
             "anchor_lon_deg": float(last["body_helio_lon_deg"]),
+            "expected_in_band_W_m2_at_body": (
+                float(last["expected_in_band_W_m2_at_body"])
+                if "expected_in_band_W_m2_at_body" in irr_sorted.columns
+                and pd.notna(last["expected_in_band_W_m2_at_body"])
+                else None),
+            "zeropoint_calibrated": (
+                bool(last["zeropoint_calibrated"])
+                if "zeropoint_calibrated" in irr_sorted.columns
+                else False),
         })
     for body in forecast["body"].unique():
         sub = forecast[forecast["body"] == body]
@@ -334,6 +343,8 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
                 float(anchor["anchor_inferred_irradiance_proxy"]),
             "phase_angle_deg": meta.get("phase_angle_deg"),
             "delta_au": meta.get("delta_au"),
+            "expected_in_band_W_m2_at_body": meta.get("expected_in_band_W_m2_at_body"),
+            "zeropoint_calibrated": meta.get("zeropoint_calibrated", False),
             "forecast": [
                 {
                     "h": int(r["horizon_h"]),
