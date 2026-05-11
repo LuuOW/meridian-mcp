@@ -16,7 +16,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
-from huggingface_hub import HfApi, list_repo_files
+from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
 from targets import PERIHELIA, BODIES
 
@@ -32,6 +32,7 @@ STAGES = {
     "irradiance": "irradiance/",
     "forecast": "forecast/",
     "status": "status/",
+    "gates": "gates/",
 }
 
 
@@ -78,6 +79,28 @@ def main() -> int:
             sc, tag = m.group(1), m.group(2)
             probes_per_perihelion[tag].append(sc.replace("_", "-"))
 
+    # Per-perihelion gate summary: read every gates/{stage}_{P}.json so the
+    # dashboard can show pass/fail pills per stage.
+    gates_per_perihelion: dict[str, dict] = defaultdict(dict)
+    for f in by_stage.get("gates", []):
+        m = re.match(r"gates/(.+)_(E\d+)\.json$", f)
+        if not m:
+            continue
+        stage, tag = m.group(1), m.group(2)
+        try:
+            p = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                                 filename=f, token=token)
+            data = json.loads(Path(p).read_text())
+            gates_per_perihelion[tag][stage] = {
+                "ok": bool(data.get("ok")),
+                "n_inputs": data.get("n_inputs"),
+                "n_outputs": data.get("n_outputs"),
+                "duration_sec": data.get("duration_sec"),
+                "reason": data.get("reason"),
+            }
+        except Exception as e:
+            print(f"[status] gate read failed for {f}: {e}", file=sys.stderr)
+
     summary = {
         "generated_at": pd.Timestamp.utcnow().isoformat(),
         "repo": f"https://huggingface.co/datasets/{REPO_ID}",
@@ -90,6 +113,10 @@ def main() -> int:
         ),
         "probes_per_perihelion": {
             tag: sorted(probes_per_perihelion.get(tag, []))
+            for tag in PERIHELION_TAGS
+        },
+        "gates_per_perihelion": {
+            tag: dict(gates_per_perihelion.get(tag, {}))
             for tag in PERIHELION_TAGS
         },
         "per_perihelion_completeness": {
