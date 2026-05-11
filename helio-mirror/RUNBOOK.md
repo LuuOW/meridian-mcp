@@ -75,7 +75,7 @@ Common failure modes seen so far:
 | `module 'numpy' has no attribute 'in1d'` | `astropy<7.1` pinned with `numpy>=2` | Drop the astropy pin; pyspedas pulls compatible version transitively. |
 | `KeyError: 'perihelion'` in stage-2 | `archetypes/labels.parquet`-style file missing the perihelion column | Make sure stage-1 (harvester/E_truth) ran first; merge perihelion column from there. |
 | `cannot convert float NaN to integer` in stage-4 | PSP samples outside the 1-h ephemeris merge_asof tolerance carry NaN r_au; one of `r_psp` / `r_body` was NaN | `coincide.py` now does `np.isfinite(r_psp) and np.isfinite(r_body)` defensively. Re-run. |
-| `429 Too Many Requests` on HF commit | Parallel jobs uploading to the same dataset | Resolved: `hf_push.py` adds 5-attempt exponential backoff; fanout runs with `max-parallel: 1`. |
+| `429 Too Many Requests` on HF commit | HF free tier caps at 128 commits/hour per repo. Many small `upload_file` calls in a tight loop blow the budget within one perihelion. | Two-prong: all stages now call `hf_push.push_folder` to batch a stage's outputs into a single commit; `hf_push.push` retries 429/5xx with exponential backoff (2/5/15/45/120s). Fanout serialised with `max-parallel: 1`. |
 | `No links matching pattern psp_swp_spc_l3i_*` | PSP SWEAP/SPC L3 is gappy post-E18 | Use SWEAP/SPAN-I (`psp.spi`) — that's what `pull.py` does now. |
 | JWST anchor is years off PSP perihelion | MAST query unwindowed | `search_jwst()` now takes `t_start/t_stop` and a `window_days=365` band; falls back to nearest-in-time if window is empty. |
 

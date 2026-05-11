@@ -113,7 +113,12 @@ avoid the HF Hub 429s the first parallel attempt hit.)
   `cf-worker/stellar-proxy.mjs` carried over.
 - **Output impact:** cosmetic — branded subdomain like the others.
 
-### 10. Honest error gates — ⟳ partial (HF 429 retry done, per-stage gates TBD)
+### 10. Honest error gates — ⟳ retry policy done; per-stage gate JSON TBD
+
+(Status: `hf_push.push_folder` + per-stage folder commits keeps the
+five-perihelion fanout under HF's 128 commits/hour. Per-stage gate JSON —
+"N inputs / N outputs / pass-fail" — still TBD.)
+
 
 
 - **Gap:** Stage 4 v0.1 silently returned 0 coincidences with no warning.
