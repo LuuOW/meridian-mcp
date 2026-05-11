@@ -27,7 +27,8 @@ from astroquery.jplhorizons import Horizons
 from astroquery.mast import Observations
 from huggingface_hub import HfApi, create_repo
 
-from targets import BODIES, PSP_NAIF, PERIHELIA, JWST_BODIES_DEFAULT, EPHEMERIS_BODIES_DEFAULT
+from targets import BODIES, PSP_NAIF, PERIHELIA, JWST_BODIES_DEFAULT, EPHEMERIS_BODIES_DEFAULT, SPACECRAFT, SPACECRAFT_DEFAULT
+from probes import LOADER_MAP
 
 REPO_ID = "luuow/meridian-helio-mirror"
 PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
@@ -359,6 +360,47 @@ def pull_jwst(api: HfApi, out: Path, bodies: tuple[str, ...],
     return ok
 
 
+def pull_probes(api: HfApi, t_start: str, t_stop: str, out: Path,
+                 spacecraft: tuple[str, ...]) -> bool:
+    """HSO mode — pull B-field RTN time series from every spacecraft in the
+    list. PSP gets its richer specialised loader via pull_psp(); here we just
+    do uniform MAG-only ingestion across the heliophysics fleet for cross-
+    spacecraft event detection in stage-3+.
+    """
+    ok = False
+    probes_dir = out / "probes"
+    probes_dir.mkdir(parents=True, exist_ok=True)
+    for sc in spacecraft:
+        if sc == "PSP":
+            continue  # PSP handled by pull_psp with its specialised products
+        info = SPACECRAFT.get(sc)
+        if info is None:
+            continue
+        loader = LOADER_MAP.get(info["loader"])
+        if loader is None:
+            continue
+        try:
+            print(f"[probes/{sc}] {t_start} → {t_stop}")
+            df = loader(t_start, t_stop)
+            if df.empty:
+                print(f"[probes/{sc}] empty (no data on CDAWeb for this window)")
+                continue
+            df["spacecraft"] = sc
+            safe = sc.replace("/", "_").replace(" ", "_")
+            df.to_parquet(probes_dir / f"{safe}_mag_{PERIHELION}.parquet", compression="snappy")
+            ok = True
+            print(f"[probes/{sc}] {len(df)} samples")
+        except Exception as e:
+            print(f"[probes/{sc}] failed: {e}", file=sys.stderr)
+            traceback.print_exc()
+    if ok:
+        push_subdir(api, probes_dir, "probes",
+                     f"stage-1: HSO probe magnetometer bundle {PERIHELION}",
+                     patterns=[f"*_mag_{PERIHELION}.parquet"])
+        print(f"[probes] folder-uploaded {len(list(probes_dir.glob(f'*_mag_{PERIHELION}.parquet')))} probes")
+    return ok
+
+
 def pull_ephemeris(api: HfApi, t_start: str, t_stop: str, out: Path,
                     bodies: tuple[str, ...]) -> bool:
     ok = False
@@ -385,9 +427,21 @@ def pull_ephemeris(api: HfApi, t_start: str, t_stop: str, out: Path,
         except Exception as e:
             print(f"[eph/{body.name}] failed: {e}", file=sys.stderr)
             traceback.print_exc()
+    for sc, info in SPACECRAFT.items():
+        if sc == "PSP":
+            continue
+        try:
+            print(f"[eph/{sc}] {t_start} → {t_stop}")
+            df = fetch_ephemeris(info["naif"], t_start, t_stop)
+            safe = sc.replace("/", "_").replace(" ", "_")
+            df.to_parquet(eph_dir / f"{safe}_{PERIHELION}.parquet")
+            ok = True
+        except Exception as e:
+            print(f"[eph/{sc}] failed: {e}", file=sys.stderr)
+            traceback.print_exc()
     if ok:
         push_subdir(api, eph_dir, "ephemeris",
-                    f"stage-1: ephemeris bundle {PERIHELION}",
+                    f"stage-1: ephemeris bundle (bodies + HSO probes) {PERIHELION}",
                     patterns=[f"*_{PERIHELION}.parquet"])
         print(f"[eph] folder-uploaded {len(list(eph_dir.glob(f'*_{PERIHELION}.parquet')))} parquets")
     return ok
@@ -418,14 +472,16 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
 
     psp_ok = pull_psp(api, t_start, t_stop, out)
+    probes_ok = pull_probes(api, t_start, t_stop, out, SPACECRAFT_DEFAULT)
     eph_ok = pull_ephemeris(api, t_start, t_stop, out, EPHEMERIS_BODIES_DEFAULT)
     jwst_ok = pull_jwst(api, out, JWST_BODIES_DEFAULT, t_start, t_stop)
 
     print("\n[helio-mirror] stage-1 done.")
     print(f"  PSP:       {'OK' if psp_ok else 'FAIL'}")
+    print(f"  HSO probes:{'OK' if probes_ok else 'FAIL'}")
     print(f"  Ephemeris: {'OK' if eph_ok else 'FAIL'}")
     print(f"  JWST:      {'OK' if jwst_ok else 'FAIL'}")
-    if not (psp_ok or eph_ok or jwst_ok):
+    if not (psp_ok or probes_ok or eph_ok or jwst_ok):
         return 1
     return 0
 
