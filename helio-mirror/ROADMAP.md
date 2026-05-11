@@ -4,9 +4,19 @@ Tracking what we know is missing in v0.1, in priority order. Each item lists
 the gap, the fix, and the **output impact** — i.e., what the final forecast
 gets to claim once the item lands.
 
+## Status legend
+
+- ☐ — not started
+- ⟳ — scaffolded, awaiting data / verification
+- ✓ — done and verified
+
 ## v0.2 — bigger and more honest
 
-### 1. Multi-perihelion run (E21–E24)
+### 1. Multi-perihelion run (E21–E24) — ⟳ in progress
+
+(Status: `helio-mirror-fanout` running serially with `max-parallel: 1` to
+avoid the HF Hub 429s the first parallel attempt hit.)
+
 
 - **Gap:** Only E20 has been processed end-to-end. Data for the four other
   perihelia is on HF (raw) but never registered, detected, or forecast.
@@ -17,7 +27,8 @@ gets to claim once the item lands.
   "first run, n=1" to "preliminary, n=5". Critical for any
   honest skill claim.
 
-### 2. Coincidences-now-non-zero verification
+### 2. Coincidences-now-non-zero verification — ⟳ depends on item 1
+
 
 - **Gap:** v0.1 returned 0 coincidences because the JWST query wasn't
   time-windowed. The fix is shipped (`pull.py` ±90 d window) but unverified.
@@ -26,7 +37,8 @@ gets to claim once the item lands.
 - **Output impact:** flips the dashboard from "structurally correct, no
   matches yet" to "first real cross-body event chain".
 
-### 3. WISPR coronagraph integration
+### 3. WISPR coronagraph integration — ⟳ scaffolded
+
 
 - **Gap:** PSP B-field only tells us **a** CME happened, not where it's
   going. Without WISPR we can only assume radial propagation from PSP's
@@ -39,7 +51,8 @@ gets to claim once the item lands.
   measured CME direction → tighter lon tolerance → fewer false
   coincidences.
 
-### 4. ISOIS energetic particles
+### 4. ISOIS energetic particles — ⟳ scaffolded
+
 
 - **Gap:** SEP onsets show up cleanly in particle data; PVI is a proxy.
 - **Fix:** `pyspedas.psp.epihi()` L2 integrated count rates, threshold-cross
@@ -59,7 +72,8 @@ gets to claim once the item lands.
 
 ## v0.3 — predictive skill
 
-### 6. ML residual layer
+### 6. ML residual layer — ⟳ scaffolded
+
 
 - **Gap:** Forecast is persistence × r² — beats nothing once we have a real
   evaluation set.
@@ -81,7 +95,8 @@ gets to claim once the item lands.
 
 ## v0.4 — operational
 
-### 8. Cron orchestrator
+### 8. Cron orchestrator — ✓ done
+
 
 - **Gap:** Everything is manual `workflow_dispatch`.
 - **Fix:** Add weekly cron in `helio-mirror-all.yml` that picks the most
@@ -98,7 +113,8 @@ gets to claim once the item lands.
   `cf-worker/stellar-proxy.mjs` carried over.
 - **Output impact:** cosmetic — branded subdomain like the others.
 
-### 10. Honest error gates
+### 10. Honest error gates — ⟳ partial (HF 429 retry done, per-stage gates TBD)
+
 
 - **Gap:** Stage 4 v0.1 silently returned 0 coincidences with no warning.
 - **Fix:** explicit gate JSON per stage (`gate.json` per stage output)
