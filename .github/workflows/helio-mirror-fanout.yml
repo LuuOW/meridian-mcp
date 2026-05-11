@@ -1,38 +1,34 @@
-name: helio-mirror-all
+name: helio-mirror-fanout
 
-# Single-click orchestrator: runs all six stages in sequence for one perihelion.
-# Each stage uses the same env (HF_TOKEN, HELIO_PERIHELION) and pip cache. If
-# you only need to rerun a single stage, use its dedicated workflow instead.
+# Fan-out the full pipeline across all five perihelia. Each runs as an
+# independent job in parallel so a failure in one doesn't poison the others.
+# Use this when you've patched a stage and want every perihelion in the
+# cache regenerated end-to-end. ~15 min × 5 = 75 min wall clock, ~15 min
+# of CI budget per job (parallel) on free tier.
 
 on:
   workflow_dispatch:
     inputs:
-      perihelion:
-        description: "Perihelion window (E20–E24)"
-        required: true
-        default: "E24"
-        type: choice
-        options: [E20, E21, E22, E23, E24]
       skip_pull:
         description: "Skip stage 1 (pull) — useful when raw data is already on HF"
         required: false
         default: false
         type: boolean
-  schedule:
-    # Mondays 06:00 UTC — refresh forecast/latest.json from the most recent
-    # perihelion (defaults to E24 above; change default to widen).
-    - cron: "0 6 * * 1"
 
 permissions:
   contents: read
 
 jobs:
-  full-chain:
+  perihelion:
+    strategy:
+      fail-fast: false
+      matrix:
+        perihelion: [E20, E21, E22, E23, E24]
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      HELIO_PERIHELION: ${{ inputs.perihelion }}
+      HELIO_PERIHELION: ${{ matrix.perihelion }}
     steps:
       - uses: actions/checkout@v4
 
