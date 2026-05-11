@@ -39,7 +39,10 @@ PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
 
 PVI_LAGS_SEC = (10, 100, 1000)
 PVI_REF_LAG_SEC = 100
-PVI_THRESHOLD = 3.0
+# Threshold default = 3 (standard literature value). Raise to 5+ via
+# HELIO_PVI_THRESHOLD env var to drop event density and escape the
+# null-saturation regime documented in ROADMAP item 0a.
+PVI_THRESHOLD = float(os.environ.get("HELIO_PVI_THRESHOLD", "3.0"))
 PVI_WINDOW_SAMPLES = 4096
 
 
