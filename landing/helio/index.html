@@ -75,6 +75,12 @@
   </div>
 
   <section class="panel">
+    <h2>Pipeline state</h2>
+    <p class="sub">Counts of artifacts on the HF dataset by stage; per-perihelion completeness.</p>
+    <div id="status-mount" class="loading">loading forecast/dataset_status.json …</div>
+  </section>
+
+  <section class="panel">
     <h2>Per-body forecast</h2>
     <p class="sub">Anchor = most recent JWST observation reduced through stage-5 (reflection calibrator). Forecast = persistence × geometric r² correction.</p>
     <div id="bodies-mount" class="body-grid loading">loading forecast/latest.json …</div>
@@ -184,6 +190,36 @@
     }
   }
   loadForecast();
+
+  async function loadStatus() {
+    try {
+      const r = await fetch(`${HF_BASE}/forecast/dataset_status.json`, { cache: "no-store" });
+      if (!r.ok) throw new Error("HF " + r.status);
+      const d = await r.json();
+      const mount = document.getElementById("status-mount");
+      mount.classList.remove("loading");
+      const stageCounts = d.n_files_by_stage || {};
+      const stages = Object.entries(stageCounts)
+        .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+      const peris = (d.perihelia_processed || []).map(p => `<span class="pill ok">${p}</span>`).join(" ");
+      const bodies = (d.bodies_with_data || []).map(b => `<span class="pill ok">${b}</span>`).join(" ");
+      mount.innerHTML = `
+        <div class="chart-frame" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.65;">
+          <strong>Files on HF dataset:</strong> ${d.n_files_total}<br>
+          <strong>Perihelia with forecast:</strong> ${peris || '—'}<br>
+          <strong>Bodies with data:</strong> ${bodies || '—'}<br>
+          <strong>Last status update:</strong> ${fmtTs(d.generated_at)}
+        </div>
+        <table class="dash-table" style="margin-top: 12px;">
+          <thead><tr><th>stage</th><th>n_files</th></tr></thead>
+          <tbody>${stages}</tbody>
+        </table>`;
+    } catch (e) {
+      const mount = document.getElementById("status-mount");
+      if (mount) mount.textContent = "(dataset_status.json not yet on HF — run helio-mirror-status workflow)";
+    }
+  }
+  loadStatus();
 </script>
 <script src="https://ask-meridian.uk/nav.js"></script>
 </body>
