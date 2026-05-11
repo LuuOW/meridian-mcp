@@ -271,6 +271,8 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
 
     probe_pairs_by_pair: list[dict] = []
     median_probe_match_score: float | None = None
+    median_v_sw_used: float | None = None
+    n_events_with_real_v_sw: int | None = None
     probes_load_status: dict | None = None
     try:
         files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
@@ -281,6 +283,8 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
             sdata = json.loads(Path(sp).read_text())
             probe_pairs_by_pair = sdata.get("probe_pairs_by_pair") or []
             median_probe_match_score = sdata.get("median_probe_match_score")
+            median_v_sw_used = sdata.get("median_v_sw_km_s_used")
+            n_events_with_real_v_sw = sdata.get("n_events_with_real_v_sw")
         stat_name = f"status/probes_status_{PERIHELION}.json"
         if stat_name in files:
             stp = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
@@ -303,6 +307,8 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         "n_probe_coincidences_matched": n_probe_matched,
         "probe_pairs_by_pair": probe_pairs_by_pair,
         "median_probe_match_score": median_probe_match_score,
+        "median_v_sw_km_s_used": median_v_sw_used,
+        "n_events_with_real_v_sw": n_events_with_real_v_sw,
         "probes_load_status": probes_load_status,
         "bodies": {},
         "caveats": [
