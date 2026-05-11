@@ -4,49 +4,63 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HelioCast — solar irradiance triangulator</title>
-<meta name="description" content="3D interactive dashboard for HelioCast: PSP × JWST cross-correlation gives a per-body irradiance proxy forecast 24 h ahead. Orbit the scene, click a body for its anchor + history.">
+<meta name="description" content="3D interactive dashboard for HelioCast. PSP × JWST cross-correlation gives a per-body irradiance forecast 24 h ahead. Main metric: kWh per m² per day available at each body.">
 <meta property="og:title" content="HelioCast — solar irradiance triangulator">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ask-meridian.uk/helio/">
 <link rel="canonical" href="https://ask-meridian.uk/helio/">
 <link rel="icon" type="image/svg+xml" href="https://ask-meridian.uk/favicon.svg">
-<link rel="stylesheet" href="https://ask-meridian.uk/style.css?v=20260511c">
+<link rel="stylesheet" href="https://ask-meridian.uk/style.css?v=20260511d">
 <style>
   body { background: #050608; color: var(--text, #e9eaee); margin: 0; }
-  .dash { max-width: 1200px; margin: 0 auto; padding: 16px 16px 64px; }
+  .dash { max-width: 1280px; margin: 0 auto; padding: 14px 14px 64px; }
   .dash h1 { font-size: 22px; margin: 4px 0 2px; letter-spacing: -0.01em; }
-  .dash .lead { color: var(--text-faint, #9aa0a6); margin: 0 0 12px; font-size: 13px; max-width: 760px; }
+  .dash .lead { color: var(--text-faint, #9aa0a6); margin: 0 0 12px; font-size: 13px; max-width: 800px; }
   .meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
-  .toolbar { display: flex; gap: 8px; align-items: center; margin: 8px 0 10px; flex-wrap: wrap; }
+  .topbar { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: stretch; margin-bottom: 10px; }
+  @media (max-width: 880px) { .topbar { grid-template-columns: 1fr; } }
+  .hero-metric { background: linear-gradient(135deg, #1a1f2e 0%, #11141a 100%); border: 1px solid #2a2e36; border-radius: 12px; padding: 12px 18px; display: flex; align-items: center; gap: 14px; min-width: 280px; }
+  .hero-metric .hero-num { font-family: var(--font-mono); font-weight: 800; font-size: 32px; color: #ffd34a; line-height: 1; }
+  .hero-metric .hero-lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; line-height: 1.4; }
+  .hero-secondary { color: #9aa0a6; font-size: 11px; font-family: var(--font-mono); }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin: 6px 0 10px; flex-wrap: wrap; }
   .search { flex: 1; min-width: 200px; padding: 8px 12px; font-size: 13px; background: #11141a; border: 1px solid #2a2e36; border-radius: 8px; color: var(--text); font-family: var(--font-mono); }
-  .search:focus { outline: none; border-color: #3a8dde; }
+  .search:focus { outline: none; border-color: #ffd34a; }
   .toggle { padding: 6px 10px; font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; background: #11141a; border: 1px solid #2a2e36; border-radius: 6px; color: var(--text-faint); cursor: pointer; }
-  .toggle.active { color: #3a8dde; border-color: #3a8dde; }
-  .stage { position: relative; background: radial-gradient(ellipse at center, #0a0d14 0%, #030406 100%); border: 1px solid #2a2e36; border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 9; min-height: 360px; }
+  .toggle.active { color: #ffd34a; border-color: #ffd34a; }
+  .area-input { display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: #11141a; border: 1px solid #2a2e36; border-radius: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+  .area-input input { width: 70px; padding: 4px 6px; background: #0a0d14; border: 1px solid #2a2e36; border-radius: 4px; color: var(--text); font-family: var(--font-mono); font-size: 11px; }
+  .stage { position: relative; background: radial-gradient(ellipse at center, #0a0d14 0%, #030406 100%); border: 1px solid #2a2e36; border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 9; min-height: 380px; }
   #canvas { display: block; width: 100%; height: 100%; }
   .hud { position: absolute; bottom: 10px; left: 14px; right: 14px; display: flex; gap: 10px; font-family: var(--font-mono); font-size: 10px; color: #9aa0a6; flex-wrap: wrap; pointer-events: none; }
   .hud .dot { width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; display: inline-block; }
   .hud-hint { margin-left: auto; opacity: 0.7; }
-  .tooltip { position: absolute; pointer-events: none; padding: 4px 8px; background: rgba(20,22,28,0.95); border: 1px solid #3a8dde; border-radius: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text); transform: translate(-50%, -120%); white-space: nowrap; opacity: 0; transition: opacity 0.12s; }
+  .tooltip { position: absolute; pointer-events: none; padding: 6px 10px; background: rgba(15,18,25,0.96); border: 1px solid #ffd34a; border-radius: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--text); transform: translate(-50%, -120%); white-space: nowrap; opacity: 0; transition: opacity 0.12s; line-height: 1.4; }
+  .tooltip .name { color: #ffd34a; font-weight: 700; }
   .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; margin-top: 14px; }
   @media (max-width: 820px) { .grid-2 { grid-template-columns: 1fr; } }
   .panel { background: #11141a; border: 1px solid #2a2e36; border-radius: 12px; padding: 16px; }
   .panel h2 { font-size: 15px; margin: 0 0 6px; }
   .panel .sub { color: var(--text-faint); font-size: 12px; margin: 0 0 12px; }
-  .card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-  .card-title { font-size: 18px; font-weight: 700; margin: 0; }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .card-title { font-size: 20px; font-weight: 700; margin: 0; }
   .card-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+  .kwh-hero { background: linear-gradient(135deg, #2a2208 0%, #1a1308 100%); border: 1px solid #ffd34a44; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; text-align: center; }
+  .kwh-hero .num { font-family: var(--font-mono); font-weight: 800; font-size: 36px; color: #ffd34a; line-height: 1; }
+  .kwh-hero .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; }
+  .kwh-hero .sec { font-family: var(--font-mono); font-size: 11px; color: #c7c7c7; margin-top: 4px; }
   .now-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 6px 0 12px; }
   @media (max-width: 600px) { .now-grid { grid-template-columns: repeat(2, 1fr); } }
   .now-card { background: #0a0d14; border: 1px solid #2a2e36; border-radius: 8px; padding: 8px; text-align: center; }
   .now-num { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: #e9eaee; line-height: 1.1; }
   .now-lbl { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
-  .sparkline { width: 100%; height: 64px; background: #0a0d14; border: 1px solid #2a2e36; border-radius: 8px; margin-bottom: 10px; }
+  .sparkline { width: 100%; height: 90px; background: #0a0d14; border: 1px solid #2a2e36; border-radius: 8px; margin-bottom: 10px; }
   .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }
   .hist-table th { color: var(--text-faint); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 6px; text-align: right; border-bottom: 1px solid #2a2e36; }
   .hist-table th:first-child { text-align: left; }
   .hist-table td { padding: 3px 6px; text-align: right; border-bottom: 1px solid #1a1d24; }
   .hist-table td:first-child { text-align: left; }
+  .hist-table td.kwh { color: #ffd34a; font-weight: 600; }
   .hist-table tr.event td { color: #f5a623; }
   .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.06em; }
   .pill.warn { background: rgba(245,166,35,0.15); color: #f5a623; border: 1px solid rgba(245,166,35,0.45); }
@@ -59,10 +73,11 @@
   .caveats li { color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
   .empty { color: var(--text-faint); font-style: italic; text-align: center; padding: 24px 8px; font-size: 13px; }
   .body-list { max-height: 360px; overflow-y: auto; }
-  .body-list-item { display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-family: var(--font-mono); font-size: 12px; }
+  .body-list-item { display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-family: var(--font-mono); font-size: 12px; gap: 10px; }
   .body-list-item:hover { background: #1a1d24; }
-  .body-list-item.selected { background: rgba(58,141,222,0.15); color: #3a8dde; }
+  .body-list-item.selected { background: rgba(255,211,74,0.12); color: #ffd34a; }
   .body-list-item .b-r { color: var(--text-faint); font-size: 11px; }
+  .body-list-item .b-kwh { color: #ffd34a; font-weight: 600; min-width: 60px; text-align: right; }
   .body-list-item.hidden { display: none; }
 </style>
 </head>
@@ -83,13 +98,41 @@
 
 <main class="dash">
   <p class="meta" id="meta-line">live · loads from huggingface.co/datasets/luuow/meridian-helio-mirror</p>
-  <h1>HelioCast — solar irradiance per body</h1>
+  <h1>HelioCast — kWh forecast per solar-system body</h1>
   <p class="lead">
-    PSP at deep perihelion is the Sun-direct probe; JWST observations of solar-system bodies are scattered-light mirrors. Orbit the scene with the mouse; click any body for its anchor + 24h forecast.
+    PSP measures the Sun directly; JWST observes other bodies that reflect sunlight. For each body, geometric solar flux × multi-junction PV efficiency gives the kWh per m² per day available at that location. Click a body in the 3D scene for its 24 h forecast.
   </p>
+
+  <div class="topbar">
+    <div class="hero-metric">
+      <div>
+        <div class="hero-num" id="hero-kwh">—</div>
+        <div class="hero-lbl">kWh / m² / day · selected body</div>
+        <div class="hero-secondary" id="hero-secondary">tap a body to load</div>
+      </div>
+    </div>
+    <div class="hero-metric">
+      <div>
+        <div class="hero-num" id="hero-collector" style="color:#7aa3ff;">—</div>
+        <div class="hero-lbl">kWh / day · collector below</div>
+        <div class="hero-secondary" id="hero-collector-sub">m² × kWh/m²/day</div>
+      </div>
+    </div>
+    <div class="hero-metric">
+      <div>
+        <div class="hero-num" id="hero-bodies" style="color:#9aa0a6;">—</div>
+        <div class="hero-lbl">bodies in forecast</div>
+        <div class="hero-secondary" id="hero-bodies-sub">PSP at <span id="hero-psp-r">—</span> AU</div>
+      </div>
+    </div>
+  </div>
 
   <div class="toolbar">
     <input id="search" class="search" placeholder="Search body — Mars, Europa, …" autocomplete="off">
+    <label class="area-input">collector m²
+      <input id="area" type="number" min="1" max="1000000" step="100" value="1000">
+    </label>
+    <button id="toggle-kwh-glow" class="toggle active">brightness ∝ kWh</button>
     <button id="toggle-log" class="toggle active">log scale</button>
     <button id="toggle-labels" class="toggle active">labels</button>
     <button id="toggle-rings" class="toggle active">orbits</button>
@@ -101,12 +144,9 @@
     <canvas id="canvas"></canvas>
     <div class="tooltip" id="tooltip"></div>
     <div class="hud">
-      <span><span class="dot" style="background:#f5a623"></span>Sun</span>
+      <span><span class="dot" style="background:#ffd34a"></span>Sun (TSI = 1361 W/m²)</span>
       <span><span class="dot" style="background:#3a8dde"></span>PSP</span>
-      <span><span class="dot" style="background:#cd853f"></span>inner</span>
-      <span><span class="dot" style="background:#e1c98c"></span>gas giants</span>
-      <span><span class="dot" style="background:#b8b8b8"></span>moons</span>
-      <span class="hud-hint">drag to orbit · scroll to zoom · click body</span>
+      <span class="hud-hint">drag = orbit · scroll = zoom · click = forecast card</span>
     </div>
   </div>
 
@@ -116,8 +156,8 @@
       <div id="card-mount"><div class="empty">click a body in the 3D scene or list to load its forecast</div></div>
     </section>
     <section class="panel">
-      <h2>Bodies</h2>
-      <p class="sub">sorted by r (AU) · click to focus</p>
+      <h2>Bodies · sorted by kWh / m² / day</h2>
+      <p class="sub">click a row to focus</p>
       <div id="body-list" class="body-list"></div>
     </section>
   </div>
@@ -131,8 +171,13 @@
   </details>
 
   <details>
-    <summary>honest caveats</summary>
-    <ul class="caveats" id="caveats-mount" style="margin-top: 6px;"><li class="empty">loading …</li></ul>
+    <summary>kWh formula &amp; caveats</summary>
+    <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+      <p><strong>Per-hour kWh / m²:</strong> <code>TSI / r² × η × Δt</code> where TSI = 1361 W/m² (solar constant at 1 AU), r = body-to-Sun distance in AU at the forecast hour (from JPL Horizons), η = 0.30 (multi-junction PV efficiency, Spectrolab XTJ Prime), Δt = 1 hour.</p>
+      <p>Daily (24 h) kWh / m² is the sum of hourly values; integrates orbital motion over the horizon.</p>
+      <p><strong>This is an upper bound</strong> assuming an ideal Sun-tracking collector, no atmosphere, no eclipses, no rotation losses. Real harvester yield is a fraction of this. PSP-event flags (orange dots) mark hours where a wind-mechanism PSP disturbance is predicted to arrive — those hours likely deviate from geometric prediction.</p>
+    </div>
+    <ul class="caveats" id="caveats-mount" style="margin-top: 6px;"><li class="empty">loading data caveats …</li></ul>
   </details>
 
   <details>
@@ -158,7 +203,20 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const HF_BASE = "https://huggingface.co/datasets/luuow/meridian-helio-mirror/resolve/main";
-const STATE = { useLog: true, showLabels: true, showRings: true };
+const STATE = { useLog: true, showLabels: true, showRings: true, kwhGlow: true };
+
+const TSI_W_M2 = 1361.0;
+const PV_ETA = 0.30;
+function kwhPerM2PerHour(r_au) {
+  if (!Number.isFinite(r_au) || r_au <= 0) return 0;
+  return (TSI_W_M2 / (r_au * r_au)) * PV_ETA / 1000;
+}
+function kwhPerM2PerDay(r_au) { return kwhPerM2PerHour(r_au) * 24; }
+function forecastedDailyKwh(b) {
+  if (!b || !b.forecast || !b.forecast.length) return kwhPerM2PerDay(b?.anchor_r_au ?? 0);
+  return b.forecast.reduce((s, r) => s + kwhPerM2PerHour(r.r_au), 0);
+}
+
 const BODY_COLOR = {
   Sun: 0xffd44a, PSP: 0x3a8dde,
   Mercury: 0x9aa0a6, Venus: 0xeacb95, Earth: 0x7aa3ff,
@@ -170,17 +228,14 @@ const BODY_COLOR = {
 const BODY_VISUAL_RADIUS = { Sun: 1.2, PSP: 0.18, Mercury: 0.18, Venus: 0.22, Earth: 0.22, Mars: 0.20, Jupiter: 0.55, Saturn: 0.48, Uranus: 0.35, Neptune: 0.35, Europa: 0.14, Io: 0.14, Ganymede: 0.14, Callisto: 0.14, Titan: 0.14, Enceladus: 0.12 };
 
 let scene, camera, renderer, controls, raycaster, pointer;
-let bodyMeshes = new Map();    // name -> Mesh
-let bodyLabels = new Map();    // name -> Sprite
+let bodyMeshes = new Map();
+let bodyLabels = new Map();
 let orbitRings = [];
 let forecastData = null;
 let selectedBody = null;
 let hovered = null;
 
-function rTransform(r) {
-  if (!STATE.useLog) return r;
-  return Math.log10(Math.max(0.01, r) + 1) * 8;
-}
+function rTransform(r) { return STATE.useLog ? Math.log10(Math.max(0.01, r) + 1) * 8 : r; }
 function pos3(r_au, lon_deg, lat_deg) {
   const r = rTransform(r_au || 0);
   const lon = (lon_deg || 0) * Math.PI / 180;
@@ -194,20 +249,39 @@ function pos3(r_au, lon_deg, lat_deg) {
 
 function makeLabel(text, color = "#e9eaee") {
   const canvas = document.createElement("canvas");
-  const size = 256;
-  canvas.width = size; canvas.height = 64;
+  canvas.width = 384; canvas.height = 96;
   const ctx = canvas.getContext("2d");
-  ctx.font = "bold 28px ui-monospace, Menlo, monospace";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = color;
+  ctx.font = "bold 30px ui-monospace, Menlo, monospace";
+  ctx.textBaseline = "top";
   ctx.shadowColor = "rgba(0,0,0,0.85)";
-  ctx.shadowBlur = 8;
-  ctx.fillText(text, 8, 32);
+  ctx.shadowBlur = 10;
+  ctx.fillStyle = color;
+  ctx.fillText(text, 8, 8);
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter;
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(2.6, 0.65, 1);
+  sprite.scale.set(3.0, 0.75, 1);
+  return sprite;
+}
+function makeBodyLabel(name, kwh) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 384; canvas.height = 110;
+  const ctx = canvas.getContext("2d");
+  ctx.font = "bold 28px ui-monospace, Menlo, monospace";
+  ctx.textBaseline = "top";
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = 10;
+  ctx.fillStyle = "#e9eaee";
+  ctx.fillText(name, 8, 4);
+  ctx.font = "bold 22px ui-monospace, Menlo, monospace";
+  ctx.fillStyle = "#ffd34a";
+  ctx.fillText(fmtKwh(kwh) + " kWh/m²/d", 8, 44);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.minFilter = THREE.LinearFilter;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(3.4, 1.0, 1);
   return sprite;
 }
 
@@ -256,7 +330,7 @@ function buildSun() {
     color: 0xffb84a, transparent: true, blending: THREE.AdditiveBlending, depthTest: false,
   });
   const glow = new THREE.Sprite(glowMat);
-  glow.scale.set(6, 6, 1);
+  glow.scale.set(7, 7, 1);
   sun.add(glow);
 }
 
@@ -265,7 +339,7 @@ function makeGlowTexture() {
   c.width = c.height = 128;
   const ctx = c.getContext("2d");
   const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  g.addColorStop(0, "rgba(255,210,80,0.9)");
+  g.addColorStop(0, "rgba(255,210,80,0.95)");
   g.addColorStop(0.3, "rgba(255,170,60,0.5)");
   g.addColorStop(1, "rgba(255,140,40,0)");
   ctx.fillStyle = g;
@@ -274,10 +348,7 @@ function makeGlowTexture() {
 }
 
 function clearBodies() {
-  for (const m of bodyMeshes.values()) {
-    if (m.name === "Sun") continue;
-    scene.remove(m);
-  }
+  for (const m of bodyMeshes.values()) if (m.name !== "Sun") scene.remove(m);
   for (const s of bodyLabels.values()) scene.remove(s);
   for (const r of orbitRings) scene.remove(r);
   bodyMeshes = new Map([["Sun", bodyMeshes.get("Sun")]]);
@@ -285,19 +356,38 @@ function clearBodies() {
   orbitRings = [];
 }
 
+function kwhGlowIntensity(kwh, kwhMin, kwhMax) {
+  if (!STATE.kwhGlow) return 0.35;
+  if (kwhMax <= kwhMin) return 0.6;
+  // Log-normalize, output in [0.25, 1.3]
+  const lk = Math.log10(Math.max(1e-6, kwh));
+  const lmin = Math.log10(Math.max(1e-6, kwhMin));
+  const lmax = Math.log10(Math.max(1e-6, kwhMax));
+  const t = Math.max(0, Math.min(1, (lk - lmin) / (lmax - lmin || 1)));
+  return 0.25 + t * 1.05;
+}
+
 function placeBodies() {
   if (!forecastData) return;
   clearBodies();
 
+  const allKwh = Object.values(forecastData.bodies || {}).map(b => forecastedDailyKwh(b));
+  const kwhMin = allKwh.length ? Math.min(...allKwh) : 0.001;
+  const kwhMax = allKwh.length ? Math.max(...allKwh) : 1;
+
   if (forecastData.psp) {
     const p = forecastData.psp;
     const mesh = makeBody("PSP", BODY_VISUAL_RADIUS.PSP, BODY_COLOR.PSP);
+    mesh.material.emissiveIntensity = 1.0;
     mesh.position.copy(pos3(p.r_au, p.lon_deg, 0));
     scene.add(mesh);
     bodyMeshes.set("PSP", mesh);
-    if (STATE.showLabels) addLabel("PSP", mesh);
+    if (STATE.showLabels) {
+      const lbl = makeBodyLabel("PSP", kwhPerM2PerDay(p.r_au));
+      scene.add(lbl); bodyLabels.set("PSP", lbl);
+    }
     if (STATE.showRings) {
-      const ring = buildOrbitRing(p.r_au, BODY_COLOR.PSP, 0.35);
+      const ring = buildOrbitRing(p.r_au, BODY_COLOR.PSP, 0.4);
       scene.add(ring); orbitRings.push(ring);
     }
   }
@@ -306,12 +396,18 @@ function placeBodies() {
     const color = BODY_COLOR[name] ?? 0x9aa0a6;
     const size = BODY_VISUAL_RADIUS[name] ?? 0.18;
     const mesh = makeBody(name, size, color);
+    const kwh = forecastedDailyKwh(b);
+    mesh.material.emissiveIntensity = kwhGlowIntensity(kwh, kwhMin, kwhMax);
+    mesh.userData.kwh = kwh;
     const lon = b.anchor_lon_deg ?? b.forecast?.[0]?.lon_deg ?? 0;
     const lat = b.anchor_lat_deg ?? 0;
     mesh.position.copy(pos3(b.anchor_r_au, lon, lat));
     scene.add(mesh);
     bodyMeshes.set(name, mesh);
-    if (STATE.showLabels) addLabel(name, mesh);
+    if (STATE.showLabels) {
+      const lbl = makeBodyLabel(name, kwh);
+      scene.add(lbl); bodyLabels.set(name, lbl);
+    }
     if (STATE.showRings) {
       const ring = buildOrbitRing(b.anchor_r_au, color, 0.18);
       scene.add(ring); orbitRings.push(ring);
@@ -322,18 +418,10 @@ function placeBodies() {
 
 function makeBody(name, size, color) {
   const geo = new THREE.SphereGeometry(size, 24, 24);
-  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.35, roughness: 0.6 });
+  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.35, roughness: 0.55 });
   const m = new THREE.Mesh(geo, mat);
   m.name = name;
-  m.userData.baseColor = color;
   return m;
-}
-
-function addLabel(name, mesh) {
-  const label = makeLabel(name);
-  label.position.copy(mesh.position).add(new THREE.Vector3(0, BODY_VISUAL_RADIUS[name] || 0.2, 0));
-  scene.add(label);
-  bodyLabels.set(name, label);
 }
 
 function applyFilter() {
@@ -344,10 +432,18 @@ function applyFilter() {
     m.visible = !hidden;
     const lbl = bodyLabels.get(name);
     if (lbl) lbl.visible = !hidden && STATE.showLabels;
-    if (m.material) m.material.emissiveIntensity = (selectedBody === name) ? 1.0 : 0.35;
   }
 }
 
+function fmtKwh(x) {
+  if (x === null || x === undefined || !Number.isFinite(+x)) return "—";
+  const v = +x;
+  if (v >= 1000) return (v / 1000).toFixed(2) + "k";
+  if (v >= 100) return v.toFixed(0);
+  if (v >= 10) return v.toFixed(1);
+  if (v >= 1) return v.toFixed(2);
+  return v.toFixed(4).replace(/0+$/, "0");
+}
 function fmtNum(x, digits = 3) {
   if (x === null || x === undefined || Number.isNaN(+x)) return "—";
   const v = +x;
@@ -356,26 +452,51 @@ function fmtNum(x, digits = 3) {
 }
 function fmtTs(s) { return s ? new Date(s).toUTCString().replace("GMT", "UTC") : "—"; }
 
+function updateCollectorMetric() {
+  if (!selectedBody) return;
+  const b = forecastData?.bodies?.[selectedBody];
+  const r_au = b ? b.anchor_r_au : (selectedBody === "PSP" ? forecastData?.psp?.r_au : null);
+  const dailyKwhPerM2 = b ? forecastedDailyKwh(b) : (r_au ? kwhPerM2PerDay(r_au) : 0);
+  const area = +(document.getElementById("area").value) || 0;
+  document.getElementById("hero-kwh").textContent = fmtKwh(dailyKwhPerM2);
+  document.getElementById("hero-collector").textContent = fmtKwh(dailyKwhPerM2 * area);
+  document.getElementById("hero-collector-sub").textContent =
+    `${area.toLocaleString()} m² × ${fmtKwh(dailyKwhPerM2)} kWh/m²/d`;
+  document.getElementById("hero-secondary").textContent = selectedBody + (b ? ` at r = ${b.anchor_r_au.toFixed(3)} AU` : "");
+}
+
 function selectBody(name) {
   if (!forecastData) return;
   if (name === "Sun") {
     document.getElementById("card-mount").innerHTML = `
-      <div class="card-header"><h3 class="card-title">☀ Sun</h3><span class="card-sub">heliographic origin</span></div>
+      <div class="card-header"><h3 class="card-title">☀ Sun</h3><span class="card-sub">heliographic origin · TSI = 1361 W/m²</span></div>
       <p class="sub">Reference body for all coordinates. No forecast — PSP and JWST measure relative to this point.</p>`;
-    selectedBody = "Sun"; applyFilter(); renderList(); return;
+    selectedBody = "Sun";
+    document.getElementById("hero-kwh").textContent = "—";
+    document.getElementById("hero-collector").textContent = "—";
+    document.getElementById("hero-secondary").textContent = "Sun is the source, not a target";
+    applyFilter(); renderList(); return;
   }
   if (name === "PSP" && forecastData.psp) {
     const p = forecastData.psp;
+    selectedBody = "PSP";
+    const k = kwhPerM2PerDay(p.r_au);
     document.getElementById("card-mount").innerHTML = `
-      <div class="card-header"><h3 class="card-title">⊙ Parker Solar Probe</h3><span class="card-sub">in-situ Sun probe</span></div>
+      <div class="card-header"><h3 class="card-title">⊙ Parker Solar Probe</h3><span class="card-sub">in-situ Sun probe · ${p.perihelion ?? ""}</span></div>
+      <div class="kwh-hero">
+        <div class="num">${fmtKwh(k)}</div>
+        <div class="lbl">kWh / m² / day at PSP perihelion radius</div>
+        <div class="sec">r = ${p.r_au.toFixed(3)} AU · ${(TSI_W_M2 / (p.r_au * p.r_au)).toFixed(0)} W/m² incident</div>
+      </div>
       <div class="now-grid">
         <div class="now-card"><div class="now-num">${fmtNum(p.r_au, 3)}</div><div class="now-lbl">r (AU)</div></div>
         <div class="now-card"><div class="now-num">${fmtNum(p.lon_deg, 1)}°</div><div class="now-lbl">helio lon</div></div>
         <div class="now-card"><div class="now-num">${p.perihelion ?? "—"}</div><div class="now-lbl">encounter</div></div>
         <div class="now-card"><div class="now-num">${p.n_events ?? "—"}</div><div class="now-lbl">PSP events</div></div>
       </div>
-      <p class="sub">PSP detected ${p.n_events ?? "?"} candidate events (PVI + WISPR + SEP) at this perihelion.</p>`;
-    selectedBody = "PSP"; applyFilter(); renderList(); return;
+      <p class="sub">PSP at deep perihelion sees solar flux ~${((TSI_W_M2/p.r_au/p.r_au)/TSI_W_M2).toFixed(0)}× Earth-orbit intensity. ${p.n_events ?? "?"} candidate events (PVI / WISPR / SEP) detected this perihelion.</p>`;
+    updateCollectorMetric();
+    applyFilter(); renderList(); return;
   }
   const b = (forecastData.bodies || {})[name];
   if (!b) return;
@@ -386,32 +507,44 @@ function selectBody(name) {
     : `<span class="pill ok">clear</span>`;
   const phase = b.phase_angle_deg !== undefined && b.phase_angle_deg !== null
     ? `<div class="now-card"><div class="now-num">${fmtNum(b.phase_angle_deg, 1)}°</div><div class="now-lbl">phase α</div></div>` : "";
-  const rows = (b.forecast || []).map(r => `
-    <tr${r.psp_flag ? ' class="event"' : ''}>
-      <td>+${r.h}h</td><td>${fmtNum(r.r_au, 4)}</td><td>${fmtNum(r.lon_deg, 1)}°</td>
-      <td>${fmtNum(r.i_proxy, 3)}</td><td>${r.psp_flag ? '⚠' : ''}</td>
-    </tr>`).join("");
+  const dailyKwh = forecastedDailyKwh(b);
+  const peakKwh = Math.max(...(b.forecast || []).map(r => kwhPerM2PerHour(r.r_au)));
+  const rows = (b.forecast || []).map(r => {
+    const kwh = kwhPerM2PerHour(r.r_au);
+    return `<tr${r.psp_flag ? ' class="event"' : ''}>
+      <td>+${r.h}h</td>
+      <td>${fmtNum(r.r_au, 4)}</td>
+      <td>${fmtNum(r.lon_deg, 1)}°</td>
+      <td class="kwh">${fmtKwh(kwh)}</td>
+      <td>${r.psp_flag ? '⚠' : ''}</td>
+    </tr>`;
+  }).join("");
   document.getElementById("card-mount").innerHTML = `
     <div class="card-header">
       <h3 class="card-title">${name} ${pill}</h3>
       <span class="card-sub">anchor ${fmtTs(b.anchor_timestamp)}</span>
     </div>
+    <div class="kwh-hero">
+      <div class="num">${fmtKwh(dailyKwh)}</div>
+      <div class="lbl">kWh / m² · next 24 h</div>
+      <div class="sec">peak hour ${fmtKwh(peakKwh)} kWh/m²/h · r ≈ ${b.anchor_r_au.toFixed(3)} AU</div>
+    </div>
     <div class="now-grid">
       <div class="now-card"><div class="now-num">${fmtNum(b.anchor_r_au, 3)}</div><div class="now-lbl">r (AU)</div></div>
-      <div class="now-card"><div class="now-num">${fmtNum(b.anchor_inferred_irradiance_proxy, 3)}</div><div class="now-lbl">I proxy</div></div>
+      <div class="now-card"><div class="now-num">${fmtKwh(dailyKwh)}</div><div class="now-lbl">kWh/m²/d</div></div>
       <div class="now-card"><div class="now-num">${b.filter || "—"}</div><div class="now-lbl">filter</div></div>
-      ${phase || `<div class="now-card"><div class="now-num">${(b.forecast || []).length}</div><div class="now-lbl">forecast h</div></div>`}
+      ${phase || `<div class="now-card"><div class="now-num">${(b.forecast || []).length}</div><div class="now-lbl">horizon (h)</div></div>`}
     </div>
     <div class="sparkline">${sparklineSVG(b.forecast || [])}</div>
     <details open>
       <summary>hourly history (+1h → +${(b.forecast || []).length}h)</summary>
       <table class="hist-table">
-        <thead><tr><th>Δh</th><th>r AU</th><th>helio lon</th><th>I proxy</th><th>PSP</th></tr></thead>
+        <thead><tr><th>Δh</th><th>r AU</th><th>helio lon</th><th>kWh/m²/h</th><th>PSP</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </details>`;
+  updateCollectorMetric();
   applyFilter(); renderList();
-  // Camera focus
   const m = bodyMeshes.get(name);
   if (m) {
     const target = m.position.clone();
@@ -439,27 +572,32 @@ function animateCamera(toPos, toLook) {
 
 function sparklineSVG(rows) {
   if (!rows.length) return "<text>no forecast</text>";
-  const W = 600, H = 64, padX = 30, padY = 12;
-  const ys = rows.map(r => r.i_proxy).filter(Number.isFinite);
+  const W = 600, H = 90, padX = 36, padY = 14;
+  const ys = rows.map(r => kwhPerM2PerHour(r.r_au)).filter(Number.isFinite);
   if (!ys.length) return "";
   const ymin = Math.min(...ys), ymax = Math.max(...ys);
   const span = ymax - ymin || Math.abs(ymin) * 0.01 || 1;
   const xs = rows.map((_, i) => i / Math.max(1, rows.length - 1));
-  const path = rows.map((r, i) => {
+  const pts = rows.map((r, i) => {
+    const k = kwhPerM2PerHour(r.r_au);
     const x = padX + xs[i] * (W - 2 * padX);
-    const y = H - padY - ((r.i_proxy - ymin) / span) * (H - 2 * padY);
-    return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  const dots = rows.map((r, i) => {
-    const x = padX + xs[i] * (W - 2 * padX);
-    const y = H - padY - ((r.i_proxy - ymin) / span) * (H - 2 * padY);
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.psp_flag ? 3 : 1.6}" fill="${r.psp_flag ? '#f5a623' : '#3a8dde'}"/>`;
-  }).join("");
+    const y = H - padY - ((k - ymin) / span) * (H - 2 * padY);
+    return { x, y, k, psp: r.psp_flag };
+  });
+  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const area = path + ` L${pts[pts.length-1].x.toFixed(1)},${H - padY} L${pts[0].x.toFixed(1)},${H - padY} Z`;
+  const dots = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.psp ? 3.5 : 2}" fill="${p.psp ? '#f5a623' : '#ffd34a'}"/>`).join("");
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;">
-    <path d="${path}" fill="none" stroke="#3a8dde" stroke-width="1.6"/>
+    <defs><linearGradient id="kwhGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffd34a" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ffd34a" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${area}" fill="url(#kwhGrad)" stroke="none"/>
+    <path d="${path}" fill="none" stroke="#ffd34a" stroke-width="2"/>
     ${dots}
     <text x="6" y="${H-3}" font-family="ui-monospace,Menlo" font-size="9" fill="#6c727a">+1h</text>
-    <text x="${W-32}" y="${H-3}" font-family="ui-monospace,Menlo" font-size="9" fill="#6c727a">+${rows.length}h</text>
+    <text x="${W-36}" y="${H-3}" font-family="ui-monospace,Menlo" font-size="9" fill="#6c727a">+${rows.length}h</text>
+    <text x="6" y="13" font-family="ui-monospace,Menlo" font-size="9" fill="#ffd34a">kWh/m²/h</text>
   </svg>`;
 }
 
@@ -468,11 +606,14 @@ function renderList() {
   if (!forecastData || !forecastData.bodies) return;
   const filter = (document.getElementById("search").value || "").trim().toLowerCase();
   mount.innerHTML = "";
-  const sorted = Object.entries(forecastData.bodies).sort((a, b) => a[1].anchor_r_au - b[1].anchor_r_au);
-  for (const [name, b] of sorted) {
+  const entries = Object.entries(forecastData.bodies).map(([name, b]) => ({
+    name, body: b, kwh: forecastedDailyKwh(b),
+  }));
+  entries.sort((a, b) => b.kwh - a.kwh);
+  for (const { name, body: b, kwh } of entries) {
     const item = document.createElement("div");
     item.className = "body-list-item" + (selectedBody === name ? " selected" : "") + (filter && !name.toLowerCase().includes(filter) ? " hidden" : "");
-    item.innerHTML = `<span>${name}</span><span class="b-r">${fmtNum(b.anchor_r_au, 3)} AU</span>`;
+    item.innerHTML = `<span>${name}</span><span class="b-r">${fmtNum(b.anchor_r_au, 3)} AU</span><span class="b-kwh">${fmtKwh(kwh)}</span>`;
     item.addEventListener("click", () => selectBody(name));
     mount.appendChild(item);
   }
@@ -491,7 +632,12 @@ async function loadAll() {
     for (const c of (forecastData.caveats || [])) {
       const li = document.createElement("li"); li.textContent = c; cm.appendChild(li);
     }
-    placeBodies(); renderList();
+    document.getElementById("hero-bodies").textContent = Object.keys(forecastData.bodies || {}).length;
+    document.getElementById("hero-bodies-sub").innerHTML = `perihelion <strong>${forecastData.perihelion}</strong> · PSP at <span id="hero-psp-r">${forecastData.psp?.r_au.toFixed(3) ?? "—"}</span> AU`;
+    placeBodies();
+    renderList();
+    const bodies = Object.keys(forecastData.bodies || {});
+    if (bodies.length) selectBody(bodies[0]);
   } catch (e) {
     document.getElementById("raw-json").textContent = "(forecast/latest.json not yet on HF: " + e.message + ")";
     document.getElementById("card-mount").innerHTML = `<div class="empty">no forecast on HF yet — run the helio-mirror workflows</div>`;
@@ -549,9 +695,7 @@ function init() {
     pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   });
-  renderer.domElement.addEventListener("click", () => {
-    if (hovered) selectBody(hovered);
-  });
+  renderer.domElement.addEventListener("click", () => { if (hovered) selectBody(hovered); });
 
   window.addEventListener("resize", () => {
     camera.aspect = stage.clientWidth / stage.clientHeight;
@@ -565,7 +709,6 @@ function init() {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
-
   raycaster.setFromCamera(pointer, camera);
   const hits = raycaster.intersectObjects([...bodyMeshes.values()].filter(m => m.visible));
   const tooltip = document.getElementById("tooltip");
@@ -573,7 +716,11 @@ function animate() {
   if (newHover !== hovered) {
     hovered = newHover;
     if (hovered) {
-      tooltip.textContent = hovered;
+      const m = bodyMeshes.get(hovered);
+      const kwh = m?.userData?.kwh;
+      tooltip.innerHTML = `<div class="name">${hovered}</div>${
+        kwh !== undefined ? `<div>${fmtKwh(kwh)} kWh/m²/d</div>` : ""
+      }`;
       tooltip.style.opacity = "1";
     } else {
       tooltip.style.opacity = "0";
@@ -586,18 +733,22 @@ function animate() {
     tooltip.style.left = ((v.x + 1) / 2 * rect.width) + "px";
     tooltip.style.top = ((-v.y + 1) / 2 * rect.height) + "px";
   }
-
   for (const [name, lbl] of bodyLabels) {
     const m = bodyMeshes.get(name);
     if (!m) continue;
-    lbl.position.copy(m.position).add(new THREE.Vector3(0, (BODY_VISUAL_RADIUS[name] || 0.2) * 1.6, 0));
+    lbl.position.copy(m.position).add(new THREE.Vector3(0, (BODY_VISUAL_RADIUS[name] || 0.2) * 1.8, 0));
     lbl.visible = m.visible && STATE.showLabels;
   }
-
   renderer.render(scene, camera);
 }
 
 document.getElementById("search").addEventListener("input", () => { applyFilter(); renderList(); });
+document.getElementById("area").addEventListener("input", updateCollectorMetric);
+document.getElementById("toggle-kwh-glow").addEventListener("click", (e) => {
+  STATE.kwhGlow = !STATE.kwhGlow;
+  e.currentTarget.classList.toggle("active", STATE.kwhGlow);
+  placeBodies();
+});
 document.getElementById("toggle-log").addEventListener("click", (e) => {
   STATE.useLog = !STATE.useLog;
   e.currentTarget.classList.toggle("active", STATE.useLog);
