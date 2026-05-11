@@ -224,8 +224,20 @@ const BODY_COLOR = {
   Uranus: 0x7dd3fc, Neptune: 0x4575b4,
   Europa: 0xcfd8e3, Io: 0xf9d878, Ganymede: 0xb8b8b8, Callisto: 0x8d827a,
   Titan: 0xd4b271, Enceladus: 0xe6f0ff,
+  // HSO probes — colored teal/cyan family so they read as instruments not bodies
+  SolO:      0x00d4aa,
+  "STEREO-A": 0x40c4ff,
+  Wind:      0x80deea,
+  ACE:       0x4dd0e1,
+  DSCOVR:    0x26c6da,
+  MAVEN:     0xff8a65,
 };
-const BODY_VISUAL_RADIUS = { Sun: 1.2, PSP: 0.18, Mercury: 0.18, Venus: 0.22, Earth: 0.22, Mars: 0.20, Jupiter: 0.55, Saturn: 0.48, Uranus: 0.35, Neptune: 0.35, Europa: 0.14, Io: 0.14, Ganymede: 0.14, Callisto: 0.14, Titan: 0.14, Enceladus: 0.12 };
+const BODY_VISUAL_RADIUS = {
+  Sun: 1.2, PSP: 0.18, Mercury: 0.18, Venus: 0.22, Earth: 0.22, Mars: 0.20,
+  Jupiter: 0.55, Saturn: 0.48, Uranus: 0.35, Neptune: 0.35,
+  Europa: 0.14, Io: 0.14, Ganymede: 0.14, Callisto: 0.14, Titan: 0.14, Enceladus: 0.12,
+  SolO: 0.14, "STEREO-A": 0.14, Wind: 0.13, ACE: 0.13, DSCOVR: 0.13, MAVEN: 0.13,
+};
 
 let scene, camera, renderer, controls, raycaster, pointer;
 let bodyMeshes = new Map();
@@ -392,6 +404,27 @@ function placeBodies() {
     }
   }
 
+  // HSO probes — same treatment as PSP but with their own colours
+  for (const [name, p] of Object.entries(forecastData.probes || {})) {
+    const color = BODY_COLOR[name] ?? 0x80deea;
+    const size = BODY_VISUAL_RADIUS[name] ?? 0.13;
+    const mesh = makeBody(name, size, color);
+    mesh.material.emissiveIntensity = 0.7;
+    mesh.userData.kwh = kwhPerM2PerDay(p.r_au);
+    mesh.userData.nEvents = p.n_events;
+    mesh.position.copy(pos3(p.r_au, p.lon_deg, p.lat_deg));
+    scene.add(mesh);
+    bodyMeshes.set(name, mesh);
+    if (STATE.showLabels) {
+      const lbl = makeBodyLabel(name, kwhPerM2PerDay(p.r_au));
+      scene.add(lbl); bodyLabels.set(name, lbl);
+    }
+    if (STATE.showRings) {
+      const ring = buildOrbitRing(p.r_au, color, 0.22);
+      scene.add(ring); orbitRings.push(ring);
+    }
+  }
+
   for (const [name, b] of Object.entries(forecastData.bodies || {})) {
     const color = BODY_COLOR[name] ?? 0x9aa0a6;
     const size = BODY_VISUAL_RADIUS[name] ?? 0.18;
@@ -475,6 +508,27 @@ function selectBody(name) {
     document.getElementById("hero-kwh").textContent = "—";
     document.getElementById("hero-collector").textContent = "—";
     document.getElementById("hero-secondary").textContent = "Sun is the source, not a target";
+    applyFilter(); renderList(); return;
+  }
+  const probe = (forecastData.probes || {})[name];
+  if (probe) {
+    selectedBody = name;
+    const k = kwhPerM2PerDay(probe.r_au);
+    document.getElementById("card-mount").innerHTML = `
+      <div class="card-header"><h3 class="card-title">${name}</h3><span class="card-sub">HSO probe · in-situ B-field</span></div>
+      <div class="kwh-hero">
+        <div class="num">${fmtKwh(k)}</div>
+        <div class="lbl">kWh / m² / day at this probe's heliographic radius</div>
+        <div class="sec">r = ${probe.r_au.toFixed(3)} AU · ${(TSI_W_M2 / (probe.r_au * probe.r_au)).toFixed(0)} W/m² incident</div>
+      </div>
+      <div class="now-grid">
+        <div class="now-card"><div class="now-num">${fmtNum(probe.r_au, 3)}</div><div class="now-lbl">r (AU)</div></div>
+        <div class="now-card"><div class="now-num">${fmtNum(probe.lon_deg, 1)}°</div><div class="now-lbl">helio lon</div></div>
+        <div class="now-card"><div class="now-num">${fmtNum(probe.lat_deg, 1)}°</div><div class="now-lbl">helio lat</div></div>
+        <div class="now-card"><div class="now-num">${probe.n_events ?? 0}</div><div class="now-lbl">PVI events</div></div>
+      </div>
+      <p class="sub">In-situ magnetometer probe. ${probe.n_events ?? 0} PVI&gt;3 events detected at this perihelion. Cross-referenced against PSP via Parker-spiral advection in stage-4.</p>`;
+    updateCollectorMetric();
     applyFilter(); renderList(); return;
   }
   if (name === "PSP" && forecastData.psp) {

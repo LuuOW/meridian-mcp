@@ -235,6 +235,31 @@ def main() -> int:
             "lon_deg": float(psp_eph.iloc[len(psp_eph) // 2]["helio_lon_deg"]),
             "n_events": n_total_events,
         }
+    from targets import SPACECRAFT
+    probe_events = load(token, f"events/probe_candidate_events_{PERIHELION}.parquet",
+                          required=False)
+    probe_summaries: dict[str, dict] = {}
+    for sc in SPACECRAFT:
+        if sc == "PSP":
+            continue
+        sc_eph = eph_long[eph_long["body"] == sc].sort_values("timestamp")
+        if sc_eph.empty:
+            continue
+        n_ev = 0
+        if not probe_events.empty and "spacecraft" in probe_events.columns:
+            n_ev = int((probe_events["spacecraft"] == sc).sum())
+        mid = sc_eph.iloc[len(sc_eph) // 2]
+        probe_summaries[sc] = {
+            "r_au": float(mid["r_au"]),
+            "lon_deg": float(mid["helio_lon_deg"]),
+            "lat_deg": float(mid["helio_lat_deg"]),
+            "n_events": n_ev,
+        }
+    probe_coincidences = load(token, f"events/probe_coincidences_{PERIHELION}.parquet",
+                                required=False)
+    n_probe_matched = (int(probe_coincidences["matched"].sum())
+                        if not probe_coincidences.empty and "matched" in probe_coincidences.columns
+                        else 0)
     latest = {
         "perihelion": PERIHELION,
         "model": ("persistence_r2_plus_ml_residual" if ml_specialists else "persistence_r2"),
@@ -242,13 +267,15 @@ def main() -> int:
         "step_hours": STEP_HOURS,
         "generated_at": pd.Timestamp.utcnow().isoformat(),
         "psp": psp_summary,
+        "probes": probe_summaries,
         "n_total_psp_events": n_total_events,
+        "n_probe_coincidences_matched": n_probe_matched,
         "bodies": {},
         "caveats": [
             "Forecast is per-body persistence × geometric r² correction; ML residual applied when a per-body specialist is trained.",
             "PSP-event flags are advisory: wind-mechanism arrivals overlapping the forecast horizon get psp_event_flag=True; impact on irradiance not quantified yet.",
             "Inferred-irradiance units are a relative proxy within (body, filter); absolute W/m² requires per-filter calibration not yet applied.",
-            "Coincidences (PSP event × JWST obs) require contemporaneous data; current cache has zero matches structurally.",
+            "Coincidences (PSP event × JWST obs) require contemporaneous data; current cache has zero matches structurally — multi-probe HSO coincidences (PSP × SolO × STEREO-A × L1) are the real validation route.",
         ],
     }
     irr_sorted = irr.sort_values(["body", "filter", "timestamp"])
