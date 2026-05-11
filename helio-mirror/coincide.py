@@ -117,15 +117,15 @@ def predicted_lon_at_arrival(body_eph: pd.DataFrame, t_arrival: pd.Timestamp) ->
 
 def find_probe_coincidences(events: pd.DataFrame,
                               eph_long: pd.DataFrame) -> pd.DataFrame:
-    """HSO multi-probe matching. For every (source_event, target_spacecraft)
-    pair, predict arrival via Parker spiral (wind mechanism only — light is
-    instantaneous within the heliosphere). Check if target spacecraft has a
-    PVI event near the predicted arrival.
+    """HSO multi-probe matching, vectorized.
+
+    Was an O(N_events × N_eph) Python iterrows loop — 3+ min per null_test
+    shuffle. Now batched merge_asof per (src, tgt) pair: src events as a
+    numpy frame, three merge_asof joins for (r_tgt, lon_tgt_at_src,
+    lon_tgt_at_arrival, nearest_target_event). Same output schema.
 
     Per-event v_sw: if a `v_sw_km_s` column is present on source events,
-    use it; otherwise fall back to V_SW_KM_PER_SEC constant. This is the
-    fix that turned 4/5 perihelia from indistinguishable to (hopefully)
-    significant by aligning the spiral lon prediction with real solar wind.
+    use it; otherwise fall back to V_SW_KM_PER_SEC constant.
 
     Drops self-pairs and any pair where target ephemeris is missing.
     """
@@ -136,74 +136,118 @@ def find_probe_coincidences(events: pd.DataFrame,
         return pd.DataFrame()
     events = events.dropna(subset=["r_au", "helio_lon_deg", "spacecraft"]).copy()
     events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
-    has_per_event_vsw = "v_sw_km_s" in events.columns
-    rows: list[dict] = []
+    if "v_sw_km_s" not in events.columns:
+        events["v_sw_km_s"] = np.nan
+    if "pvi_tau100s" not in events.columns:
+        events["pvi_tau100s"] = np.nan
+
+    chunks: list[pd.DataFrame] = []
+    eph_long = eph_long.copy()
+    eph_long["timestamp"] = pd.to_datetime(eph_long["timestamp"]).dt.tz_localize(None)
+
     for src in spacecrafts:
-        src_events = events[events["spacecraft"] == src]
+        src_events = events[events["spacecraft"] == src].copy()
         if src_events.empty:
             continue
+        src_events = src_events.sort_values("timestamp").reset_index(drop=True)
         for tgt in spacecrafts:
             if tgt == src:
                 continue
             tgt_eph = eph_long[eph_long["body"] == tgt].sort_values("timestamp")
-            tgt_events = events[events["spacecraft"] == tgt].sort_values("timestamp")
             if tgt_eph.empty:
                 continue
-            for _, ev in src_events.iterrows():
-                r_src = float(ev["r_au"])
-                t_src = pd.Timestamp(ev["timestamp"])
-                lon_src = float(ev["helio_lon_deg"])
-                v_sw = (float(ev["v_sw_km_s"])
-                         if has_per_event_vsw and pd.notna(ev.get("v_sw_km_s"))
-                         else V_SW_KM_PER_SEC)
-                idx = (tgt_eph["timestamp"] - t_src).abs().idxmin()
-                r_tgt = float(tgt_eph.loc[idx, "r_au"])
-                if not np.isfinite(r_src) or not np.isfinite(r_tgt):
-                    continue
-                dr_km = (r_tgt - r_src) * AU_KM
-                dt_h = dr_km / v_sw / 3600.0
-                if dt_h < 0:
-                    continue  # target inside source; skip (would be light-only)
-                t_arrival = t_src + pd.Timedelta(hours=dt_h)
-                lon_tgt_at_arr = float(
-                    tgt_eph.loc[(tgt_eph["timestamp"] - t_arrival).abs().idxmin(),
-                                 "helio_lon_deg"])
-                lon_src_advected = lon_src - OMEGA_SUN_DEG_PER_DAY * dt_h / 24.0
-                d_lon = float(wrap_180(np.array([lon_src_advected - lon_tgt_at_arr]))[0])
-                if abs(d_lon) > LON_TOLERANCE_DEG:
-                    continue
-                if tgt_events.empty:
-                    matched = False
-                    nearest_dt_h = np.nan
-                    nearest_peak_pvi = np.nan
-                    nearest_event_ts = None
-                else:
-                    deltas = (tgt_events["timestamp"] - t_arrival).dt.total_seconds() / 3600.0
-                    idx_n = deltas.abs().idxmin()
-                    nearest_dt_h = float(deltas.loc[idx_n])
-                    matched = abs(nearest_dt_h) <= T_TOLERANCE_HOURS_WIND
-                    nearest_peak_pvi = float(tgt_events.loc[idx_n, "pvi_tau100s"]) \
-                        if "pvi_tau100s" in tgt_events.columns else np.nan
-                    nearest_event_ts = pd.Timestamp(tgt_events.loc[idx_n, "timestamp"])
-                rows.append({
-                    "source_spacecraft": src,
-                    "target_spacecraft": tgt,
-                    "source_event_timestamp": t_src,
-                    "source_event_pvi": float(ev.get("pvi_tau100s", np.nan)),
-                    "source_r_au": r_src, "source_lon_deg": lon_src,
-                    "target_r_au": r_tgt, "target_lon_at_arrival_deg": lon_tgt_at_arr,
-                    "predicted_arrival_timestamp": t_arrival,
-                    "advection_lead_hours": dt_h,
-                    "advection_v_sw_km_s": v_sw,
-                    "delta_lon_deg": d_lon,
-                    "matched": matched,
-                    "nearest_target_event_dt_hours": nearest_dt_h,
-                    "nearest_target_event_pvi": nearest_peak_pvi,
-                    "nearest_target_event_timestamp": nearest_event_ts,
-                })
-    out = pd.DataFrame(rows)
-    if out.empty:
-        return out
+            tgt_events = events[events["spacecraft"] == tgt].sort_values("timestamp")
+
+            # 1) For each src event, get r_tgt at t_src via merge_asof
+            df = src_events[["timestamp", "r_au", "helio_lon_deg", "v_sw_km_s",
+                              "pvi_tau100s"]].rename(columns={
+                "r_au": "source_r_au",
+                "helio_lon_deg": "source_lon_deg",
+                "pvi_tau100s": "source_event_pvi",
+            })
+            df = pd.merge_asof(
+                df, tgt_eph[["timestamp", "r_au"]].rename(columns={"r_au": "target_r_au"}),
+                on="timestamp", direction="nearest",
+            )
+
+            # Compute v_sw (with fallback) and dt_h
+            df["v_sw_km_s"] = df["v_sw_km_s"].fillna(V_SW_KM_PER_SEC)
+            valid = np.isfinite(df["source_r_au"]) & np.isfinite(df["target_r_au"])
+            df = df[valid].reset_index(drop=True)
+            if df.empty:
+                continue
+            dr_km = (df["target_r_au"] - df["source_r_au"]) * AU_KM
+            df["advection_lead_hours"] = dr_km / df["v_sw_km_s"] / 3600.0
+            df["advection_v_sw_km_s"] = df["v_sw_km_s"]
+            df = df[df["advection_lead_hours"] >= 0].reset_index(drop=True)  # target outside
+            if df.empty:
+                continue
+            df["predicted_arrival_timestamp"] = df["timestamp"] + pd.to_timedelta(
+                df["advection_lead_hours"], unit="h")
+
+            # 2) lon_tgt_at_arrival via merge_asof on predicted_arrival_timestamp
+            df = df.sort_values("predicted_arrival_timestamp").reset_index(drop=True)
+            df = pd.merge_asof(
+                df, tgt_eph[["timestamp", "helio_lon_deg"]].rename(columns={
+                    "helio_lon_deg": "target_lon_at_arrival_deg",
+                    "timestamp": "_eph_ts"}),
+                left_on="predicted_arrival_timestamp", right_on="_eph_ts",
+                direction="nearest",
+            ).drop(columns="_eph_ts")
+
+            # 3) Vectorized lon-spiral check
+            lon_src_advected = df["source_lon_deg"] - OMEGA_SUN_DEG_PER_DAY * df["advection_lead_hours"] / 24.0
+            d_lon = ((lon_src_advected - df["target_lon_at_arrival_deg"] + 180) % 360) - 180
+            df["delta_lon_deg"] = d_lon
+            df = df[d_lon.abs() <= LON_TOLERANCE_DEG].reset_index(drop=True)
+            if df.empty:
+                continue
+
+            # 4) Nearest target event around predicted_arrival via merge_asof
+            if tgt_events.empty:
+                df["matched"] = False
+                df["nearest_target_event_dt_hours"] = np.nan
+                df["nearest_target_event_pvi"] = np.nan
+                df["nearest_target_event_timestamp"] = pd.NaT
+            else:
+                tgt_e = tgt_events[["timestamp", "pvi_tau100s"]].rename(columns={
+                    "timestamp": "_tgt_ts",
+                    "pvi_tau100s": "nearest_target_event_pvi",
+                }).sort_values("_tgt_ts")
+                df = df.sort_values("predicted_arrival_timestamp").reset_index(drop=True)
+                df = pd.merge_asof(
+                    df, tgt_e,
+                    left_on="predicted_arrival_timestamp", right_on="_tgt_ts",
+                    direction="nearest",
+                )
+                df["nearest_target_event_dt_hours"] = (
+                    (df["_tgt_ts"] - df["predicted_arrival_timestamp"])
+                    .dt.total_seconds() / 3600.0
+                )
+                df["matched"] = df["nearest_target_event_dt_hours"].abs() <= T_TOLERANCE_HOURS_WIND
+                df["nearest_target_event_timestamp"] = df["_tgt_ts"]
+                df = df.drop(columns="_tgt_ts")
+
+            df["source_spacecraft"] = src
+            df["target_spacecraft"] = tgt
+            df = df.rename(columns={"timestamp": "source_event_timestamp"})
+            chunks.append(df[[
+                "source_spacecraft", "target_spacecraft",
+                "source_event_timestamp", "source_event_pvi",
+                "source_r_au", "source_lon_deg",
+                "target_r_au", "target_lon_at_arrival_deg",
+                "predicted_arrival_timestamp",
+                "advection_lead_hours", "advection_v_sw_km_s",
+                "delta_lon_deg",
+                "matched",
+                "nearest_target_event_dt_hours",
+                "nearest_target_event_pvi",
+                "nearest_target_event_timestamp",
+            ]])
+
+    if not chunks:
+        return pd.DataFrame()
+    out = pd.concat(chunks, ignore_index=True)
     out["lon_score"] = 1.0 - out["delta_lon_deg"].abs() / LON_TOLERANCE_DEG
     out["t_score"] = (1.0 - out["nearest_target_event_dt_hours"].abs() / T_TOLERANCE_HOURS_WIND).clip(0, 1)
     out["match_score"] = (out["lon_score"] * out["t_score"]).where(out["matched"], 0.0)
