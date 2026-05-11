@@ -22,6 +22,7 @@ from pathlib import Path
 import pandas as pd
 import pyspedas
 import pytplot
+import numpy as np
 from astroquery.jplhorizons import Horizons
 from astroquery.mast import Observations
 from huggingface_hub import HfApi, create_repo
@@ -96,14 +97,39 @@ def fetch_ephemeris(naif_id: str, t_start: str, t_stop: str, step: str = "1h") -
     })
 
 
-def search_jwst(target_name: str, cap: int):
-    obs = Observations.query_criteria(
-        obs_collection="JWST",
-        target_name=target_name,
-        calib_level=3,
-    )
+def search_jwst(target_name: str, cap: int,
+                t_start: str | None = None, t_stop: str | None = None,
+                window_days: int = 90):
+    """Find JWST L3 observations of target_name. If t_start/t_stop given,
+    require the observation midpoint within ±window_days of either endpoint
+    (so the JWST data is temporally close to the PSP perihelion of interest).
+
+    MAST stores t_min / t_max as MJD floats. Falls back to a no-time-filter
+    query if the windowed search returns nothing — better partial data than
+    a silent empty pull."""
+    criteria = dict(obs_collection="JWST", target_name=target_name, calib_level=3)
+    if t_start and t_stop:
+        from astropy.time import Time
+        mjd_lo = Time(t_start).mjd - window_days
+        mjd_hi = Time(t_stop).mjd + window_days
+        criteria["t_min"] = [mjd_lo, mjd_hi]
+        obs = Observations.query_criteria(**criteria)
+        if len(obs) > 0:
+            return obs[: min(cap, len(obs))]
+        print(f"[jwst] no obs of {target_name} within ±{window_days} d of "
+              f"{t_start}–{t_stop}; falling back to nearest in time")
+        criteria.pop("t_min", None)
+    obs = Observations.query_criteria(**criteria)
     if len(obs) == 0:
         return obs
+    if t_start and "t_min" not in obs.colnames:
+        return obs[: min(cap, len(obs))]
+    from astropy.time import Time
+    target_mjd = (Time(t_start).mjd + Time(t_stop).mjd) / 2.0 if t_start and t_stop else None
+    if target_mjd is not None and "t_min" in obs.colnames:
+        obs.sort([("t_min", lambda x: abs(x - target_mjd))]) if False else None
+        idx = np.argsort(np.abs(np.asarray(obs["t_min"]) - target_mjd))
+        obs = obs[idx]
     return obs[: min(cap, len(obs))]
 
 
@@ -179,7 +205,8 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
     return ok
 
 
-def pull_jwst(api: HfApi, out: Path, bodies: tuple[str, ...]) -> bool:
+def pull_jwst(api: HfApi, out: Path, bodies: tuple[str, ...],
+               t_start: str, t_stop: str) -> bool:
     ok = False
     for body_name in bodies:
         body = BODIES.get(body_name)
@@ -187,8 +214,9 @@ def pull_jwst(api: HfApi, out: Path, bodies: tuple[str, ...]) -> bool:
             continue
         for tgt in body.jwst_names:
             try:
-                print(f"[jwst] searching {tgt}")
-                obs = search_jwst(tgt, cap=JWST_CAP_PER_BODY)
+                print(f"[jwst] searching {tgt} near {t_start}–{t_stop}")
+                obs = search_jwst(tgt, cap=JWST_CAP_PER_BODY,
+                                   t_start=t_start, t_stop=t_stop)
                 if len(obs) == 0:
                     print(f"[jwst] no obs for {tgt}")
                     continue
@@ -277,7 +305,7 @@ def main() -> int:
 
     psp_ok = pull_psp(api, t_start, t_stop, out)
     eph_ok = pull_ephemeris(api, t_start, t_stop, out, EPHEMERIS_BODIES_DEFAULT)
-    jwst_ok = pull_jwst(api, out, JWST_BODIES_DEFAULT)
+    jwst_ok = pull_jwst(api, out, JWST_BODIES_DEFAULT, t_start, t_stop)
 
     print("\n[helio-mirror] stage-1 done.")
     print(f"  PSP:       {'OK' if psp_ok else 'FAIL'}")
