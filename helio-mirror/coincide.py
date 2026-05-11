@@ -76,6 +76,7 @@ def predicted_lon_at_arrival(body_eph: pd.DataFrame, t_arrival: pd.Timestamp) ->
 def find_coincidences(events: pd.DataFrame, jwst: pd.DataFrame,
                       eph_long: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict] = []
+    events = events.dropna(subset=["r_au", "helio_lon_deg"])
     bodies = jwst["body"].unique()
     for body in bodies:
         body_eph = eph_long[eph_long["body"] == body].sort_values("timestamp")
@@ -88,6 +89,8 @@ def find_coincidences(events: pd.DataFrame, jwst: pd.DataFrame,
             psp_lon = float(ev["helio_lon_deg"])
             t_ev_idx = (body_eph["timestamp"] - t_psp).abs().idxmin()
             r_body = float(body_eph.loc[t_ev_idx, "r_au"])
+            if not np.isfinite(r_psp) or not np.isfinite(r_body):
+                continue
             dr_km = (r_body - r_psp) * AU_KM
             for mech, v_km_s, t_tol_h in (
                 ("wind", V_SW_KM_PER_SEC, T_TOLERANCE_HOURS_WIND),
