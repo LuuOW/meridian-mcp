@@ -53,9 +53,19 @@ jobs:
         working-directory: helio-mirror
         run: python register.py
 
-      - name: Stage 3 — detect
+      - name: Stage 3 — detect (PVI + JWST aggregates)
         working-directory: helio-mirror
         run: python detect.py
+
+      - name: Stage 3b — detect_wispr (CME brightness fronts)
+        working-directory: helio-mirror
+        continue-on-error: true
+        run: python detect_wispr.py
+
+      - name: Stage 3c — detect_sep (SEP onsets)
+        working-directory: helio-mirror
+        continue-on-error: true
+        run: python detect_sep.py
 
       - name: Stage 4 — coincide
         working-directory: helio-mirror
