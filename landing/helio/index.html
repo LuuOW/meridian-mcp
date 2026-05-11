@@ -162,6 +162,12 @@
     </section>
   </div>
 
+  <section class="panel" style="margin-top: 14px;">
+    <h2>HSO multi-probe coincidences</h2>
+    <p class="sub">When PSP fires a PVI event, we Parker-advect it to every other probe and check for a real event within ±20° / ±24 h. Matches below.</p>
+    <div id="coinc-mount" class="empty">loading events/probe_coincidences_*.parquet metadata …</div>
+  </section>
+
   <details style="margin-top: 14px;">
     <summary>pipeline state &amp; ml residual</summary>
     <div class="grid-2" style="margin-top: 12px;">
@@ -705,6 +711,26 @@ async function loadAll() {
       <p style="font-size:12px;margin:0;">perihelia: ${(s.perihelia_processed || []).map(p => `<span class="pill ok">${p}</span>`).join(" ") || "—"}</p>
       <p style="font-size:12px;margin:6px 0 0;">bodies: ${(s.bodies_with_data || []).map(b => `<span class="pill muted">${b}</span>`).join(" ")}</p>`;
   } catch { document.getElementById("status-mount").textContent = "(dataset_status.json not yet on HF)"; }
+  // Headline coincidence count, sourced from forecast/latest.json
+  try {
+    const matched = forecastData?.n_probe_coincidences_matched ?? 0;
+    const probesN = Object.keys(forecastData?.probes || {}).length;
+    const mount = document.getElementById("coinc-mount");
+    mount.classList.remove("empty");
+    if (matched === 0) {
+      mount.innerHTML = `
+        <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
+          <strong style="color:#9aa0a6;">0 matched coincidences</strong> across ${probesN} HSO probes this perihelion.<br>
+          That's expected at low data volume. Add more perihelia (run the fanout) or wider tolerance to see real cross-probe events.
+        </div>`;
+    } else {
+      mount.innerHTML = `
+        <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
+          <strong style="color:#1cab5d;">${matched} matched coincidences</strong> across ${probesN} HSO probes.<br>
+          Open the raw JSON below for the per-pair breakdown.
+        </div>`;
+    }
+  } catch {}
   try {
     const d = await (await fetch(`${HF_BASE}/forecast/ml_residual.json`, { cache: "no-store" })).json();
     const m = document.getElementById("ml-mount"); m.classList.remove("empty");
