@@ -54,6 +54,47 @@ def fetch_psp_fields(t_start: str, t_stop: str) -> pd.DataFrame:
     })
 
 
+def fetch_psp_isois_epihi(t_start: str, t_stop: str) -> pd.DataFrame:
+    """ISOIS/EPI-Hi L2 integrated proton flux.
+
+    We don't need the full energy spectrum here — just one or two integrated
+    flux channels are enough to flag SEP onsets. EPI-Hi exposes a `let1`
+    (Low Energy Telescope) high-energy proton variable; pulling that as a
+    time series is the minimal SEP detector.
+    """
+    pyspedas.psp.epihi(
+        trange=[t_start, t_stop],
+        datatype="let1_rates",
+        level="l2",
+        time_clip=True,
+    )
+    candidates = (
+        "psp_isois_epihi_let1_protons_he_rate",
+        "psp_isois_epihi_let1_h_flux",
+        "psp_isois_let1_h_int_rate",
+    )
+    chosen = None
+    for name in candidates:
+        d = pytplot.get_data(name)
+        if d is not None:
+            chosen = (name, d)
+            break
+    pytplot.del_data("*")
+    if chosen is None:
+        return pd.DataFrame()
+    var_name, data = chosen
+    y = data.y
+    if y.ndim > 1:
+        y_scalar = np.nansum(y, axis=1) if y.shape[1] > 1 else y[:, 0]
+    else:
+        y_scalar = y
+    return pd.DataFrame({
+        "time": pd.to_datetime(data.times, unit="s"),
+        "source_variable": var_name,
+        "proton_rate": y_scalar.astype(float),
+    })
+
+
 def fetch_psp_wispr(t_start: str, t_stop: str) -> pd.DataFrame:
     """WISPR L3 inner/outer detector brightness time series.
 
@@ -255,6 +296,21 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
             print("[psp/wispr] empty frame (data gap at this perihelion)")
     except Exception as e:
         print(f"[psp/wispr] failed: {e}", file=sys.stderr)
+        traceback.print_exc()
+    try:
+        print(f"[psp/isois-epihi] {t_start} → {t_stop}")
+        df = fetch_psp_isois_epihi(t_start, t_stop)
+        if not df.empty:
+            path = out / "psp" / f"isois_epihi_{PERIHELION}.parquet"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            df.to_parquet(path, compression="snappy")
+            push(api, path, f"psp/isois_epihi_{PERIHELION}.parquet",
+                 f"stage-1: PSP ISOIS/EPI-Hi integrated proton rate {PERIHELION}")
+            ok = True
+        else:
+            print("[psp/isois-epihi] empty frame")
+    except Exception as e:
+        print(f"[psp/isois-epihi] failed: {e}", file=sys.stderr)
         traceback.print_exc()
     return ok
 
