@@ -225,32 +225,54 @@ def main() -> int:
     push(api, out_path, f"forecast/forecast_24h_{PERIHELION}.parquet",
          f"stage-6: 24 h irradiance forecast per body {PERIHELION}")
 
+    psp_eph = eph_long[eph_long["body"] == "PSP"].sort_values("timestamp")
+    psp_summary = None
+    if not psp_eph.empty:
+        psp_summary = {
+            "perihelion": PERIHELION,
+            "r_au": float(psp_eph["r_au"].min()),
+            "lon_deg": float(psp_eph.iloc[len(psp_eph) // 2]["helio_lon_deg"]),
+            "n_events": int(len(events)) if not events.empty else 0,
+        }
+    n_total_events = int(len(events)) if not events.empty else 0
     latest = {
         "perihelion": PERIHELION,
-        "model": "persistence_r2",
+        "model": ("persistence_r2_plus_ml_residual" if ml_specialists else "persistence_r2"),
         "horizon_hours": HORIZON_HOURS,
         "step_hours": STEP_HOURS,
         "generated_at": pd.Timestamp.utcnow().isoformat(),
+        "psp": psp_summary,
+        "n_total_psp_events": n_total_events,
         "bodies": {},
         "caveats": [
-            "Forecast is per-body persistence × geometric r² correction.",
-            "ML residual layer not yet trained — needs more JWST observations per body.",
-            "PSP-event flags are advisory: wind-mechanism arrivals overlapping the "
-            "forecast horizon get psp_event_flag=True; impact on irradiance not "
-            "quantified yet.",
-            "Inferred-irradiance units are a relative proxy within (body, filter); "
-            "absolute W/m² requires per-filter calibration not yet applied.",
+            "Forecast is per-body persistence × geometric r² correction; ML residual applied when a per-body specialist is trained.",
+            "PSP-event flags are advisory: wind-mechanism arrivals overlapping the forecast horizon get psp_event_flag=True; impact on irradiance not quantified yet.",
+            "Inferred-irradiance units are a relative proxy within (body, filter); absolute W/m² requires per-filter calibration not yet applied.",
+            "Coincidences (PSP event × JWST obs) require contemporaneous data; current cache has zero matches structurally.",
         ],
     }
+    irr_sorted = irr.sort_values(["body", "filter", "timestamp"])
+    body_anchor_meta: dict[str, dict] = {}
+    for (body, filt), g in irr_sorted.groupby(["body", "filter"]):
+        last = g.iloc[-1]
+        body_anchor_meta.setdefault(body, {
+            "phase_angle_deg": float(last["phase_angle_deg"]),
+            "delta_au": float(last["delta_au"]),
+            "anchor_lon_deg": float(last["body_helio_lon_deg"]),
+        })
     for body in forecast["body"].unique():
         sub = forecast[forecast["body"] == body]
         anchor = sub.iloc[0]
+        meta = body_anchor_meta.get(body, {})
         latest["bodies"][body] = {
             "filter": str(anchor["filter"]),
             "anchor_timestamp": anchor["anchor_timestamp"].isoformat(),
             "anchor_r_au": float(anchor["anchor_r_au"]),
+            "anchor_lon_deg": meta.get("anchor_lon_deg"),
             "anchor_inferred_irradiance_proxy":
                 float(anchor["anchor_inferred_irradiance_proxy"]),
+            "phase_angle_deg": meta.get("phase_angle_deg"),
+            "delta_au": meta.get("delta_au"),
             "forecast": [
                 {
                     "h": int(r["horizon_h"]),
