@@ -341,12 +341,16 @@ def main() -> int:
         }
 
     latest_path = out_dir / "latest.json"
-    latest_path.write_text(json.dumps(latest, indent=2, default=str))
+    per_perihelion_path = out_dir / f"latest_{PERIHELION}.json"
+    payload = json.dumps(latest, indent=2, default=str)
+    latest_path.write_text(payload)
+    per_perihelion_path.write_text(payload)
     from hf_push import push_folder
     push_folder(api, REPO_ID, out_dir, "forecast",
                  f"stage-6: 24h forecast + latest summary {PERIHELION}",
                  allow_patterns=[f"forecast_24h_{PERIHELION}.parquet",
-                                  "latest.json"])
+                                  "latest.json",
+                                  f"latest_{PERIHELION}.json"])
     print(f"[stage-6] pushed forecast/ for {PERIHELION} as one commit")
     print("[stage-6] done.")
     return 0
