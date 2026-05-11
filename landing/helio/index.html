@@ -702,6 +702,98 @@ async function renderForecast(data) {
   renderList();
   const bodies = Object.keys(forecastData.bodies || {});
   if (bodies.length) selectBody(bodies[0]);
+  // Re-render perihelion-dependent panels so picker switching updates them.
+  renderHSOPanel();
+}
+
+function renderHSOPanel() {
+  // Per-probe load status
+  try {
+    const st = forecastData?.probes_load_status;
+    const mount = document.getElementById("probes-status-mount");
+    if (!st) {
+      mount.textContent = "(probes_status not yet on HF — run the pull stage)";
+    } else {
+      mount.classList.remove("empty");
+      const ok = (st.loaded || []).map(x => `<span class="pill ok">${x.sc} · ${(x.samples ?? 0).toLocaleString()} samples</span>`).join(" ");
+      const empty = (st.empty || []).map(sc => `<span class="pill muted">${sc} (empty)</span>`).join(" ");
+      const failed = Object.entries(st.failed || {}).map(([sc, err]) => `<span class="pill warn" title="${err.replace(/"/g, "&quot;")}">${sc} (failed)</span>`).join(" ");
+      mount.innerHTML = `
+        <div style="font-size:12px;line-height:1.8;">
+          <strong>Probe load status</strong> · window ${st.window?.[0]} → ${st.window?.[1]}<br>
+          ${ok || "<span style='color:#9aa0a6;'>no probes loaded</span>"} ${empty} ${failed}
+        </div>`;
+    }
+  } catch (e) { console.warn("probes_status render", e); }
+
+  // Coincidence summary + null test + tight-tolerance overlay
+  try {
+    const matched = forecastData?.n_probe_coincidences_matched ?? 0;
+    const candidate = forecastData?.n_probe_coincidences_candidate ?? 0;
+    const score = forecastData?.median_probe_match_score;
+    const pairs = forecastData?.probe_pairs_by_pair || [];
+    const probesN = Object.keys(forecastData?.probes || {}).length;
+    const mount = document.getElementById("coinc-mount");
+    mount.classList.remove("empty");
+    const pairRows = pairs.length
+      ? pairs.slice().sort((a, b) => (b.n || 0) - (a.n || 0))
+          .map(p => `<tr><td style="padding:2px 12px 2px 0;">${p.source_spacecraft} → ${p.target_spacecraft}</td><td style="text-align:right;color:#1cab5d;">${p.n}</td></tr>`)
+          .join("")
+      : "";
+    let scoreLine = "";
+    if (score != null) {
+      const s = Number(score);
+      const verdict = s >= 0.6 ? { cls: "ok", txt: "tight" }
+                    : s >= 0.4 ? { cls: "muted", txt: "moderate" }
+                    : { cls: "warn", txt: "loose — tolerances too wide" };
+      scoreLine = `<span style="color:#9aa0a6;">median match score</span> <strong>${s.toFixed(2)}</strong> <span class="pill ${verdict.cls}">${verdict.txt}</span>`;
+    }
+    if (matched === 0) {
+      mount.innerHTML = `
+        <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
+          <strong style="color:#9aa0a6;">0 matched coincidences</strong> across ${probesN} HSO probes this perihelion
+          ${candidate ? ` <span style="color:#666;">(${candidate} candidate pairs tested)</span>` : ""}.<br>
+          That's expected at low data volume. Add more perihelia (run the fanout) or wider tolerance to see real cross-probe events.
+        </div>`;
+    } else {
+      mount.innerHTML = `
+        <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
+          <strong style="color:#1cab5d;">${matched} matched coincidences</strong> across ${probesN} HSO probes
+          <span style="color:#666;">(of ${candidate} candidate pairs tested)</span>. ${scoreLine}
+          ${pairRows ? `<table style="margin-top:8px;border-collapse:collapse;">${pairRows}</table>` : ""}
+          <div id="null-test-line" style="margin-top:8px;color:#9aa0a6;font-size:11px;"></div>
+          <div id="tight-tol-line" style="margin-top:6px;color:#9aa0a6;font-size:11px;"></div>
+        </div>`;
+    }
+    const tag = forecastData?.perihelion;
+    if (!tag) return;
+    fetch(`${HF_BASE}/events/probe_coincidences_summary_tight_${tag}.json`, { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(t => {
+        if (!t) return;
+        const line = document.getElementById("tight-tol-line");
+        if (!line) return;
+        const score = t.median_match_score;
+        const cls = score == null ? "muted" : (score >= 0.6 ? "ok" : score >= 0.4 ? "muted" : "warn");
+        const scoreTxt = score == null ? "n/a" : Number(score).toFixed(3);
+        const pp = (t.pair_breakdown || []).slice().sort((a,b)=>(b.n||0)-(a.n||0))
+          .map(p => `<code>${p.source_spacecraft}→${p.target_spacecraft}:${p.n}</code>`).join(" · ");
+        line.innerHTML = `Physics-aware tolerances: <strong>${t.n_matched_pairs}</strong>/${t.n_candidate_pairs} matched · score <span class="pill ${cls}">${scoreTxt}</span> ${pp ? "· " + pp : ""}`;
+      })
+      .catch(() => {});
+    fetch(`${HF_BASE}/events/null_test_${tag}.json`, { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(nt => {
+        if (!nt) return;
+        const line = document.getElementById("null-test-line");
+        if (!line) return;
+        const cls = nt.verdict === "significant" ? "ok"
+                  : nt.verdict === "marginal" ? "muted"
+                  : "warn";
+        line.innerHTML = `Null test (${nt.mode || "loose"}): observed <strong>${nt.observed_matched}</strong> vs null mean <strong>${nt.null_matches_mean}</strong> (n=${nt.n_shuffles} shuffles) · z=${nt.z_score} · p=${nt.p_value_one_sided?.toFixed(3)} <span class="pill ${cls}">${nt.verdict}</span>`;
+      })
+      .catch(() => {});
+  } catch {}
 }
 
 async function fetchPerihelion(tag) {
@@ -770,95 +862,7 @@ async function loadAll() {
       ${gateRows ? `<div style="margin-top:8px;font-size:11px;"><strong>Stage gates per perihelion</strong> <span class="sub" style="font-size:10px;">(hover for details)</span>${gateRows}</div>` : ""}
       ${probeRows ? `<div style="margin-top:8px;font-size:11px;"><strong>HSO probes per perihelion</strong>${probeRows}</div>` : ""}`;
   } catch { document.getElementById("status-mount").textContent = "(dataset_status.json not yet on HF)"; }
-  // Per-probe load status: which spacecraft actually landed data this perihelion
-  try {
-    const st = forecastData?.probes_load_status;
-    const mount = document.getElementById("probes-status-mount");
-    if (!st) {
-      mount.textContent = "(probes_status not yet on HF — run the pull stage)";
-    } else {
-      mount.classList.remove("empty");
-      const ok = (st.loaded || []).map(x => `<span class="pill ok">${x.sc} · ${(x.samples ?? 0).toLocaleString()} samples</span>`).join(" ");
-      const empty = (st.empty || []).map(sc => `<span class="pill muted">${sc} (empty)</span>`).join(" ");
-      const failed = Object.entries(st.failed || {}).map(([sc, err]) => `<span class="pill warn" title="${err.replace(/"/g, "&quot;")}">${sc} (failed)</span>`).join(" ");
-      mount.innerHTML = `
-        <div style="font-size:12px;line-height:1.8;">
-          <strong>Probe load status</strong> · window ${st.window?.[0]} → ${st.window?.[1]}<br>
-          ${ok || "<span style='color:#9aa0a6;'>no probes loaded</span>"} ${empty} ${failed}
-        </div>`;
-    }
-  } catch (e) { console.warn("probes_status render", e); }
-
-  // Headline coincidence count + per-pair breakdown, sourced from forecast/latest.json
-  try {
-    const matched = forecastData?.n_probe_coincidences_matched ?? 0;
-    const candidate = forecastData?.n_probe_coincidences_candidate ?? 0;
-    const score = forecastData?.median_probe_match_score;
-    const pairs = forecastData?.probe_pairs_by_pair || [];
-    const probesN = Object.keys(forecastData?.probes || {}).length;
-    const mount = document.getElementById("coinc-mount");
-    mount.classList.remove("empty");
-    const pairRows = pairs.length
-      ? pairs
-          .slice()
-          .sort((a, b) => (b.n || 0) - (a.n || 0))
-          .map(p => `<tr><td style="padding:2px 12px 2px 0;">${p.source_spacecraft} → ${p.target_spacecraft}</td><td style="text-align:right;color:#1cab5d;">${p.n}</td></tr>`)
-          .join("")
-      : "";
-    let scoreLine = "";
-    if (score != null) {
-      const s = Number(score);
-      const verdict = s >= 0.6 ? { cls: "ok", txt: "tight" }
-                    : s >= 0.4 ? { cls: "muted", txt: "moderate" }
-                    : { cls: "warn", txt: "loose — tolerances too wide" };
-      scoreLine = `<span style="color:#9aa0a6;">median match score</span> <strong>${s.toFixed(2)}</strong> <span class="pill ${verdict.cls}">${verdict.txt}</span>`;
-    }
-    if (matched === 0) {
-      mount.innerHTML = `
-        <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
-          <strong style="color:#9aa0a6;">0 matched coincidences</strong> across ${probesN} HSO probes this perihelion
-          ${candidate ? ` <span style="color:#666;">(${candidate} candidate pairs tested)</span>` : ""}.<br>
-          That's expected at low data volume. Add more perihelia (run the fanout) or wider tolerance to see real cross-probe events.
-        </div>`;
-    } else {
-      mount.innerHTML = `
-        <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
-          <strong style="color:#1cab5d;">${matched} matched coincidences</strong> across ${probesN} HSO probes
-          <span style="color:#666;">(of ${candidate} candidate pairs tested)</span>. ${scoreLine}
-          ${pairRows ? `<table style="margin-top:8px;border-collapse:collapse;">${pairRows}</table>` : ""}
-          <div id="null-test-line" style="margin-top:8px;color:#9aa0a6;font-size:11px;"></div>
-          <div id="tight-tol-line" style="margin-top:6px;color:#9aa0a6;font-size:11px;"></div>
-        </div>`;
-    }
-    // Overlay tight-tolerance verdict if coincide_tight has been run
-    fetch(`${HF_BASE}/events/probe_coincidences_summary_tight_${forecastData?.perihelion}.json`, { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .then(t => {
-        if (!t) return;
-        const line = document.getElementById("tight-tol-line");
-        if (!line) return;
-        const score = t.median_match_score;
-        const cls = score == null ? "muted" : (score >= 0.6 ? "ok" : score >= 0.4 ? "muted" : "warn");
-        const scoreTxt = score == null ? "n/a" : Number(score).toFixed(3);
-        const pairs = (t.pair_breakdown || []).slice().sort((a,b)=>(b.n||0)-(a.n||0))
-          .map(p => `<code>${p.source_spacecraft}→${p.target_spacecraft}:${p.n}</code>`).join(" · ");
-        line.innerHTML = `Physics-aware tolerances: <strong>${t.n_matched_pairs}</strong>/${t.n_candidate_pairs} matched · score <span class="pill ${cls}">${scoreTxt}</span> ${pairs ? "· " + pairs : ""}`;
-      })
-      .catch(() => {});
-    // Overlay the significance test verdict if it's been run
-    fetch(`${HF_BASE}/events/null_test_${forecastData?.perihelion}.json`, { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .then(nt => {
-        if (!nt) return;
-        const line = document.getElementById("null-test-line");
-        if (!line) return;
-        const cls = nt.verdict === "significant" ? "ok"
-                  : nt.verdict === "marginal" ? "muted"
-                  : "warn";
-        line.innerHTML = `Null test: observed <strong>${nt.observed_matched}</strong> vs null mean <strong>${nt.null_matches_mean}</strong> (n=${nt.n_shuffles} shuffles) · z=${nt.z_score} · p=${nt.p_value_one_sided?.toFixed(3)} <span class="pill ${cls}">${nt.verdict}</span>`;
-      })
-      .catch(() => {});
-  } catch {}
+  // (HSO panel is now rendered by renderHSOPanel, called from renderForecast.)
   try {
     const d = await (await fetch(`${HF_BASE}/forecast/ml_residual.json`, { cache: "no-store" })).json();
     const m = document.getElementById("ml-mount"); m.classList.remove("empty");
