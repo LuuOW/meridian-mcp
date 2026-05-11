@@ -230,10 +230,15 @@ def find_probe_coincidences(events: pd.DataFrame,
             if df.empty:
                 continue
 
-            # v_sw: average of source and target plasma speeds when both
-            # available; else source-only; else 400 km/s fallback. The
-            # first-pass uses source v_sw to get a rough t_arrival, then we
-            # look up target v_sw at that t_arrival and re-average.
+            # v_sw integration: assume v(r) varies linearly between source
+            # and target measurements. The transit time integral
+            # t = ∫(r_src→r_tgt) dr/v(r) = (r_tgt − r_src) · ln(v_tgt/v_src) / (v_tgt − v_src)
+            # collapses to (r_tgt − r_src)/v when v_src == v_tgt. We express
+            # this as an "effective velocity" v_eff so the rest of the code
+            # is unchanged: v_eff = (v_tgt − v_src) / ln(v_tgt/v_src).
+            #
+            # First-pass: use source v_sw to get rough t_arrival → look up
+            # target v_sw at that arrival → compute v_eff for the final dt.
             df["v_sw_src_km_s"] = df["v_sw_km_s"].fillna(V_SW_KM_PER_SEC)
             dr_km = (df["target_r_au"] - df["source_r_au"]) * AU_KM
             dt_h_first = dr_km / df["v_sw_src_km_s"] / 3600.0
@@ -242,13 +247,23 @@ def find_probe_coincidences(events: pd.DataFrame,
                 target_vsw_at(plasma_by_sc, tgt, t_arrival_first)
                 if plasma_by_sc else pd.Series([np.nan] * len(df))
             ).reset_index(drop=True)
-            v_avg = np.where(
-                df["v_sw_tgt_km_s"].notna(),
-                (df["v_sw_src_km_s"] + df["v_sw_tgt_km_s"]) / 2.0,
-                df["v_sw_src_km_s"],
+            v_src = df["v_sw_src_km_s"].to_numpy()
+            v_tgt = df["v_sw_tgt_km_s"].to_numpy()
+            have_tgt = np.isfinite(v_tgt)
+            # Guard ln(v_tgt/v_src) — when |v_tgt − v_src| < 1 km/s fall back
+            # to arithmetic mean (the integral collapses to v itself).
+            near_equal = np.abs(v_tgt - v_src) < 1.0
+            with np.errstate(divide="ignore", invalid="ignore"):
+                v_eff_log = (v_tgt - v_src) / np.log(np.divide(v_tgt, v_src,
+                                                                   out=np.ones_like(v_src),
+                                                                   where=v_src > 0))
+            v_eff = np.where(
+                have_tgt & ~near_equal,
+                v_eff_log,
+                np.where(have_tgt, (v_src + v_tgt) / 2.0, v_src),
             )
-            df["advection_v_sw_km_s"] = v_avg
-            df["advection_lead_hours"] = dr_km / v_avg / 3600.0
+            df["advection_v_sw_km_s"] = v_eff
+            df["advection_lead_hours"] = dr_km / v_eff / 3600.0
             df = df[df["advection_lead_hours"] >= 0].reset_index(drop=True)  # target outside
             if df.empty:
                 continue
