@@ -89,13 +89,9 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "dataset_status.json"
     out_path.write_text(json.dumps(summary, indent=2, default=str))
-    api.upload_file(
-        path_or_fileobj=str(out_path),
-        path_in_repo="forecast/dataset_status.json",
-        repo_id=REPO_ID,
-        repo_type="dataset",
-        commit_message="status: dataset health summary",
-    )
+    from hf_push import push as _push
+    _push(api, REPO_ID, out_path, "forecast/dataset_status.json",
+          "status: dataset health summary")
     print(f"[status] pushed forecast/dataset_status.json")
     return 0
 

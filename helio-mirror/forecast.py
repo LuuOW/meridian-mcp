@@ -41,13 +41,8 @@ STEP_HOURS = int(os.environ.get("HELIO_STEP_H", "1"))
 
 
 def push(api: HfApi, local: Path, repo_path: str, message: str) -> None:
-    api.upload_file(
-        path_or_fileobj=str(local),
-        path_in_repo=repo_path,
-        repo_id=REPO_ID,
-        repo_type="dataset",
-        commit_message=message,
-    )
+    from hf_push import push as _push
+    _push(api, REPO_ID, local, repo_path, message)
 
 
 def load(token: str, name: str, required: bool = True) -> pd.DataFrame:

@@ -202,33 +202,8 @@ def select_jwst_products(obs):
 
 
 def push(api: HfApi, local: Path, repo_path: str, message: str) -> None:
-    """Upload with exponential-backoff retry on 429 / 5xx (HF Hub commits
-    can rate-limit even at modest QPS when parallel jobs share a dataset)."""
-    import time
-    from huggingface_hub.errors import HfHubHTTPError
-    delays = [2, 5, 15, 45, 120]
-    last: Exception | None = None
-    for attempt, delay in enumerate(delays):
-        try:
-            api.upload_file(
-                path_or_fileobj=str(local),
-                path_in_repo=repo_path,
-                repo_id=REPO_ID,
-                repo_type="dataset",
-                commit_message=message,
-            )
-            return
-        except HfHubHTTPError as e:
-            status = getattr(getattr(e, "response", None), "status_code", None)
-            if status in (429, 500, 502, 503, 504):
-                last = e
-                print(f"[push] HF {status} on {repo_path}; retry in {delay}s (attempt {attempt+1}/{len(delays)})",
-                      file=sys.stderr)
-                time.sleep(delay)
-                continue
-            raise
-    if last is not None:
-        raise last
+    from hf_push import push as _push
+    _push(api, REPO_ID, local, repo_path, message)
 
 
 def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
