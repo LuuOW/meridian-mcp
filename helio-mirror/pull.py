@@ -100,11 +100,16 @@ def fetch_psp_isois_epihi(t_start: str, t_stop: str) -> pd.DataFrame:
 def fetch_psp_wispr(t_start: str, t_stop: str) -> pd.DataFrame:
     """WISPR L3 inner/outer detector brightness time series.
 
-    Each image frame collapses to scalars: mean, sum, p99 of brightness over
-    the calibrated science array, so we ship a small time series instead of
-    raw image cubes. Image-based CME-front direction extraction is left to a
-    later stage.
+    pyspedas does not (as of this writing) expose a wispr loader — it ships
+    fields/spc/spe/spi/epihi/epilo/rfs only. We short-circuit here so the
+    workflow doesn't spam an AttributeError every pull; a direct PSP SOC
+    fetcher is a v0.4 item. Stage 3b (detect_wispr) handles the empty input
+    gracefully and emits no events.
     """
+    if not hasattr(pyspedas.psp, "wispr"):
+        print("[psp/wispr] pyspedas has no wispr loader; stage 3b is gated until "
+              "we ship a direct PSP SOC fetcher", file=sys.stderr)
+        return pd.DataFrame()
     pyspedas.psp.wispr(
         trange=[t_start, t_stop],
         datatype="science",
