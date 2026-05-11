@@ -75,6 +75,11 @@ jobs:
         working-directory: helio-mirror
         run: python coincide.py
 
+      - name: Stage 4-tight — physics-aware tolerances
+        working-directory: helio-mirror
+        continue-on-error: true
+        run: python coincide_tight.py
+
       - name: Stage 5 — calibrate
         working-directory: helio-mirror
         run: python calibrate.py

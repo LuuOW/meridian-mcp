@@ -1,0 +1,43 @@
+name: helio-mirror-coincide-tight
+
+# Physics-aware probe-pair coincidence stage. Tighter, per-pair-type
+# tolerances based on predicted Parker transit time. Reads the same
+# events/{psp,probe}_candidate_events_*.parquet that stage 4 reads.
+
+on:
+  workflow_dispatch:
+    inputs:
+      perihelion:
+        description: "Perihelion window"
+        required: true
+        default: "E20"
+        type: choice
+        options: [E20, E21, E22, E23, E24]
+
+permissions:
+  contents: read
+
+jobs:
+  coincide-tight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HELIO_PERIHELION: ${{ inputs.perihelion }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: helio-mirror/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r helio-mirror/requirements.txt
+
+      - name: Run tight-tolerance coincidence
+        working-directory: helio-mirror
+        run: python coincide_tight.py

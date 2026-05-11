@@ -827,9 +827,25 @@ async function loadAll() {
           <span style="color:#666;">(of ${candidate} candidate pairs tested)</span>. ${scoreLine}
           ${pairRows ? `<table style="margin-top:8px;border-collapse:collapse;">${pairRows}</table>` : ""}
           <div id="null-test-line" style="margin-top:8px;color:#9aa0a6;font-size:11px;"></div>
+          <div id="tight-tol-line" style="margin-top:6px;color:#9aa0a6;font-size:11px;"></div>
         </div>`;
     }
-    // Try to overlay the significance test verdict if it's been run
+    // Overlay tight-tolerance verdict if coincide_tight has been run
+    fetch(`${HF_BASE}/events/probe_coincidences_summary_tight_${forecastData?.perihelion}.json`, { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(t => {
+        if (!t) return;
+        const line = document.getElementById("tight-tol-line");
+        if (!line) return;
+        const score = t.median_match_score;
+        const cls = score == null ? "muted" : (score >= 0.6 ? "ok" : score >= 0.4 ? "muted" : "warn");
+        const scoreTxt = score == null ? "n/a" : Number(score).toFixed(3);
+        const pairs = (t.pair_breakdown || []).slice().sort((a,b)=>(b.n||0)-(a.n||0))
+          .map(p => `<code>${p.source_spacecraft}→${p.target_spacecraft}:${p.n}</code>`).join(" · ");
+        line.innerHTML = `Physics-aware tolerances: <strong>${t.n_matched_pairs}</strong>/${t.n_candidate_pairs} matched · score <span class="pill ${cls}">${scoreTxt}</span> ${pairs ? "· " + pairs : ""}`;
+      })
+      .catch(() => {});
+    // Overlay the significance test verdict if it's been run
     fetch(`${HF_BASE}/events/null_test_${forecastData?.perihelion}.json`, { cache: "no-store" })
       .then(r => r.ok ? r.json() : null)
       .then(nt => {
