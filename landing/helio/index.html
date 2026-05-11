@@ -165,6 +165,7 @@
   <section class="panel" style="margin-top: 14px;">
     <h2>HSO multi-probe coincidences</h2>
     <p class="sub">When PSP fires a PVI event, we Parker-advect it to every other probe and check for a real event within ±20° / ±24 h. Matches below.</p>
+    <div id="probes-status-mount" class="empty" style="margin-bottom: 10px;">loading status/probes_status_*.json …</div>
     <div id="coinc-mount" class="empty">loading events/probe_coincidences_*.parquet metadata …</div>
   </section>
 
@@ -711,6 +712,25 @@ async function loadAll() {
       <p style="font-size:12px;margin:0;">perihelia: ${(s.perihelia_processed || []).map(p => `<span class="pill ok">${p}</span>`).join(" ") || "—"}</p>
       <p style="font-size:12px;margin:6px 0 0;">bodies: ${(s.bodies_with_data || []).map(b => `<span class="pill muted">${b}</span>`).join(" ")}</p>`;
   } catch { document.getElementById("status-mount").textContent = "(dataset_status.json not yet on HF)"; }
+  // Per-probe load status: which spacecraft actually landed data this perihelion
+  try {
+    const st = forecastData?.probes_load_status;
+    const mount = document.getElementById("probes-status-mount");
+    if (!st) {
+      mount.textContent = "(probes_status not yet on HF — run the pull stage)";
+    } else {
+      mount.classList.remove("empty");
+      const ok = (st.loaded || []).map(x => `<span class="pill ok">${x.sc} · ${(x.samples ?? 0).toLocaleString()} samples</span>`).join(" ");
+      const empty = (st.empty || []).map(sc => `<span class="pill muted">${sc} (empty)</span>`).join(" ");
+      const failed = Object.entries(st.failed || {}).map(([sc, err]) => `<span class="pill warn" title="${err.replace(/"/g, "&quot;")}">${sc} (failed)</span>`).join(" ");
+      mount.innerHTML = `
+        <div style="font-size:12px;line-height:1.8;">
+          <strong>Probe load status</strong> · window ${st.window?.[0]} → ${st.window?.[1]}<br>
+          ${ok || "<span style='color:#9aa0a6;'>no probes loaded</span>"} ${empty} ${failed}
+        </div>`;
+    }
+  } catch (e) { console.warn("probes_status render", e); }
+
   // Headline coincidence count + per-pair breakdown, sourced from forecast/latest.json
   try {
     const matched = forecastData?.n_probe_coincidences_matched ?? 0;

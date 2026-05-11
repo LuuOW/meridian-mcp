@@ -14,6 +14,7 @@ HELIO_PERIHELION (default E20).
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 import traceback
@@ -366,33 +367,69 @@ def pull_probes(api: HfApi, t_start: str, t_stop: str, out: Path,
     list. PSP gets its richer specialised loader via pull_psp(); here we just
     do uniform MAG-only ingestion across the heliophysics fleet for cross-
     spacecraft event detection in stage-3+.
+
+    Also writes status/probes_status_{P}.json so the dashboard can show which
+    probes landed data and which failed, without forcing the user to dig in
+    GitHub Actions logs.
     """
     ok = False
     probes_dir = out / "probes"
     probes_dir.mkdir(parents=True, exist_ok=True)
+    status = {
+        "perihelion": PERIHELION,
+        "window": [t_start, t_stop],
+        "loaded": [],          # {sc, samples}
+        "empty": [],           # spacecraft with empty CDAWeb response
+        "failed": {},          # {sc: error message}
+        "skipped": [],         # PSP (specialised loader) or unknown
+    }
     for sc in spacecraft:
         if sc == "PSP":
+            status["skipped"].append(sc)
             continue  # PSP handled by pull_psp with its specialised products
         info = SPACECRAFT.get(sc)
         if info is None:
+            status["skipped"].append(sc)
             continue
         loader = LOADER_MAP.get(info["loader"])
         if loader is None:
+            status["skipped"].append(sc)
             continue
         try:
             print(f"[probes/{sc}] {t_start} → {t_stop}")
             df = loader(t_start, t_stop)
             if df.empty:
                 print(f"[probes/{sc}] empty (no data on CDAWeb for this window)")
+                status["empty"].append(sc)
                 continue
             df["spacecraft"] = sc
             safe = sc.replace("/", "_").replace(" ", "_")
             df.to_parquet(probes_dir / f"{safe}_mag_{PERIHELION}.parquet", compression="snappy")
             ok = True
+            status["loaded"].append({"sc": sc, "samples": int(len(df))})
             print(f"[probes/{sc}] {len(df)} samples")
         except Exception as e:
             print(f"[probes/{sc}] failed: {e}", file=sys.stderr)
+            status["failed"][sc] = str(e)[:200]
             traceback.print_exc()
+
+    # Push status JSON regardless of outcome so the dashboard can show "all
+    # failed" as a distinct state, not "no data".
+    status_dir = out / "status"
+    status_dir.mkdir(parents=True, exist_ok=True)
+    status_path = status_dir / f"probes_status_{PERIHELION}.json"
+    status_path.write_text(json.dumps(status, indent=2))
+    try:
+        push_subdir(api, status_dir, "status",
+                     f"stage-1: probes_status {PERIHELION} "
+                     f"({len(status['loaded'])}/{len(spacecraft)-1} loaded)",
+                     patterns=[f"probes_status_{PERIHELION}.json"])
+        print(f"[probes] pushed status/probes_status_{PERIHELION}.json: "
+              f"{len(status['loaded'])} loaded, {len(status['empty'])} empty, "
+              f"{len(status['failed'])} failed")
+    except Exception as e:
+        print(f"[probes] status push failed (continuing): {e}", file=sys.stderr)
+
     if ok:
         push_subdir(api, probes_dir, "probes",
                      f"stage-1: HSO probe magnetometer bundle {PERIHELION}",
