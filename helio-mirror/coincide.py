@@ -62,6 +62,56 @@ def load(token: str, name: str) -> pd.DataFrame:
     return pd.read_parquet(p)
 
 
+def load_all_plasma(token: str) -> dict[str, pd.DataFrame]:
+    """Read every plasma/{sc}_speed_{P}.parquet from HF, return a dict
+    {spacecraft: DataFrame[time, v_sw_km_s]}. Used by find_probe_coincidences
+    to look up target-side v_sw at predicted arrival time, so we can
+    average source+target speeds instead of assuming constant-at-source."""
+    out: dict[str, pd.DataFrame] = {}
+    try:
+        files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
+    except Exception:
+        return out
+    for f in files:
+        if not f.startswith("plasma/") or not f.endswith(f"_speed_{PERIHELION}.parquet"):
+            continue
+        sc_safe = f.split("plasma/")[1].split(f"_speed_{PERIHELION}")[0]
+        # Reverse the safe-naming used in pull.py
+        sc = sc_safe.replace("_", "-") if sc_safe not in ("PSP","SolO","Wind","ACE","DSCOVR","MAVEN") else sc_safe
+        try:
+            p = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                                 filename=f, token=token)
+            df = pd.read_parquet(p)
+            if df.empty:
+                continue
+            df = df.copy()
+            df["time"] = pd.to_datetime(df["time"]).dt.tz_localize(None)
+            out[sc] = df[["time", "v_sw_km_s"]].sort_values("time").reset_index(drop=True)
+        except Exception as e:
+            print(f"[stage-4/plasma] {sc}: {e}", file=sys.stderr)
+    if out:
+        medians = {sc: float(df["v_sw_km_s"].median()) for sc, df in out.items()}
+        print(f"[stage-4/plasma] loaded plasma for {len(out)} sc; medians: {medians}")
+    return out
+
+
+def target_vsw_at(plasma_by_sc: dict[str, pd.DataFrame], sc: str,
+                    arrival_times: pd.Series) -> pd.Series:
+    """For each arrival time, return target spacecraft's v_sw via merge_asof.
+    Empty plasma for that sc → all-NaN Series."""
+    plasma = plasma_by_sc.get(sc)
+    if plasma is None or plasma.empty:
+        return pd.Series([np.nan] * len(arrival_times), index=arrival_times.index)
+    times = pd.DataFrame({"timestamp": arrival_times.values}).reset_index(drop=True)
+    joined = pd.merge_asof(
+        times.sort_values("timestamp").reset_index(),
+        plasma.rename(columns={"time": "_p_t", "v_sw_km_s": "_p_v"}),
+        left_on="timestamp", right_on="_p_t",
+        direction="nearest", tolerance=pd.Timedelta("2h"),
+    ).sort_values("index").reset_index(drop=True)
+    return joined["_p_v"]
+
+
 def attach_per_event_vsw(events: pd.DataFrame, token: str) -> pd.DataFrame:
     """For each event, look up v_sw from plasma/{sc}_speed_{P}.parquet via
     nearest-time match (±2 h tolerance). Adds a `v_sw_km_s` column; rows
@@ -116,7 +166,8 @@ def predicted_lon_at_arrival(body_eph: pd.DataFrame, t_arrival: pd.Timestamp) ->
 
 
 def find_probe_coincidences(events: pd.DataFrame,
-                              eph_long: pd.DataFrame) -> pd.DataFrame:
+                              eph_long: pd.DataFrame,
+                              plasma_by_sc: dict[str, pd.DataFrame] | None = None) -> pd.DataFrame:
     """HSO multi-probe matching, vectorized.
 
     Was an O(N_events × N_eph) Python iterrows loop — 3+ min per null_test
@@ -124,8 +175,12 @@ def find_probe_coincidences(events: pd.DataFrame,
     numpy frame, three merge_asof joins for (r_tgt, lon_tgt_at_src,
     lon_tgt_at_arrival, nearest_target_event). Same output schema.
 
-    Per-event v_sw: if a `v_sw_km_s` column is present on source events,
-    use it; otherwise fall back to V_SW_KM_PER_SEC constant.
+    v_sw model (in order of preference):
+      1. plasma_by_sc supplies both source and target speeds → use the
+         average (parcels accelerate from inner to outer heliosphere; the
+         time-of-flight integral is best approximated by the mean).
+      2. Source-only v_sw on the event row.
+      3. V_SW_KM_PER_SEC constant fallback.
 
     Drops self-pairs and any pair where target ephemeris is missing.
     """
@@ -170,15 +225,30 @@ def find_probe_coincidences(events: pd.DataFrame,
                 on="timestamp", direction="nearest",
             )
 
-            # Compute v_sw (with fallback) and dt_h
-            df["v_sw_km_s"] = df["v_sw_km_s"].fillna(V_SW_KM_PER_SEC)
             valid = np.isfinite(df["source_r_au"]) & np.isfinite(df["target_r_au"])
             df = df[valid].reset_index(drop=True)
             if df.empty:
                 continue
+
+            # v_sw: average of source and target plasma speeds when both
+            # available; else source-only; else 400 km/s fallback. The
+            # first-pass uses source v_sw to get a rough t_arrival, then we
+            # look up target v_sw at that t_arrival and re-average.
+            df["v_sw_src_km_s"] = df["v_sw_km_s"].fillna(V_SW_KM_PER_SEC)
             dr_km = (df["target_r_au"] - df["source_r_au"]) * AU_KM
-            df["advection_lead_hours"] = dr_km / df["v_sw_km_s"] / 3600.0
-            df["advection_v_sw_km_s"] = df["v_sw_km_s"]
+            dt_h_first = dr_km / df["v_sw_src_km_s"] / 3600.0
+            t_arrival_first = df["timestamp"] + pd.to_timedelta(dt_h_first.clip(lower=0), unit="h")
+            df["v_sw_tgt_km_s"] = (
+                target_vsw_at(plasma_by_sc, tgt, t_arrival_first)
+                if plasma_by_sc else pd.Series([np.nan] * len(df))
+            ).reset_index(drop=True)
+            v_avg = np.where(
+                df["v_sw_tgt_km_s"].notna(),
+                (df["v_sw_src_km_s"] + df["v_sw_tgt_km_s"]) / 2.0,
+                df["v_sw_src_km_s"],
+            )
+            df["advection_v_sw_km_s"] = v_avg
+            df["advection_lead_hours"] = dr_km / v_avg / 3600.0
             df = df[df["advection_lead_hours"] >= 0].reset_index(drop=True)  # target outside
             if df.empty:
                 continue
@@ -383,14 +453,19 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
           f"{events['spacecraft'].nunique()} spacecraft, "
           f"{len(jwst)} JWST obs, {eph_long['body'].nunique()} bodies")
     # Attach per-event v_sw from plasma data when available, falling back to
-    # V_SW_KM_PER_SEC where missing. This is what (we hope) flips the 4/5
-    # negative-z perihelia to positive.
+    # V_SW_KM_PER_SEC where missing.
     events = attach_per_event_vsw(events, token)
     n_with_vsw = int(events["v_sw_km_s"].notna().sum()) if "v_sw_km_s" in events.columns else 0
     print(f"[stage-4] {n_with_vsw}/{len(events)} events have per-event v_sw "
           f"(rest fall back to {V_SW_KM_PER_SEC} km/s)")
+    # Plasma lookup table for target-side v_sw at predicted arrival; lets
+    # find_probe_coincidences average source+target speeds for the
+    # advection rather than assuming constant-at-source (wrong for
+    # inner→outer transits because PSP at perihelion sees slow wind that
+    # accelerates en route to L1).
+    plasma_by_sc = load_all_plasma(token)
     coincidences = find_coincidences(events, jwst, eph_long)
-    probe_coincidences = find_probe_coincidences(events, eph_long)
+    probe_coincidences = find_probe_coincidences(events, eph_long, plasma_by_sc)
     print(f"[stage-4] probe×probe coincidences: {len(probe_coincidences)}")
 
     out_dir = Path("helio_cache/events")
