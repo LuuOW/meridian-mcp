@@ -62,20 +62,46 @@ def latest_per_body(irr: pd.DataFrame) -> pd.DataFrame:
 
 
 def forecast_one(latest_row: pd.Series, body_eph: pd.DataFrame,
-                  horizon_h: int, step_h: int) -> pd.DataFrame:
+                  horizon_h: int, step_h: int,
+                  ml_specialist: dict | None = None) -> pd.DataFrame:
     t0 = pd.Timestamp(latest_row["timestamp"]).tz_localize(None)
     t_forecast = pd.date_range(t0 + pd.Timedelta(hours=step_h),
                                 t0 + pd.Timedelta(hours=horizon_h),
                                 freq=f"{step_h}h")
     r0 = float(latest_row["body_r_au"])
     i0 = float(latest_row["inferred_irradiance_proxy"])
+    lon0 = float(latest_row["body_helio_lon_deg"])
+    phase0 = float(latest_row["phase_angle_deg"])
+    model_label = "persistence_r2"
+    if ml_specialist is not None:
+        model_label = "persistence_r2_plus_ml_residual"
+        scaler_mean = np.array(ml_specialist["scaler_mean"])
+        scaler_scale = np.array(ml_specialist["scaler_scale"])
+        coef = np.array(ml_specialist["coef"])
+        intercept = float(ml_specialist["intercept"])
 
     rows = []
     body_eph = body_eph.sort_values("timestamp")
     for t in t_forecast:
         idx = (body_eph["timestamp"] - t).abs().idxmin()
         r_t = float(body_eph.loc[idx, "r_au"])
-        i_pred = i0 * (r0 / r_t) ** 2 if r_t > 0 else float("nan")
+        lon_t = float(body_eph.loc[idx, "helio_lon_deg"])
+        i_persist = i0 * (r0 / r_t) ** 2 if r_t > 0 else float("nan")
+        i_pred = i_persist
+        residual_added = 0.0
+        if ml_specialist is not None and np.isfinite(i_persist) and i_persist > 0:
+            interval_h = (t - t0).total_seconds() / 3600.0
+            delta_lon = ((lon_t - lon0 + 180) % 360) - 180
+            feats = np.array([
+                np.log10(i0),
+                r_t - r0,
+                delta_lon,
+                0.0,            # phase angle delta — unknown at forecast time without observer geometry
+                interval_h,
+            ])
+            z = (feats - scaler_mean) / scaler_scale
+            residual_added = float(z @ coef + intercept)
+            i_pred = i_persist * (10.0 ** residual_added)
         rows.append({
             "forecast_for_timestamp": t,
             "horizon_h": int((t - t0).total_seconds() // 3600),
@@ -85,9 +111,11 @@ def forecast_one(latest_row: pd.Series, body_eph: pd.DataFrame,
             "anchor_inferred_irradiance_proxy": i0,
             "anchor_r_au": r0,
             "predicted_r_au": r_t,
-            "predicted_helio_lon_deg": float(body_eph.loc[idx, "helio_lon_deg"]),
+            "predicted_helio_lon_deg": lon_t,
+            "predicted_inferred_irradiance_proxy_persistence": i_persist,
+            "ml_residual_log10": residual_added,
             "predicted_inferred_irradiance_proxy": i_pred,
-            "model": "persistence_r2",
+            "model": model_label,
         })
     return pd.DataFrame(rows)
 
@@ -138,6 +166,24 @@ def main() -> int:
         print("[stage-6] missing irradiance or ephemeris", file=sys.stderr)
         return 1
 
+    ml_specialists: dict = {}
+    try:
+        files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
+        if "forecast/ml_residual.json" in files:
+            ml_path = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                                       filename="forecast/ml_residual.json",
+                                       token=token)
+            ml_data = json.loads(Path(ml_path).read_text())
+            if ml_data.get("status") == "trained":
+                ml_specialists = ml_data.get("specialists", {})
+                print(f"[stage-6] ML residual specialists available for: "
+                      f"{list(ml_specialists.keys())}")
+            else:
+                print(f"[stage-6] ML residual gated ({ml_data.get('status')}); "
+                      "using persistence baseline only")
+    except Exception as e:
+        print(f"[stage-6] ml_residual load failed: {e}", file=sys.stderr)
+
     eph_long = eph_long.copy()
     eph_long["timestamp"] = pd.to_datetime(eph_long["timestamp"]).dt.tz_localize(None)
     irr = irr.copy()
@@ -156,7 +202,8 @@ def main() -> int:
         body_eph = eph_long[eph_long["body"] == lr["body"]]
         if body_eph.empty:
             continue
-        fc = forecast_one(lr, body_eph, HORIZON_HOURS, STEP_HOURS)
+        spec = ml_specialists.get(lr["body"])
+        fc = forecast_one(lr, body_eph, HORIZON_HOURS, STEP_HOURS, ml_specialist=spec)
         forecasts.append(fc)
     if not forecasts:
         print("[stage-6] no forecasts produced", file=sys.stderr)
