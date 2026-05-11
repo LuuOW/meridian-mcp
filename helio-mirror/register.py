@@ -30,7 +30,7 @@ import pandas as pd
 from astropy.io import fits
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
-from targets import BODIES, PERIHELIA
+from targets import BODIES, PERIHELIA, SPACECRAFT
 
 REPO_ID = "luuow/meridian-helio-mirror"
 PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
@@ -71,10 +71,12 @@ def load_ephemeris_long(token: str) -> pd.DataFrame:
         return pd.DataFrame()
 
     rows = []
+    sc_safe_lookup = {sc.replace("/", "_").replace(" ", "_"): sc for sc in SPACECRAFT}
     for f in eph_files:
         path = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
                                filename=f, token=token)
         body = Path(f).name.replace(suffix, "")
+        body = sc_safe_lookup.get(body, body)
         df = pd.read_parquet(path)
         df["timestamp"] = pd.to_datetime(df["time_jd"], unit="D", origin="julian")
         df["body"] = body
@@ -158,6 +160,59 @@ def _resolve_body(targname_raw: str, source_file: str) -> str | None:
             if p == body_name:
                 return body_name
     return None
+
+
+def register_probes(token: str, eph: pd.DataFrame) -> pd.DataFrame:
+    """Per HSO spacecraft (SolO / STEREO-A / Wind / ACE / DSCOVR / MAVEN),
+    join its B-field samples to its own ephemeris position via merge_asof.
+    Returns a long-form frame keyed by (spacecraft, timestamp)."""
+    files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
+    suffix = f"_mag_{PERIHELION}.parquet"
+    probe_files = [f for f in files if f.startswith("probes/") and f.endswith(suffix)]
+    if not probe_files:
+        return pd.DataFrame()
+
+    chunks: list[pd.DataFrame] = []
+    for f in probe_files:
+        sc_safe = Path(f).name.replace(suffix, "")
+        sc = sc_safe.replace("_", "-") if sc_safe not in SPACECRAFT else sc_safe
+        if sc not in SPACECRAFT:
+            for k in SPACECRAFT:
+                if k.replace("/", "_").replace(" ", "_") == sc_safe:
+                    sc = k
+                    break
+        sc_eph = eph[eph["body"] == sc]
+        if sc_eph.empty:
+            print(f"[stage-2/probes] no ephemeris for {sc}; skipped {f}")
+            continue
+        try:
+            path = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                                    filename=f, token=token)
+            df = pd.read_parquet(path)
+        except Exception as e:
+            print(f"[stage-2/probes] {f}: {e}", file=sys.stderr)
+            continue
+        df["time"] = pd.to_datetime(df["time"]).dt.tz_localize(None)
+        df["spacecraft"] = sc
+        df = df.sort_values("time")
+        sc_eph_sorted = sc_eph.sort_values("timestamp")
+        joined = pd.merge_asof(
+            df, sc_eph_sorted,
+            left_on="time", right_on="timestamp",
+            direction="nearest", tolerance=pd.Timedelta("1h"),
+        )
+        chunks.append(joined[[
+            "time", "spacecraft", "B_R", "B_T", "B_N",
+            "x_au", "y_au", "z_au", "r_au",
+            "helio_lon_deg", "helio_lat_deg", "carrington_lon_deg",
+        ]].rename(columns={"time": "timestamp"}))
+    if not chunks:
+        return pd.DataFrame()
+    out = pd.concat(chunks, ignore_index=True).sort_values(["spacecraft", "timestamp"])
+    print(f"[stage-2] probes_registered: {len(out)} samples across "
+          f"{out['spacecraft'].nunique()} spacecraft")
+    print(out.groupby("spacecraft")["r_au"].agg(["count", "min", "max"]).to_string())
+    return out
 
 
 def register_jwst(token: str, eph: pd.DataFrame) -> pd.DataFrame:
@@ -252,6 +307,13 @@ def main() -> int:
                              compression="snappy")
     else:
         print("[stage-2] no JWST observations registered")
+
+    probes_reg = register_probes(token, eph)
+    if not probes_reg.empty:
+        probes_reg.to_parquet(out_dir / f"probes_registered_{PERIHELION}.parquet",
+                                compression="snappy")
+    else:
+        print("[stage-2] no HSO probe data registered")
 
     from hf_push import push_folder
     push_folder(api, REPO_ID, out_dir, "coords",
