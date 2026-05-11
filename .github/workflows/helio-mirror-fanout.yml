@@ -120,6 +120,17 @@ jobs:
         continue-on-error: true   # may stay gated (insufficient pairs) — not a fanout failure
         run: python ml_residual.py
 
+      - name: Null tests across all perihelia
+        working-directory: helio-mirror
+        continue-on-error: true
+        env:
+          HELIO_NULL_SHUFFLES: "100"
+        run: |
+          for P in E20 E21 E22 E23 E24; do
+            echo "=== null_test loose $P ==="
+            HELIO_PERIHELION=$P HELIO_NULL_MODE=loose python null_test.py || true
+          done
+
       - name: Refresh dataset_status.json
         working-directory: helio-mirror
         continue-on-error: true
