@@ -30,7 +30,7 @@ pyspedas, all time-overlapping every PSP perihelion.
   from chance.** With 1500+ events at that tolerance, virtually any
   pairing matches.
 
-### 0a. Physics-aware tolerances (stage-4-tight) — ✓ first real signal
+### 0a. Physics-aware tolerances (stage-4-tight) — ⟳ tighter but still null-saturated on E20
 
 Replaces constant ±20°/±24h with per-pair-type bands scaled by
 predicted Parker transit (`coincide_tight.py`). E20 result: **212
@@ -39,8 +39,35 @@ loose). The big improvement comes from L1↔L1 pairs (transit ~0) getting
 ±5°/0.5h, and STEREO-A↔L1 getting ±10°/2h — both are properly
 discriminated now.
 
-- **Next step:** Run `null_test` against the tight output to verify
-  these 212 matches actually beat null at the tightened bands.
+**Null result on E20 (tight mode):** observed=212, null_mean=226.7,
+z=-5.88, p=1.0 — still indistinguishable from null. PVI > 3 threshold
+admits ~1500 events per perihelion across 5 probes; that's dense enough
+that even tight tolerances saturate. Match-count alone won't separate
+signal from chance at this event density.
+
+### 0b. Reduce PVI noise floor — ✓ rare-event detection is the path forward
+
+The honest implication of the null results: we need fewer, rarer events
+to escape the saturation, OR a correlation metric that goes beyond
+"any event within tolerance" (e.g., amplitude correlation, peak-to-peak
+matching).
+
+- **Concrete next step:** raise PVI threshold to 5 (from 3) and re-run.
+  This drops the event count by ~10× per spacecraft; null saturation
+  should drop with it. Then re-test.
+- **Alternative:** integrate WISPR (CME-front catalogue, not pyspedas)
+  for rare events that DO advect predictably.
+
+### 0c. E21 shows different signal — investigate
+
+While E20 loose-mode is null-saturated, **E21 raw output shows median
+match score 0.97 with PSP→outer-probe pairs** (DSCOVR→ACE: 206,
+PSP→DSCOVR: 71, PSP→ACE: 61). This is a candidate real signal —
+E21's PSP geometry happened to line up with L1 monitors at a
+Parker-spiral-friendly heliographic longitude.
+
+- **Next step:** Run `null_test` on E21 to confirm whether the 0.97
+  median is above null at this perihelion's event distribution.
 
 ### 0b. Inner-heliosphere → outer-probe Parker transit exceeds perihelion window
 
