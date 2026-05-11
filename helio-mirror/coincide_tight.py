@@ -34,7 +34,10 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
-from coincide import wrap_180, V_SW_KM_PER_SEC, AU_KM, OMEGA_SUN_DEG_PER_DAY
+from coincide import (
+    AU_KM, OMEGA_SUN_DEG_PER_DAY, V_SW_KM_PER_SEC,
+    attach_per_event_vsw, load_all_plasma, target_vsw_at, wrap_180,
+)
 from gates import Gate
 from targets import PERIHELIA
 
@@ -63,7 +66,12 @@ def load(token: str, name: str) -> pd.DataFrame:
     return pd.read_parquet(p)
 
 
-def find_tight(events: pd.DataFrame, eph_long: pd.DataFrame) -> pd.DataFrame:
+def find_tight(events: pd.DataFrame, eph_long: pd.DataFrame,
+                plasma_by_sc: dict[str, pd.DataFrame] | None = None) -> pd.DataFrame:
+    """Same v_sw model as the loose find_probe_coincidences: source+target
+    average via plasma_by_sc, fall back to event row v_sw, fall back to
+    V_SW_KM_PER_SEC constant. Without this the 'tight' track was at
+    constant v=400 while 'loose' uses averaging — inconsistent."""
     if events.empty:
         return pd.DataFrame()
     spacecrafts = events["spacecraft"].dropna().unique().tolist()
@@ -71,6 +79,7 @@ def find_tight(events: pd.DataFrame, eph_long: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
     events = events.dropna(subset=["r_au", "helio_lon_deg", "spacecraft"]).copy()
     events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
+    has_per_event_vsw = "v_sw_km_s" in events.columns
 
     rows: list[dict] = []
     for src in spacecrafts:
@@ -88,14 +97,27 @@ def find_tight(events: pd.DataFrame, eph_long: pd.DataFrame) -> pd.DataFrame:
                 r_src = float(ev["r_au"])
                 t_src = pd.Timestamp(ev["timestamp"])
                 lon_src = float(ev["helio_lon_deg"])
+                v_src = (float(ev["v_sw_km_s"])
+                          if has_per_event_vsw and pd.notna(ev.get("v_sw_km_s"))
+                          else V_SW_KM_PER_SEC)
                 idx = (tgt_eph["timestamp"] - t_src).abs().idxmin()
                 r_tgt = float(tgt_eph.loc[idx, "r_au"])
                 if not np.isfinite(r_src) or not np.isfinite(r_tgt):
                     continue
                 dr_km = (r_tgt - r_src) * AU_KM
-                dt_h = dr_km / V_SW_KM_PER_SEC / 3600.0
-                if dt_h < 0:
+                # First-pass dt with source v_sw; then look up target v_sw
+                # at predicted arrival and average.
+                dt_h_first = dr_km / v_src / 3600.0
+                if dt_h_first < 0:
                     continue
+                if plasma_by_sc is not None and tgt in plasma_by_sc:
+                    v_tgt_series = target_vsw_at(plasma_by_sc, tgt,
+                                                    pd.Series([t_src + pd.Timedelta(hours=dt_h_first)]))
+                    v_tgt = float(v_tgt_series.iloc[0]) if not v_tgt_series.empty else float("nan")
+                else:
+                    v_tgt = float("nan")
+                v_avg = (v_src + v_tgt) / 2.0 if np.isfinite(v_tgt) else v_src
+                dt_h = dr_km / v_avg / 3600.0
                 t_tol, lon_tol = per_pair_tolerance(dt_h)
                 t_arrival = t_src + pd.Timedelta(hours=dt_h)
                 lon_tgt_at_arr = float(
@@ -127,6 +149,7 @@ def find_tight(events: pd.DataFrame, eph_long: pd.DataFrame) -> pd.DataFrame:
                     "target_r_au": r_tgt, "target_lon_at_arrival_deg": lon_tgt_at_arr,
                     "predicted_arrival_timestamp": t_arrival,
                     "advection_lead_hours": dt_h,
+                    "advection_v_sw_km_s": v_avg,
                     "delta_lon_deg": d_lon,
                     "t_tolerance_hours": t_tol,
                     "lon_tolerance_deg": lon_tol,
@@ -180,7 +203,12 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     eph_long = eph_long.copy()
     eph_long["timestamp"] = pd.to_datetime(eph_long["timestamp"]).dt.tz_localize(None)
 
-    out = find_tight(events, eph_long)
+    # Same v_sw model as loose stage 4 (otherwise this 'tight' track is
+    # at constant v=400 while the loose track averages plasma — apples vs
+    # oranges).
+    events = attach_per_event_vsw(events, token)
+    plasma_by_sc = load_all_plasma(token)
+    out = find_tight(events, eph_long, plasma_by_sc)
     matched = (out[out["matched"]] if not out.empty else pd.DataFrame())
     n_matched = int(len(matched))
     n_total = int(len(out))

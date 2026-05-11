@@ -107,13 +107,13 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
 
     # Use the SAME v_sw model as the live run, otherwise the null
     # distribution is at constant v_sw while observed uses real plasma —
-    # apples-to-oranges. Attach v_sw + load plasma table.
+    # apples-to-oranges. Attach v_sw + load plasma table for both modes.
     events = attach_per_event_vsw(events, token)
-    plasma_by_sc = load_all_plasma(token) if MODE == "loose" else {}
+    plasma_by_sc = load_all_plasma(token)
 
     def _call(ev: pd.DataFrame) -> pd.DataFrame:
         if MODE == "tight":
-            return find_tight(ev, eph_long)
+            return find_tight(ev, eph_long, plasma_by_sc)
         return find_probe_coincidences(ev, eph_long, plasma_by_sc)
 
     # Observed match count (re-derived to verify against stage-4 output)
