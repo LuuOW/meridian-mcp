@@ -100,35 +100,46 @@ def fetch_dscovr_fc(t_start: str, t_stop: str) -> pd.DataFrame:
 
 
 def fetch_stereoa_plastic(t_start: str, t_stop: str) -> pd.DataFrame:
+    # Only valid datatype is "1min" per pyspedas; level="l2".
     pytplot.del_data("*")
     _safe_load("stereo.plastic", pyspedas.stereo.plastic,
-               probe="a", trange=[t_start, t_stop], time_clip=True)
+               probe="a", trange=[t_start, t_stop],
+               datatype="1min", level="l2", time_clip=True)
     df, _ = _extract_speed_from_vec([
-        "proton_bulk_speed", "Vp", "STA_PLASTIC_Vp", "proton_bulk_speed_v",
-        "proton_speed",
+        "proton_bulk_speed", "STA_L2_PLA_1DMax_speed", "Vp", "proton_speed",
     ])
     pytplot.del_data("*")
     return df
 
 
 def fetch_solo_swa(t_start: str, t_stop: str) -> pd.DataFrame:
+    # Default datatype is pas-eflux (energy flux). We want bulk moments —
+    # try pas-grnd-mom first, fall back to others if upstream renames.
     pytplot.del_data("*")
     _safe_load("solo.swa", pyspedas.solo.swa,
-               trange=[t_start, t_stop], time_clip=True)
+               trange=[t_start, t_stop], datatype="pas-grnd-mom",
+               level="l2", time_clip=True)
     df, _ = _extract_speed_from_vec([
-        "V_RTN", "solo_swa_pas_V_RTN", "Vp", "proton_bulk_speed",
+        "V_RTN", "solo_swa_pas_grnd_mom_V_RTN", "Vp",
+        "solo_swa_pas_grnd_mom_V_SRF", "proton_bulk_speed",
     ])
     pytplot.del_data("*")
     return df
 
 
 def fetch_psp_spi(t_start: str, t_stop: str) -> pd.DataFrame:
+    # sf00_l3_mom = SPI proton distribution moments. tplot vars often
+    # follow the pattern "psp_swp_spi_<datatype>_<quantity>".
     pytplot.del_data("*")
     _safe_load("psp.spi", pyspedas.psp.spi,
-               trange=[t_start, t_stop], datatype="sf00_l3_mom", time_clip=True)
+               trange=[t_start, t_stop], datatype="sf00_l3_mom",
+               level="l3", time_clip=True)
     df, _ = _extract_speed_from_vec([
-        "psp_spi_VEL_RTN_SUN", "VEL_RTN_SUN", "psp_spi_VEL_SC",
+        "psp_swp_spi_sf00_l3_mom_VEL_RTN_SUN",
         "psp_swp_spi_sf00_VEL_RTN_SUN",
+        "psp_spi_VEL_RTN_SUN", "VEL_RTN_SUN",
+        "psp_swp_spi_sf00_l3_mom_VEL_SC",
+        "psp_spi_VEL_SC",
     ])
     pytplot.del_data("*")
     return df
