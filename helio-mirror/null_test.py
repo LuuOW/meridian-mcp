@@ -26,6 +26,7 @@ import pandas as pd
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
 from coincide import find_probe_coincidences
+from coincide_tight import find_tight
 from gates import Gate
 from targets import PERIHELIA
 
@@ -33,6 +34,7 @@ REPO_ID = "luuow/meridian-helio-mirror"
 PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
 N_SHUFFLES = int(os.environ.get("HELIO_NULL_SHUFFLES", "100"))
 RNG_SEED = int(os.environ.get("HELIO_NULL_SEED", "42"))
+MODE = os.environ.get("HELIO_NULL_MODE", "loose")   # "loose" or "tight"
 
 
 def load(token: str, name: str) -> pd.DataFrame:
@@ -96,8 +98,11 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     eph_long = eph_long.copy()
     eph_long["timestamp"] = pd.to_datetime(eph_long["timestamp"]).dt.tz_localize(None)
 
+    find_fn = find_tight if MODE == "tight" else find_probe_coincidences
+    print(f"[null_test] mode={MODE} ({'physics-aware per-pair tolerances' if MODE == 'tight' else 'constant ±20°/±24h'})")
+
     # Observed match count (re-derived to verify against stage-4 output)
-    obs = find_probe_coincidences(events, eph_long)
+    obs = find_fn(events, eph_long)
     obs_matched = int(obs["matched"].sum()) if not obs.empty else 0
     obs_total_pairs = int(len(obs))
     print(f"[null_test] {PERIHELION} observed: {obs_matched} matched / "
@@ -110,7 +115,7 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     null_counts: list[int] = []
     for i in range(N_SHUFFLES):
         shuffled = shuffle_timestamps(events, rng)
-        null_coinc = find_probe_coincidences(shuffled, eph_long)
+        null_coinc = find_fn(shuffled, eph_long)
         null_matched = int(null_coinc["matched"].sum()) if not null_coinc.empty else 0
         null_counts.append(null_matched)
         if (i + 1) % 10 == 0:
@@ -126,6 +131,7 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
 
     result = {
         "perihelion": PERIHELION,
+        "mode": MODE,
         "observed_matched": obs_matched,
         "observed_total_pairs": obs_total_pairs,
         "n_events_total": int(len(events)),
@@ -148,11 +154,12 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
 
     out_dir = Path("helio_cache/events")
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"null_test_{PERIHELION}.json"
+    name_suffix = "" if MODE == "loose" else f"_{MODE}"
+    out_path = out_dir / f"null_test{name_suffix}_{PERIHELION}.json"
     out_path.write_text(json.dumps(result, indent=2))
     from hf_push import push as _push
-    _push(api, REPO_ID, out_path, f"events/null_test_{PERIHELION}.json",
-          f"null_test: {N_SHUFFLES} shuffles for {PERIHELION} "
+    _push(api, REPO_ID, out_path, f"events/{out_path.name}",
+          f"null_test ({MODE}): {N_SHUFFLES} shuffles for {PERIHELION} "
           f"(z={z_score:.2f}, p={p_value:.3f})")
     gate.n_inputs = int(len(events))
     gate.n_outputs = obs_matched
