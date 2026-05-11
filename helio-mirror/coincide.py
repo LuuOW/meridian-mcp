@@ -190,7 +190,7 @@ def find_probe_coincidences(events: pd.DataFrame,
     if len(spacecrafts) < 2:
         return pd.DataFrame()
     events = events.dropna(subset=["r_au", "helio_lon_deg", "spacecraft"]).copy()
-    events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
+    events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None).astype("datetime64[ns]")
     if "v_sw_km_s" not in events.columns:
         events["v_sw_km_s"] = np.nan
     if "pvi_tau100s" not in events.columns:
@@ -198,7 +198,7 @@ def find_probe_coincidences(events: pd.DataFrame,
 
     chunks: list[pd.DataFrame] = []
     eph_long = eph_long.copy()
-    eph_long["timestamp"] = pd.to_datetime(eph_long["timestamp"]).dt.tz_localize(None)
+    eph_long["timestamp"] = pd.to_datetime(eph_long["timestamp"]).dt.tz_localize(None).astype("datetime64[ns]")
 
     for src in spacecrafts:
         src_events = events[events["spacecraft"] == src].copy()
@@ -252,8 +252,9 @@ def find_probe_coincidences(events: pd.DataFrame,
             df = df[df["advection_lead_hours"] >= 0].reset_index(drop=True)  # target outside
             if df.empty:
                 continue
-            df["predicted_arrival_timestamp"] = df["timestamp"] + pd.to_timedelta(
-                df["advection_lead_hours"], unit="h")
+            df["predicted_arrival_timestamp"] = (
+                df["timestamp"] + pd.to_timedelta(df["advection_lead_hours"], unit="h")
+            ).astype("datetime64[ns]")
 
             # 2) lon_tgt_at_arrival via merge_asof on predicted_arrival_timestamp
             df = df.sort_values("predicted_arrival_timestamp").reset_index(drop=True)
