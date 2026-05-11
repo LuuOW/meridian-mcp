@@ -1,0 +1,32 @@
+name: helio-mirror-ml-residual
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ml-residual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: helio-mirror/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r helio-mirror/requirements.txt
+          pip install scikit-learn==1.5.2
+
+      - name: Train per-body ML residual specialists
+        working-directory: helio-mirror
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python ml_residual.py
