@@ -362,6 +362,13 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
 
     probe_matched = (probe_coincidences[probe_coincidences["matched"]]
                        if not probe_coincidences.empty else pd.DataFrame())
+    # Diagnostic: what v_sw values did the model actually use?
+    if not probe_coincidences.empty and "advection_v_sw_km_s" in probe_coincidences.columns:
+        median_v_sw_used = float(probe_coincidences["advection_v_sw_km_s"].median())
+        n_real_vsw = int((probe_coincidences["advection_v_sw_km_s"] != V_SW_KM_PER_SEC).sum())
+    else:
+        median_v_sw_used = V_SW_KM_PER_SEC
+        n_real_vsw = 0
     summary = {
         "v_sw_km_s": V_SW_KM_PER_SEC,
         "lon_tolerance_deg": LON_TOLERANCE_DEG,
@@ -388,6 +395,9 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
             .size().reset_index(name="n").to_dict(orient="records")),
         "median_probe_match_score": (None if probe_matched.empty else
                                        float(probe_matched["match_score"].median())),
+        "median_v_sw_km_s_used": median_v_sw_used,
+        "n_events_with_real_v_sw": n_real_vsw,
+        "v_sw_default_km_s": V_SW_KM_PER_SEC,
     }
     summary_path = out_dir / f"coincidences_summary_{PERIHELION}.json"
     summary_path.write_text(json.dumps(summary, indent=2, default=str))
