@@ -22,6 +22,7 @@ jobs:
   perihelion:
     strategy:
       fail-fast: false
+      max-parallel: 1   # HF Hub commit API rate-limits parallel uploads to the same dataset (429)
       matrix:
         perihelion: [E20, E21, E22, E23, E24]
     runs-on: ubuntu-latest
