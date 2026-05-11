@@ -68,6 +68,18 @@ def emit_perihelion(tag: str, latest: dict | None, summary: dict | None,
         pair_strs = ", ".join(f"{p['source_spacecraft']}→{p['target_spacecraft']}: {p['n']}"
                                for p in sorted(pairs, key=lambda x: -x.get("n", 0)))
         lines.append(f"- Pair breakdown: {pair_strs}.")
+
+    # Null test verdict (if it's been run for this perihelion)
+    null_data = summary.get("__null_test__") if isinstance(summary, dict) else None
+    if null_data:
+        verdict = null_data.get("verdict", "?")
+        verdict_marker = ("**SIGNIFICANT**" if verdict == "significant"
+                           else "marginal" if verdict == "marginal"
+                           else "_indistinguishable from null_")
+        lines.append(f"- Null test (n={null_data.get('n_shuffles')}, mode={null_data.get('mode','loose')}): "
+                      f"observed {null_data.get('observed_matched')} vs null mean "
+                      f"{null_data.get('null_matches_mean'):.1f} · z={null_data.get('z_score')} · "
+                      f"p={null_data.get('p_value_one_sided')} → {verdict_marker}.")
     if gates:
         passed = sum(1 for g in gates.values() if g.get("ok"))
         lines.append(f"- Stage gates: **{passed}/{len(gates)}** pass.")
@@ -114,7 +126,11 @@ def main() -> int:
         latest = fetch_json(token, latest_name, files)
         if latest is None and tag == status.get("perihelia_processed", [None])[-1]:
             latest = fetch_json(token, "forecast/latest.json", files)
-        summary = fetch_json(token, f"events/coincidences_summary_{tag}.json", files)
+        summary = fetch_json(token, f"events/coincidences_summary_{tag}.json", files) or {}
+        # Stitch null_test in via __null_test__ key so emit_perihelion can read it
+        null_data = fetch_json(token, f"events/null_test_{tag}.json", files)
+        if null_data:
+            summary["__null_test__"] = null_data
         gates = gates_per.get(tag, {})
         section = emit_perihelion(tag, latest, summary, gates)
         sections.append(section)
