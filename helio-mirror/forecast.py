@@ -260,6 +260,22 @@ def main() -> int:
     n_probe_matched = (int(probe_coincidences["matched"].sum())
                         if not probe_coincidences.empty and "matched" in probe_coincidences.columns
                         else 0)
+    n_probe_candidate = int(len(probe_coincidences))
+
+    probe_pairs_by_pair: list[dict] = []
+    median_probe_match_score: float | None = None
+    try:
+        files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
+        sum_name = f"events/coincidences_summary_{PERIHELION}.json"
+        if sum_name in files:
+            sp = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                                   filename=sum_name, token=token)
+            sdata = json.loads(Path(sp).read_text())
+            probe_pairs_by_pair = sdata.get("probe_pairs_by_pair") or []
+            median_probe_match_score = sdata.get("median_probe_match_score")
+    except Exception as e:
+        print(f"[stage-6] coincidences_summary load skipped: {e}", file=sys.stderr)
+
     latest = {
         "perihelion": PERIHELION,
         "model": ("persistence_r2_plus_ml_residual" if ml_specialists else "persistence_r2"),
@@ -269,7 +285,10 @@ def main() -> int:
         "psp": psp_summary,
         "probes": probe_summaries,
         "n_total_psp_events": n_total_events,
+        "n_probe_coincidences_candidate": n_probe_candidate,
         "n_probe_coincidences_matched": n_probe_matched,
+        "probe_pairs_by_pair": probe_pairs_by_pair,
+        "median_probe_match_score": median_probe_match_score,
         "bodies": {},
         "caveats": [
             "Forecast is per-body persistence × geometric r² correction; ML residual applied when a per-body specialist is trained.",
