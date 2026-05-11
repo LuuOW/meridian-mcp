@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
+from gates import Gate
 from targets import PERIHELIA
 
 REPO_ID = "luuow/meridian-helio-mirror"
@@ -159,6 +160,12 @@ def main() -> int:
         print(f"ERROR: unknown perihelion {PERIHELION}", file=sys.stderr)
         return 1
 
+    with Gate("forecast", PERIHELION, REPO_ID, api=api) as g:
+        rc = _main_inner(token, api, g)
+    return rc
+
+
+def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     irr = load(token, f"irradiance/delivered_{PERIHELION}.parquet")
     eph_long = load(token, f"coords/ephemeris_long_{PERIHELION}.parquet")
     coinc = load(token, f"events/coincidences_{PERIHELION}.parquet", required=False)
@@ -353,6 +360,19 @@ def main() -> int:
                                   f"latest_{PERIHELION}.json"])
     print(f"[stage-6] pushed forecast/ for {PERIHELION} as one commit")
     print("[stage-6] done.")
+
+    gate.n_inputs = int(len(irr))
+    gate.n_outputs = int(len(forecast))
+    gate.notes = {
+        "n_bodies_forecast": int(forecast["body"].nunique()),
+        "model": latest["model"],
+        "n_probes_with_data": len(probe_summaries),
+        "n_probe_coincidences_matched": n_probe_matched,
+        "ml_residual_trained": bool(ml_specialists),
+    }
+    if gate.n_outputs == 0:
+        gate.ok = False
+        gate.reason = "0 forecast rows produced"
     return 0
 
 
