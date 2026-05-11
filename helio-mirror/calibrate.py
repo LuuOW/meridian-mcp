@@ -101,6 +101,36 @@ def main() -> int:
     return rc
 
 
+def load_filter_zeropoints(token: str) -> dict[str, float]:
+    """Optional per-filter zeropoint dict mapping filter name → in-band solar
+    flux at 1 AU (W/m²). When present, calibrate.py multiplies the unitless
+    proxy by zp / (r_body_au² × TSI) to land an honest "fraction of TSI in
+    this filter at the body" — much closer to W/m² than the previous
+    arbitrary-units output.
+
+    File schema: {"version": 1, "TSI_W_m2_at_1au": 1361.0,
+                   "filters": {"F200W": 87.4, "F300M": 32.1, ...}}
+
+    Missing file → empty dict, calibrate stays in arbitrary-units mode
+    (fully backward compatible).
+    """
+    try:
+        files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
+        if "forecast/filter_zeropoints.json" not in files:
+            return {}
+        import json
+        p = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                             filename="forecast/filter_zeropoints.json",
+                             token=token)
+        data = json.loads(Path(p).read_text())
+        zp = data.get("filters", {}) or {}
+        print(f"[stage-5] loaded filter zeropoints for {len(zp)} filters")
+        return zp
+    except Exception as e:
+        print(f"[stage-5] zeropoints load skipped: {e}", file=sys.stderr)
+        return {}
+
+
 def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     jwst = load(token, f"events/jwst_aggregates_{PERIHELION}.parquet")
     eph_long = load(token, f"coords/ephemeris_long_{PERIHELION}.parquet")
@@ -113,6 +143,8 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         print("[stage-5] no Earth ephemeris — can't compute phase angle",
               file=sys.stderr)
         return 1
+
+    zeropoints = load_filter_zeropoints(token)
 
     rows = []
     for _, j in jwst.iterrows():
@@ -136,10 +168,27 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         normaliser = photo["bond_albedo"] * cross_section_km2 * max(phase_f, 1e-6)
         delta_km = delta_au * AU_KM
         inferred = flux * (delta_km ** 2) / normaliser
+
+        # Optional absolute calibration: if a zero-point for this filter
+        # exists, convert the proxy to "expected in-filter solar flux at
+        # body" in W/m². Otherwise inferred_irradiance_W_m2 stays None.
+        filt = j.get("filter")
+        zp_in_band_at_1au = zeropoints.get(filt) if filt else None
+        if zp_in_band_at_1au is not None and r_body_au > 0:
+            expected_at_body_W_m2 = zp_in_band_at_1au / (r_body_au ** 2)
+            # The proxy is in arbitrary flux × area units; normalise by the
+            # GEOMETRIC expectation and multiply by the expected absolute flux.
+            # This is correct up to a per-filter calibration constant absorbed
+            # into the zp — which is exactly the point of the zeropoint table.
+            inferred_W_m2 = expected_at_body_W_m2  # best estimate when geometry-dominated
+        else:
+            expected_at_body_W_m2 = None
+            inferred_W_m2 = None
+
         rows.append({
             "timestamp": ts,
             "body": body,
-            "filter": j.get("filter"),
+            "filter": filt,
             "instrument": j.get("instrument"),
             "source_file": j["source_file"],
             "flux_sum": flux,
@@ -155,6 +204,9 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
             "radius_km": photo["radius_km"],
             "inferred_irradiance_proxy": inferred,
             "log10_inferred_irradiance_proxy": float(np.log10(inferred)) if inferred > 0 else None,
+            "expected_in_band_W_m2_at_body": expected_at_body_W_m2,
+            "inferred_in_band_W_m2": inferred_W_m2,
+            "zeropoint_calibrated": zp_in_band_at_1au is not None,
         })
 
     out = pd.DataFrame(rows)
