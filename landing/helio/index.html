@@ -711,23 +711,38 @@ async function loadAll() {
       <p style="font-size:12px;margin:0;">perihelia: ${(s.perihelia_processed || []).map(p => `<span class="pill ok">${p}</span>`).join(" ") || "—"}</p>
       <p style="font-size:12px;margin:6px 0 0;">bodies: ${(s.bodies_with_data || []).map(b => `<span class="pill muted">${b}</span>`).join(" ")}</p>`;
   } catch { document.getElementById("status-mount").textContent = "(dataset_status.json not yet on HF)"; }
-  // Headline coincidence count, sourced from forecast/latest.json
+  // Headline coincidence count + per-pair breakdown, sourced from forecast/latest.json
   try {
     const matched = forecastData?.n_probe_coincidences_matched ?? 0;
+    const candidate = forecastData?.n_probe_coincidences_candidate ?? 0;
+    const score = forecastData?.median_probe_match_score;
+    const pairs = forecastData?.probe_pairs_by_pair || [];
     const probesN = Object.keys(forecastData?.probes || {}).length;
     const mount = document.getElementById("coinc-mount");
     mount.classList.remove("empty");
+    const pairRows = pairs.length
+      ? pairs
+          .slice()
+          .sort((a, b) => (b.n || 0) - (a.n || 0))
+          .map(p => `<tr><td style="padding:2px 12px 2px 0;">${p.source_spacecraft} → ${p.target_spacecraft}</td><td style="text-align:right;color:#1cab5d;">${p.n}</td></tr>`)
+          .join("")
+      : "";
+    const scoreLine = score != null
+      ? `<span style="color:#9aa0a6;">median match score</span> <strong>${Number(score).toFixed(2)}</strong>`
+      : "";
     if (matched === 0) {
       mount.innerHTML = `
         <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
-          <strong style="color:#9aa0a6;">0 matched coincidences</strong> across ${probesN} HSO probes this perihelion.<br>
+          <strong style="color:#9aa0a6;">0 matched coincidences</strong> across ${probesN} HSO probes this perihelion
+          ${candidate ? ` <span style="color:#666;">(${candidate} candidate pairs tested)</span>` : ""}.<br>
           That's expected at low data volume. Add more perihelia (run the fanout) or wider tolerance to see real cross-probe events.
         </div>`;
     } else {
       mount.innerHTML = `
         <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
-          <strong style="color:#1cab5d;">${matched} matched coincidences</strong> across ${probesN} HSO probes.<br>
-          Open the raw JSON below for the per-pair breakdown.
+          <strong style="color:#1cab5d;">${matched} matched coincidences</strong> across ${probesN} HSO probes
+          <span style="color:#666;">(of ${candidate} candidate pairs tested)</span>. ${scoreLine}
+          ${pairRows ? `<table style="margin-top:8px;border-collapse:collapse;">${pairRows}</table>` : ""}
         </div>`;
     }
   } catch {}
