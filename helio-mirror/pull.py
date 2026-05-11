@@ -99,7 +99,7 @@ def fetch_ephemeris(naif_id: str, t_start: str, t_stop: str, step: str = "1h") -
 
 def search_jwst(target_name: str, cap: int,
                 t_start: str | None = None, t_stop: str | None = None,
-                window_days: int = 90):
+                window_days: int = 365):
     """Find JWST L3 observations of target_name. If t_start/t_stop given,
     require the observation midpoint within ±window_days of either endpoint
     (so the JWST data is temporally close to the PSP perihelion of interest).
