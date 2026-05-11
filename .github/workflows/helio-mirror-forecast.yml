@@ -1,0 +1,39 @@
+name: helio-mirror-forecast
+
+on:
+  workflow_dispatch:
+    inputs:
+      perihelion:
+        description: "Perihelion window for forecast"
+        required: true
+        default: "E20"
+        type: choice
+        options: [E20, E21, E22, E23, E24]
+
+permissions:
+  contents: read
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: helio-mirror/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r helio-mirror/requirements.txt
+
+      - name: Forecast
+        working-directory: helio-mirror
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HELIO_PERIHELION: ${{ inputs.perihelion }}
+        run: python forecast.py
