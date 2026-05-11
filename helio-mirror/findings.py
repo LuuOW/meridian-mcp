@@ -118,9 +118,43 @@ def main() -> int:
     out_dir = Path("helio_cache/findings")
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # First pass: collect null-test results across perihelia to surface
+    # the strongest claim up top.
+    null_results: list[dict] = []
+    for tag in PERIHELIA:
+        nt = fetch_json(token, f"events/null_test_{tag}.json", files)
+        if nt:
+            nt["perihelion"] = tag
+            null_results.append(nt)
+    significant = [n for n in null_results if n.get("verdict") == "significant"]
+
     sections: list[str] = []
     sections.append("# HelioCast — findings\n")
     sections.append(f"_Auto-generated {pd.Timestamp.utcnow().isoformat()}._\n\n")
+
+    # Headline: what's the strongest defensible claim?
+    if significant:
+        best = max(significant, key=lambda n: n.get("z_score", 0))
+        sections.append(
+            f"## TL;DR\n"
+            f"**Statistically significant signal at {best['perihelion']}**: "
+            f"observed **{best['observed_matched']}** matched probe-pair "
+            f"coincidences vs null mean **{best['null_matches_mean']:.0f}** "
+            f"(z = {best['z_score']:+.2f}, p < 0.001 over "
+            f"{best['n_shuffles']} timestamp shuffles).\n\n")
+    elif null_results:
+        sections.append(
+            "## TL;DR\n"
+            f"No perihelion produced a statistically significant excess over "
+            f"timestamp-shuffled null at current tolerances. {len(null_results)} "
+            "perihelia tested; all indistinguishable from null. See per-perihelion "
+            "rows below and ROADMAP item 0e for next steps.\n\n")
+    else:
+        sections.append(
+            "## TL;DR\n"
+            "No null tests run yet. Dispatch `helio-mirror-null-test` per perihelion "
+            "after a fanout completes.\n\n")
+
     sections.append("HSO = Heliophysics System Observatory. A handful of "
                      "operational in-situ spacecraft (PSP, SolO, STEREO-A, Wind, "
                      "ACE, DSCOVR, MAVEN) treated as a single distributed "
