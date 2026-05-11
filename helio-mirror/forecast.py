@@ -224,15 +224,17 @@ def main() -> int:
     forecast.to_parquet(out_path, compression="snappy")
 
     psp_eph = eph_long[eph_long["body"] == "PSP"].sort_values("timestamp")
+    psp_candidates = load(token, f"events/psp_candidate_events_{PERIHELION}.parquet",
+                           required=False)
+    n_total_events = int(len(psp_candidates)) if not psp_candidates.empty else 0
     psp_summary = None
     if not psp_eph.empty:
         psp_summary = {
             "perihelion": PERIHELION,
             "r_au": float(psp_eph["r_au"].min()),
             "lon_deg": float(psp_eph.iloc[len(psp_eph) // 2]["helio_lon_deg"]),
-            "n_events": int(len(events)) if not events.empty else 0,
+            "n_events": n_total_events,
         }
-    n_total_events = int(len(events)) if not events.empty else 0
     latest = {
         "perihelion": PERIHELION,
         "model": ("persistence_r2_plus_ml_residual" if ml_specialists else "persistence_r2"),
