@@ -1,0 +1,34 @@
+name: helio-mirror-test-coincide
+
+# Synthetic-data sanity test for the vectorized find_probe_coincidences.
+# Runs in <1 min. Catches regressions in the inner-loop rewrite without
+# waiting for a real null-test run on HF data.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "helio-mirror/coincide.py"
+      - "helio-mirror/test_coincide.py"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal deps
+        run: pip install pandas numpy
+
+      - name: Run synthetic-data test
+        working-directory: helio-mirror
+        run: python test_coincide.py
