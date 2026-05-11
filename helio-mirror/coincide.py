@@ -151,12 +151,26 @@ def main() -> int:
     events = load(token, f"events/psp_candidate_events_{PERIHELION}.parquet")
     jwst = load(token, f"events/jwst_aggregates_{PERIHELION}.parquet")
     eph_long = load(token, f"coords/ephemeris_long_{PERIHELION}.parquet")
+    wispr_events = load(token, f"events/wispr_fronts_{PERIHELION}.parquet")
     if events.empty or jwst.empty or eph_long.empty:
         print("[stage-4] missing inputs — events/jwst/ephemeris not all present",
               file=sys.stderr)
         return 1
 
     events = events.copy()
+    events["event_kind"] = "psp_pvi"
+    if not wispr_events.empty:
+        wispr_events = wispr_events.copy()
+        wispr_events["event_kind"] = "wispr_front"
+        common = ["timestamp", "r_au", "helio_lon_deg", "helio_lat_deg",
+                  "carrington_lon_deg", "pvi_tau100s", "event_kind", "source_file"]
+        for c in common:
+            if c not in wispr_events.columns:
+                wispr_events[c] = np.nan
+        events = pd.concat([events[common + [c for c in events.columns if c not in common]],
+                             wispr_events[common + [c for c in wispr_events.columns if c not in common]]],
+                            ignore_index=True)
+        print(f"[stage-4] including {len(wispr_events)} WISPR fronts in event pool")
     events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
     jwst = jwst.copy()
     jwst["timestamp"] = pd.to_datetime(jwst["timestamp"]).dt.tz_localize(None)
