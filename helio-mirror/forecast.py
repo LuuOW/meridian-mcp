@@ -551,10 +551,19 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         if worst_impact > 0:
             worst_row = sub.iloc[sub["event_impact_factor"].argmax()]
             worst_kind = str(worst_row.get("event_worst_kind") or "")
+        # Instantaneous solar flux at the body — TSI/r². The kWh number
+        # below is this × η × 24h. Surface this so users can sanity-check
+        # against published TSI = 1361 W/m² at 1 AU.
+        anchor_r_au_val = float(anchor["anchor_r_au"])
+        tsi_at_body_now = TSI_W_M2 / (anchor_r_au_val ** 2) if anchor_r_au_val > 0 else 0.0
+        # If event impacts are non-zero in the next hour (h=1), the
+        # "right now" flux is scaled by that impact too.
+        first_hour_impact = float(sub.iloc[0]["event_impact_factor"]) if len(sub) else 0.0
+        tsi_at_body_adjusted = tsi_at_body_now * (1.0 - first_hour_impact)
         latest["bodies"][body] = {
             "filter": str(anchor["filter"]),
             "anchor_timestamp": anchor["anchor_timestamp"].isoformat(),
-            "anchor_r_au": float(anchor["anchor_r_au"]),
+            "anchor_r_au": anchor_r_au_val,
             "anchor_lon_deg": meta.get("anchor_lon_deg"),
             "anchor_inferred_irradiance_proxy":
                 float(anchor["anchor_inferred_irradiance_proxy"]),
@@ -562,6 +571,8 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
             "delta_au": meta.get("delta_au"),
             "expected_in_band_W_m2_at_body": meta.get("expected_in_band_W_m2_at_body"),
             "zeropoint_calibrated": meta.get("zeropoint_calibrated", False),
+            "tsi_W_m2_at_body": round(tsi_at_body_now, 2),
+            "tsi_W_m2_at_body_adjusted": round(tsi_at_body_adjusted, 2),
             "baseline_kwh_per_m2_per_day": round(baseline_day, 4),
             "adjusted_kwh_per_m2_per_day": round(adjusted_day, 4),
             "kwh_drop_pct": round(100.0 * (1.0 - adjusted_day / baseline_day), 2)
