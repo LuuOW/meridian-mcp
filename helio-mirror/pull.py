@@ -29,6 +29,7 @@ from astroquery.mast import Observations
 from huggingface_hub import HfApi, create_repo
 
 from gates import Gate
+from plasma import LOADER_MAP as PLASMA_LOADERS
 from probes import LOADER_MAP
 from targets import BODIES, PSP_NAIF, PERIHELIA, JWST_BODIES_DEFAULT, EPHEMERIS_BODIES_DEFAULT, SPACECRAFT, SPACECRAFT_DEFAULT
 
@@ -444,6 +445,63 @@ def pull_probes(api: HfApi, t_start: str, t_stop: str, out: Path,
     return ok
 
 
+def pull_plasma(api: HfApi, t_start: str, t_stop: str, out: Path,
+                 spacecraft: tuple[str, ...]) -> bool:
+    """Solar wind speed (|V|) per spacecraft for use as Parker-spiral
+    advection speed in stage 4. Best-effort: missing per-spacecraft data
+    is fine, coincide.py falls back to 400 km/s constant where v_sw isn't
+    available."""
+    ok = False
+    plasma_dir = out / "plasma"
+    plasma_dir.mkdir(parents=True, exist_ok=True)
+    status = {
+        "perihelion": PERIHELION,
+        "window": [t_start, t_stop],
+        "loaded": [], "empty": [], "failed": {},
+    }
+    for sc in spacecraft:
+        loader = PLASMA_LOADERS.get(sc)
+        if loader is None:
+            continue
+        try:
+            print(f"[plasma/{sc}] {t_start} → {t_stop}")
+            df = loader(t_start, t_stop)
+            if df.empty:
+                print(f"[plasma/{sc}] empty (no CDAWeb plasma in this window)")
+                status["empty"].append(sc)
+                continue
+            df["spacecraft"] = sc
+            safe = sc.replace("/", "_").replace(" ", "_")
+            df.to_parquet(plasma_dir / f"{safe}_speed_{PERIHELION}.parquet",
+                           compression="snappy")
+            ok = True
+            status["loaded"].append({"sc": sc, "samples": int(len(df)),
+                                       "median_v_sw_km_s": float(df["v_sw_km_s"].median())})
+            print(f"[plasma/{sc}] {len(df)} samples, median v_sw={df['v_sw_km_s'].median():.0f} km/s")
+        except Exception as e:
+            print(f"[plasma/{sc}] failed: {e}", file=sys.stderr)
+            status["failed"][sc] = str(e)[:200]
+            traceback.print_exc()
+
+    status_dir = out / "status"
+    status_dir.mkdir(parents=True, exist_ok=True)
+    (status_dir / f"plasma_status_{PERIHELION}.json").write_text(json.dumps(status, indent=2))
+    try:
+        push_subdir(api, status_dir, "status",
+                     f"stage-1: plasma_status {PERIHELION} "
+                     f"({len(status['loaded'])} loaded)",
+                     patterns=[f"plasma_status_{PERIHELION}.json"])
+    except Exception as e:
+        print(f"[plasma] status push failed: {e}", file=sys.stderr)
+
+    if ok:
+        push_subdir(api, plasma_dir, "plasma",
+                     f"stage-1: plasma speed bundle {PERIHELION}",
+                     patterns=[f"*_speed_{PERIHELION}.parquet"])
+        print(f"[plasma] folder-uploaded {len(status['loaded'])} plasma files")
+    return ok
+
+
 def pull_ephemeris(api: HfApi, t_start: str, t_stop: str, out: Path,
                     bodies: tuple[str, ...]) -> bool:
     ok = False
@@ -522,24 +580,27 @@ def _main_inner(token: str, api: HfApi, gate) -> int:
 
     psp_ok = pull_psp(api, t_start, t_stop, out)
     probes_ok = pull_probes(api, t_start, t_stop, out, SPACECRAFT_DEFAULT)
+    plasma_ok = pull_plasma(api, t_start, t_stop, out, SPACECRAFT_DEFAULT)
     eph_ok = pull_ephemeris(api, t_start, t_stop, out, EPHEMERIS_BODIES_DEFAULT)
     jwst_ok = pull_jwst(api, out, JWST_BODIES_DEFAULT, t_start, t_stop)
 
     print("\n[helio-mirror] stage-1 done.")
     print(f"  PSP:       {'OK' if psp_ok else 'FAIL'}")
     print(f"  HSO probes:{'OK' if probes_ok else 'FAIL'}")
+    print(f"  Plasma:    {'OK' if plasma_ok else 'FAIL'}")
     print(f"  Ephemeris: {'OK' if eph_ok else 'FAIL'}")
     print(f"  JWST:      {'OK' if jwst_ok else 'FAIL'}")
     gate.notes = {
         "psp": bool(psp_ok), "probes": bool(probes_ok),
+        "plasma": bool(plasma_ok),
         "ephemeris": bool(eph_ok), "jwst": bool(jwst_ok),
     }
-    n_ok = sum([psp_ok, probes_ok, eph_ok, jwst_ok])
-    gate.n_inputs = 4  # the four pull buckets
+    n_ok = sum([psp_ok, probes_ok, plasma_ok, eph_ok, jwst_ok])
+    gate.n_inputs = 5  # the five pull buckets (incl. plasma)
     gate.n_outputs = int(n_ok)
     if n_ok == 0:
         gate.ok = False
-        gate.reason = "all four pull buckets failed"
+        gate.reason = "all pull buckets failed"
         return 1
     return 0
 

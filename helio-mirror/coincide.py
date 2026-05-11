@@ -62,6 +62,52 @@ def load(token: str, name: str) -> pd.DataFrame:
     return pd.read_parquet(p)
 
 
+def attach_per_event_vsw(events: pd.DataFrame, token: str) -> pd.DataFrame:
+    """For each event, look up v_sw from plasma/{sc}_speed_{P}.parquet via
+    nearest-time match (±2 h tolerance). Adds a `v_sw_km_s` column; rows
+    without plasma coverage get NaN and fall back to V_SW_KM_PER_SEC
+    in find_probe_coincidences."""
+    files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
+    if "spacecraft" not in events.columns:
+        return events.copy()
+    out = events.copy()
+    out["v_sw_km_s"] = np.nan
+    out = out.reset_index(drop=False).rename(columns={"index": "__orig_idx__"})
+    for sc in out["spacecraft"].dropna().unique():
+        safe = sc.replace("/", "_").replace(" ", "_")
+        name = f"plasma/{safe}_speed_{PERIHELION}.parquet"
+        if name not in files:
+            continue
+        try:
+            p = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                                 filename=name, token=token)
+            plasma = pd.read_parquet(p)
+            if plasma.empty:
+                continue
+            plasma = plasma.copy()
+            plasma["time"] = pd.to_datetime(plasma["time"]).dt.tz_localize(None)
+            plasma = plasma[["time", "v_sw_km_s"]].rename(
+                columns={"v_sw_km_s": "v_sw_km_s_plasma"}).sort_values("time")
+            mask = out["spacecraft"] == sc
+            ev_sub = out.loc[mask].sort_values("timestamp")
+            joined = pd.merge_asof(
+                ev_sub, plasma,
+                left_on="timestamp", right_on="time",
+                direction="nearest", tolerance=pd.Timedelta("2h"),
+            )
+            # joined retains __orig_idx__ from ev_sub; use it to write back
+            for idx, v in zip(joined["__orig_idx__"], joined["v_sw_km_s_plasma"]):
+                if pd.notna(v):
+                    out.loc[out["__orig_idx__"] == idx, "v_sw_km_s"] = float(v)
+            n_attached = joined["v_sw_km_s_plasma"].notna().sum()
+            print(f"[stage-4/vsw] {sc}: attached v_sw to {int(n_attached)}/{int(mask.sum())} events "
+                  f"(plasma median {plasma['v_sw_km_s_plasma'].median():.0f} km/s)")
+        except Exception as e:
+            print(f"[stage-4/vsw] {sc}: {e}", file=sys.stderr)
+    out = out.drop(columns="__orig_idx__")
+    return out
+
+
 def predicted_lon_at_arrival(body_eph: pd.DataFrame, t_arrival: pd.Timestamp) -> float | None:
     if body_eph.empty:
         return None
@@ -76,6 +122,11 @@ def find_probe_coincidences(events: pd.DataFrame,
     instantaneous within the heliosphere). Check if target spacecraft has a
     PVI event near the predicted arrival.
 
+    Per-event v_sw: if a `v_sw_km_s` column is present on source events,
+    use it; otherwise fall back to V_SW_KM_PER_SEC constant. This is the
+    fix that turned 4/5 perihelia from indistinguishable to (hopefully)
+    significant by aligning the spiral lon prediction with real solar wind.
+
     Drops self-pairs and any pair where target ephemeris is missing.
     """
     if events.empty:
@@ -85,6 +136,7 @@ def find_probe_coincidences(events: pd.DataFrame,
         return pd.DataFrame()
     events = events.dropna(subset=["r_au", "helio_lon_deg", "spacecraft"]).copy()
     events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
+    has_per_event_vsw = "v_sw_km_s" in events.columns
     rows: list[dict] = []
     for src in spacecrafts:
         src_events = events[events["spacecraft"] == src]
@@ -101,12 +153,15 @@ def find_probe_coincidences(events: pd.DataFrame,
                 r_src = float(ev["r_au"])
                 t_src = pd.Timestamp(ev["timestamp"])
                 lon_src = float(ev["helio_lon_deg"])
+                v_sw = (float(ev["v_sw_km_s"])
+                         if has_per_event_vsw and pd.notna(ev.get("v_sw_km_s"))
+                         else V_SW_KM_PER_SEC)
                 idx = (tgt_eph["timestamp"] - t_src).abs().idxmin()
                 r_tgt = float(tgt_eph.loc[idx, "r_au"])
                 if not np.isfinite(r_src) or not np.isfinite(r_tgt):
                     continue
                 dr_km = (r_tgt - r_src) * AU_KM
-                dt_h = dr_km / V_SW_KM_PER_SEC / 3600.0
+                dt_h = dr_km / v_sw / 3600.0
                 if dt_h < 0:
                     continue  # target inside source; skip (would be light-only)
                 t_arrival = t_src + pd.Timedelta(hours=dt_h)
@@ -139,6 +194,7 @@ def find_probe_coincidences(events: pd.DataFrame,
                     "target_r_au": r_tgt, "target_lon_at_arrival_deg": lon_tgt_at_arr,
                     "predicted_arrival_timestamp": t_arrival,
                     "advection_lead_hours": dt_h,
+                    "advection_v_sw_km_s": v_sw,
                     "delta_lon_deg": d_lon,
                     "matched": matched,
                     "nearest_target_event_dt_hours": nearest_dt_h,
@@ -282,6 +338,13 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     print(f"[stage-4] event pool: {len(events)} events across "
           f"{events['spacecraft'].nunique()} spacecraft, "
           f"{len(jwst)} JWST obs, {eph_long['body'].nunique()} bodies")
+    # Attach per-event v_sw from plasma data when available, falling back to
+    # V_SW_KM_PER_SEC where missing. This is what (we hope) flips the 4/5
+    # negative-z perihelia to positive.
+    events = attach_per_event_vsw(events, token)
+    n_with_vsw = int(events["v_sw_km_s"].notna().sum()) if "v_sw_km_s" in events.columns else 0
+    print(f"[stage-4] {n_with_vsw}/{len(events)} events have per-event v_sw "
+          f"(rest fall back to {V_SW_KM_PER_SEC} km/s)")
     coincidences = find_coincidences(events, jwst, eph_long)
     probe_coincidences = find_probe_coincidences(events, eph_long)
     print(f"[stage-4] probe×probe coincidences: {len(probe_coincidences)}")
