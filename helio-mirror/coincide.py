@@ -147,6 +147,7 @@ def main() -> int:
     jwst = load(token, f"events/jwst_aggregates_{PERIHELION}.parquet")
     eph_long = load(token, f"coords/ephemeris_long_{PERIHELION}.parquet")
     wispr_events = load(token, f"events/wispr_fronts_{PERIHELION}.parquet")
+    sep_events = load(token, f"events/psp_sep_onsets_{PERIHELION}.parquet")
     if events.empty or jwst.empty or eph_long.empty:
         print("[stage-4] missing inputs — events/jwst/ephemeris not all present",
               file=sys.stderr)
@@ -154,18 +155,22 @@ def main() -> int:
 
     events = events.copy()
     events["event_kind"] = "psp_pvi"
-    if not wispr_events.empty:
-        wispr_events = wispr_events.copy()
-        wispr_events["event_kind"] = "wispr_front"
-        common = ["timestamp", "r_au", "helio_lon_deg", "helio_lat_deg",
-                  "carrington_lon_deg", "pvi_tau100s", "event_kind", "source_file"]
+    extra_chunks: list[pd.DataFrame] = []
+    common = ["timestamp", "r_au", "helio_lon_deg", "helio_lat_deg",
+              "carrington_lon_deg", "pvi_tau100s", "event_kind", "source_file"]
+    for tag, extra in (("wispr_front", wispr_events), ("sep_onset", sep_events)):
+        if extra.empty:
+            continue
+        extra = extra.copy()
+        extra["event_kind"] = tag
         for c in common:
-            if c not in wispr_events.columns:
-                wispr_events[c] = np.nan
-        events = pd.concat([events[common + [c for c in events.columns if c not in common]],
-                             wispr_events[common + [c for c in wispr_events.columns if c not in common]]],
-                            ignore_index=True)
-        print(f"[stage-4] including {len(wispr_events)} WISPR fronts in event pool")
+            if c not in extra.columns:
+                extra[c] = np.nan
+        extra_chunks.append(extra[common + [c for c in extra.columns if c not in common]])
+        print(f"[stage-4] including {len(extra)} {tag} events in pool")
+    if extra_chunks:
+        events = pd.concat([events[common + [c for c in events.columns if c not in common]]]
+                             + extra_chunks, ignore_index=True)
     events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
     jwst = jwst.copy()
     jwst["timestamp"] = pd.to_datetime(jwst["timestamp"]).dt.tz_localize(None)
