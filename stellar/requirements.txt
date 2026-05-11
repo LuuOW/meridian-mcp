@@ -1,5 +1,0 @@
-pyspedas==1.7.20
-astroquery==0.4.10
-pandas==2.2.3
-pyarrow==18.1.0
-huggingface_hub==0.27.0
