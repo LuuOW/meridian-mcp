@@ -28,8 +28,9 @@ from astroquery.jplhorizons import Horizons
 from astroquery.mast import Observations
 from huggingface_hub import HfApi, create_repo
 
-from targets import BODIES, PSP_NAIF, PERIHELIA, JWST_BODIES_DEFAULT, EPHEMERIS_BODIES_DEFAULT, SPACECRAFT, SPACECRAFT_DEFAULT
+from gates import Gate
 from probes import LOADER_MAP
+from targets import BODIES, PSP_NAIF, PERIHELIA, JWST_BODIES_DEFAULT, EPHEMERIS_BODIES_DEFAULT, SPACECRAFT, SPACECRAFT_DEFAULT
 
 REPO_ID = "luuow/meridian-helio-mirror"
 PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
@@ -500,7 +501,6 @@ def main() -> int:
         print(f"ERROR: unknown perihelion {PERIHELION}; one of {list(PERIHELIA)}",
               file=sys.stderr)
         return 1
-    from gates import Gate
     with Gate("pull", PERIHELION, REPO_ID, api=api) as g:
         rc = _main_inner(token, api, g)
     return rc
