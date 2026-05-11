@@ -103,20 +103,28 @@ WORSE because PSP at perihelion has slow wind (240 km/s vs assumed
 400), making the spiral wrap MORE not less, pushing predictions further
 past the lon-tolerance.
 
-### 0e. Real fix is v_sw(r), not constant — proper next step
+### 0e. v_sw(r) averaging shipped — moves the needle on E24
 
-Solar wind isn't a constant speed; it accelerates with r out to ~1 AU.
-Using `v_sw_at_source` is wrong for inner→outer transits (PSP slow
-near perihelion, accelerates en route). Two reasonable approximations:
+Implemented source+target plasma speed averaging in
+`find_probe_coincidences` (load_all_plasma + target_vsw_at + linear
+average of v_src and v_tgt as the spiral advection speed).
 
-1. **Use v_sw at target spacecraft** for inner→outer transits (since
-   most of the path is at near-target speeds).
-2. **Piecewise v_sw(r)** with linear interpolation between source and
-   target measurements: `t = ∫(r_src→r_tgt) dr/v(r)`.
+**Null test panel comparison (constant 400 km/s vs v_sw averaged):**
 
-Either fix is ~30 lines in `find_probe_coincidences`. Defer until we
-have a proper validation set — currently can't tell if it'd
-materially change E21's significance or rescue E22–E24.
+| Perihelion | v=400 | v_sw avg | Result |
+|---|---|---|---|
+| E20 | z=-3.0 indist | z=0.0 indist | fully saturated; tolerance band catches all density |
+| **E21** | **z=+4.98 SIG** | **z=+4.24 SIG** | claim survives the model upgrade |
+| E22 | z=-5.2 | z=-3.4 | improved by ~1.8σ |
+| E23 | z=-14.6 | z=-15.5 | marginally worse |
+| **E24** | **z=-4.1** | **z=+2.36 MARGINAL** | **swung from indistinguishable to p<0.05** |
+
+**Pipeline now produces 1 strong + 1 marginal claim** (was 1 strong).
+
+Defensible statement: "At E21 geometry, probe-pair coincidences at
+±20°/±24h tolerance occur 13% more often than chance (z=+4.2,
+p<0.001, n=100 shuffles, source+target v_sw averaging). At E24 the
+same test gives z=+2.4 (p≈0.02), marginal evidence."
 
 ### 0b. Inner-heliosphere → outer-probe Parker transit exceeds perihelion window
 
