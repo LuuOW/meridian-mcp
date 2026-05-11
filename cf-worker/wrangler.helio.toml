@@ -1,0 +1,10 @@
+name = "helio-proxy"
+main = "helio-proxy.mjs"
+compatibility_date = "2026-05-11"
+
+# Route bound to the subdomain. DNS CNAME `helio` must already exist.
+# routes = [
+#   { pattern = "helio.ask-meridian.uk/*", custom_domain = true }
+# ]
+# (Uncomment the routes block once the DNS CNAME is set up. Run
+#  `wrangler deploy --config wrangler.helio.toml`.)
