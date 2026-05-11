@@ -31,7 +31,7 @@ import pandas as pd
 from astropy.io import fits
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
-from targets import PERIHELIA
+from targets import PERIHELIA, SPACECRAFT
 
 REPO_ID = "luuow/meridian-helio-mirror"
 PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
@@ -125,6 +125,74 @@ def detect_psp_events(token: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     return pvi_df, candidates
 
 
+def detect_probe_events(token: str) -> pd.DataFrame:
+    """Run the same PVI + clustering pipeline as PSP, but for every HSO probe
+    that landed in coords/probes_registered_*. PVI on |dB| works on any RTN
+    magnetometer regardless of mission.
+
+    Returns rows compatible with psp_candidate_events_* plus a `spacecraft`
+    column so stage-4 can pull them all into a single event pool.
+    """
+    reg_path = f"coords/probes_registered_{PERIHELION}.parquet"
+    files = list_repo_files(REPO_ID, repo_type="dataset", token=token)
+    if reg_path not in files:
+        print(f"[stage-3/probes] missing {reg_path} — skipping HSO events",
+              file=sys.stderr)
+        return pd.DataFrame()
+    path = hf_hub_download(repo_id=REPO_ID, repo_type="dataset",
+                            filename=reg_path, token=token)
+    df = pd.read_parquet(path)
+    df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.tz_localize(None)
+
+    all_events: list[pd.DataFrame] = []
+    for sc, g in df.groupby("spacecraft"):
+        g = g.sort_values("timestamp").reset_index(drop=True)
+        if len(g) < 64:
+            print(f"[stage-3/probes] {sc}: {len(g)} samples, skipping")
+            continue
+        dt_sec = estimate_dt_sec(g["timestamp"])
+        b = g[["B_R", "B_T", "B_N"]].to_numpy()
+        pvi_cols = {f"pvi_tau{lag}s": compute_pvi(b, dt_sec, lag) for lag in PVI_LAGS_SEC}
+        sc_pvi = pd.concat([g[["timestamp", "spacecraft", "r_au", "helio_lon_deg",
+                                "helio_lat_deg", "carrington_lon_deg"]].reset_index(drop=True),
+                             pd.DataFrame(pvi_cols)], axis=1)
+        ref_col = f"pvi_tau{PVI_REF_LAG_SEC}s"
+        above = sc_pvi[sc_pvi[ref_col] > PVI_THRESHOLD].copy().dropna(
+            subset=["r_au", "helio_lon_deg"])
+        if above.empty:
+            print(f"[stage-3/probes] {sc}: 0 PVI>{PVI_THRESHOLD} samples")
+            continue
+        above = above.sort_values("timestamp").reset_index(drop=True)
+        above["t_s"] = above["timestamp"].astype("int64") / 1e9
+        gaps = above["t_s"].diff().fillna(0)
+        EVENT_GAP_SEC = 60.0
+        above["event_id"] = (gaps > EVENT_GAP_SEC).cumsum()
+        grouped = above.groupby("event_id").agg(
+            timestamp=("timestamp", "first"),
+            event_end=("timestamp", "last"),
+            spacecraft=("spacecraft", "first"),
+            r_au=("r_au", "mean"),
+            helio_lon_deg=("helio_lon_deg", "mean"),
+            helio_lat_deg=("helio_lat_deg", "mean"),
+            carrington_lon_deg=("carrington_lon_deg", "mean"),
+            pvi_tau10s=("pvi_tau10s", "max"),
+            pvi_tau100s=("pvi_tau100s", "max"),
+            pvi_tau1000s=("pvi_tau1000s", "max"),
+            n_samples=("timestamp", "size"),
+        ).reset_index(drop=True)
+        grouped["duration_sec"] = (grouped["event_end"] - grouped["timestamp"]).dt.total_seconds()
+        grouped["source_file"] = f"probes/{sc}_mag_{PERIHELION}.parquet"
+        all_events.append(grouped)
+        print(f"[stage-3/probes] {sc}: clustered {len(grouped)} events, "
+              f"median peak PVI100 {grouped['pvi_tau100s'].median():.2f}")
+
+    if not all_events:
+        return pd.DataFrame()
+    out = pd.concat(all_events, ignore_index=True)
+    print(f"[stage-3/probes] total HSO events: {len(out)}")
+    return out
+
+
 def jwst_aggregate(local_path: Path) -> dict | None:
     try:
         with fits.open(local_path) as hdul:
@@ -210,6 +278,11 @@ def main() -> int:
     if not candidates.empty:
         candidates.to_parquet(
             out_dir / f"psp_candidate_events_{PERIHELION}.parquet", compression="snappy")
+
+    probe_events = detect_probe_events(token)
+    if not probe_events.empty:
+        probe_events.to_parquet(
+            out_dir / f"probe_candidate_events_{PERIHELION}.parquet", compression="snappy")
 
     jwst_agg = aggregate_jwst(token)
     if not jwst_agg.empty:

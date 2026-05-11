@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
-from targets import PERIHELIA
+from targets import PERIHELIA, SPACECRAFT
 
 REPO_ID = "luuow/meridian-helio-mirror"
 PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
@@ -66,6 +66,91 @@ def predicted_lon_at_arrival(body_eph: pd.DataFrame, t_arrival: pd.Timestamp) ->
         return None
     idx = (body_eph["timestamp"] - t_arrival).abs().idxmin()
     return float(body_eph.loc[idx, "helio_lon_deg"])
+
+
+def find_probe_coincidences(events: pd.DataFrame,
+                              eph_long: pd.DataFrame) -> pd.DataFrame:
+    """HSO multi-probe matching. For every (source_event, target_spacecraft)
+    pair, predict arrival via Parker spiral (wind mechanism only — light is
+    instantaneous within the heliosphere). Check if target spacecraft has a
+    PVI event near the predicted arrival.
+
+    Drops self-pairs and any pair where target ephemeris is missing.
+    """
+    if events.empty:
+        return pd.DataFrame()
+    spacecrafts = events["spacecraft"].dropna().unique().tolist()
+    if len(spacecrafts) < 2:
+        return pd.DataFrame()
+    events = events.dropna(subset=["r_au", "helio_lon_deg", "spacecraft"]).copy()
+    events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
+    rows: list[dict] = []
+    for src in spacecrafts:
+        src_events = events[events["spacecraft"] == src]
+        if src_events.empty:
+            continue
+        for tgt in spacecrafts:
+            if tgt == src:
+                continue
+            tgt_eph = eph_long[eph_long["body"] == tgt].sort_values("timestamp")
+            tgt_events = events[events["spacecraft"] == tgt].sort_values("timestamp")
+            if tgt_eph.empty:
+                continue
+            for _, ev in src_events.iterrows():
+                r_src = float(ev["r_au"])
+                t_src = pd.Timestamp(ev["timestamp"])
+                lon_src = float(ev["helio_lon_deg"])
+                idx = (tgt_eph["timestamp"] - t_src).abs().idxmin()
+                r_tgt = float(tgt_eph.loc[idx, "r_au"])
+                if not np.isfinite(r_src) or not np.isfinite(r_tgt):
+                    continue
+                dr_km = (r_tgt - r_src) * AU_KM
+                dt_h = dr_km / V_SW_KM_PER_SEC / 3600.0
+                if dt_h < 0:
+                    continue  # target inside source; skip (would be light-only)
+                t_arrival = t_src + pd.Timedelta(hours=dt_h)
+                lon_tgt_at_arr = float(
+                    tgt_eph.loc[(tgt_eph["timestamp"] - t_arrival).abs().idxmin(),
+                                 "helio_lon_deg"])
+                lon_src_advected = lon_src - OMEGA_SUN_DEG_PER_DAY * dt_h / 24.0
+                d_lon = float(wrap_180(np.array([lon_src_advected - lon_tgt_at_arr]))[0])
+                if abs(d_lon) > LON_TOLERANCE_DEG:
+                    continue
+                if tgt_events.empty:
+                    matched = False
+                    nearest_dt_h = np.nan
+                    nearest_peak_pvi = np.nan
+                    nearest_event_ts = None
+                else:
+                    deltas = (tgt_events["timestamp"] - t_arrival).dt.total_seconds() / 3600.0
+                    idx_n = deltas.abs().idxmin()
+                    nearest_dt_h = float(deltas.loc[idx_n])
+                    matched = abs(nearest_dt_h) <= T_TOLERANCE_HOURS_WIND
+                    nearest_peak_pvi = float(tgt_events.loc[idx_n, "pvi_tau100s"]) \
+                        if "pvi_tau100s" in tgt_events.columns else np.nan
+                    nearest_event_ts = pd.Timestamp(tgt_events.loc[idx_n, "timestamp"])
+                rows.append({
+                    "source_spacecraft": src,
+                    "target_spacecraft": tgt,
+                    "source_event_timestamp": t_src,
+                    "source_event_pvi": float(ev.get("pvi_tau100s", np.nan)),
+                    "source_r_au": r_src, "source_lon_deg": lon_src,
+                    "target_r_au": r_tgt, "target_lon_at_arrival_deg": lon_tgt_at_arr,
+                    "predicted_arrival_timestamp": t_arrival,
+                    "advection_lead_hours": dt_h,
+                    "delta_lon_deg": d_lon,
+                    "matched": matched,
+                    "nearest_target_event_dt_hours": nearest_dt_h,
+                    "nearest_target_event_pvi": nearest_peak_pvi,
+                    "nearest_target_event_timestamp": nearest_event_ts,
+                })
+    out = pd.DataFrame(rows)
+    if out.empty:
+        return out
+    out["lon_score"] = 1.0 - out["delta_lon_deg"].abs() / LON_TOLERANCE_DEG
+    out["t_score"] = (1.0 - out["nearest_target_event_dt_hours"].abs() / T_TOLERANCE_HOURS_WIND).clip(0, 1)
+    out["match_score"] = (out["lon_score"] * out["t_score"]).where(out["matched"], 0.0)
+    return out
 
 
 def find_coincidences(events: pd.DataFrame, jwst: pd.DataFrame,
@@ -148,21 +233,31 @@ def main() -> int:
     eph_long = load(token, f"coords/ephemeris_long_{PERIHELION}.parquet")
     wispr_events = load(token, f"events/wispr_fronts_{PERIHELION}.parquet")
     sep_events = load(token, f"events/psp_sep_onsets_{PERIHELION}.parquet")
-    if events.empty or jwst.empty or eph_long.empty:
-        print("[stage-4] missing inputs — events/jwst/ephemeris not all present",
+    probe_events = load(token, f"events/probe_candidate_events_{PERIHELION}.parquet")
+    if events.empty or eph_long.empty:
+        print("[stage-4] missing inputs — events/ephemeris not present",
               file=sys.stderr)
         return 1
+    if jwst.empty:
+        print("[stage-4] no JWST aggregates this perihelion; JWST half disabled")
 
     events = events.copy()
     events["event_kind"] = "psp_pvi"
+    events["spacecraft"] = "PSP"
     extra_chunks: list[pd.DataFrame] = []
-    common = ["timestamp", "r_au", "helio_lon_deg", "helio_lat_deg",
+    common = ["timestamp", "spacecraft", "r_au", "helio_lon_deg", "helio_lat_deg",
               "carrington_lon_deg", "pvi_tau100s", "event_kind", "source_file"]
-    for tag, extra in (("wispr_front", wispr_events), ("sep_onset", sep_events)):
+    for tag, extra, sc_default in (
+        ("wispr_front", wispr_events, "PSP"),
+        ("sep_onset", sep_events, "PSP"),
+        ("probe_pvi", probe_events, None),
+    ):
         if extra.empty:
             continue
         extra = extra.copy()
         extra["event_kind"] = tag
+        if "spacecraft" not in extra.columns and sc_default is not None:
+            extra["spacecraft"] = sc_default
         for c in common:
             if c not in extra.columns:
                 extra[c] = np.nan
@@ -177,15 +272,23 @@ def main() -> int:
     eph_long = eph_long.copy()
     eph_long["timestamp"] = pd.to_datetime(eph_long["timestamp"]).dt.tz_localize(None)
 
-    print(f"[stage-4] {len(events)} PSP candidates × {len(jwst)} JWST obs "
-          f"× {eph_long['body'].nunique()} bodies")
+    print(f"[stage-4] event pool: {len(events)} events across "
+          f"{events['spacecraft'].nunique()} spacecraft, "
+          f"{len(jwst)} JWST obs, {eph_long['body'].nunique()} bodies")
     coincidences = find_coincidences(events, jwst, eph_long)
+    probe_coincidences = find_probe_coincidences(events, eph_long)
+    print(f"[stage-4] probe×probe coincidences: {len(probe_coincidences)}")
 
     out_dir = Path("helio_cache/events")
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"coincidences_{PERIHELION}.parquet"
     coincidences.to_parquet(out_path, compression="snappy")
-    print(f"[stage-4] wrote {len(coincidences)} coincidences to {out_path}")
+    if not probe_coincidences.empty:
+        probe_coincidences.to_parquet(
+            out_dir / f"probe_coincidences_{PERIHELION}.parquet",
+            compression="snappy")
+    print(f"[stage-4] wrote {len(coincidences)} JWST-coincidences + "
+          f"{len(probe_coincidences)} probe-coincidences to {out_dir}")
 
     summary = {
         "v_sw_km_s": V_SW_KM_PER_SEC,
