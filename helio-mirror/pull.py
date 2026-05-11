@@ -54,6 +54,50 @@ def fetch_psp_fields(t_start: str, t_stop: str) -> pd.DataFrame:
     })
 
 
+def fetch_psp_wispr(t_start: str, t_stop: str) -> pd.DataFrame:
+    """WISPR L3 inner/outer detector brightness time series.
+
+    Each image frame collapses to scalars: mean, sum, p99 of brightness over
+    the calibrated science array, so we ship a small time series instead of
+    raw image cubes. Image-based CME-front direction extraction is left to a
+    later stage.
+    """
+    pyspedas.psp.wispr(
+        trange=[t_start, t_stop],
+        datatype="science",
+        level="l3",
+        time_clip=True,
+    )
+    rows: list[dict] = []
+    for det_var, det_name in (
+        ("psp_wispr_inner_image", "inner"),
+        ("psp_wispr_outer_image", "outer"),
+    ):
+        data = pytplot.get_data(det_var)
+        if data is None:
+            continue
+        times = pd.to_datetime(data.times, unit="s")
+        cube = data.y
+        if cube.ndim != 3:
+            continue
+        for i in range(cube.shape[0]):
+            frame = cube[i]
+            valid = np.isfinite(frame)
+            if not valid.any():
+                continue
+            rows.append({
+                "time": times[i],
+                "detector": det_name,
+                "n_pixels_valid": int(valid.sum()),
+                "brightness_mean": float(np.nanmean(frame)),
+                "brightness_sum": float(np.nansum(frame)),
+                "brightness_p99": float(np.nanpercentile(frame, 99)),
+                "brightness_max": float(np.nanmax(frame)),
+            })
+    pytplot.del_data("*")
+    return pd.DataFrame(rows)
+
+
 def fetch_psp_sweap_spi(t_start: str, t_stop: str) -> pd.DataFrame:
     """SWEAP/SPAN-I L3 ion moments. SPC L3i is gappy post-E18 due to instrument
     issues; SPAN-I has cleaner coverage at perihelion."""
@@ -201,6 +245,21 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
             print("[psp/sweap-spi] empty frame (data gap at this perihelion)")
     except Exception as e:
         print(f"[psp/sweap-spi] failed: {e}", file=sys.stderr)
+        traceback.print_exc()
+    try:
+        print(f"[psp/wispr] {t_start} → {t_stop}")
+        df = fetch_psp_wispr(t_start, t_stop)
+        if not df.empty:
+            path = out / "psp" / f"wispr_brightness_{PERIHELION}.parquet"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            df.to_parquet(path, compression="snappy")
+            push(api, path, f"psp/wispr_brightness_{PERIHELION}.parquet",
+                 f"stage-1: PSP WISPR L3 brightness time series {PERIHELION}")
+            ok = True
+        else:
+            print("[psp/wispr] empty frame (data gap at this perihelion)")
+    except Exception as e:
+        print(f"[psp/wispr] failed: {e}", file=sys.stderr)
         traceback.print_exc()
     return ok
 
