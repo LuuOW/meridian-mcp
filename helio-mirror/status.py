@@ -101,6 +101,14 @@ def main() -> int:
         except Exception as e:
             print(f"[status] gate read failed for {f}: {e}", file=sys.stderr)
 
+    # Which perihelia have a per-perihelion forecast JSON (latest_{P}.json)?
+    # Used by the dashboard picker so it only offers options that won't
+    # silently fall back to latest.json.
+    perihelia_with_latest_json = sorted(
+        tag for tag in PERIHELION_TAGS
+        if f"forecast/latest_{tag}.json" in files
+    )
+
     summary = {
         "generated_at": pd.Timestamp.utcnow().isoformat(),
         "repo": f"https://huggingface.co/datasets/{REPO_ID}",
@@ -111,6 +119,7 @@ def main() -> int:
             tag for tag in PERIHELION_TAGS
             if per_perihelion.get(tag, {}).get("forecast", 0) > 0
         ),
+        "perihelia_with_latest_json": perihelia_with_latest_json,
         "probes_per_perihelion": {
             tag: sorted(probes_per_perihelion.get(tag, []))
             for tag in PERIHELION_TAGS
