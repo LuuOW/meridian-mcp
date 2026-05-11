@@ -222,8 +222,6 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"forecast_24h_{PERIHELION}.parquet"
     forecast.to_parquet(out_path, compression="snappy")
-    push(api, out_path, f"forecast/forecast_24h_{PERIHELION}.parquet",
-         f"stage-6: 24 h irradiance forecast per body {PERIHELION}")
 
     psp_eph = eph_long[eph_long["body"] == "PSP"].sort_values("timestamp")
     psp_summary = None
@@ -288,9 +286,12 @@ def main() -> int:
 
     latest_path = out_dir / "latest.json"
     latest_path.write_text(json.dumps(latest, indent=2, default=str))
-    push(api, latest_path, "forecast/latest.json",
-         f"stage-6: latest forecast summary {PERIHELION}")
-    print(f"[stage-6] wrote {out_path} and forecast/latest.json")
+    from hf_push import push_folder
+    push_folder(api, REPO_ID, out_dir, "forecast",
+                 f"stage-6: 24h forecast + latest summary {PERIHELION}",
+                 allow_patterns=[f"forecast_24h_{PERIHELION}.parquet",
+                                  "latest.json"])
+    print(f"[stage-6] pushed forecast/ for {PERIHELION} as one commit")
     print("[stage-6] done.")
     return 0
 
