@@ -9,19 +9,25 @@ asteroids, comets). By cross-correlating PSP solar-event signatures with JWST
 reflectance excursions on bodies at known heliographic positions, we measure
 **irradiance delivered to each body** and forecast it 24 h ahead.
 
-## Stages
+## Stages — all six scaffolded
 
-| # | Stage | Reads | Writes |
-|---|---|---|---|
-| 1 | **pull** | NASA / STScI public archives | `psp/`, `jwst/`, `ephemeris/` on HF |
-| 2 | register | stage 1 | `coords/registered.parquet` |
-| 3 | detect | stage 2 + raw | `events/{psp,jwst}_events.parquet` |
-| 4 | coincide | stage 3 | `events/coincidences.parquet` |
-| 5 | calibrate | stage 4 + raw spectra | `irradiance/delivered.parquet` |
-| 6 | forecast | stages 2 + 3 + 5 | `forecast/irradiance_24h.parquet` |
+| # | Stage | Script | Workflow | Writes to HF |
+|---|---|---|---|---|
+| 1 | **pull** | `pull.py` | `helio-mirror-pull` | `psp/`, `jwst/`, `ephemeris/` |
+| 2 | **register** | `register.py` | `helio-mirror-register` | `coords/ephemeris_long_*`, `coords/psp_registered_*`, `coords/jwst_registered_*` |
+| 3 | **detect** | `detect.py` | `helio-mirror-detect` | `events/psp_pvi_*`, `events/psp_candidate_events_*`, `events/jwst_aggregates_*` |
+| 4 | **coincide** | `coincide.py` | `helio-mirror-coincide` | `events/coincidences_*`, `events/coincidences_summary_*.json` |
+| 5 | **calibrate** | `calibrate.py` | `helio-mirror-calibrate` | `irradiance/delivered_*` |
+| 6 | **forecast** | `forecast.py` | `helio-mirror-forecast` | `forecast/forecast_24h_*`, `forecast/latest.json` |
 
-Only stage 1 is scaffolded today. Stages 2–6 land after stage 1 has produced
-real data on the HF dataset `luuow/meridian-helio-mirror`.
+Each workflow is `workflow_dispatch` only and takes a `perihelion` input
+(`E20`–`E24`). Stages are independently rerunnable; `latest.json` is the
+artifact the dashboard at `/helio/` reads.
+
+## Live dashboard
+
+`https://ask-meridian.uk/helio/` — loads `forecast/latest.json` from the HF
+dataset on each pageview, renders per-body cards + 24 h tables + caveats.
 
 ## Stage 1 — pull (current scope)
 
