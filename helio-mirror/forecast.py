@@ -40,6 +40,27 @@ PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
 HORIZON_HOURS = int(os.environ.get("HELIO_HORIZON_H", "24"))
 STEP_HOURS = int(os.environ.get("HELIO_STEP_H", "1"))
 
+# Physical constants for kWh + event-impact coupling
+TSI_W_M2 = 1361.0
+PV_ETA = 0.30
+AU_KM = 149_597_870.7
+V_SW_DEFAULT_KM_S = 400.0
+
+# Per-event-kind impact factor on PV yield during arrival window.
+# Physically motivated: CMEs scatter & redden the spectrum + sleet of
+# energetic particles drops cell output ~5-15%; isolated PVI > 3 (current
+# sheets / rotational discontinuities) are mild ~3%; SEP onsets are the
+# worst because they cause direct radiation degradation that persists.
+# Values are NOT ground-truth-fit (no off-Earth yield labels exist) —
+# document as such; physically reasonable ±5%.
+IMPACT_BY_KIND = {
+    "psp_pvi":    0.03,
+    "probe_pvi":  0.03,
+    "wispr_front": 0.10,
+    "sep_onset":  0.15,
+}
+IMPACT_WINDOW_HOURS = 3.0   # event impact spans ±3h around predicted arrival
+
 
 def push(api: HfApi, local: Path, repo_path: str, message: str) -> None:
     from hf_push import push as _push
@@ -122,6 +143,9 @@ def forecast_one(latest_row: pd.Series, body_eph: pd.DataFrame,
 
 
 def annotate_psp_events(forecast: pd.DataFrame, coincidences: pd.DataFrame) -> pd.DataFrame:
+    """Legacy: marks hours where a coincidences_{P}.parquet row predicts wind
+    arrival. Kept for back-compat in latest.json (psp_event_flag column),
+    but the kWh-impact path now uses compute_event_impact() below."""
     if coincidences.empty:
         forecast["psp_event_flag"] = False
         forecast["psp_event_match_score"] = 0.0
@@ -148,6 +172,115 @@ def annotate_psp_events(forecast: pd.DataFrame, coincidences: pd.DataFrame) -> p
     out["psp_event_flag"] = flags
     out["psp_event_match_score"] = scores
     return out
+
+
+def compute_event_impact(forecast: pd.DataFrame, events: pd.DataFrame,
+                          eph_long: pd.DataFrame) -> pd.DataFrame:
+    """For each forecast row, compute event_impact_factor ∈ [0, 0.25] —
+    the fractional drop applied to baseline TSI/r² kWh when one or more
+    PSP/probe events are predicted to arrive at the body within
+    ±IMPACT_WINDOW_HOURS of the forecast hour.
+
+    Propagation: Parker spiral with per-event v_sw (column v_sw_km_s,
+    falling back to V_SW_DEFAULT_KM_S). Multiple arriving events are
+    aggregated by max impact (worst-case yield drop), not sum — physically
+    you saturate at the highest-impact event in the window."""
+    out = forecast.copy()
+    out["event_impact_factor"] = 0.0
+    out["event_worst_kind"] = ""
+    if events.empty or forecast.empty:
+        return out
+    out_idx = out.reset_index(drop=True)
+    fc_times = pd.to_datetime(out_idx["forecast_for_timestamp"]).dt.tz_localize(None).values.astype("datetime64[ns]")
+
+    for body in out_idx["body"].unique():
+        body_mask = out_idx["body"].values == body
+        body_eph = eph_long[eph_long["body"] == body].sort_values("timestamp").reset_index(drop=True)
+        if body_eph.empty:
+            continue
+        body_fc_times = fc_times[body_mask]
+        body_impacts = np.zeros(body_mask.sum())
+        body_worst_kind = np.array([""] * body_mask.sum(), dtype=object)
+
+        for _, ev in events.iterrows():
+            r_src_raw = ev.get("r_au")
+            ts_raw = ev.get("timestamp")
+            if r_src_raw is None or pd.isna(r_src_raw) or ts_raw is None or pd.isna(ts_raw):
+                continue
+            r_src = float(r_src_raw)
+            if not np.isfinite(r_src):
+                continue
+            t_src = pd.Timestamp(ts_raw).tz_localize(None)
+            v_raw = ev.get("v_sw_km_s")
+            v_src = float(v_raw) if v_raw is not None and pd.notna(v_raw) and float(v_raw) > 0 else V_SW_DEFAULT_KM_S
+            # Look up body r at event time
+            idx = (body_eph["timestamp"] - t_src).abs().idxmin()
+            r_body = float(body_eph.loc[idx, "r_au"])
+            if not np.isfinite(r_body):
+                continue
+            dr_km = (r_body - r_src) * AU_KM
+            if dr_km <= 0:
+                continue  # body inside source — skip (would be light-only)
+            dt_h = dr_km / v_src / 3600.0
+            t_arrival = np.datetime64(t_src + pd.Timedelta(hours=dt_h))
+
+            kind = ev.get("event_kind") or "psp_pvi"
+            impact = IMPACT_BY_KIND.get(kind, 0.03)
+            dt_to_fc_h = np.abs(body_fc_times - t_arrival).astype("timedelta64[s]").astype(float) / 3600.0
+            within = dt_to_fc_h < IMPACT_WINDOW_HOURS
+            # max-aggregate: pick the worst-impact arriving event per hour
+            update = within & (impact > body_impacts)
+            if update.any():
+                body_impacts = np.where(update, impact, body_impacts)
+                body_worst_kind = np.where(update, kind, body_worst_kind)
+        # Write back
+        out.loc[body_mask, "event_impact_factor"] = body_impacts
+        out.loc[body_mask, "event_worst_kind"] = body_worst_kind
+    return out
+
+
+def load_events_for_impact(token: str) -> pd.DataFrame:
+    """Concat PSP candidates + probe candidates + WISPR fronts + SEP onsets
+    into a single event pool with `event_kind` tagged, ready for
+    compute_event_impact."""
+    parts: list[pd.DataFrame] = []
+
+    psp = load(token, f"events/psp_candidate_events_{PERIHELION}.parquet", required=False)
+    if not psp.empty:
+        psp = psp.copy()
+        psp["event_kind"] = "psp_pvi"
+        psp["spacecraft"] = "PSP"
+        parts.append(psp)
+    pr = load(token, f"events/probe_candidate_events_{PERIHELION}.parquet", required=False)
+    if not pr.empty:
+        pr = pr.copy()
+        pr["event_kind"] = "probe_pvi"
+        parts.append(pr)
+    wispr = load(token, f"events/wispr_fronts_{PERIHELION}.parquet", required=False)
+    if not wispr.empty:
+        wispr = wispr.copy()
+        wispr["event_kind"] = "wispr_front"
+        if "spacecraft" not in wispr.columns:
+            wispr["spacecraft"] = "PSP"
+        parts.append(wispr)
+    sep = load(token, f"events/psp_sep_onsets_{PERIHELION}.parquet", required=False)
+    if not sep.empty:
+        sep = sep.copy()
+        sep["event_kind"] = "sep_onset"
+        if "spacecraft" not in sep.columns:
+            sep["spacecraft"] = "PSP"
+        parts.append(sep)
+    if not parts:
+        return pd.DataFrame()
+    common_cols = ["timestamp", "spacecraft", "r_au", "event_kind"]
+    for df in parts:
+        for c in common_cols:
+            if c not in df.columns:
+                df[c] = np.nan
+    events = pd.concat(parts, ignore_index=True)
+    events["timestamp"] = pd.to_datetime(events["timestamp"]).dt.tz_localize(None)
+    events = events.dropna(subset=["timestamp", "r_au"])
+    return events
 
 
 def main() -> int:
@@ -217,12 +350,43 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         return 1
     forecast = pd.concat(forecasts, ignore_index=True)
     forecast = annotate_psp_events(forecast, coinc)
-    print(f"[stage-6] {len(forecast)} hourly forecast rows")
-    print(forecast.groupby("body")[["horizon_h", "predicted_inferred_irradiance_proxy",
-                                     "psp_event_flag"]].agg({
+
+    # Event-to-kWh coupling: propagate PSP/probe/WISPR/SEP events to each
+    # body via Parker spiral (per-event v_sw), apply impact factor when
+    # arrival window overlaps a forecast hour. Adds event_impact_factor +
+    # event_worst_kind columns; the dashboard turns these into a kWh drop.
+    impact_events = load_events_for_impact(token)
+    if not impact_events.empty:
+        # Attach per-event v_sw so propagation uses real plasma data when
+        # available (same model as coincide.py).
+        from coincide import attach_per_event_vsw
+        impact_events = attach_per_event_vsw(impact_events, token)
+        print(f"[stage-6/impact] {len(impact_events)} candidate events "
+              f"({impact_events['event_kind'].value_counts().to_dict()})")
+    forecast = compute_event_impact(forecast, impact_events, eph_long)
+
+    # Per-hour baseline + adjusted kWh on the forecast frame so the
+    # summary at the bottom can roll them up by body. Geometric upper
+    # bound (TSI/r² × η × Δt); adjusted = baseline × (1 − impact).
+    forecast["baseline_kwh_per_m2_per_hour"] = (
+        TSI_W_M2 / forecast["predicted_r_au"] ** 2 * PV_ETA * STEP_HOURS / 1000.0
+    )
+    forecast["adjusted_kwh_per_m2_per_hour"] = (
+        forecast["baseline_kwh_per_m2_per_hour"] *
+        (1.0 - forecast["event_impact_factor"])
+    )
+
+    n_impacted = int((forecast["event_impact_factor"] > 0).sum())
+    print(f"[stage-6] {len(forecast)} hourly forecast rows; "
+          f"{n_impacted} rows have non-zero event impact "
+          f"(max impact: {forecast['event_impact_factor'].max():.3f})")
+    print(forecast.groupby("body")[["horizon_h", "baseline_kwh_per_m2_per_hour",
+                                     "adjusted_kwh_per_m2_per_hour",
+                                     "event_impact_factor"]].agg({
         "horizon_h": ["min", "max"],
-        "predicted_inferred_irradiance_proxy": "median",
-        "psp_event_flag": "sum",
+        "baseline_kwh_per_m2_per_hour": "sum",
+        "adjusted_kwh_per_m2_per_hour": "sum",
+        "event_impact_factor": "max",
     }).to_string())
 
     out_dir = Path("helio_cache/forecast")
@@ -340,6 +504,15 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         sub = forecast[forecast["body"] == body]
         anchor = sub.iloc[0]
         meta = body_anchor_meta.get(body, {})
+        baseline_day = float(sub["baseline_kwh_per_m2_per_hour"].sum())
+        adjusted_day = float(sub["adjusted_kwh_per_m2_per_hour"].sum())
+        n_impacted_hours = int((sub["event_impact_factor"] > 0).sum())
+        worst_impact = float(sub["event_impact_factor"].max())
+        # Most-severe event kind in the window, blank if none
+        worst_kind = ""
+        if worst_impact > 0:
+            worst_row = sub.iloc[sub["event_impact_factor"].argmax()]
+            worst_kind = str(worst_row.get("event_worst_kind") or "")
         latest["bodies"][body] = {
             "filter": str(anchor["filter"]),
             "anchor_timestamp": anchor["anchor_timestamp"].isoformat(),
@@ -351,6 +524,13 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
             "delta_au": meta.get("delta_au"),
             "expected_in_band_W_m2_at_body": meta.get("expected_in_band_W_m2_at_body"),
             "zeropoint_calibrated": meta.get("zeropoint_calibrated", False),
+            "baseline_kwh_per_m2_per_day": round(baseline_day, 4),
+            "adjusted_kwh_per_m2_per_day": round(adjusted_day, 4),
+            "kwh_drop_pct": round(100.0 * (1.0 - adjusted_day / baseline_day), 2)
+                              if baseline_day > 0 else 0.0,
+            "n_impacted_hours": n_impacted_hours,
+            "worst_event_kind": worst_kind,
+            "worst_event_impact": worst_impact,
             "forecast": [
                 {
                     "h": int(r["horizon_h"]),
@@ -360,6 +540,10 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
                     "i_proxy": float(r["predicted_inferred_irradiance_proxy"]),
                     "psp_flag": bool(r["psp_event_flag"]),
                     "psp_score": float(r["psp_event_match_score"]),
+                    "baseline_kwh": round(float(r["baseline_kwh_per_m2_per_hour"]), 5),
+                    "adjusted_kwh": round(float(r["adjusted_kwh_per_m2_per_hour"]), 5),
+                    "event_impact": round(float(r["event_impact_factor"]), 3),
+                    "event_kind": str(r.get("event_worst_kind") or "") or None,
                 } for _, r in sub.iterrows()
             ],
         }

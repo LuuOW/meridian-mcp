@@ -222,9 +222,30 @@ function kwhPerM2PerHour(r_au) {
   return (TSI_W_M2 / (r_au * r_au)) * PV_ETA / 1000;
 }
 function kwhPerM2PerDay(r_au) { return kwhPerM2PerHour(r_au) * 24; }
+
+// Prefer server-computed adjusted_kwh (which already folds in event impacts)
+// over the legacy r²-only fallback. forecastedDailyKwh returns the ADJUSTED
+// daily total. baselineDailyKwh is the un-impacted reference.
+function adjustedHourly(row) {
+  // Backward-compat: rows from old latest.json lack adjusted_kwh.
+  if (row && typeof row.adjusted_kwh === "number") return row.adjusted_kwh;
+  return kwhPerM2PerHour(row?.r_au ?? 0);
+}
+function baselineHourly(row) {
+  if (row && typeof row.baseline_kwh === "number") return row.baseline_kwh;
+  return kwhPerM2PerHour(row?.r_au ?? 0);
+}
 function forecastedDailyKwh(b) {
-  if (!b || !b.forecast || !b.forecast.length) return kwhPerM2PerDay(b?.anchor_r_au ?? 0);
-  return b.forecast.reduce((s, r) => s + kwhPerM2PerHour(r.r_au), 0);
+  if (!b) return 0;
+  if (typeof b.adjusted_kwh_per_m2_per_day === "number") return b.adjusted_kwh_per_m2_per_day;
+  if (!b.forecast || !b.forecast.length) return kwhPerM2PerDay(b.anchor_r_au ?? 0);
+  return b.forecast.reduce((s, r) => s + adjustedHourly(r), 0);
+}
+function baselineDailyKwh(b) {
+  if (!b) return 0;
+  if (typeof b.baseline_kwh_per_m2_per_day === "number") return b.baseline_kwh_per_m2_per_day;
+  if (!b.forecast || !b.forecast.length) return kwhPerM2PerDay(b.anchor_r_au ?? 0);
+  return b.forecast.reduce((s, r) => s + baselineHourly(r), 0);
 }
 
 const BODY_COLOR = {
@@ -565,22 +586,36 @@ function selectBody(name) {
   const b = (forecastData.bodies || {})[name];
   if (!b) return;
   selectedBody = name;
-  const eventHrs = (b.forecast || []).filter(r => r.psp_flag).length;
-  const pill = eventHrs > 0
-    ? `<span class="pill warn">PSP event flag · ${eventHrs} h</span>`
-    : `<span class="pill ok">clear</span>`;
+  const impactedHrs = (b.forecast || []).filter(r => (r.event_impact ?? 0) > 0).length;
+  const worstKind = b.worst_event_kind || "";
+  const impactPctNum = typeof b.kwh_drop_pct === "number" ? b.kwh_drop_pct : 0;
+  const pill = impactedHrs > 0
+    ? `<span class="pill warn">solar weather · ${impactedHrs} h impacted · ${worstKind || "event"}</span>`
+    : `<span class="pill ok">clear sky</span>`;
   const phase = b.phase_angle_deg !== undefined && b.phase_angle_deg !== null
     ? `<div class="now-card"><div class="now-num">${fmtNum(b.phase_angle_deg, 1)}°</div><div class="now-lbl">phase α</div></div>` : "";
-  const dailyKwh = forecastedDailyKwh(b);
-  const peakKwh = Math.max(...(b.forecast || []).map(r => kwhPerM2PerHour(r.r_au)));
+  const dailyKwh = forecastedDailyKwh(b);          // adjusted (server-provided when present)
+  const baselineKwh = baselineDailyKwh(b);         // baseline (no event impacts)
+  const peakKwh = Math.max(...(b.forecast || []).map(r => adjustedHourly(r)));
+  // Pick the contiguous range of impacted hours for the subtitle, if any.
+  const impactedRows = (b.forecast || []).filter(r => (r.event_impact ?? 0) > 0);
+  const impactHourSpan = impactedRows.length
+    ? `hr ${impactedRows[0].h}–${impactedRows[impactedRows.length - 1].h}`
+    : "";
+  const dropTxt = impactPctNum > 0.01
+    ? `<span style="color:#f5a623;">−${impactPctNum.toFixed(1)}%</span> from baseline ${fmtKwh(baselineKwh)} · predicted ${worstKind || "event"} ${impactHourSpan}`
+    : `${fmtKwh(baselineKwh)} baseline · no events predicted`;
   const rows = (b.forecast || []).map(r => {
-    const kwh = kwhPerM2PerHour(r.r_au);
-    return `<tr${r.psp_flag ? ' class="event"' : ''}>
+    const kwh = adjustedHourly(r);
+    const baseline = baselineHourly(r);
+    const impacted = (r.event_impact ?? 0) > 0;
+    const impactMark = impacted ? `⚠ ${(100 * r.event_impact).toFixed(0)}%${r.event_kind ? " " + r.event_kind : ""}` : "";
+    return `<tr${impacted ? ' class="event"' : ''}>
       <td>+${r.h}h</td>
       <td>${fmtNum(r.r_au, 4)}</td>
       <td>${fmtNum(r.lon_deg, 1)}°</td>
-      <td class="kwh">${fmtKwh(kwh)}</td>
-      <td>${r.psp_flag ? '⚠' : ''}</td>
+      <td class="kwh">${fmtKwh(kwh)}${impacted ? ` <span style="color:#9aa0a6;font-size:10px;">(${fmtKwh(baseline)})</span>` : ""}</td>
+      <td style="color:#f5a623;">${impactMark}</td>
     </tr>`;
   }).join("");
   document.getElementById("card-mount").innerHTML = `
@@ -590,7 +625,8 @@ function selectBody(name) {
     </div>
     <div class="kwh-hero">
       <div class="num">${fmtKwh(dailyKwh)}</div>
-      <div class="lbl">kWh / m² · next 24 h</div>
+      <div class="lbl">kWh / m² · next 24 h${impactPctNum > 0.01 ? " · weather-adjusted" : ""}</div>
+      <div class="sec">${dropTxt}</div>
       <div class="sec">peak hour ${fmtKwh(peakKwh)} kWh/m²/h · r ≈ ${b.anchor_r_au.toFixed(3)} AU</div>
       ${b.expected_in_band_W_m2_at_body != null
         ? `<div class="sec" style="color:#1cab5d;">in-band JWST filter (${b.filter}): ${b.expected_in_band_W_m2_at_body.toFixed(3)} W/m² <span class="pill ok" style="margin-left:6px;">zp-calibrated</span></div>`
