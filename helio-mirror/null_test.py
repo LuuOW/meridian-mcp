@@ -25,7 +25,11 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
-from coincide import find_probe_coincidences
+from coincide import (
+    attach_per_event_vsw,
+    find_probe_coincidences,
+    load_all_plasma,
+)
 from coincide_tight import find_tight
 from gates import Gate
 from targets import PERIHELIA
@@ -101,8 +105,19 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     find_fn = find_tight if MODE == "tight" else find_probe_coincidences
     print(f"[null_test] mode={MODE} ({'physics-aware per-pair tolerances' if MODE == 'tight' else 'constant ±20°/±24h'})")
 
+    # Use the SAME v_sw model as the live run, otherwise the null
+    # distribution is at constant v_sw while observed uses real plasma —
+    # apples-to-oranges. Attach v_sw + load plasma table.
+    events = attach_per_event_vsw(events, token)
+    plasma_by_sc = load_all_plasma(token) if MODE == "loose" else {}
+
+    def _call(ev: pd.DataFrame) -> pd.DataFrame:
+        if MODE == "tight":
+            return find_tight(ev, eph_long)
+        return find_probe_coincidences(ev, eph_long, plasma_by_sc)
+
     # Observed match count (re-derived to verify against stage-4 output)
-    obs = find_fn(events, eph_long)
+    obs = _call(events)
     obs_matched = int(obs["matched"].sum()) if not obs.empty else 0
     obs_total_pairs = int(len(obs))
     print(f"[null_test] {PERIHELION} observed: {obs_matched} matched / "
@@ -110,12 +125,15 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
           f"{events['spacecraft'].nunique()} spacecraft, "
           f"{len(events)} events")
 
-    # Null distribution: shuffle timestamps within each spacecraft
+    # Null distribution: shuffle timestamps within each spacecraft. Note:
+    # we shuffle WITHIN spacecraft (preserves per-sc event count and the
+    # marginal r/lon distributions). v_sw column rides along — we're
+    # asking "does timestamp-pairing carry the signal?" not "does v_sw?".
     rng = np.random.default_rng(RNG_SEED)
     null_counts: list[int] = []
     for i in range(N_SHUFFLES):
         shuffled = shuffle_timestamps(events, rng)
-        null_coinc = find_fn(shuffled, eph_long)
+        null_coinc = _call(shuffled)
         null_matched = int(null_coinc["matched"].sum()) if not null_coinc.empty else 0
         null_counts.append(null_matched)
         if (i + 1) % 10 == 0:
