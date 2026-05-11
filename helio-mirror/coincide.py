@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
+from gates import Gate
 from targets import PERIHELIA, SPACECRAFT
 
 REPO_ID = "luuow/meridian-helio-mirror"
@@ -228,6 +229,12 @@ def main() -> int:
         print(f"ERROR: unknown perihelion {PERIHELION}", file=sys.stderr)
         return 1
 
+    with Gate("coincide", PERIHELION, REPO_ID, api=api) as g:
+        rc = _main_inner(token, api, g)
+    return rc
+
+
+def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     events = load(token, f"events/psp_candidate_events_{PERIHELION}.parquet")
     jwst = load(token, f"events/jwst_aggregates_{PERIHELION}.parquet")
     eph_long = load(token, f"coords/ephemeris_long_{PERIHELION}.parquet")
@@ -330,6 +337,21 @@ def main() -> int:
                                   f"probe_coincidences_{PERIHELION}.parquet",
                                   f"coincidences_summary_{PERIHELION}.json"])
     print(f"[stage-4] pushed events/ coincidences for {PERIHELION} as one commit")
+
+    gate.n_inputs = int(len(events))
+    gate.n_outputs = int(len(coincidences) + len(probe_coincidences))
+    gate.notes = {
+        "n_psp_events": int(len(events)),
+        "n_jwst_observations": int(len(jwst)),
+        "n_coincidences_jwst": int(len(coincidences)),
+        "n_probe_pairs_candidate": int(len(probe_coincidences)),
+        "n_probe_pairs_matched": int(probe_coincidences["matched"].sum())
+            if not probe_coincidences.empty else 0,
+        "median_probe_match_score": (None if probe_matched.empty
+                                       else float(probe_matched["match_score"].median())),
+    }
+    if gate.n_outputs == 0:
+        gate.reason = "0 coincidences (expected at low data volume; not a stage failure)"
     return 0
 
 
