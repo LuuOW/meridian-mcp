@@ -345,6 +345,37 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         spec = ml_specialists.get(lr["body"])
         fc = forecast_one(lr, body_eph, HORIZON_HOURS, STEP_HOURS, ml_specialist=spec)
         forecasts.append(fc)
+
+    # Ephemeris-only bodies: Earth has no JWST observations (you can't point
+    # a Lagrange-2 telescope at Earth's surface), but the kWh forecast is
+    # purely geometric so we can include it from ephemeris alone. Synthesize
+    # a placeholder anchor with proxy=1.0 — downstream code only uses r_au
+    # for the kWh calculation, the proxy carries no physical meaning here.
+    ephemeris_only_bodies = ("Earth",)
+    jwst_observed = set(latest_obs["body"].unique()) if not latest_obs.empty else set()
+    for body in ephemeris_only_bodies:
+        if body in jwst_observed:
+            continue
+        body_eph = eph_long[eph_long["body"] == body].sort_values("timestamp")
+        if body_eph.empty:
+            continue
+        anchor_row = body_eph.iloc[len(body_eph) // 2]   # middle of perihelion window
+        synthetic_anchor = pd.Series({
+            "timestamp": anchor_row["timestamp"],
+            "body": body,
+            "filter": "geometric",
+            "body_r_au": float(anchor_row["r_au"]),
+            "body_helio_lon_deg": float(anchor_row["helio_lon_deg"]),
+            "inferred_irradiance_proxy": 1.0,        # placeholder, no JWST
+            "phase_angle_deg": 0.0,
+            "delta_au": 0.0,
+        })
+        fc = forecast_one(synthetic_anchor, body_eph, HORIZON_HOURS, STEP_HOURS,
+                          ml_specialist=None)
+        forecasts.append(fc)
+        print(f"[stage-6] added ephemeris-only forecast for {body} "
+              f"(no JWST anchor; geometric kWh only)")
+
     if not forecasts:
         print("[stage-6] no forecasts produced", file=sys.stderr)
         return 1
