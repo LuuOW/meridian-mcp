@@ -69,6 +69,19 @@ def emit_perihelion(tag: str, latest: dict | None, summary: dict | None,
                                for p in sorted(pairs, key=lambda x: -x.get("n", 0)))
         lines.append(f"- Pair breakdown: {pair_strs}.")
 
+    # Solar wind diagnostic — how much real plasma data informed this run.
+    median_v_sw = latest.get("median_v_sw_km_s_used")
+    n_real_vsw = latest.get("n_events_with_real_v_sw")
+    if median_v_sw is not None:
+        vsw_note = (f" ({n_real_vsw} events with measured v_sw)"
+                     if n_real_vsw is not None else "")
+        if abs(median_v_sw - 400.0) < 1.0:
+            lines.append(f"- Solar wind: model fell back to **400 km/s constant** "
+                          f"for all events (no plasma coverage at sources this perihelion).")
+        else:
+            lines.append(f"- Solar wind: median **{median_v_sw:.0f} km/s** "
+                          f"used for spiral advection{vsw_note}.")
+
     # Null test verdict (if it's been run for this perihelion)
     null_data = summary.get("__null_test__") if isinstance(summary, dict) else None
     if null_data:
