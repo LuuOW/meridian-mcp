@@ -98,10 +98,35 @@ def detect_psp_events(token: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     )
 
     ref_col = f"pvi_tau{PVI_REF_LAG_SEC}s"
-    candidates = pvi_df[pvi_df[ref_col] > PVI_THRESHOLD].copy()
+    above = pvi_df[pvi_df[ref_col] > PVI_THRESHOLD].copy()
+    above = above.dropna(subset=["r_au", "helio_lon_deg"])
+    above = above.sort_values("timestamp").reset_index(drop=True)
     print(f"[stage-3/psp] PVI>{PVI_THRESHOLD} at τ={PVI_REF_LAG_SEC}s: "
-          f"{len(candidates)} samples "
-          f"({100.0 * len(candidates)/max(1,len(pvi_df)):.2f}% of dataset)")
+          f"{len(above)} raw samples")
+    if above.empty:
+        return pvi_df, above
+    above["t_s"] = above["timestamp"].astype("int64") / 1e9
+    EVENT_GAP_SEC = 60.0
+    gaps = above["t_s"].diff().fillna(0)
+    above["event_id"] = (gaps > EVENT_GAP_SEC).cumsum()
+    grouped = above.groupby("event_id").agg(
+        timestamp=("timestamp", "first"),
+        event_end=("timestamp", "last"),
+        source_file=("source_file", "first"),
+        r_au=("r_au", "mean"),
+        helio_lon_deg=("helio_lon_deg", "mean"),
+        helio_lat_deg=("helio_lat_deg", "mean"),
+        carrington_lon_deg=("carrington_lon_deg", "mean"),
+        pvi_tau10s=("pvi_tau10s", "max"),
+        pvi_tau100s=("pvi_tau100s", "max"),
+        pvi_tau1000s=("pvi_tau1000s", "max"),
+        n_samples=("timestamp", "size"),
+    ).reset_index(drop=True)
+    grouped["duration_sec"] = (grouped["event_end"] - grouped["timestamp"]).dt.total_seconds()
+    candidates = grouped
+    print(f"[stage-3/psp] clustered into {len(candidates)} events "
+          f"(gap > {EVENT_GAP_SEC}s); median peak PVI100 "
+          f"{candidates['pvi_tau100s'].median():.2f}")
     return pvi_df, candidates
 
 
