@@ -12,7 +12,7 @@ gets to claim once the item lands.
 
 ## v0.3 — HSO mode (in flight)
 
-### 0. Heliophysics System Observatory ingest — ✓ validated on E20
+### 0. Heliophysics System Observatory ingest — ✓ structurally working
 
 PSP × JWST-reflection alone has zero coincidences because of how
 infrequently JWST images a body at the right heliographic position vs
@@ -20,12 +20,27 @@ PSP's encounter. Real triangulation uses NASA/ESA's existing fleet —
 SolO, STEREO-A, Wind, ACE, DSCOVR, MAVEN — pulled from CDAWeb via
 pyspedas, all time-overlapping every PSP perihelion.
 
-- **Output impact:** 979 matched probe×probe coincidences on E20 alone
-  (vs the previous 0). Median match score 0.29 — tolerances are loose
-  but the structural pipeline now produces validation data.
 - **Status:** `probes.py` + multi-probe register / detect / coincide
   shipped. E20 end-to-end run confirms 5/6 probes load (MAVEN was the
   only one with no CDAWeb data for that window — not a code issue).
+- **Loose-tolerance honesty:** initial run on ±20°/±24h showed 979
+  matched coincidences, BUT null_test.py (100 shuffles of timestamps
+  within each spacecraft) shows the null mean is 985 with z=-3.0,
+  p=1.0 — i.e., **the loose-tolerance "979 matches" is indistinguishable
+  from chance.** With 1500+ events at that tolerance, virtually any
+  pairing matches.
+
+### 0a. Physics-aware tolerances (stage-4-tight) — ✓ first real signal
+
+Replaces constant ±20°/±24h with per-pair-type bands scaled by
+predicted Parker transit (`coincide_tight.py`). E20 result: **212
+matched / 265 candidate pairs, median match score 0.781** (vs 0.29
+loose). The big improvement comes from L1↔L1 pairs (transit ~0) getting
+±5°/0.5h, and STEREO-A↔L1 getting ±10°/2h — both are properly
+discriminated now.
+
+- **Next step:** Run `null_test` against the tight output to verify
+  these 212 matches actually beat null at the tightened bands.
 
 ### 0b. Inner-heliosphere → outer-probe Parker transit exceeds perihelion window
 
