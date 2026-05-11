@@ -724,12 +724,14 @@ async function loadAll() {
   }
   try {
     const s = await (await fetch(`${HF_BASE}/forecast/dataset_status.json`, { cache: "no-store" })).json();
-    // Populate the perihelion picker with whatever perihelia have a forecast
-    const processed = s.perihelia_processed || [];
-    if (processed.length > 1 && forecastData) {
+    // Populate the perihelion picker — only perihelia that have their own
+    // latest_{P}.json. Falls back to the broader "processed" list when the
+    // status workflow hasn't been run yet against the new schema.
+    const offerable = s.perihelia_with_latest_json ?? s.perihelia_processed ?? [];
+    if (offerable.length > 1 && forecastData) {
       const picker = document.getElementById("perihelion-picker");
       const wrap = document.getElementById("perihelion-picker-wrap");
-      picker.innerHTML = processed.map(p => `<option value="${p}"${p === forecastData.perihelion ? " selected" : ""}>${p}</option>`).join("");
+      picker.innerHTML = offerable.map(p => `<option value="${p}"${p === forecastData.perihelion ? " selected" : ""}>${p}</option>`).join("");
       wrap.style.display = "";
       picker.onchange = async (ev) => {
         try {
