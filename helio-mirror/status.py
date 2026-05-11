@@ -26,10 +26,12 @@ STAGES = {
     "raw_psp": "psp/",
     "raw_jwst": "jwst/",
     "raw_ephemeris": "ephemeris/",
+    "raw_probes": "probes/",
     "registered": "coords/",
     "events": "events/",
     "irradiance": "irradiance/",
     "forecast": "forecast/",
+    "status": "status/",
 }
 
 
@@ -68,6 +70,14 @@ def main() -> int:
                 bodies_present.add(body_name)
     bodies_present.discard("PSP")
 
+    # Per-perihelion HSO probe count from probes/{sc}_mag_{P}.parquet
+    probes_per_perihelion: dict[str, list[str]] = defaultdict(list)
+    for f in by_stage.get("raw_probes", []):
+        m = re.match(r"probes/(.+)_mag_(E\d+)\.parquet$", f)
+        if m:
+            sc, tag = m.group(1), m.group(2)
+            probes_per_perihelion[tag].append(sc.replace("_", "-"))
+
     summary = {
         "generated_at": pd.Timestamp.utcnow().isoformat(),
         "repo": f"https://huggingface.co/datasets/{REPO_ID}",
@@ -78,6 +88,10 @@ def main() -> int:
             tag for tag in PERIHELION_TAGS
             if per_perihelion.get(tag, {}).get("forecast", 0) > 0
         ),
+        "probes_per_perihelion": {
+            tag: sorted(probes_per_perihelion.get(tag, []))
+            for tag in PERIHELION_TAGS
+        },
         "per_perihelion_completeness": {
             tag: dict(per_perihelion[tag]) for tag in PERIHELION_TAGS
         },
