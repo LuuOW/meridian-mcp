@@ -1,0 +1,273 @@
+#!/usr/bin/env python3
+"""
+Stage 1 — helio-mirror multi-source pull.
+
+Pulls, for one perihelion window:
+  - PSP FIELDS L2 + SWEAP/SPC L3 via pyspedas
+  - JWST solar-system body observations (Mars / Jupiter / Saturn by default)
+    via astroquery MAST, calib_level=3
+  - JPL Horizons heliocentric vectors for PSP + each target body + Earth
+
+Outputs are pushed to the public HF dataset `luuow/meridian-helio-mirror`
+(auto-created on first push). Set HF_TOKEN env var; choose perihelion via
+HELIO_PERIHELION (default E20).
+"""
+from __future__ import annotations
+
+import os
+import sys
+import traceback
+from pathlib import Path
+
+import pandas as pd
+import pyspedas
+import pytplot
+from astroquery.jplhorizons import Horizons
+from astroquery.mast import Observations
+from huggingface_hub import HfApi, create_repo
+
+from targets import BODIES, PSP_NAIF, PERIHELIA, JWST_BODIES_DEFAULT, EPHEMERIS_BODIES_DEFAULT
+
+REPO_ID = "luuow/meridian-helio-mirror"
+PERIHELION = os.environ.get("HELIO_PERIHELION", "E20")
+JWST_CAP_PER_BODY = int(os.environ.get("JWST_CAP_PER_BODY", "2"))
+JWST_FILE_CAP_PER_BODY = int(os.environ.get("JWST_FILE_CAP_PER_BODY", "3"))
+
+
+def fetch_psp_fields(t_start: str, t_stop: str) -> pd.DataFrame:
+    pyspedas.psp.fields(
+        trange=[t_start, t_stop],
+        datatype="mag_rtn_4_per_cycle",
+        level="l2",
+        time_clip=True,
+    )
+    data = pytplot.get_data("psp_fld_l2_mag_RTN_4_Sa_per_Cyc")
+    pytplot.del_data("*")
+    if data is None or len(data.times) == 0:
+        return pd.DataFrame()
+    return pd.DataFrame({
+        "time": pd.to_datetime(data.times, unit="s"),
+        "B_R": data.y[:, 0],
+        "B_T": data.y[:, 1],
+        "B_N": data.y[:, 2],
+    })
+
+
+def fetch_psp_sweap_spc(t_start: str, t_stop: str) -> pd.DataFrame:
+    pyspedas.psp.spc(
+        trange=[t_start, t_stop],
+        datatype="l3i",
+        level="l3",
+        time_clip=True,
+    )
+    vp = pytplot.get_data("psp_spc_vp_moment_RTN")
+    np_ = pytplot.get_data("psp_spc_np_moment")
+    wp = pytplot.get_data("psp_spc_wp_moment")
+    pytplot.del_data("*")
+    if vp is None or np_ is None:
+        return pd.DataFrame()
+    return pd.DataFrame({
+        "time": pd.to_datetime(vp.times, unit="s"),
+        "v_R_km_s": vp.y[:, 0],
+        "v_T_km_s": vp.y[:, 1],
+        "v_N_km_s": vp.y[:, 2],
+        "n_p_cm3": np_.y,
+        "w_p_km_s": wp.y if wp is not None else float("nan"),
+    })
+
+
+def fetch_ephemeris(naif_id: str, t_start: str, t_stop: str, step: str = "1h") -> pd.DataFrame:
+    obj = Horizons(
+        id=naif_id,
+        location="@sun",
+        epochs={"start": t_start, "stop": t_stop, "step": step},
+    )
+    vec = obj.vectors().to_pandas()
+    return pd.DataFrame({
+        "time_jd": vec["datetime_jd"].astype(float),
+        "x_au":    vec["x"].astype(float),
+        "y_au":    vec["y"].astype(float),
+        "z_au":    vec["z"].astype(float),
+        "r_au":    vec["range"].astype(float),
+    })
+
+
+def search_jwst(target_name: str, cap: int):
+    obs = Observations.query_criteria(
+        obs_collection="JWST",
+        target_name=target_name,
+        calib_level=3,
+    )
+    if len(obs) == 0:
+        return obs
+    return obs[: min(cap, len(obs))]
+
+
+def select_jwst_products(obs):
+    products = Observations.get_product_list(obs)
+    if len(products) == 0:
+        return products
+    mask = (products["productType"] == "SCIENCE") & (products["calib_level"] == 3)
+    sel = products[mask]
+    if len(sel) > JWST_FILE_CAP_PER_BODY:
+        sel = sel[:JWST_FILE_CAP_PER_BODY]
+    return sel
+
+
+def push(api: HfApi, local: Path, repo_path: str, message: str) -> None:
+    api.upload_file(
+        path_or_fileobj=str(local),
+        path_in_repo=repo_path,
+        repo_id=REPO_ID,
+        repo_type="dataset",
+        commit_message=message,
+    )
+
+
+def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
+    ok = False
+    days = pd.date_range(t_start, t_stop, freq="D")
+    for day in days:
+        try:
+            day_str = day.strftime("%Y-%m-%d")
+            day_next = (day + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+            print(f"[psp/fields] {day_str}")
+            df = fetch_psp_fields(day_str, day_next)
+            if df.empty:
+                print(f"[psp/fields] no data {day_str}")
+                continue
+            path = out / "psp" / f"fields_{day_str}.parquet"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            df.to_parquet(path, compression="snappy")
+            push(api, path, f"psp/fields_{day_str}.parquet", f"stage-1: PSP FIELDS {day_str}")
+            ok = True
+        except Exception as e:
+            print(f"[psp/fields] {day_str} failed: {e}", file=sys.stderr)
+            traceback.print_exc()
+    try:
+        print(f"[psp/sweap-spc] {t_start} → {t_stop}")
+        df = fetch_psp_sweap_spc(t_start, t_stop)
+        if not df.empty:
+            path = out / "psp" / f"sweap_spc_{PERIHELION}.parquet"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            df.to_parquet(path, compression="snappy")
+            push(api, path, f"psp/sweap_spc_{PERIHELION}.parquet",
+                 f"stage-1: PSP SWEAP/SPC {PERIHELION}")
+            ok = True
+    except Exception as e:
+        print(f"[psp/sweap-spc] failed: {e}", file=sys.stderr)
+        traceback.print_exc()
+    return ok
+
+
+def pull_jwst(api: HfApi, out: Path, bodies: tuple[str, ...]) -> bool:
+    ok = False
+    for body_name in bodies:
+        body = BODIES.get(body_name)
+        if body is None or not body.jwst_names:
+            continue
+        for tgt in body.jwst_names:
+            try:
+                print(f"[jwst] searching {tgt}")
+                obs = search_jwst(tgt, cap=JWST_CAP_PER_BODY)
+                if len(obs) == 0:
+                    print(f"[jwst] no obs for {tgt}")
+                    continue
+                products = select_jwst_products(obs)
+                if len(products) == 0:
+                    print(f"[jwst] no calib_level=3 SCIENCE products for {tgt}")
+                    continue
+                dest = out / "jwst" / body.name
+                dest.mkdir(parents=True, exist_ok=True)
+                print(f"[jwst] downloading {len(products)} products for {body.name}")
+                manifest = Observations.download_products(
+                    products, download_dir=str(dest), curl_flag=False)
+                for row in manifest:
+                    if "Local Path" not in manifest.colnames:
+                        continue
+                    local = Path(row["Local Path"])
+                    if not local.exists():
+                        continue
+                    rel = local.relative_to(out)
+                    push(api, local, str(rel),
+                         f"stage-1: JWST {body.name} {local.name}")
+                    ok = True
+            except Exception as e:
+                print(f"[jwst] {body.name}/{tgt} failed: {e}", file=sys.stderr)
+                traceback.print_exc()
+    return ok
+
+
+def pull_ephemeris(api: HfApi, t_start: str, t_stop: str, out: Path,
+                    bodies: tuple[str, ...]) -> bool:
+    ok = False
+    try:
+        print(f"[eph/PSP] {t_start} → {t_stop}")
+        df = fetch_ephemeris(PSP_NAIF, t_start, t_stop)
+        path = out / "ephemeris" / f"PSP_{PERIHELION}.parquet"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(path)
+        push(api, path, f"ephemeris/PSP_{PERIHELION}.parquet",
+             f"stage-1: ephemeris PSP {PERIHELION}")
+        ok = True
+    except Exception as e:
+        print(f"[eph/PSP] failed: {e}", file=sys.stderr)
+        traceback.print_exc()
+
+    for body_name in bodies:
+        body = BODIES.get(body_name)
+        if body is None:
+            continue
+        try:
+            print(f"[eph/{body.name}] {t_start} → {t_stop}")
+            df = fetch_ephemeris(body.naif_id, t_start, t_stop)
+            path = out / "ephemeris" / f"{body.name}_{PERIHELION}.parquet"
+            df.to_parquet(path)
+            push(api, path, f"ephemeris/{body.name}_{PERIHELION}.parquet",
+                 f"stage-1: ephemeris {body.name} {PERIHELION}")
+            ok = True
+        except Exception as e:
+            print(f"[eph/{body.name}] failed: {e}", file=sys.stderr)
+            traceback.print_exc()
+    return ok
+
+
+def main() -> int:
+    if "HF_TOKEN" not in os.environ:
+        print("ERROR: HF_TOKEN not set", file=sys.stderr)
+        return 1
+    token = os.environ["HF_TOKEN"]
+    api = HfApi(token=token)
+
+    if PERIHELION not in PERIHELIA:
+        print(f"ERROR: unknown perihelion {PERIHELION}; one of {list(PERIHELIA)}",
+              file=sys.stderr)
+        return 1
+    t_start, t_stop = PERIHELIA[PERIHELION]
+    print(f"[helio-mirror stage-1] perihelion={PERIHELION} window={t_start} → {t_stop}")
+
+    try:
+        create_repo(repo_id=REPO_ID, repo_type="dataset", token=token,
+                     exist_ok=True, private=False)
+        print(f"[helio-mirror] HF dataset ready: https://huggingface.co/datasets/{REPO_ID}")
+    except Exception as e:
+        print(f"[helio-mirror] create_repo: {e}")
+
+    out = Path("helio_cache")
+    out.mkdir(parents=True, exist_ok=True)
+
+    psp_ok = pull_psp(api, t_start, t_stop, out)
+    eph_ok = pull_ephemeris(api, t_start, t_stop, out, EPHEMERIS_BODIES_DEFAULT)
+    jwst_ok = pull_jwst(api, out, JWST_BODIES_DEFAULT)
+
+    print("\n[helio-mirror] stage-1 done.")
+    print(f"  PSP:       {'OK' if psp_ok else 'FAIL'}")
+    print(f"  Ephemeris: {'OK' if eph_ok else 'FAIL'}")
+    print(f"  JWST:      {'OK' if jwst_ok else 'FAIL'}")
+    if not (psp_ok or eph_ok or jwst_ok):
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
