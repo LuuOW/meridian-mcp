@@ -800,9 +800,14 @@ async function loadAll() {
           .map(p => `<tr><td style="padding:2px 12px 2px 0;">${p.source_spacecraft} → ${p.target_spacecraft}</td><td style="text-align:right;color:#1cab5d;">${p.n}</td></tr>`)
           .join("")
       : "";
-    const scoreLine = score != null
-      ? `<span style="color:#9aa0a6;">median match score</span> <strong>${Number(score).toFixed(2)}</strong>`
-      : "";
+    let scoreLine = "";
+    if (score != null) {
+      const s = Number(score);
+      const verdict = s >= 0.6 ? { cls: "ok", txt: "tight" }
+                    : s >= 0.4 ? { cls: "muted", txt: "moderate" }
+                    : { cls: "warn", txt: "loose — tolerances too wide" };
+      scoreLine = `<span style="color:#9aa0a6;">median match score</span> <strong>${s.toFixed(2)}</strong> <span class="pill ${verdict.cls}">${verdict.txt}</span>`;
+    }
     if (matched === 0) {
       mount.innerHTML = `
         <div class="chart-frame" style="font-family:var(--font-mono);font-size:12px;line-height:1.7;">
