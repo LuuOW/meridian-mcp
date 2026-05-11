@@ -33,9 +33,16 @@ gh workflow run helio-mirror-ml-residual.yml -R LuuOW/meridian-mcp
 ```
 
 Reads every `irradiance/delivered_*.parquet`, builds (anchor, future) pairs,
-fits per-body Ridge. Skips bodies with <10 pairs (status `gated_insufficient_data`).
-With our current cadence (≈1 JWST obs per body per perihelion), this WILL gate
-until items 1–2 of `ROADMAP.md` give us more data per body.
+fits per-body Ridge with a **chronological 80/20 holdout** (oldest train,
+newest test). A specialist only ships if `(baseline_test_mae − model_test_mae)
+/ baseline_test_mae > 0` on the held-out set — i.e., it has to beat
+persistence-r². Bodies that fail this skill gate go to
+`insufficient_data_bodies` with the reason `"Ridge worse than persistence"`,
+and `forecast.py` falls back to persistence-only for them.
+
+With our current cadence (≈1 JWST obs per body per perihelion), this WILL
+gate until items 1–2 of `ROADMAP.md` give us more data per body. **Now
+also runs automatically at end of `helio-mirror-fanout.yml` (post-matrix job).**
 
 ### Refresh just the dataset health summary
 
@@ -44,7 +51,32 @@ gh workflow run helio-mirror-status.yml -R LuuOW/meridian-mcp
 ```
 
 Reads the file tree on HF, emits `forecast/dataset_status.json` for the
-dashboard's pipeline-state panel. Fast (no compute).
+dashboard's pipeline-state panel. Also gathers per-stage `gates/*.json`
+into `gates_per_perihelion` so the dashboard can render pass/fail pills
+without log diving. Fast (no compute).
+
+### Generate the portfolio findings markdown
+
+```bash
+gh workflow run helio-mirror-findings.yml -R LuuOW/meridian-mcp
+```
+
+Reads `latest_{P}.json` + `dataset_status.json` + per-stage gates +
+coincidence summaries; emits `findings/FINDINGS.md` (canonical) plus
+per-perihelion `FINDINGS_{P}.md`. Suitable for pasting into a portfolio
+page or resume bullet. Also runs at end of fanout.
+
+### Compute filter zeropoints (one-shot)
+
+```bash
+gh workflow run helio-mirror-zeropoints.yml -R LuuOW/meridian-mcp
+```
+
+Computes Planck-tophat zeropoints for 36 NIRCam/MIRI filters and pushes
+`forecast/filter_zeropoints.json`. Once present, `calibrate.py` emits
+`expected_in_band_W_m2_at_body` per JWST observation and `forecast.py`
+forwards it into `latest.json` — the dashboard body card then renders
+"in-band W/m² · zp-calibrated". Run once after pipeline bootstrap.
 
 ### Weekly auto-refresh
 
@@ -78,6 +110,10 @@ Common failure modes seen so far:
 | `429 Too Many Requests` on HF commit | HF free tier caps at 128 commits/hour per repo. Many small `upload_file` calls in a tight loop blow the budget within one perihelion. | Two-prong: all stages now call `hf_push.push_folder` to batch a stage's outputs into a single commit; `hf_push.push` retries 429/5xx with exponential backoff (2/5/15/45/120s). Fanout serialised with `max-parallel: 1`. |
 | `No links matching pattern psp_swp_spc_l3i_*` | PSP SWEAP/SPC L3 is gappy post-E18 | Use SWEAP/SPAN-I (`psp.spi`) — that's what `pull.py` does now. |
 | JWST anchor is years off PSP perihelion | MAST query unwindowed | `search_jwst()` now takes `t_start/t_stop` and a `window_days=365` band; falls back to nearest-in-time if window is empty. |
+| `module 'pyspedas.projects.psp' has no attribute 'wispr'` | pyspedas ships fields/spc/spe/spi/epihi/epilo/rfs only — no wispr loader. | `pull.py` short-circuits with `hasattr` check; stage 3b gates on missing input. Direct PSP SOC HTTP fetch is a v0.4 item. |
+| `mag() got an unexpected keyword argument 'level'/'datatype'/'time_clip'` (STEREO-A / DSCOVR / MAVEN / etc) | Per-mission `pyspedas.<mission>.mag()` signatures differ — no universal kwarg set. | `probes.py` uses per-mission-specific kwargs verified against upstream master: STEREO `datatype="8hz"`, Wind `"h3-rtn"`, ACE keeps `"h3"` (GSE — fine for PVI). |
+| Picker switches to E20 but shows E24 data | Old fanout SHA didn't emit `latest_{E20-E24}.json`, so picker falls back to `latest.json`. | Re-dispatch fanout (now writes per-perihelion JSON) or run `helio-mirror-forecast.yml` per perihelion. |
+| `n_probe_pairs_matched / n_candidate` is 95% but `median_probe_match_score` is 0.29 | Tolerances (±20° lon, ±24 h time) too wide. Almost every event finds *some* event within window. | Dashboard flags as "loose". Tighten via `HELIO_LON_TOL_DEG` / `HELIO_T_TOL_WIND_H` env vars in the orchestrator. |
 
 ### Resource sanity check
 
@@ -100,15 +136,29 @@ of headroom.
 
 ## Adding a new stage
 
-1. Write `helio-mirror/<name>.py` with a `main()` that returns 0/1.
-2. Use `from hf_push import push as _push; _push(api, REPO_ID, local, repo_path, msg)`
-   for HF uploads — gets retry-on-429 for free.
+1. Write `helio-mirror/<name>.py` with a `main()` that opens a `Gate`
+   context manager and delegates to `_main_inner()`:
+   ```python
+   from gates import Gate
+   def main() -> int:
+       ...
+       with Gate("<stage>", PERIHELION, REPO_ID, api=api) as g:
+           rc = _main_inner(token, api, g)
+       return rc
+   ```
+   Set `g.n_inputs`, `g.n_outputs`, `g.notes`, `g.ok`, `g.reason` at end.
+   This emits `gates/<stage>_<P>.json` that the dashboard picks up.
+2. Use `from hf_push import push as _push` (single file) or `push_folder`
+   (batch a folder into one HF commit — preferred since HF caps 128
+   commits/hour). Both retry 429/5xx with backoff.
 3. Add a workflow `helio-mirror-<name>.yml` cloning the pattern of an
    existing single-stage workflow (`helio-mirror-detect.yml` is the
    simplest template).
 4. Add the new stage to `helio-mirror-all.yml`'s job step list.
 5. Add the new stage to `helio-mirror-fanout.yml`'s job step list.
 6. Add a line to the stages table in `README.md`.
+7. Add the stage prefix to `STAGES` in `status.py` if it produces a
+   distinct HF folder.
 
 ## Common gotchas
 
