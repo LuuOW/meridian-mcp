@@ -749,7 +749,7 @@ async function loadAll() {
       .map(([tag, sc]) => `<div style="margin-top:3px;"><span class="pill ok">${tag}</span> <span style="font-size:11px;color:#9aa0a6;">${sc.length}/6 probes:</span> ${sc.map(x => `<code style="color:#1cab5d;">${x}</code>`).join(", ")}</div>`)
       .join("");
     const gpp = s.gates_per_perihelion || {};
-    const STAGE_ORDER = ["pull","register","detect","calibrate","coincide","forecast"];
+    const STAGE_ORDER = ["pull","register","detect","calibrate","coincide","coincide_tight","forecast"];
     const gateRows = Object.entries(gpp)
       .filter(([, g]) => g && Object.keys(g).length)
       .map(([tag, g]) => {
