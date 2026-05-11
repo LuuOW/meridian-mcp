@@ -79,64 +79,67 @@ def fetch_solo_mag(t_start: str, t_stop: str) -> pd.DataFrame:
 
 
 def fetch_stereoa_mag(t_start: str, t_stop: str) -> pd.DataFrame:
+    # pyspedas.stereo.mag has no `level` kwarg. Valid datatype: "8hz" or "32hz".
     pytplot.del_data("*")
     _safe_load("stereo.mag", pyspedas.stereo.mag,
                probe="a", trange=[t_start, t_stop],
-               level="l1", time_clip=True)
+               datatype="8hz", time_clip=True)
     df, _ = _extract_rtn([
-        "sta_l1_mag_rtn", "sta_l1_mag_RTN",
-        "BFIELDRTN", "BRTN",
+        "BFIELDRTN", "sta_BFIELDRTN", "BFIELD",
+        "sta_BFIELD", "BRTN",
     ])
     pytplot.del_data("*")
     return df
 
 
 def fetch_wind_mfi(t_start: str, t_stop: str) -> pd.DataFrame:
+    # h3-rtn = 11-second RTN. Default h0 is GSE-only.
     pytplot.del_data("*")
     _safe_load("wind.mfi", pyspedas.wind.mfi,
                trange=[t_start, t_stop],
-               datatype="h0", time_clip=True)
+               datatype="h3-rtn", time_clip=True)
     df, _ = _extract_rtn([
-        "wi_h0_mfi_B3RTN", "wi_h0_mfi_BRTN", "BRTN",
+        "wi_h3-rtn_mfi_BRTN", "wi_h3rtn_mfi_BRTN",
+        "BRTN", "wi_h0_mfi_BRTN", "wi_h0_mfi_B3GSE",
     ])
     pytplot.del_data("*")
     return df
 
 
 def fetch_ace_mfi(t_start: str, t_stop: str) -> pd.DataFrame:
+    # ACE/MFI publishes B in GSE only. For PVI we just need three components.
     pytplot.del_data("*")
     _safe_load("ace.mfi", pyspedas.ace.mfi,
                trange=[t_start, t_stop],
-               datatype="h0", time_clip=True)
+               datatype="h3", time_clip=True)
     df, _ = _extract_rtn([
-        "BRTN", "ace_h0_mfi_BRTN", "Magnitude",
+        "BGSEc", "ac_h3_mfi_BGSEc", "BRTN", "Magnitude",
     ])
     pytplot.del_data("*")
     return df
 
 
 def fetch_dscovr_mag(t_start: str, t_stop: str) -> pd.DataFrame:
+    # DSCOVR load() has no `datatype` kwarg; instrument="mag" is the switch.
     pytplot.del_data("*")
     _safe_load("dscovr.mag", pyspedas.dscovr.mag,
-               trange=[t_start, t_stop],
-               datatype="h0", time_clip=True)
+               trange=[t_start, t_stop], time_clip=True)
     df, _ = _extract_rtn([
-        "dsc_h0_mag_B1RTN", "dsc_h0_mag_BRTN",
-        "B1RTN", "BRTN",
+        "dsc_h0_mag_B1GSE", "dsc_h0_mag_B1RTN",
+        "B1GSE", "B1RTN", "BRTN", "BGSE",
     ])
     pytplot.del_data("*")
     return df
 
 
 def fetch_maven_mag(t_start: str, t_stop: str) -> pd.DataFrame:
+    # MAVEN mag() does NOT accept time_clip. Default datatype is 'ss'.
     pytplot.del_data("*")
     _safe_load("maven.mag", pyspedas.maven.mag,
-               trange=[t_start, t_stop],
-               datatype="sunstate-1sec",
-               level="l2", time_clip=True)
+               trange=[t_start, t_stop], level="l2")
     df, _ = _extract_rtn([
-        "OB_B", "OB_B_pl_sunstate", "OB_B_pl",
-        "MAVEN_MAG_RTN",
+        "OB_B", "OB_B_pl", "OB_B_pl_sunstate",
+        "mvn_B_1sec", "mvn_mag_l2_OB_B",
     ])
     pytplot.del_data("*")
     return df
