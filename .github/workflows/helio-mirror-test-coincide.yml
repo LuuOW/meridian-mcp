@@ -27,7 +27,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install minimal deps
-        run: pip install pandas numpy
+        run: pip install pandas numpy huggingface_hub
 
       - name: Run synthetic-data test
         working-directory: helio-mirror
