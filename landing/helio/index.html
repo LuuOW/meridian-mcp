@@ -826,8 +826,22 @@ async function loadAll() {
           <strong style="color:#1cab5d;">${matched} matched coincidences</strong> across ${probesN} HSO probes
           <span style="color:#666;">(of ${candidate} candidate pairs tested)</span>. ${scoreLine}
           ${pairRows ? `<table style="margin-top:8px;border-collapse:collapse;">${pairRows}</table>` : ""}
+          <div id="null-test-line" style="margin-top:8px;color:#9aa0a6;font-size:11px;"></div>
         </div>`;
     }
+    // Try to overlay the significance test verdict if it's been run
+    fetch(`${HF_BASE}/events/null_test_${forecastData?.perihelion}.json`, { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(nt => {
+        if (!nt) return;
+        const line = document.getElementById("null-test-line");
+        if (!line) return;
+        const cls = nt.verdict === "significant" ? "ok"
+                  : nt.verdict === "marginal" ? "muted"
+                  : "warn";
+        line.innerHTML = `Null test: observed <strong>${nt.observed_matched}</strong> vs null mean <strong>${nt.null_matches_mean}</strong> (n=${nt.n_shuffles} shuffles) · z=${nt.z_score} · p=${nt.p_value_one_sided?.toFixed(3)} <span class="pill ${cls}">${nt.verdict}</span>`;
+      })
+      .catch(() => {});
   } catch {}
   try {
     const d = await (await fetch(`${HF_BASE}/forecast/ml_residual.json`, { cache: "no-store" })).json();
