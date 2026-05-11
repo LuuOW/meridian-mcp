@@ -743,11 +743,26 @@ async function loadAll() {
       .filter(([, sc]) => Array.isArray(sc) && sc.length)
       .map(([tag, sc]) => `<div style="margin-top:3px;"><span class="pill ok">${tag}</span> <span style="font-size:11px;color:#9aa0a6;">${sc.length}/6 probes:</span> ${sc.map(x => `<code style="color:#1cab5d;">${x}</code>`).join(", ")}</div>`)
       .join("");
+    const gpp = s.gates_per_perihelion || {};
+    const STAGE_ORDER = ["pull","register","detect","calibrate","coincide","forecast"];
+    const gateRows = Object.entries(gpp)
+      .filter(([, g]) => g && Object.keys(g).length)
+      .map(([tag, g]) => {
+        const pills = STAGE_ORDER.map(st => {
+          const entry = g[st];
+          if (!entry) return `<span class="pill muted" title="not run">${st}</span>`;
+          const cls = entry.ok ? "ok" : "warn";
+          const tip = `${st}: ${entry.reason || "ok"} (${entry.n_inputs ?? "?"}→${entry.n_outputs ?? "?"}, ${entry.duration_sec ?? "?"}s)`;
+          return `<span class="pill ${cls}" title="${tip.replace(/"/g,'&quot;')}">${st}${entry.ok ? "" : "✗"}</span>`;
+        }).join(" ");
+        return `<div style="margin-top:3px;"><span class="pill ok">${tag}</span> ${pills}</div>`;
+      }).join("");
     m.innerHTML = `
       <h2 style="font-size:14px;margin:0 0 6px;">Pipeline state</h2>
       <p class="sub">${s.n_files_total} files · last update ${fmtTs(s.generated_at)}</p>
       <p style="font-size:12px;margin:0;">perihelia: ${(s.perihelia_processed || []).map(p => `<span class="pill ok">${p}</span>`).join(" ") || "—"}</p>
       <p style="font-size:12px;margin:6px 0 0;">bodies: ${(s.bodies_with_data || []).map(b => `<span class="pill muted">${b}</span>`).join(" ")}</p>
+      ${gateRows ? `<div style="margin-top:8px;font-size:11px;"><strong>Stage gates per perihelion</strong> <span class="sub" style="font-size:10px;">(hover for details)</span>${gateRows}</div>` : ""}
       ${probeRows ? `<div style="margin-top:8px;font-size:11px;"><strong>HSO probes per perihelion</strong>${probeRows}</div>` : ""}`;
   } catch { document.getElementById("status-mount").textContent = "(dataset_status.json not yet on HF)"; }
   // Per-probe load status: which spacecraft actually landed data this perihelion
