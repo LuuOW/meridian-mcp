@@ -126,6 +126,26 @@ Defensible statement: "At E21 geometry, probe-pair coincidences at
 p<0.001, n=100 shuffles, source+target v_sw averaging). At E24 the
 same test gives z=+2.4 (p≈0.02), marginal evidence."
 
+### 0f. Log-mean v_sw integration — robustness check
+
+Replaced arithmetic mean of (v_src, v_tgt) with the exact line-integral
+effective velocity v_eff = (v_tgt − v_src) / ln(v_tgt/v_src), which is
+correct when v(r) varies linearly with r. **Same null verdicts:**
+
+| Perihelion | arith-mean z | log-mean z | verdict |
+|---|---|---|---|
+| E20 | 0.0 | 0.0 | indist (saturated) |
+| **E21** | +4.24 | +4.28 | SIGNIFICANT |
+| E22 | -3.44 | -3.44 | indist |
+| E23 | -15.5 | -15.5 | indist |
+| **E24** | +2.36 | +2.36 | MARGINAL |
+
+The two claims survive both models — robustness signal. The
+propagation-model choice is NOT what's gating the other 3 perihelia
+from significance; their indistinguishability is data-density-driven
+(saturation) or coverage-driven (E23 has the most events and the worst
+density saturation).
+
 ### 0b. Inner-heliosphere → outer-probe Parker transit exceeds perihelion window
 
 A 4-day perihelion window catches ACE↔DSCOVR (co-located at L1) and
