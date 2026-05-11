@@ -170,20 +170,22 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
         inferred = flux * (delta_km ** 2) / normaliser
 
         # Optional absolute calibration: if a zero-point for this filter
-        # exists, convert the proxy to "expected in-filter solar flux at
-        # body" in W/m². Otherwise inferred_irradiance_W_m2 stays None.
+        # exists, emit the GEOMETRIC expectation in W/m² (zp / r_body²).
+        # The JWST-derived proxy stays separate — combining them honestly
+        # requires a per-(body, filter) calibration constant which we don't
+        # have yet. The dashboard's hero number is best served by the
+        # geometric value; the proxy is a relative deviation indicator.
         filt = j.get("filter")
-        zp_in_band_at_1au = zeropoints.get(filt) if filt else None
+        zp_in_band_at_1au_obj = zeropoints.get(filt) if filt else None
+        zp_in_band_at_1au = None
+        if isinstance(zp_in_band_at_1au_obj, dict):
+            zp_in_band_at_1au = zp_in_band_at_1au_obj.get("in_band_W_m2_at_1au")
+        elif isinstance(zp_in_band_at_1au_obj, (int, float)):
+            zp_in_band_at_1au = float(zp_in_band_at_1au_obj)
         if zp_in_band_at_1au is not None and r_body_au > 0:
             expected_at_body_W_m2 = zp_in_band_at_1au / (r_body_au ** 2)
-            # The proxy is in arbitrary flux × area units; normalise by the
-            # GEOMETRIC expectation and multiply by the expected absolute flux.
-            # This is correct up to a per-filter calibration constant absorbed
-            # into the zp — which is exactly the point of the zeropoint table.
-            inferred_W_m2 = expected_at_body_W_m2  # best estimate when geometry-dominated
         else:
             expected_at_body_W_m2 = None
-            inferred_W_m2 = None
 
         rows.append({
             "timestamp": ts,
@@ -205,7 +207,6 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
             "inferred_irradiance_proxy": inferred,
             "log10_inferred_irradiance_proxy": float(np.log10(inferred)) if inferred > 0 else None,
             "expected_in_band_W_m2_at_body": expected_at_body_W_m2,
-            "inferred_in_band_W_m2": inferred_W_m2,
             "zeropoint_calibrated": zp_in_band_at_1au is not None,
         })
 
