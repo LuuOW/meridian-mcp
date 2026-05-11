@@ -33,6 +33,20 @@ BODIES: dict[str, Body] = {
 
 PSP_NAIF = "-96"
 
+# Heliophysics System Observatory — operational in-situ probes whose
+# magnetometer / plasma data is on CDAWeb via pyspedas. NAIF IDs are JPL
+# Horizons identifiers for the heliocentric ephemeris.
+SPACECRAFT = {
+    "PSP":      {"naif": "-96",  "loader": "psp_fields"},
+    "SolO":     {"naif": "-144", "loader": "solo_mag"},
+    "STEREO-A": {"naif": "-234", "loader": "stereoa_mag"},
+    "Wind":     {"naif": "-8",   "loader": "wind_mfi"},
+    "ACE":      {"naif": "-92",  "loader": "ace_mfi"},
+    "DSCOVR":   {"naif": "-78",  "loader": "dscovr_mag"},
+    "MAVEN":    {"naif": "-202", "loader": "maven_mag"},
+}
+SPACECRAFT_DEFAULT = tuple(SPACECRAFT.keys())
+
 PERIHELIA: dict[str, tuple[str, str]] = {
     "E20": ("2024-06-28", "2024-07-02"),
     "E21": ("2024-09-28", "2024-10-02"),
