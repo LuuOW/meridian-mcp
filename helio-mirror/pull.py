@@ -247,8 +247,19 @@ def push(api: HfApi, local: Path, repo_path: str, message: str) -> None:
     _push(api, REPO_ID, local, repo_path, message)
 
 
+def push_subdir(api: HfApi, local_dir: Path, repo_subdir: str, message: str,
+                 patterns: list[str] | None = None) -> None:
+    from hf_push import push_folder
+    push_folder(api, REPO_ID, local_dir, repo_subdir, message, allow_patterns=patterns)
+
+
 def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
+    """Pull all PSP instruments into out/psp/ locally first, then one folder
+    commit. HF rate-limits at 128 commits/hour; folder commits batch many
+    files into one."""
     ok = False
+    psp_dir = out / "psp"
+    psp_dir.mkdir(parents=True, exist_ok=True)
     days = pd.date_range(t_start, t_stop, freq="D")
     for day in days:
         try:
@@ -259,10 +270,8 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
             if df.empty:
                 print(f"[psp/fields] no data {day_str}")
                 continue
-            path = out / "psp" / f"fields_{day_str}.parquet"
-            path.parent.mkdir(parents=True, exist_ok=True)
+            path = psp_dir / f"fields_{day_str}.parquet"
             df.to_parquet(path, compression="snappy")
-            push(api, path, f"psp/fields_{day_str}.parquet", f"stage-1: PSP FIELDS {day_str}")
             ok = True
         except Exception as e:
             print(f"[psp/fields] {day_str} failed: {e}", file=sys.stderr)
@@ -271,11 +280,7 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
         print(f"[psp/sweap-spi] {t_start} → {t_stop}")
         df = fetch_psp_sweap_spi(t_start, t_stop)
         if not df.empty:
-            path = out / "psp" / f"sweap_spi_{PERIHELION}.parquet"
-            path.parent.mkdir(parents=True, exist_ok=True)
-            df.to_parquet(path, compression="snappy")
-            push(api, path, f"psp/sweap_spi_{PERIHELION}.parquet",
-                 f"stage-1: PSP SWEAP/SPAN-I {PERIHELION}")
+            df.to_parquet(psp_dir / f"sweap_spi_{PERIHELION}.parquet", compression="snappy")
             ok = True
         else:
             print("[psp/sweap-spi] empty frame (data gap at this perihelion)")
@@ -286,11 +291,7 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
         print(f"[psp/wispr] {t_start} → {t_stop}")
         df = fetch_psp_wispr(t_start, t_stop)
         if not df.empty:
-            path = out / "psp" / f"wispr_brightness_{PERIHELION}.parquet"
-            path.parent.mkdir(parents=True, exist_ok=True)
-            df.to_parquet(path, compression="snappy")
-            push(api, path, f"psp/wispr_brightness_{PERIHELION}.parquet",
-                 f"stage-1: PSP WISPR L3 brightness time series {PERIHELION}")
+            df.to_parquet(psp_dir / f"wispr_brightness_{PERIHELION}.parquet", compression="snappy")
             ok = True
         else:
             print("[psp/wispr] empty frame (data gap at this perihelion)")
@@ -301,23 +302,28 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
         print(f"[psp/isois-epihi] {t_start} → {t_stop}")
         df = fetch_psp_isois_epihi(t_start, t_stop)
         if not df.empty:
-            path = out / "psp" / f"isois_epihi_{PERIHELION}.parquet"
-            path.parent.mkdir(parents=True, exist_ok=True)
-            df.to_parquet(path, compression="snappy")
-            push(api, path, f"psp/isois_epihi_{PERIHELION}.parquet",
-                 f"stage-1: PSP ISOIS/EPI-Hi integrated proton rate {PERIHELION}")
+            df.to_parquet(psp_dir / f"isois_epihi_{PERIHELION}.parquet", compression="snappy")
             ok = True
         else:
             print("[psp/isois-epihi] empty frame")
     except Exception as e:
         print(f"[psp/isois-epihi] failed: {e}", file=sys.stderr)
         traceback.print_exc()
+    if ok:
+        push_subdir(api, psp_dir, "psp",
+                    f"stage-1: PSP raw bundle {PERIHELION}",
+                    patterns=["*.parquet"])
+        print(f"[psp] folder-uploaded {len(list(psp_dir.glob('*.parquet')))} parquets")
     return ok
 
 
 def pull_jwst(api: HfApi, out: Path, bodies: tuple[str, ...],
                t_start: str, t_stop: str) -> bool:
+    """Download JWST FITS for each candidate body into out/jwst/ locally,
+    then one folder commit at the end (HF 128 commits/hour cap)."""
     ok = False
+    jwst_root = out / "jwst"
+    jwst_root.mkdir(parents=True, exist_ok=True)
     for body_name in bodies:
         body = BODIES.get(body_name)
         if body is None or not body.jwst_names:
@@ -334,38 +340,34 @@ def pull_jwst(api: HfApi, out: Path, bodies: tuple[str, ...],
                 if len(products) == 0:
                     print(f"[jwst] no calib_level=3 SCIENCE products for {tgt}")
                     continue
-                dest = out / "jwst" / body.name
+                dest = jwst_root / body.name
                 dest.mkdir(parents=True, exist_ok=True)
                 print(f"[jwst] downloading {len(products)} products for {body.name}")
-                manifest = Observations.download_products(
+                Observations.download_products(
                     products, download_dir=str(dest), curl_flag=False)
-                for row in manifest:
-                    if "Local Path" not in manifest.colnames:
-                        continue
-                    local = Path(row["Local Path"])
-                    if not local.exists():
-                        continue
-                    rel = local.relative_to(out)
-                    push(api, local, str(rel),
-                         f"stage-1: JWST {body.name} {local.name}")
-                    ok = True
+                ok = True
             except Exception as e:
                 print(f"[jwst] {body.name}/{tgt} failed: {e}", file=sys.stderr)
                 traceback.print_exc()
+    if ok:
+        fits_count = sum(1 for _ in jwst_root.rglob("*.fits"))
+        push_subdir(api, jwst_root, "jwst",
+                    f"stage-1: JWST solar-system bundle {PERIHELION} "
+                    f"({fits_count} FITS)",
+                    patterns=["*.fits", "*.ecsv", "*.json"])
+        print(f"[jwst] folder-uploaded {fits_count} FITS")
     return ok
 
 
 def pull_ephemeris(api: HfApi, t_start: str, t_stop: str, out: Path,
                     bodies: tuple[str, ...]) -> bool:
     ok = False
+    eph_dir = out / "ephemeris"
+    eph_dir.mkdir(parents=True, exist_ok=True)
     try:
         print(f"[eph/PSP] {t_start} → {t_stop}")
         df = fetch_ephemeris(PSP_NAIF, t_start, t_stop)
-        path = out / "ephemeris" / f"PSP_{PERIHELION}.parquet"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        df.to_parquet(path)
-        push(api, path, f"ephemeris/PSP_{PERIHELION}.parquet",
-             f"stage-1: ephemeris PSP {PERIHELION}")
+        df.to_parquet(eph_dir / f"PSP_{PERIHELION}.parquet")
         ok = True
     except Exception as e:
         print(f"[eph/PSP] failed: {e}", file=sys.stderr)
@@ -378,14 +380,16 @@ def pull_ephemeris(api: HfApi, t_start: str, t_stop: str, out: Path,
         try:
             print(f"[eph/{body.name}] {t_start} → {t_stop}")
             df = fetch_ephemeris(body.naif_id, t_start, t_stop)
-            path = out / "ephemeris" / f"{body.name}_{PERIHELION}.parquet"
-            df.to_parquet(path)
-            push(api, path, f"ephemeris/{body.name}_{PERIHELION}.parquet",
-                 f"stage-1: ephemeris {body.name} {PERIHELION}")
+            df.to_parquet(eph_dir / f"{body.name}_{PERIHELION}.parquet")
             ok = True
         except Exception as e:
             print(f"[eph/{body.name}] failed: {e}", file=sys.stderr)
             traceback.print_exc()
+    if ok:
+        push_subdir(api, eph_dir, "ephemeris",
+                    f"stage-1: ephemeris bundle {PERIHELION}",
+                    patterns=[f"*_{PERIHELION}.parquet"])
+        print(f"[eph] folder-uploaded {len(list(eph_dir.glob(f'*_{PERIHELION}.parquet')))} parquets")
     return ok
 
 
