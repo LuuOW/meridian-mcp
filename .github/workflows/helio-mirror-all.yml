@@ -18,6 +18,11 @@ on:
         required: false
         default: false
         type: boolean
+      pvi_threshold:
+        description: "PVI > threshold gates the event detector. Default 3 (literature). Raise to 5+ to escape null-saturation."
+        required: false
+        default: "3.0"
+        type: string
   schedule:
     # Mondays 06:00 UTC — refresh forecast/latest.json from the most recent
     # perihelion (defaults to E24 above; change default to widen).
@@ -33,6 +38,7 @@ jobs:
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HELIO_PERIHELION: ${{ inputs.perihelion }}
+      HELIO_PVI_THRESHOLD: ${{ inputs.pvi_threshold }}
     steps:
       - uses: actions/checkout@v4
 
