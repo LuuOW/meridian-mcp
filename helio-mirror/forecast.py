@@ -532,7 +532,14 @@ def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
                 else False),
         })
     for body in forecast["body"].unique():
-        sub = forecast[forecast["body"] == body]
+        sub_all = forecast[forecast["body"] == body]
+        # Bodies with multiple JWST filters have one forecast per filter;
+        # the geometry (r, lon, kWh) is shared across filters so we'd be
+        # multi-counting if we summed everything. Pick one canonical
+        # filter for the geometric+kWh summary; the per-filter
+        # inferred_irradiance_proxy is preserved in the forecast list.
+        canonical_filter = sub_all["filter"].iloc[0]
+        sub = sub_all[sub_all["filter"] == canonical_filter].copy()
         anchor = sub.iloc[0]
         meta = body_anchor_meta.get(body, {})
         baseline_day = float(sub["baseline_kwh_per_m2_per_hour"].sum())
