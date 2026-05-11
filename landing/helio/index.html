@@ -833,11 +833,22 @@ async function loadAll() {
     const d = await (await fetch(`${HF_BASE}/forecast/ml_residual.json`, { cache: "no-store" })).json();
     const m = document.getElementById("ml-mount"); m.classList.remove("empty");
     const pill = d.status === "trained" ? `<span class="pill ok">${d.status}</span>` : `<span class="pill warn">${d.status}</span>`;
+    const specialists = d.specialists || {};
+    const skillRows = Object.entries(specialists).map(([body, s]) => {
+      const skill = s.holdout_skill;
+      const cls = skill > 0.1 ? "ok" : (skill > 0 ? "muted" : "warn");
+      return `<div style="margin-top:2px;font-size:11px;"><strong>${body}</strong> · holdout skill <span class="pill ${cls}">${skill != null ? skill.toFixed(3) : "—"}</span> · n_train=${s.n_train} n_test=${s.n_test} · test_mae=${s.test_mae_log10?.toFixed(4)}</div>`;
+    }).join("");
+    const insufficient = d.insufficient_data_bodies || [];
+    const insufRows = insufficient.length
+      ? `<div style="margin-top:6px;font-size:11px;color:#9aa0a6;"><strong>Gated</strong>: ${insufficient.map(b => `${b.body || "?"} (${b.reason || "?"})`).join("; ")}</div>`
+      : "";
     m.innerHTML = `
       <h2 style="font-size:14px;margin:0 0 6px;">ML residual</h2>
-      <p class="sub">${pill}</p>
+      <p class="sub">${pill} · ${d.held_out_frac ? `${(d.held_out_frac*100).toFixed(0)}% chronological holdout` : "no holdout reported"}</p>
       <p style="font-size:12px;margin:0;">pairs: ${d.n_pairs_total ?? 0} · min/body: ${d.min_train_per_body ?? "—"}</p>
-      <p style="font-size:12px;margin:6px 0 0;">trained: ${Object.keys(d.specialists || {}).join(", ") || "none"}</p>`;
+      ${skillRows || `<p style="font-size:12px;margin:6px 0 0;color:#9aa0a6;">no specialist passed holdout skill gate</p>`}
+      ${insufRows}`;
   } catch { document.getElementById("ml-mount").textContent = "(ml_residual.json not yet on HF)"; }
 }
 
