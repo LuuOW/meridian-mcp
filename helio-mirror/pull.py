@@ -500,6 +500,13 @@ def main() -> int:
         print(f"ERROR: unknown perihelion {PERIHELION}; one of {list(PERIHELIA)}",
               file=sys.stderr)
         return 1
+    from gates import Gate
+    with Gate("pull", PERIHELION, REPO_ID, api=api) as g:
+        rc = _main_inner(token, api, g)
+    return rc
+
+
+def _main_inner(token: str, api: HfApi, gate) -> int:
     t_start, t_stop = PERIHELIA[PERIHELION]
     print(f"[helio-mirror stage-1] perihelion={PERIHELION} window={t_start} → {t_stop}")
 
@@ -523,7 +530,16 @@ def main() -> int:
     print(f"  HSO probes:{'OK' if probes_ok else 'FAIL'}")
     print(f"  Ephemeris: {'OK' if eph_ok else 'FAIL'}")
     print(f"  JWST:      {'OK' if jwst_ok else 'FAIL'}")
-    if not (psp_ok or probes_ok or eph_ok or jwst_ok):
+    gate.notes = {
+        "psp": bool(psp_ok), "probes": bool(probes_ok),
+        "ephemeris": bool(eph_ok), "jwst": bool(jwst_ok),
+    }
+    n_ok = sum([psp_ok, probes_ok, eph_ok, jwst_ok])
+    gate.n_inputs = 4  # the four pull buckets
+    gate.n_outputs = int(n_ok)
+    if n_ok == 0:
+        gate.ok = False
+        gate.reason = "all four pull buckets failed"
         return 1
     return 0
 

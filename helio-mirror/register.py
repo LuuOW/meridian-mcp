@@ -30,6 +30,7 @@ import pandas as pd
 from astropy.io import fits
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
+from gates import Gate
 from targets import BODIES, PERIHELIA, SPACECRAFT
 
 REPO_ID = "luuow/meridian-helio-mirror"
@@ -280,9 +281,17 @@ def main() -> int:
         return 1
     print(f"[stage-2] perihelion={PERIHELION}")
 
+    with Gate("register", PERIHELION, REPO_ID, api=api) as g:
+        rc = _main_inner(token, api, g)
+    return rc
+
+
+def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     eph = load_ephemeris_long(token)
     if eph.empty:
         print("[stage-2] no ephemeris files — run stage-1 first", file=sys.stderr)
+        gate.ok = False
+        gate.reason = "no ephemeris files — stage-1 didn't run or pull failed"
         return 1
 
     out_dir = Path("helio_cache/coords")
@@ -292,6 +301,7 @@ def main() -> int:
     eph.to_parquet(eph_path, compression="snappy")
 
     eph_psp = eph[eph["body"] == "PSP"]
+    psp_reg = pd.DataFrame()
     if eph_psp.empty:
         print("[stage-2] WARN: no PSP ephemeris in eph; PSP registration skipped",
               file=sys.stderr)
@@ -322,6 +332,19 @@ def main() -> int:
     print(f"[stage-2] pushed coords/ for {PERIHELION} as one commit")
 
     print("[stage-2] done.")
+    gate.n_inputs = int(len(eph))
+    gate.n_outputs = int(
+        (0 if eph_psp.empty else len(eph_psp))
+        + (0 if jwst_reg.empty else len(jwst_reg))
+        + (0 if probes_reg.empty else len(probes_reg))
+    )
+    gate.notes = {
+        "n_psp_samples": 0 if psp_reg.empty else int(len(psp_reg)),
+        "n_jwst_obs": 0 if jwst_reg.empty else int(len(jwst_reg)),
+        "n_probe_samples": 0 if probes_reg.empty else int(len(probes_reg)),
+        "n_probes_with_data": (0 if probes_reg.empty
+                                  else int(probes_reg["spacecraft"].nunique())),
+    }
     return 0
 
 
