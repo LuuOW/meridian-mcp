@@ -84,10 +84,39 @@ model does on those perihelia.
 
 - **Defensible claim:** "at E21 geometry, probe-pair coincidences at
   ±20°/±24h occur 17% more often than chance (p < 0.001, n=100)."
-- **Next step:** integrate measured v_sw per event (from SWEAP/SPAN-I or
-  ACE/Wind plasma data) instead of the 400 km/s constant. Once the
-  propagation model matches reality, the other 4 perihelia should also
-  produce positive z if the underlying coincidences are real.
+
+### 0d. v_sw integration shipped — marginal impact on E20
+
+The v_sw fix landed (`plasma.py` + per-event v_sw in `coincide.py`).
+On E20:
+- Plasma loaded for PSP (median **240 km/s** at deep perihelion!),
+  STEREO-A (388), Wind (432), ACE (455). SolO + DSCOVR empty in this
+  CDAWeb window.
+- 1018/1529 events (67%) got per-event v_sw; rest use 400 constant.
+- **Coincidence count barely changed: 979 → 979 matched (different
+  candidate pool because PSP transits are now longer), score 0.29 → 0.31.**
+
+**Why so little impact:** L1↔L1 + STEREO-A↔L1 still dominate the
+matched pool — short transits where v_sw barely matters. PSP→outer
+pairs (which the v_sw correction was supposed to rescue) actually get
+WORSE because PSP at perihelion has slow wind (240 km/s vs assumed
+400), making the spiral wrap MORE not less, pushing predictions further
+past the lon-tolerance.
+
+### 0e. Real fix is v_sw(r), not constant — proper next step
+
+Solar wind isn't a constant speed; it accelerates with r out to ~1 AU.
+Using `v_sw_at_source` is wrong for inner→outer transits (PSP slow
+near perihelion, accelerates en route). Two reasonable approximations:
+
+1. **Use v_sw at target spacecraft** for inner→outer transits (since
+   most of the path is at near-target speeds).
+2. **Piecewise v_sw(r)** with linear interpolation between source and
+   target measurements: `t = ∫(r_src→r_tgt) dr/v(r)`.
+
+Either fix is ~30 lines in `find_probe_coincidences`. Defer until we
+have a proper validation set — currently can't tell if it'd
+materially change E21's significance or rescue E22–E24.
 
 ### 0b. Inner-heliosphere → outer-probe Parker transit exceeds perihelion window
 
