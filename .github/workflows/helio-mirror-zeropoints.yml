@@ -1,0 +1,35 @@
+name: helio-mirror-zeropoints
+
+# One-shot: compute filter zeropoints (Planck-tophat) and push to HF as
+# forecast/filter_zeropoints.json. Subsequent calibrate.py runs will pick
+# it up automatically and emit absolute W/m² alongside the unitless proxy.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zeropoints:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: helio-mirror/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install huggingface_hub
+
+      - name: Compute and upload zeropoints
+        working-directory: helio-mirror
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python compute_zeropoints.py
