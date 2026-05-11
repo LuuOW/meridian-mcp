@@ -14,6 +14,11 @@ on:
           - E22
           - E23
           - E24
+      buckets:
+        description: "Comma-separated buckets to pull (psp,probes,plasma,ephemeris,jwst) or 'all'"
+        required: false
+        default: "all"
+        type: string
 
 permissions:
   contents: read
@@ -36,9 +41,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r helio-mirror/requirements.txt
 
-      - name: Pull PSP + JWST + ephemeris
+      - name: Pull selected buckets
         working-directory: helio-mirror
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HELIO_PERIHELION: ${{ inputs.perihelion }}
+          HELIO_PULL_BUCKETS: ${{ inputs.buckets }}
         run: python pull.py
