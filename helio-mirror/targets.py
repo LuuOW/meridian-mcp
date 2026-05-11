@@ -41,5 +41,12 @@ PERIHELIA: dict[str, tuple[str, str]] = {
     "E24": ("2025-06-17", "2025-06-21"),
 }
 
-JWST_BODIES_DEFAULT = ("Mars", "Jupiter", "Saturn")
-EPHEMERIS_BODIES_DEFAULT = ("Earth", "Mercury", "Venus", "Mars", "Jupiter", "Saturn")
+JWST_BODIES_DEFAULT = (
+    "Mars", "Jupiter", "Saturn", "Uranus", "Neptune",
+    "Europa", "Io", "Ganymede", "Callisto", "Titan", "Enceladus",
+)
+EPHEMERIS_BODIES_DEFAULT = (
+    "Earth", "Mercury", "Venus", "Mars", "Jupiter", "Saturn",
+    "Uranus", "Neptune",
+    "Europa", "Io", "Ganymede", "Callisto", "Titan", "Enceladus",
+)
