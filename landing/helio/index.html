@@ -75,6 +75,12 @@
   </div>
 
   <section class="panel">
+    <h2>ML residual layer</h2>
+    <p class="sub">Per-body Ridge on top of persistence × r². Gates when a body has &lt; 10 (anchor, future) pairs in the [12, 36] h window — pre-built so it lights up the moment enough observations land.</p>
+    <div id="ml-mount" class="loading">loading forecast/ml_residual.json …</div>
+  </section>
+
+  <section class="panel">
     <h2>Pipeline state</h2>
     <p class="sub">Counts of artifacts on the HF dataset by stage; per-perihelion completeness.</p>
     <div id="status-mount" class="loading">loading forecast/dataset_status.json …</div>
@@ -220,6 +226,49 @@
     }
   }
   loadStatus();
+
+  async function loadML() {
+    try {
+      const r = await fetch(`${HF_BASE}/forecast/ml_residual.json`, { cache: "no-store" });
+      if (!r.ok) throw new Error("HF " + r.status);
+      const d = await r.json();
+      const mount = document.getElementById("ml-mount");
+      mount.classList.remove("loading");
+      const pillClass = d.status === "trained" ? "ok" : "warn";
+      const pairsTable = Object.entries(d.pairs_per_body || {})
+        .map(([b, n]) => `<tr><td>${b}</td><td>${n}</td></tr>`).join("");
+      const insufficient = (d.insufficient_data_bodies || [])
+        .map(o => `<tr><td>${o.body}</td><td>${o.n_pairs}</td><td>&lt; ${d.min_train_per_body}</td></tr>`).join("");
+      let trainedTable = "";
+      const specs = d.specialists || {};
+      if (Object.keys(specs).length) {
+        trainedTable = `
+          <table class="dash-table" style="margin-top: 12px;">
+            <thead><tr><th>body</th><th>n_train</th><th>train MAE (log10)</th><th>baseline MAE (log10)</th><th>improvement</th></tr></thead>
+            <tbody>${Object.entries(specs).map(([b, s]) => {
+              const imp = s.baseline_mae_log10 > 0
+                ? (100 * (1 - s.train_mae_log10 / s.baseline_mae_log10)).toFixed(1) + "%"
+                : "—";
+              return `<tr><td>${b}</td><td>${s.n_train}</td><td>${s.train_mae_log10.toFixed(3)}</td><td>${s.baseline_mae_log10.toFixed(3)}</td><td>${imp}</td></tr>`;
+            }).join("")}</tbody>
+          </table>`;
+      }
+      mount.innerHTML = `
+        <div class="chart-frame" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.65;">
+          <strong>Status:</strong> <span class="pill ${pillClass}">${d.status}</span><br>
+          <strong>Pairs total:</strong> ${d.n_pairs_total || 0}<br>
+          <strong>Min train per body:</strong> ${d.min_train_per_body || '—'}<br>
+          <strong>Interval window:</strong> ${(d.interval_hours || []).join(' – ')} h
+        </div>
+        ${trainedTable}
+        ${pairsTable ? `<details style="margin-top: 12px;"><summary class="sub">pairs per body</summary><table class="dash-table"><thead><tr><th>body</th><th>n_pairs</th></tr></thead><tbody>${pairsTable}</tbody></table></details>` : ''}
+        ${insufficient ? `<details style="margin-top: 12px;"><summary class="sub">insufficient data (gated)</summary><table class="dash-table"><thead><tr><th>body</th><th>n_pairs</th><th>threshold</th></tr></thead><tbody>${insufficient}</tbody></table></details>` : ''}`;
+    } catch (e) {
+      const mount = document.getElementById("ml-mount");
+      if (mount) mount.textContent = "(ml_residual.json not yet on HF — run helio-mirror-ml-residual workflow)";
+    }
+  }
+  loadML();
 </script>
 <script src="https://ask-meridian.uk/nav.js"></script>
 </body>
