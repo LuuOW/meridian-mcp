@@ -1,9 +1,15 @@
-"""Shared HF Hub push helper with 429 / 5xx retry.
+"""Shared HF Hub push helpers with 429 / 5xx retry + folder-commit support.
 
-All helio-mirror stages used to have their own copy of `push(api, ...)` which
-called `api.upload_file` without retry. HF Hub rate-limits dataset commits at
-modest QPS; under fanout this caused 429 failures. Centralising the logic
-here means a single retry policy across stages.
+HF free tier caps at 128 commits/hour per repository. Pulling raw data
+naively (one upload_file per artifact) blew past that during a five-
+perihelion fanout. Two helpers are exposed:
+
+- `push(api, repo_id, local, repo_path, message)` — single-file commit.
+  Retries on transient HTTP errors. Use for small infrequent outputs.
+
+- `push_folder(api, repo_id, local_dir, repo_subdir, message, allow_patterns=None)`
+  — batches every file under `local_dir` into ONE commit. Use this in
+  pull.py and any stage that emits many files at once.
 """
 from __future__ import annotations
 
@@ -18,24 +24,16 @@ RETRY_DELAYS_SEC = (2, 5, 15, 45, 120)
 RETRY_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
-def push(api: HfApi, repo_id: str, local: Path | str, repo_path: str,
-         message: str, repo_type: str = "dataset") -> None:
+def _retry(call, label: str):
     last: Exception | None = None
     for attempt, delay in enumerate(RETRY_DELAYS_SEC):
         try:
-            api.upload_file(
-                path_or_fileobj=str(local),
-                path_in_repo=repo_path,
-                repo_id=repo_id,
-                repo_type=repo_type,
-                commit_message=message,
-            )
-            return
+            return call()
         except HfHubHTTPError as e:
             status = getattr(getattr(e, "response", None), "status_code", None)
             if status in RETRY_STATUS_CODES:
                 last = e
-                print(f"[hf_push] HF {status} on {repo_path}; retry in {delay}s "
+                print(f"[hf_push] HF {status} on {label}; retry in {delay}s "
                       f"(attempt {attempt+1}/{len(RETRY_DELAYS_SEC)})",
                       file=sys.stderr)
                 time.sleep(delay)
@@ -43,3 +41,28 @@ def push(api: HfApi, repo_id: str, local: Path | str, repo_path: str,
             raise
     if last is not None:
         raise last
+
+
+def push(api: HfApi, repo_id: str, local: Path | str, repo_path: str,
+         message: str, repo_type: str = "dataset") -> None:
+    _retry(lambda: api.upload_file(
+        path_or_fileobj=str(local),
+        path_in_repo=repo_path,
+        repo_id=repo_id,
+        repo_type=repo_type,
+        commit_message=message,
+    ), repo_path)
+
+
+def push_folder(api: HfApi, repo_id: str, local_dir: Path | str,
+                repo_subdir: str, message: str,
+                allow_patterns: list[str] | None = None,
+                repo_type: str = "dataset") -> None:
+    _retry(lambda: api.upload_folder(
+        folder_path=str(local_dir),
+        path_in_repo=repo_subdir,
+        repo_id=repo_id,
+        repo_type=repo_type,
+        commit_message=message,
+        allow_patterns=allow_patterns,
+    ), f"folder:{repo_subdir}")
