@@ -35,6 +35,7 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
+from gates import Gate
 from targets import PERIHELIA
 
 REPO_ID = "luuow/meridian-helio-mirror"
@@ -95,6 +96,12 @@ def main() -> int:
         print(f"ERROR: unknown perihelion {PERIHELION}", file=sys.stderr)
         return 1
 
+    with Gate("calibrate", PERIHELION, REPO_ID, api=api) as g:
+        rc = _main_inner(token, api, g)
+    return rc
+
+
+def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     jwst = load(token, f"events/jwst_aggregates_{PERIHELION}.parquet")
     eph_long = load(token, f"coords/ephemeris_long_{PERIHELION}.parquet")
     if jwst.empty or eph_long.empty:
@@ -168,6 +175,12 @@ def main() -> int:
     push(api, out_path, f"irradiance/delivered_{PERIHELION}.parquet",
          f"stage-5: inferred-irradiance proxy per JWST observation {PERIHELION}")
     print("[stage-5] done.")
+    gate.n_inputs = int(len(jwst))
+    gate.n_outputs = int(len(out))
+    gate.notes = {
+        "n_bodies_calibrated": int(out["body"].nunique()),
+        "n_filters_used": int(out["filter"].nunique()),
+    }
     return 0
 
 
