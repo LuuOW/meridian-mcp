@@ -22,6 +22,12 @@ on:
         required: false
         default: "100"
         type: string
+      mode:
+        description: "Tolerance mode: loose (constant ±20°/±24h) or tight (per-pair physics-aware)"
+        required: false
+        default: "loose"
+        type: choice
+        options: [loose, tight]
 
 permissions:
   contents: read
@@ -34,6 +40,7 @@ jobs:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HELIO_PERIHELION: ${{ inputs.perihelion }}
       HELIO_NULL_SHUFFLES: ${{ inputs.n_shuffles }}
+      HELIO_NULL_MODE: ${{ inputs.mode }}
     steps:
       - uses: actions/checkout@v4
 
