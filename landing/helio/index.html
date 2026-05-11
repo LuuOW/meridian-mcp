@@ -4,42 +4,72 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HelioCast — solar irradiance triangulator</title>
-<meta name="description" content="Live dashboard for HelioCast: multi-spacecraft solar irradiance forecaster combining Parker Solar Probe direct measurements with JWST observations of solar-system bodies. Reads its own outputs from the public Hugging Face dataset luuow/meridian-helio-mirror.">
+<meta name="description" content="Live interactive dashboard for HelioCast: PSP × JWST cross-correlation gives a per-body irradiance proxy forecast 24 h ahead. Click any body to see its anchor + forecast history.">
 <meta property="og:title" content="HelioCast — solar irradiance triangulator">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ask-meridian.uk/helio/">
 <link rel="canonical" href="https://ask-meridian.uk/helio/">
 <link rel="icon" type="image/svg+xml" href="https://ask-meridian.uk/favicon.svg">
-<link rel="stylesheet" href="https://ask-meridian.uk/style.css?v=20260511a">
+<link rel="stylesheet" href="https://ask-meridian.uk/style.css?v=20260511b">
 <style>
   body { background: var(--bg, #0c0e12); color: var(--text, #e9eaee); }
-  .dash { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
-  .dash h1 { font-size: 30px; margin: 8px 0 6px; letter-spacing: -0.01em; }
-  .dash .lead { color: var(--text-faint, #9aa0a6); margin: 0 0 24px; max-width: 760px; }
+  .dash { max-width: 1200px; margin: 0 auto; padding: 24px 16px 64px; }
+  .dash h1 { font-size: 26px; margin: 8px 0 4px; letter-spacing: -0.01em; }
+  .dash .lead { color: var(--text-faint, #9aa0a6); margin: 0 0 18px; font-size: 14px; max-width: 760px; }
   .meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 18px 0 28px; }
-  .stat-card { background: var(--bg-card, #15171c); border: 1px solid var(--border, #2a2e36); border-radius: 12px; padding: 16px; text-align: center; }
-  .key-figure { font-size: 32px; line-height: 1; font-weight: 700; color: #3a8dde; font-family: var(--font-mono); margin: 6px 0; }
-  .key-label { font-size: 10px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
-  .panel { background: var(--bg-card, #15171c); border: 1px solid var(--border, #2a2e36); border-radius: 14px; padding: 22px; margin: 16px 0; }
-  .panel h2 { font-size: 18px; margin: 0 0 8px; }
-  .panel .sub { color: var(--text-faint); font-size: 13px; margin: 0 0 14px; }
-  table.dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  table.dash-table th, table.dash-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; font-family: var(--font-mono); }
-  table.dash-table th { color: var(--text-faint); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
-  table.dash-table td:first-child, table.dash-table th:first-child { text-align: left; }
-  .body-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
-  .body-card { background: #0c0e12; border: 1px solid #2a2e36; border-radius: 10px; padding: 14px; }
-  .body-card h3 { margin: 0 0 6px; font-size: 15px; font-family: var(--font-mono); letter-spacing: 0.02em; }
-  .anchor { color: var(--text-faint); font-size: 12px; font-family: var(--font-mono); margin: 4px 0 10px; }
+  .toolbar { display: flex; gap: 10px; align-items: center; margin: 8px 0 14px; flex-wrap: wrap; }
+  .search { flex: 1; min-width: 220px; padding: 9px 12px; font-size: 13px; background: #15171c; border: 1px solid #2a2e36; border-radius: 8px; color: var(--text); font-family: var(--font-mono); }
+  .search:focus { outline: none; border-color: #3a8dde; }
+  .toggle { padding: 8px 12px; font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; background: #15171c; border: 1px solid #2a2e36; border-radius: 8px; color: var(--text-faint); cursor: pointer; }
+  .toggle.active { color: #3a8dde; border-color: #3a8dde; }
+  .stage { position: relative; background: radial-gradient(ellipse at center, #0e1219 0%, #060810 100%); border: 1px solid #2a2e36; border-radius: 14px; overflow: hidden; }
+  .stage svg { display: block; width: 100%; height: auto; }
+  .body-dot { cursor: pointer; transition: filter 0.15s; }
+  .body-dot:hover { filter: drop-shadow(0 0 6px #3a8dde); }
+  .body-dot.selected { filter: drop-shadow(0 0 10px #3a8dde); }
+  .body-dot.dimmed { opacity: 0.3; }
+  .body-label { font-family: var(--font-mono); font-size: 10px; fill: #9aa0a6; pointer-events: none; user-select: none; }
+  .body-label.bright { fill: #e9eaee; }
+  .orbit-ring { fill: none; stroke: #3a8dde; stroke-opacity: 0.18; stroke-width: 1; }
+  .grid-label { font-family: var(--font-mono); font-size: 9px; fill: #6c727a; letter-spacing: 0.04em; }
+  .legend { position: absolute; bottom: 12px; left: 14px; right: 14px; display: flex; gap: 12px; font-family: var(--font-mono); font-size: 10px; color: #9aa0a6; flex-wrap: wrap; pointer-events: none; }
+  .legend .dot { width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; display: inline-block; }
+  .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 820px) { .grid-2 { grid-template-columns: 1fr; } }
+  .panel { background: var(--bg-card, #15171c); border: 1px solid var(--border, #2a2e36); border-radius: 12px; padding: 16px; }
+  .panel h2 { font-size: 15px; margin: 0 0 6px; }
+  .panel .sub { color: var(--text-faint); font-size: 12px; margin: 0 0 12px; }
+  .card-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .card-title { font-size: 20px; font-weight: 700; margin: 0; }
+  .card-sub { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+  .now-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 6px 0 16px; }
+  @media (max-width: 600px) { .now-grid { grid-template-columns: repeat(2, 1fr); } }
+  .now-card { background: #0c0e12; border: 1px solid #2a2e36; border-radius: 8px; padding: 9px 10px; text-align: center; }
+  .now-num { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: #e9eaee; line-height: 1.1; }
+  .now-lbl { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+  .sparkline { width: 100%; height: 70px; background: #0c0e12; border: 1px solid #2a2e36; border-radius: 8px; margin-bottom: 10px; }
+  .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }
+  .hist-table th { color: var(--text-faint); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 6px; text-align: right; border-bottom: 1px solid #2a2e36; }
+  .hist-table th:first-child { text-align: left; }
+  .hist-table td { padding: 3px 6px; text-align: right; border-bottom: 1px solid #1a1d24; }
+  .hist-table td:first-child { text-align: left; }
+  .hist-table tr.event td { color: #f5a623; }
   .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.06em; }
   .pill.warn { background: rgba(245,166,35,0.15); color: #f5a623; border: 1px solid rgba(245,166,35,0.45); }
   .pill.ok { background: rgba(28,171,93,0.15); color: #1cab5d; border: 1px solid rgba(28,171,93,0.45); }
-  .links a { color: #a5b4fc; text-decoration: none; }
-  .links a:hover { text-decoration: underline; }
-  pre.json { background: #0c0e12; border: 1px solid var(--border); border-radius: 10px; padding: 14px; overflow-x: auto; font-size: 11px; max-height: 320px; }
-  .loading { color: var(--text-faint); font-style: italic; }
-  .caveats li { color: var(--text-muted); font-size: 13px; margin-bottom: 4px; }
+  .pill.muted { background: rgba(154,160,166,0.15); color: #9aa0a6; border: 1px solid rgba(154,160,166,0.45); }
+  details { background: #0c0e12; border: 1px solid #2a2e36; border-radius: 8px; padding: 8px 12px; margin-top: 8px; }
+  details summary { cursor: pointer; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+  details[open] summary { margin-bottom: 6px; color: var(--text); }
+  pre.json { background: #0c0e12; border: 1px solid #2a2e36; border-radius: 8px; padding: 12px; overflow-x: auto; font-size: 11px; max-height: 240px; margin: 0; }
+  .caveats li { color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
+  .empty { color: var(--text-faint); font-style: italic; text-align: center; padding: 24px 8px; font-size: 13px; }
+  .body-list { max-height: 360px; overflow-y: auto; }
+  .body-list-item { display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px; cursor: pointer; transition: background 0.1s; font-family: var(--font-mono); font-size: 12px; }
+  .body-list-item:hover { background: #1a1d24; }
+  .body-list-item.selected { background: rgba(58,141,222,0.15); color: #3a8dde; }
+  .body-list-item .b-r { color: var(--text-faint); font-size: 11px; }
+  .body-list-item.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -51,224 +81,362 @@
   </button>
   <div id="navMenu" class="nav-menu" role="menu">
     <a href="https://ask-meridian.uk/">Home</a>
-    <a href="https://ask-meridian.uk/blog/">Blog</a>
+    <a href="https://ask-meridian.uk/blog/helio-mirror/">Build log</a>
     <a href="https://huggingface.co/datasets/luuow/meridian-helio-mirror">HF Dataset</a>
-    <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helio-mirror">GitHub source</a>
+    <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helio-mirror">GitHub</a>
   </div>
 </nav>
 
 <main class="dash">
-  <p class="meta">live dashboard · loads from huggingface.co/datasets/luuow/meridian-helio-mirror</p>
-  <h1>HelioCast — solar irradiance triangulator</h1>
+  <p class="meta" id="meta-line">live · loads from huggingface.co/datasets/luuow/meridian-helio-mirror</p>
+  <h1>HelioCast — solar irradiance per body</h1>
   <p class="lead">
-    PSP measures the Sun directly; JWST observes the Sun indirectly via reflected
-    sunlight off solar-system bodies (Mars, Jupiter, Saturn, …). Cross-correlating
-    PSP solar-event signatures with JWST reflectance excursions at known heliographic
-    positions gives a per-body irradiance proxy that we forecast 24 h ahead.
+    PSP at deep perihelion is the Sun-direct probe; JWST observations of solar-system bodies are scattered-light mirrors. Click any body to see its anchor observation, the 24 h forecast, and any PSP-event flags.
   </p>
 
-  <div class="stat-grid" id="hero-stats">
-    <div class="stat-card"><div class="key-label">model</div><div class="key-figure" id="hc-model">—</div><div class="key-label">deterministic baseline</div></div>
-    <div class="stat-card"><div class="key-label">bodies in forecast</div><div class="key-figure" id="hc-n-bodies">—</div><div class="key-label">at last run</div></div>
-    <div class="stat-card"><div class="key-label">horizon</div><div class="key-figure" id="hc-horizon">—</div><div class="key-label">hours ahead</div></div>
-    <div class="stat-card"><div class="key-label">last updated</div><div class="key-figure" id="hc-updated" style="font-size: 18px;">—</div><div class="key-label">UTC</div></div>
+  <div class="toolbar">
+    <input id="search" class="search" placeholder="Search body — Mars, Europa, …" autocomplete="off">
+    <button id="toggle-log" class="toggle active">log scale</button>
+    <button id="toggle-labels" class="toggle active">labels</button>
   </div>
 
-  <section class="panel">
-    <h2>ML residual layer</h2>
-    <p class="sub">Per-body Ridge on top of persistence × r². Gates when a body has &lt; 10 (anchor, future) pairs in the [12, 36] h window — pre-built so it lights up the moment enough observations land.</p>
-    <div id="ml-mount" class="loading">loading forecast/ml_residual.json …</div>
-  </section>
+  <div class="stage" id="stage">
+    <svg id="sky" viewBox="-400 -400 800 800"></svg>
+    <div class="legend">
+      <span><span class="dot" style="background:#f5a623"></span>Sun</span>
+      <span><span class="dot" style="background:#3a8dde"></span>PSP</span>
+      <span><span class="dot" style="background:#cd853f"></span>inner planets</span>
+      <span><span class="dot" style="background:#e1c98c"></span>gas giants</span>
+      <span><span class="dot" style="background:#b8b8b8"></span>moons</span>
+      <span style="margin-left:auto;">click a body for forecast card</span>
+    </div>
+  </div>
 
-  <section class="panel">
-    <h2>Pipeline state</h2>
-    <p class="sub">Counts of artifacts on the HF dataset by stage; per-perihelion completeness.</p>
-    <div id="status-mount" class="loading">loading forecast/dataset_status.json …</div>
-  </section>
+  <div class="grid-2">
+    <section class="panel">
+      <h2>Body forecast</h2>
+      <div id="card-mount"><div class="empty">click a body in the orbital view or list to load its forecast</div></div>
+    </section>
+    <section class="panel">
+      <h2>Bodies in forecast</h2>
+      <p class="sub">Click an entry or search above</p>
+      <div id="body-list" class="body-list"></div>
+    </section>
+  </div>
 
-  <section class="panel">
-    <h2>Per-body forecast</h2>
-    <p class="sub">Anchor = most recent JWST observation reduced through stage-5 (reflection calibrator). Forecast = persistence × geometric r² correction.</p>
-    <div id="bodies-mount" class="body-grid loading">loading forecast/latest.json …</div>
-  </section>
+  <details style="margin-top: 16px;">
+    <summary>pipeline state & ml residual</summary>
+    <div class="grid-2" style="margin-top: 12px;">
+      <div id="status-mount" class="empty">loading dataset_status.json …</div>
+      <div id="ml-mount" class="empty">loading ml_residual.json …</div>
+    </div>
+  </details>
 
-  <section class="panel">
-    <h2>Pipeline</h2>
-    <p class="sub">Seven cloud workflows. Each rerunnable on demand.</p>
-    <ol class="links" style="line-height: 1.7;">
-      <li><code>helio-mirror-pull</code> — PSP FIELDS + SWEAP/SPAN-I, JWST solar-system observations, JPL Horizons ephemerides.</li>
-      <li><code>helio-mirror-register</code> — heliographic registration of every measurement.</li>
-      <li><code>helio-mirror-detect</code> — PSP PVI events + JWST per-FITS aggregates.</li>
-      <li><code>helio-mirror-coincide</code> — PSP event × JWST observation matching at advection lead time.</li>
-      <li><code>helio-mirror-calibrate</code> — Lambertian-disk inversion → inferred-irradiance proxy per body.</li>
-      <li><code>helio-mirror-forecast</code> — 24 h per-body persistence × r² forecast.</li>
-      <li><i>(future)</i> ML residual layer once we have multiple visits per body.</li>
-    </ol>
-  </section>
+  <details>
+    <summary>honest caveats</summary>
+    <ul class="caveats" id="caveats-mount" style="margin-top: 6px;"><li class="empty">loading …</li></ul>
+  </details>
 
-  <section class="panel">
-    <h2>Honest caveats</h2>
-    <ul class="caveats" id="caveats-mount">
-      <li class="loading">loading …</li>
-    </ul>
-  </section>
+  <details>
+    <summary>raw forecast JSON</summary>
+    <pre class="json" id="raw-json" style="margin-top: 6px;">loading …</pre>
+  </details>
 
-  <section class="panel">
-    <h2>Raw forecast JSON</h2>
-    <p class="sub">Live from <code>luuow/meridian-helio-mirror@main:forecast/latest.json</code>.</p>
-    <pre class="json" id="raw-json">loading …</pre>
-  </section>
-
-  <p class="meta" style="margin-top: 28px; text-align: center;">
-    site: <a href="https://ask-meridian.uk/" style="color: inherit;">ask-meridian.uk</a> ·
+  <p class="meta" style="margin-top: 24px; text-align: center;">
     code: <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helio-mirror" style="color: inherit;">github</a>
   </p>
 </main>
 
 <script>
   const HF_BASE = "https://huggingface.co/datasets/luuow/meridian-helio-mirror/resolve/main";
+  const SCENE = { half: 380, padding: 20, useLog: true, showLabels: true };
+  const BODY_COLOR = {
+    Sun: "#f5a623", PSP: "#3a8dde",
+    Mercury: "#9aa0a6", Venus: "#f5deb3", Earth: "#7aa3ff",
+    Mars: "#e15554", Jupiter: "#d4a574", Saturn: "#e1c98c",
+    Uranus: "#7dd3fc", Neptune: "#4575b4",
+    Europa: "#cfd8e3", Io: "#f9d878", Ganymede: "#b8b8b8", Callisto: "#8d827a",
+    Titan: "#d4b271", Enceladus: "#e6f0ff",
+  };
+  const BODY_RADIUS = { Sun: 12, PSP: 5, Mercury: 3, Venus: 4, Earth: 4, Mars: 3.5, Jupiter: 9, Saturn: 8, Uranus: 6, Neptune: 6, Europa: 2.5, Io: 2.5, Ganymede: 2.5, Callisto: 2.5, Titan: 2.5, Enceladus: 2 };
 
   function fmtNum(x, digits = 3) {
     if (x === null || x === undefined || Number.isNaN(+x)) return "—";
-    return (+x).toFixed(digits);
+    const v = +x;
+    if (Math.abs(v) > 1e6 || (Math.abs(v) > 0 && Math.abs(v) < 1e-3)) return v.toExponential(2);
+    return v.toFixed(digits);
   }
   function fmtTs(s) {
     if (!s) return "—";
     return new Date(s).toUTCString().replace("GMT", "UTC");
   }
 
-  async function loadForecast() {
+  let forecastData = null;
+  let selectedBody = null;
+
+  function rTransform(r) {
+    if (!SCENE.useLog) return r;
+    return Math.log10(Math.max(0.01, r) + 1);
+  }
+  function rMax() {
+    if (!forecastData) return rTransform(10);
+    let m = 0;
+    for (const b of Object.values(forecastData.bodies || {})) {
+      m = Math.max(m, rTransform(b.anchor_r_au));
+    }
+    return Math.max(m, rTransform(0.4));
+  }
+  function bodyXY(body, lon_deg) {
+    const lon = (lon_deg ?? 0) * Math.PI / 180;
+    const r_norm = rTransform(body.anchor_r_au) / rMax();
+    const px = r_norm * (SCENE.half - SCENE.padding);
+    return [px * Math.cos(lon), -px * Math.sin(lon)];
+  }
+  function pspXY() {
+    if (!forecastData || !forecastData.psp) return [0, 0];
+    const r_norm = rTransform(forecastData.psp.r_au) / rMax();
+    const px = r_norm * (SCENE.half - SCENE.padding);
+    const lon = (forecastData.psp.lon_deg ?? 0) * Math.PI / 180;
+    return [px * Math.cos(lon), -px * Math.sin(lon)];
+  }
+
+  function render() {
+    const svg = document.getElementById("sky");
+    svg.innerHTML = "";
+    if (!forecastData || !forecastData.bodies) return;
+    const NS = "http://www.w3.org/2000/svg";
+    const mk = (n, a = {}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+    const gridRs = SCENE.useLog ? [0.4, 1, 5, 10, 20] : [0.5, 1, 2, 5, 10];
+    for (const r of gridRs) {
+      if (r > Math.pow(10, rMax()) - 1) continue;
+      const px = (rTransform(r) / rMax()) * (SCENE.half - SCENE.padding);
+      svg.appendChild(mk("circle", { cx: 0, cy: 0, r: px, class: "orbit-ring" }));
+      const t = mk("text", { x: px + 4, y: -3, class: "grid-label" });
+      t.textContent = r + " AU";
+      svg.appendChild(t);
+    }
+
+    // Sun
+    const sun = mk("circle", { cx: 0, cy: 0, r: BODY_RADIUS.Sun, fill: BODY_COLOR.Sun, class: "body-dot" });
+    sun.dataset.body = "Sun";
+    svg.appendChild(sun);
+
+    // PSP
+    if (forecastData.psp && forecastData.psp.r_au) {
+      const [x, y] = pspXY();
+      const psp = mk("circle", { cx: x, cy: y, r: BODY_RADIUS.PSP, fill: BODY_COLOR.PSP, class: "body-dot" });
+      psp.dataset.body = "PSP";
+      svg.appendChild(psp);
+      if (SCENE.showLabels) {
+        const lbl = mk("text", { x: x + 8, y: y + 4, class: "body-label bright" });
+        lbl.textContent = "PSP";
+        svg.appendChild(lbl);
+      }
+    }
+
+    // Bodies
+    const filter = (document.getElementById("search").value || "").trim().toLowerCase();
+    for (const [name, b] of Object.entries(forecastData.bodies)) {
+      const lon = b.anchor_lon_deg ?? b.forecast?.[0]?.lon_deg ?? 0;
+      const [x, y] = bodyXY(b, lon);
+      const r = BODY_RADIUS[name] || 3;
+      const dimmed = filter && !name.toLowerCase().includes(filter);
+      const sel = selectedBody === name ? " selected" : "";
+      const dim = dimmed ? " dimmed" : "";
+      const dot = mk("circle", { cx: x, cy: y, r: r, fill: BODY_COLOR[name] || "#9aa0a6", class: "body-dot" + sel + dim });
+      dot.dataset.body = name;
+      svg.appendChild(dot);
+      if (SCENE.showLabels && !dimmed) {
+        const lbl = mk("text", { x: x + r + 4, y: y + 4, class: "body-label" + (sel ? " bright" : "") });
+        lbl.textContent = name;
+        svg.appendChild(lbl);
+      }
+    }
+
+    for (const dot of svg.querySelectorAll(".body-dot")) {
+      dot.addEventListener("click", () => selectBody(dot.dataset.body));
+    }
+  }
+
+  function renderList() {
+    const mount = document.getElementById("body-list");
+    if (!forecastData || !forecastData.bodies) return;
+    const filter = (document.getElementById("search").value || "").trim().toLowerCase();
+    mount.innerHTML = "";
+    const sorted = Object.entries(forecastData.bodies).sort((a, b) => a[1].anchor_r_au - b[1].anchor_r_au);
+    for (const [name, b] of sorted) {
+      const item = document.createElement("div");
+      item.className = "body-list-item" + (selectedBody === name ? " selected" : "") + (filter && !name.toLowerCase().includes(filter) ? " hidden" : "");
+      item.innerHTML = `<span>${name}</span><span class="b-r">${fmtNum(b.anchor_r_au, 3)} AU</span>`;
+      item.addEventListener("click", () => selectBody(name));
+      mount.appendChild(item);
+    }
+  }
+
+  function selectBody(name) {
+    if (!forecastData || !forecastData.bodies) return;
+    if (name === "Sun" || name === "PSP") {
+      renderHero(name);
+      return;
+    }
+    if (!forecastData.bodies[name]) return;
+    selectedBody = name;
+    renderCard(name);
+    render();
+    renderList();
+  }
+
+  function renderHero(name) {
+    const mount = document.getElementById("card-mount");
+    if (name === "Sun") {
+      mount.innerHTML = `
+        <div class="card-header"><h3 class="card-title">☀ Sun</h3><span class="card-sub">center of the heliographic frame</span></div>
+        <p class="sub">Reference body for all heliographic coordinates. No forecast — PSP and JWST both measure relative to this point.</p>`;
+    } else if (name === "PSP" && forecastData.psp) {
+      const p = forecastData.psp;
+      mount.innerHTML = `
+        <div class="card-header"><h3 class="card-title">⊙ Parker Solar Probe</h3><span class="card-sub">in-situ Sun probe</span></div>
+        <div class="now-grid">
+          <div class="now-card"><div class="now-num">${fmtNum(p.r_au, 3)}</div><div class="now-lbl">r (AU)</div></div>
+          <div class="now-card"><div class="now-num">${fmtNum(p.lon_deg, 1)}°</div><div class="now-lbl">helio lon</div></div>
+          <div class="now-card"><div class="now-num">${p.perihelion ?? "—"}</div><div class="now-lbl">encounter</div></div>
+          <div class="now-card"><div class="now-num">${p.n_events ?? "—"}</div><div class="now-lbl">PSP events</div></div>
+        </div>
+        <p class="sub">PSP detected ${p.n_events ?? "?"} candidate events (PVI > 3 + WISPR + SEP) at this perihelion. Each is a potential trigger for irradiance changes downstream.</p>`;
+    }
+  }
+
+  function renderCard(name) {
+    const mount = document.getElementById("card-mount");
+    const b = forecastData.bodies[name];
+    if (!b) return;
+    const eventHrs = (b.forecast || []).filter(r => r.psp_flag).length;
+    const pill = eventHrs > 0
+      ? `<span class="pill warn">PSP event flag · ${eventHrs} h</span>`
+      : `<span class="pill ok">clear forecast</span>`;
+    const phaseInfo = b.phase_angle_deg !== undefined
+      ? `<div class="now-card"><div class="now-num">${fmtNum(b.phase_angle_deg, 1)}°</div><div class="now-lbl">phase α</div></div>` : "";
+
+    const spark = sparklineSVG(b.forecast || []);
+    const rows = (b.forecast || []).map(r => `
+      <tr${r.psp_flag ? ' class="event"' : ''}>
+        <td>+${r.h}h</td>
+        <td>${fmtNum(r.r_au, 4)}</td>
+        <td>${fmtNum(r.lon_deg, 1)}°</td>
+        <td>${fmtNum(r.i_proxy, 3)}</td>
+        <td>${r.psp_flag ? '⚠' : ''}</td>
+      </tr>`).join("");
+
+    mount.innerHTML = `
+      <div class="card-header">
+        <h3 class="card-title">${name} ${pill}</h3>
+        <span class="card-sub">anchor ${fmtTs(b.anchor_timestamp)}</span>
+      </div>
+      <div class="now-grid">
+        <div class="now-card"><div class="now-num">${fmtNum(b.anchor_r_au, 3)}</div><div class="now-lbl">r (AU)</div></div>
+        <div class="now-card"><div class="now-num">${fmtNum(b.anchor_inferred_irradiance_proxy, 3)}</div><div class="now-lbl">I proxy (anchor)</div></div>
+        <div class="now-card"><div class="now-num">${b.filter || "—"}</div><div class="now-lbl">filter</div></div>
+        ${phaseInfo || `<div class="now-card"><div class="now-num">${(b.forecast || []).length}</div><div class="now-lbl">forecast h</div></div>`}
+      </div>
+      <div class="sparkline">${spark}</div>
+      <details open>
+        <summary>hourly history (+1h → +24h)</summary>
+        <table class="hist-table">
+          <thead><tr><th>Δh</th><th>r AU</th><th>helio lon</th><th>I proxy</th><th>PSP</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </details>`;
+  }
+
+  function sparklineSVG(rows) {
+    if (!rows.length) return "<text>no forecast</text>";
+    const W = 600, H = 70, padX = 30, padY = 14;
+    const ys = rows.map(r => r.i_proxy).filter(y => Number.isFinite(y));
+    if (!ys.length) return "";
+    const ymin = Math.min(...ys), ymax = Math.max(...ys);
+    const span = ymax - ymin || Math.abs(ymin) * 0.01 || 1;
+    const xs = rows.map((_, i) => i / Math.max(1, rows.length - 1));
+    const path = rows.map((r, i) => {
+      const x = padX + xs[i] * (W - 2 * padX);
+      const y = H - padY - ((r.i_proxy - ymin) / span) * (H - 2 * padY);
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+    const dots = rows.map((r, i) => {
+      const x = padX + xs[i] * (W - 2 * padX);
+      const y = H - padY - ((r.i_proxy - ymin) / span) * (H - 2 * padY);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.psp_flag ? 3 : 1.6}" fill="${r.psp_flag ? '#f5a623' : '#3a8dde'}"/>`;
+    }).join("");
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;">
+      <path d="${path}" fill="none" stroke="#3a8dde" stroke-width="1.6"/>
+      ${dots}
+      <text x="6" y="${H - 4}" font-family="ui-monospace,Menlo" font-size="9" fill="#6c727a">+1h</text>
+      <text x="${W - 30}" y="${H - 4}" font-family="ui-monospace,Menlo" font-size="9" fill="#6c727a">+${rows.length}h</text>
+      <text x="6" y="12" font-family="ui-monospace,Menlo" font-size="9" fill="#6c727a">I_proxy</text>
+    </svg>`;
+  }
+
+  async function loadAll() {
     try {
       const r = await fetch(`${HF_BASE}/forecast/latest.json`, { cache: "no-store" });
       if (!r.ok) throw new Error("HF " + r.status);
-      const data = await r.json();
-      document.getElementById("raw-json").textContent = JSON.stringify(data, null, 2);
-      document.getElementById("hc-model").textContent = data.model || "—";
-      document.getElementById("hc-horizon").textContent = data.horizon_hours + "h";
-      document.getElementById("hc-updated").textContent = fmtTs(data.generated_at);
-      const bodies = data.bodies || {};
-      document.getElementById("hc-n-bodies").textContent = Object.keys(bodies).length;
-
-      const mount = document.getElementById("bodies-mount");
-      mount.classList.remove("loading");
-      mount.innerHTML = "";
-      for (const [body, b] of Object.entries(bodies)) {
-        const div = document.createElement("div");
-        div.className = "body-card";
-        const eventHrs = b.forecast.filter(r => r.psp_flag).length;
-        const flagPill = eventHrs > 0
-          ? `<span class="pill warn">PSP event flag · ${eventHrs}h</span>`
-          : `<span class="pill ok">clear</span>`;
-        const rows = b.forecast.map(r => `
-          <tr>
-            <td>+${r.h}h</td>
-            <td>${fmtNum(r.r_au, 4)}</td>
-            <td>${fmtNum(r.lon_deg, 1)}</td>
-            <td>${fmtNum(r.i_proxy, 3)}</td>
-            <td>${r.psp_flag ? '⚠' : ''}</td>
-          </tr>`).join("");
-        div.innerHTML = `
-          <h3>${body} ${flagPill}</h3>
-          <div class="anchor">
-            anchor: ${fmtTs(b.anchor_timestamp)} ·
-            r=${fmtNum(b.anchor_r_au, 3)} AU ·
-            filter ${b.filter} ·
-            anchor I_proxy=${fmtNum(b.anchor_inferred_irradiance_proxy, 3)}
-          </div>
-          <table class="dash-table">
-            <thead><tr><th>Δh</th><th>r AU</th><th>helio lon°</th><th>I proxy</th><th>PSP</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>`;
-        mount.appendChild(div);
-      }
-
+      forecastData = await r.json();
+      document.getElementById("raw-json").textContent = JSON.stringify(forecastData, null, 2);
+      document.getElementById("meta-line").textContent =
+        `live · ${forecastData.model || "—"} · ${forecastData.horizon_hours}h horizon · ${fmtTs(forecastData.generated_at)}`;
       const caveatsMount = document.getElementById("caveats-mount");
       caveatsMount.innerHTML = "";
-      for (const c of (data.caveats || [])) {
+      for (const c of (forecastData.caveats || [])) {
         const li = document.createElement("li");
         li.textContent = c;
         caveatsMount.appendChild(li);
       }
+      render();
+      renderList();
     } catch (e) {
       document.getElementById("raw-json").textContent = "(forecast/latest.json not yet on HF: " + e.message + ")";
-      document.getElementById("bodies-mount").textContent = "(no forecast yet — run the helio-mirror workflows on GitHub Actions)";
-      document.getElementById("caveats-mount").innerHTML = "<li>HelioCast pipeline has not produced a forecast yet.</li>";
+      document.getElementById("card-mount").innerHTML = `<div class="empty">no forecast on HF yet — run the helio-mirror workflows</div>`;
     }
-  }
-  loadForecast();
-
-  async function loadStatus() {
     try {
-      const r = await fetch(`${HF_BASE}/forecast/dataset_status.json`, { cache: "no-store" });
-      if (!r.ok) throw new Error("HF " + r.status);
-      const d = await r.json();
+      const s = await (await fetch(`${HF_BASE}/forecast/dataset_status.json`, { cache: "no-store" })).json();
       const mount = document.getElementById("status-mount");
-      mount.classList.remove("loading");
-      const stageCounts = d.n_files_by_stage || {};
-      const stages = Object.entries(stageCounts)
-        .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
-      const peris = (d.perihelia_processed || []).map(p => `<span class="pill ok">${p}</span>`).join(" ");
-      const bodies = (d.bodies_with_data || []).map(b => `<span class="pill ok">${b}</span>`).join(" ");
+      mount.classList.remove("empty");
       mount.innerHTML = `
-        <div class="chart-frame" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.65;">
-          <strong>Files on HF dataset:</strong> ${d.n_files_total}<br>
-          <strong>Perihelia with forecast:</strong> ${peris || '—'}<br>
-          <strong>Bodies with data:</strong> ${bodies || '—'}<br>
-          <strong>Last status update:</strong> ${fmtTs(d.generated_at)}
-        </div>
-        <table class="dash-table" style="margin-top: 12px;">
-          <thead><tr><th>stage</th><th>n_files</th></tr></thead>
-          <tbody>${stages}</tbody>
-        </table>`;
+        <h2 style="font-size:14px;margin:0 0 6px;">Pipeline state</h2>
+        <p class="sub">${s.n_files_total} files · last update ${fmtTs(s.generated_at)}</p>
+        <p style="font-size:12px;margin:0;">perihelia processed: ${(s.perihelia_processed || []).map(p => `<span class="pill ok">${p}</span>`).join(" ") || "—"}</p>
+        <p style="font-size:12px;margin:6px 0 0;">bodies: ${(s.bodies_with_data || []).map(b => `<span class="pill muted">${b}</span>`).join(" ")}</p>`;
     } catch (e) {
-      const mount = document.getElementById("status-mount");
-      if (mount) mount.textContent = "(dataset_status.json not yet on HF — run helio-mirror-status workflow)";
+      const m = document.getElementById("status-mount"); if (m) m.textContent = "(dataset_status.json not yet on HF)";
     }
-  }
-  loadStatus();
-
-  async function loadML() {
     try {
-      const r = await fetch(`${HF_BASE}/forecast/ml_residual.json`, { cache: "no-store" });
-      if (!r.ok) throw new Error("HF " + r.status);
-      const d = await r.json();
+      const d = await (await fetch(`${HF_BASE}/forecast/ml_residual.json`, { cache: "no-store" })).json();
       const mount = document.getElementById("ml-mount");
-      mount.classList.remove("loading");
-      const pillClass = d.status === "trained" ? "ok" : "warn";
-      const pairsTable = Object.entries(d.pairs_per_body || {})
-        .map(([b, n]) => `<tr><td>${b}</td><td>${n}</td></tr>`).join("");
-      const insufficient = (d.insufficient_data_bodies || [])
-        .map(o => `<tr><td>${o.body}</td><td>${o.n_pairs}</td><td>&lt; ${d.min_train_per_body}</td></tr>`).join("");
-      let trainedTable = "";
-      const specs = d.specialists || {};
-      if (Object.keys(specs).length) {
-        trainedTable = `
-          <table class="dash-table" style="margin-top: 12px;">
-            <thead><tr><th>body</th><th>n_train</th><th>train MAE (log10)</th><th>baseline MAE (log10)</th><th>improvement</th></tr></thead>
-            <tbody>${Object.entries(specs).map(([b, s]) => {
-              const imp = s.baseline_mae_log10 > 0
-                ? (100 * (1 - s.train_mae_log10 / s.baseline_mae_log10)).toFixed(1) + "%"
-                : "—";
-              return `<tr><td>${b}</td><td>${s.n_train}</td><td>${s.train_mae_log10.toFixed(3)}</td><td>${s.baseline_mae_log10.toFixed(3)}</td><td>${imp}</td></tr>`;
-            }).join("")}</tbody>
-          </table>`;
-      }
+      mount.classList.remove("empty");
+      const pill = d.status === "trained" ? `<span class="pill ok">${d.status}</span>` : `<span class="pill warn">${d.status}</span>`;
       mount.innerHTML = `
-        <div class="chart-frame" style="font-family: var(--font-mono); font-size: 12px; line-height: 1.65;">
-          <strong>Status:</strong> <span class="pill ${pillClass}">${d.status}</span><br>
-          <strong>Pairs total:</strong> ${d.n_pairs_total || 0}<br>
-          <strong>Min train per body:</strong> ${d.min_train_per_body || '—'}<br>
-          <strong>Interval window:</strong> ${(d.interval_hours || []).join(' – ')} h
-        </div>
-        ${trainedTable}
-        ${pairsTable ? `<details style="margin-top: 12px;"><summary class="sub">pairs per body</summary><table class="dash-table"><thead><tr><th>body</th><th>n_pairs</th></tr></thead><tbody>${pairsTable}</tbody></table></details>` : ''}
-        ${insufficient ? `<details style="margin-top: 12px;"><summary class="sub">insufficient data (gated)</summary><table class="dash-table"><thead><tr><th>body</th><th>n_pairs</th><th>threshold</th></tr></thead><tbody>${insufficient}</tbody></table></details>` : ''}`;
+        <h2 style="font-size:14px;margin:0 0 6px;">ML residual</h2>
+        <p class="sub">${pill}</p>
+        <p style="font-size:12px;margin:0;">pairs: ${d.n_pairs_total ?? 0} · min/body: ${d.min_train_per_body ?? "—"}</p>
+        <p style="font-size:12px;margin:6px 0 0;">trained bodies: ${Object.keys(d.specialists || {}).join(", ") || "none"}</p>`;
     } catch (e) {
-      const mount = document.getElementById("ml-mount");
-      if (mount) mount.textContent = "(ml_residual.json not yet on HF — run helio-mirror-ml-residual workflow)";
+      const m = document.getElementById("ml-mount"); if (m) m.textContent = "(ml_residual.json not yet on HF)";
     }
   }
-  loadML();
+
+  document.getElementById("search").addEventListener("input", () => { render(); renderList(); });
+  document.getElementById("toggle-log").addEventListener("click", (e) => {
+    SCENE.useLog = !SCENE.useLog;
+    e.currentTarget.classList.toggle("active", SCENE.useLog);
+    render();
+  });
+  document.getElementById("toggle-labels").addEventListener("click", (e) => {
+    SCENE.showLabels = !SCENE.showLabels;
+    e.currentTarget.classList.toggle("active", SCENE.showLabels);
+    render();
+  });
+
+  loadAll();
 </script>
 <script src="https://ask-meridian.uk/nav.js"></script>
 </body>
