@@ -10,6 +10,21 @@ gets to claim once the item lands.
 - ⟳ — scaffolded, awaiting data / verification
 - ✓ — done and verified
 
+## v0.3 — HSO mode (in flight)
+
+### 0. Heliophysics System Observatory ingest — ⟳ scaffolded
+
+PSP × JWST-reflection alone has zero coincidences because of how
+infrequently JWST images a body at the right heliographic position vs
+PSP's encounter. Real triangulation uses NASA/ESA's existing fleet —
+SolO, STEREO-A, Wind, ACE, DSCOVR, MAVEN — pulled from CDAWeb via
+pyspedas, all time-overlapping every PSP perihelion.
+
+- **Output impact:** instead of 0 coincidences, expect 20–50 per
+  perihelion. Real validation data for the ML residual layer falls out.
+- **Status:** `probes.py` + multi-probe register / detect / coincide
+  shipped. First end-to-end run on E20 dispatched.
+
 ## v0.2 — bigger and more honest
 
 ### 1. Multi-perihelion run (E21–E24) — ⟳ in progress
