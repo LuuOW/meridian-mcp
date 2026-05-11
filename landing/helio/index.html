@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HelioCast — solar irradiance triangulator</title>
+<meta name="description" content="Live dashboard for HelioCast: multi-spacecraft solar irradiance forecaster combining Parker Solar Probe direct measurements with JWST observations of solar-system bodies. Reads its own outputs from the public Hugging Face dataset luuow/meridian-helio-mirror.">
+<meta property="og:title" content="HelioCast — solar irradiance triangulator">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ask-meridian.uk/helio/">
+<link rel="canonical" href="https://ask-meridian.uk/helio/">
+<link rel="icon" type="image/svg+xml" href="https://ask-meridian.uk/favicon.svg">
+<link rel="stylesheet" href="https://ask-meridian.uk/style.css?v=20260511a">
+<style>
+  body { background: var(--bg, #0c0e12); color: var(--text, #e9eaee); }
+  .dash { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  .dash h1 { font-size: 30px; margin: 8px 0 6px; letter-spacing: -0.01em; }
+  .dash .lead { color: var(--text-faint, #9aa0a6); margin: 0 0 24px; max-width: 760px; }
+  .meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 18px 0 28px; }
+  .stat-card { background: var(--bg-card, #15171c); border: 1px solid var(--border, #2a2e36); border-radius: 12px; padding: 16px; text-align: center; }
+  .key-figure { font-size: 32px; line-height: 1; font-weight: 700; color: #3a8dde; font-family: var(--font-mono); margin: 6px 0; }
+  .key-label { font-size: 10px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .panel { background: var(--bg-card, #15171c); border: 1px solid var(--border, #2a2e36); border-radius: 14px; padding: 22px; margin: 16px 0; }
+  .panel h2 { font-size: 18px; margin: 0 0 8px; }
+  .panel .sub { color: var(--text-faint); font-size: 13px; margin: 0 0 14px; }
+  table.dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.dash-table th, table.dash-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: right; font-family: var(--font-mono); }
+  table.dash-table th { color: var(--text-faint); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+  table.dash-table td:first-child, table.dash-table th:first-child { text-align: left; }
+  .body-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .body-card { background: #0c0e12; border: 1px solid #2a2e36; border-radius: 10px; padding: 14px; }
+  .body-card h3 { margin: 0 0 6px; font-size: 15px; font-family: var(--font-mono); letter-spacing: 0.02em; }
+  .anchor { color: var(--text-faint); font-size: 12px; font-family: var(--font-mono); margin: 4px 0 10px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.06em; }
+  .pill.warn { background: rgba(245,166,35,0.15); color: #f5a623; border: 1px solid rgba(245,166,35,0.45); }
+  .pill.ok { background: rgba(28,171,93,0.15); color: #1cab5d; border: 1px solid rgba(28,171,93,0.45); }
+  .links a { color: #a5b4fc; text-decoration: none; }
+  .links a:hover { text-decoration: underline; }
+  pre.json { background: #0c0e12; border: 1px solid var(--border); border-radius: 10px; padding: 14px; overflow-x: auto; font-size: 11px; max-height: 320px; }
+  .loading { color: var(--text-faint); font-style: italic; }
+  .caveats li { color: var(--text-muted); font-size: 13px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand">◎ Meridian</a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+    <a href="https://ask-meridian.uk/blog/">Blog</a>
+    <a href="https://huggingface.co/datasets/luuow/meridian-helio-mirror">HF Dataset</a>
+    <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helio-mirror">GitHub source</a>
+  </div>
+</nav>
+
+<main class="dash">
+  <p class="meta">live dashboard · loads from huggingface.co/datasets/luuow/meridian-helio-mirror</p>
+  <h1>HelioCast — solar irradiance triangulator</h1>
+  <p class="lead">
+    PSP measures the Sun directly; JWST observes the Sun indirectly via reflected
+    sunlight off solar-system bodies (Mars, Jupiter, Saturn, …). Cross-correlating
+    PSP solar-event signatures with JWST reflectance excursions at known heliographic
+    positions gives a per-body irradiance proxy that we forecast 24 h ahead.
+  </p>
+
+  <div class="stat-grid" id="hero-stats">
+    <div class="stat-card"><div class="key-label">model</div><div class="key-figure" id="hc-model">—</div><div class="key-label">deterministic baseline</div></div>
+    <div class="stat-card"><div class="key-label">bodies in forecast</div><div class="key-figure" id="hc-n-bodies">—</div><div class="key-label">at last run</div></div>
+    <div class="stat-card"><div class="key-label">horizon</div><div class="key-figure" id="hc-horizon">—</div><div class="key-label">hours ahead</div></div>
+    <div class="stat-card"><div class="key-label">last updated</div><div class="key-figure" id="hc-updated" style="font-size: 18px;">—</div><div class="key-label">UTC</div></div>
+  </div>
+
+  <section class="panel">
+    <h2>Per-body forecast</h2>
+    <p class="sub">Anchor = most recent JWST observation reduced through stage-5 (reflection calibrator). Forecast = persistence × geometric r² correction.</p>
+    <div id="bodies-mount" class="body-grid loading">loading forecast/latest.json …</div>
+  </section>
+
+  <section class="panel">
+    <h2>Pipeline</h2>
+    <p class="sub">Seven cloud workflows. Each rerunnable on demand.</p>
+    <ol class="links" style="line-height: 1.7;">
+      <li><code>helio-mirror-pull</code> — PSP FIELDS + SWEAP/SPAN-I, JWST solar-system observations, JPL Horizons ephemerides.</li>
+      <li><code>helio-mirror-register</code> — heliographic registration of every measurement.</li>
+      <li><code>helio-mirror-detect</code> — PSP PVI events + JWST per-FITS aggregates.</li>
+      <li><code>helio-mirror-coincide</code> — PSP event × JWST observation matching at advection lead time.</li>
+      <li><code>helio-mirror-calibrate</code> — Lambertian-disk inversion → inferred-irradiance proxy per body.</li>
+      <li><code>helio-mirror-forecast</code> — 24 h per-body persistence × r² forecast.</li>
+      <li><i>(future)</i> ML residual layer once we have multiple visits per body.</li>
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2>Honest caveats</h2>
+    <ul class="caveats" id="caveats-mount">
+      <li class="loading">loading …</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Raw forecast JSON</h2>
+    <p class="sub">Live from <code>luuow/meridian-helio-mirror@main:forecast/latest.json</code>.</p>
+    <pre class="json" id="raw-json">loading …</pre>
+  </section>
+
+  <p class="meta" style="margin-top: 28px; text-align: center;">
+    site: <a href="https://ask-meridian.uk/" style="color: inherit;">ask-meridian.uk</a> ·
+    code: <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helio-mirror" style="color: inherit;">github</a>
+  </p>
+</main>
+
+<script>
+  const HF_BASE = "https://huggingface.co/datasets/luuow/meridian-helio-mirror/resolve/main";
+
+  function fmtNum(x, digits = 3) {
+    if (x === null || x === undefined || Number.isNaN(+x)) return "—";
+    return (+x).toFixed(digits);
+  }
+  function fmtTs(s) {
+    if (!s) return "—";
+    return new Date(s).toUTCString().replace("GMT", "UTC");
+  }
+
+  async function loadForecast() {
+    try {
+      const r = await fetch(`${HF_BASE}/forecast/latest.json`, { cache: "no-store" });
+      if (!r.ok) throw new Error("HF " + r.status);
+      const data = await r.json();
+      document.getElementById("raw-json").textContent = JSON.stringify(data, null, 2);
+      document.getElementById("hc-model").textContent = data.model || "—";
+      document.getElementById("hc-horizon").textContent = data.horizon_hours + "h";
+      document.getElementById("hc-updated").textContent = fmtTs(data.generated_at);
+      const bodies = data.bodies || {};
+      document.getElementById("hc-n-bodies").textContent = Object.keys(bodies).length;
+
+      const mount = document.getElementById("bodies-mount");
+      mount.classList.remove("loading");
+      mount.innerHTML = "";
+      for (const [body, b] of Object.entries(bodies)) {
+        const div = document.createElement("div");
+        div.className = "body-card";
+        const eventHrs = b.forecast.filter(r => r.psp_flag).length;
+        const flagPill = eventHrs > 0
+          ? `<span class="pill warn">PSP event flag · ${eventHrs}h</span>`
+          : `<span class="pill ok">clear</span>`;
+        const rows = b.forecast.map(r => `
+          <tr>
+            <td>+${r.h}h</td>
+            <td>${fmtNum(r.r_au, 4)}</td>
+            <td>${fmtNum(r.lon_deg, 1)}</td>
+            <td>${fmtNum(r.i_proxy, 3)}</td>
+            <td>${r.psp_flag ? '⚠' : ''}</td>
+          </tr>`).join("");
+        div.innerHTML = `
+          <h3>${body} ${flagPill}</h3>
+          <div class="anchor">
+            anchor: ${fmtTs(b.anchor_timestamp)} ·
+            r=${fmtNum(b.anchor_r_au, 3)} AU ·
+            filter ${b.filter} ·
+            anchor I_proxy=${fmtNum(b.anchor_inferred_irradiance_proxy, 3)}
+          </div>
+          <table class="dash-table">
+            <thead><tr><th>Δh</th><th>r AU</th><th>helio lon°</th><th>I proxy</th><th>PSP</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+        mount.appendChild(div);
+      }
+
+      const caveatsMount = document.getElementById("caveats-mount");
+      caveatsMount.innerHTML = "";
+      for (const c of (data.caveats || [])) {
+        const li = document.createElement("li");
+        li.textContent = c;
+        caveatsMount.appendChild(li);
+      }
+    } catch (e) {
+      document.getElementById("raw-json").textContent = "(forecast/latest.json not yet on HF: " + e.message + ")";
+      document.getElementById("bodies-mount").textContent = "(no forecast yet — run the helio-mirror workflows on GitHub Actions)";
+      document.getElementById("caveats-mount").innerHTML = "<li>HelioCast pipeline has not produced a forecast yet.</li>";
+    }
+  }
+  loadForecast();
+</script>
+<script src="https://ask-meridian.uk/nav.js"></script>
+</body>
+</html>
