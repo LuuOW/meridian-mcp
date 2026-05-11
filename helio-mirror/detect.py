@@ -206,22 +206,21 @@ def main() -> int:
 
     pvi_df, candidates = detect_psp_events(token)
     if not pvi_df.empty:
-        p = out_dir / f"psp_pvi_{PERIHELION}.parquet"
-        pvi_df.to_parquet(p, compression="snappy")
-        push(api, p, f"events/psp_pvi_{PERIHELION}.parquet",
-             f"stage-3: PSP PVI time series {PERIHELION}")
+        pvi_df.to_parquet(out_dir / f"psp_pvi_{PERIHELION}.parquet", compression="snappy")
     if not candidates.empty:
-        p = out_dir / f"psp_candidate_events_{PERIHELION}.parquet"
-        candidates.to_parquet(p, compression="snappy")
-        push(api, p, f"events/psp_candidate_events_{PERIHELION}.parquet",
-             f"stage-3: PSP PVI>{PVI_THRESHOLD} candidates {PERIHELION}")
+        candidates.to_parquet(
+            out_dir / f"psp_candidate_events_{PERIHELION}.parquet", compression="snappy")
 
     jwst_agg = aggregate_jwst(token)
     if not jwst_agg.empty:
-        p = out_dir / f"jwst_aggregates_{PERIHELION}.parquet"
-        jwst_agg.to_parquet(p, compression="snappy")
-        push(api, p, f"events/jwst_aggregates_{PERIHELION}.parquet",
-             f"stage-3: JWST per-FITS aggregates {PERIHELION}")
+        jwst_agg.to_parquet(
+            out_dir / f"jwst_aggregates_{PERIHELION}.parquet", compression="snappy")
+
+    from hf_push import push_folder
+    push_folder(api, REPO_ID, out_dir, "events",
+                 f"stage-3: detected events {PERIHELION}",
+                 allow_patterns=[f"*_{PERIHELION}.parquet"])
+    print(f"[stage-3] pushed events/ for {PERIHELION} as one commit")
 
     print("[stage-3] done.")
     return 0

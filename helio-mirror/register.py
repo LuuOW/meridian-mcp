@@ -235,8 +235,6 @@ def main() -> int:
 
     eph_path = out_dir / f"ephemeris_long_{PERIHELION}.parquet"
     eph.to_parquet(eph_path, compression="snappy")
-    push(api, eph_path, f"coords/ephemeris_long_{PERIHELION}.parquet",
-         f"stage-2: ephemeris long-form with heliographic angles {PERIHELION}")
 
     eph_psp = eph[eph["body"] == "PSP"]
     if eph_psp.empty:
@@ -245,19 +243,21 @@ def main() -> int:
     else:
         psp_reg = register_psp(token, eph_psp)
         if not psp_reg.empty:
-            p = out_dir / f"psp_registered_{PERIHELION}.parquet"
-            psp_reg.to_parquet(p, compression="snappy")
-            push(api, p, f"coords/psp_registered_{PERIHELION}.parquet",
-                 f"stage-2: PSP B-field samples with heliographic position {PERIHELION}")
+            psp_reg.to_parquet(out_dir / f"psp_registered_{PERIHELION}.parquet",
+                                compression="snappy")
 
     jwst_reg = register_jwst(token, eph)
     if not jwst_reg.empty:
-        p = out_dir / f"jwst_registered_{PERIHELION}.parquet"
-        jwst_reg.to_parquet(p, compression="snappy")
-        push(api, p, f"coords/jwst_registered_{PERIHELION}.parquet",
-             f"stage-2: JWST observations with target-body heliographic position {PERIHELION}")
+        jwst_reg.to_parquet(out_dir / f"jwst_registered_{PERIHELION}.parquet",
+                             compression="snappy")
     else:
         print("[stage-2] no JWST observations registered")
+
+    from hf_push import push_folder
+    push_folder(api, REPO_ID, out_dir, "coords",
+                 f"stage-2: heliographic registration {PERIHELION}",
+                 allow_patterns=[f"*_{PERIHELION}.parquet"])
+    print(f"[stage-2] pushed coords/ for {PERIHELION} as one commit")
 
     print("[stage-2] done.")
     return 0
