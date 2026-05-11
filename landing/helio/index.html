@@ -628,14 +628,21 @@ function selectBody(name) {
       <div class="lbl">kWh / m² · next 24 h${impactPctNum > 0.01 ? " · weather-adjusted" : ""}</div>
       <div class="sec">${dropTxt}</div>
       <div class="sec">peak hour ${fmtKwh(peakKwh)} kWh/m²/h · r ≈ ${b.anchor_r_au.toFixed(3)} AU</div>
+      ${b.tsi_W_m2_at_body != null
+        ? `<div class="sec" style="color:#ffd34a;">☀ instant flux: <strong>${b.tsi_W_m2_at_body.toFixed(0)} W/m²</strong>${
+            b.tsi_W_m2_at_body_adjusted != null && Math.abs(b.tsi_W_m2_at_body - b.tsi_W_m2_at_body_adjusted) > 1
+              ? ` → <strong style="color:#f5a623;">${b.tsi_W_m2_at_body_adjusted.toFixed(0)} W/m²</strong> right now (event)`
+              : ""
+          } <span style="color:#9aa0a6;">(TSI ${TSI_W_M2}/r²)</span></div>`
+        : ""}
       ${b.expected_in_band_W_m2_at_body != null
         ? `<div class="sec" style="color:#1cab5d;">in-band JWST filter (${b.filter}): ${b.expected_in_band_W_m2_at_body.toFixed(3)} W/m² <span class="pill ok" style="margin-left:6px;">zp-calibrated</span></div>`
         : ""}
     </div>
     <div class="now-grid">
       <div class="now-card"><div class="now-num">${fmtNum(b.anchor_r_au, 3)}</div><div class="now-lbl">r (AU)</div></div>
+      <div class="now-card"><div class="now-num">${b.tsi_W_m2_at_body != null ? Math.round(b.tsi_W_m2_at_body) : "—"}</div><div class="now-lbl">W/m² instant</div></div>
       <div class="now-card"><div class="now-num">${fmtKwh(dailyKwh)}</div><div class="now-lbl">kWh/m²/d</div></div>
-      <div class="now-card"><div class="now-num">${b.filter || "—"}</div><div class="now-lbl">filter</div></div>
       ${phase || `<div class="now-card"><div class="now-num">${(b.forecast || []).length}</div><div class="now-lbl">horizon (h)</div></div>`}
     </div>
     <div class="sparkline">${sparklineSVG(b.forecast || [])}</div>
