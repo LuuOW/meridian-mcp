@@ -1,10 +1,9 @@
 name: helio-mirror-fanout
 
-# Fan-out the full pipeline across all five perihelia. Each runs as an
-# independent job in parallel so a failure in one doesn't poison the others.
-# Use this when you've patched a stage and want every perihelion in the
-# cache regenerated end-to-end. ~15 min × 5 = 75 min wall clock, ~15 min
-# of CI budget per job (parallel) on free tier.
+# Fan-out the full pipeline across all five perihelia. With max-parallel=1
+# they run sequentially to stay under HF's 128 commits/hour limit. Use this
+# when you've patched a stage and want every perihelion regenerated.
+# Wall clock: ~15 min × 5 + 3 min training = ~78 min.
 
 on:
   workflow_dispatch:
@@ -31,7 +30,12 @@ jobs:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HELIO_PERIHELION: ${{ matrix.perihelion }}
     steps:
+      # Pin to the dispatch-time SHA so all five matrix jobs run identical
+      # code — without this, a push during fanout makes queued jobs drift
+      # to whatever's on main when they actually start.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
       - uses: actions/setup-python@v5
         with:
@@ -78,3 +82,45 @@ jobs:
       - name: Stage 6 — forecast
         working-directory: helio-mirror
         run: python forecast.py
+
+  # Post-matrix: once all five perihelia have delivered_*.parquet on HF, train
+  # the per-body ML residual once. ml_residual pools across all perihelia, so
+  # running it inside the matrix would either retrain N times (waste) or
+  # see partial data on early iterations (misleading). Running once at the
+  # end gives a clean snapshot.
+  ml-residual:
+    needs: perihelion
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: helio-mirror/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r helio-mirror/requirements.txt
+
+      - name: Train ML residual across all delivered perihelia
+        working-directory: helio-mirror
+        continue-on-error: true   # may stay gated (insufficient pairs) — not a fanout failure
+        run: python ml_residual.py
+
+      - name: Refresh dataset_status.json
+        working-directory: helio-mirror
+        continue-on-error: true
+        run: python status.py
+
+      - name: Generate findings markdown
+        working-directory: helio-mirror
+        continue-on-error: true
+        run: python findings.py
