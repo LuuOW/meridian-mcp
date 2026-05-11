@@ -31,6 +31,7 @@ import pandas as pd
 from astropy.io import fits
 from huggingface_hub import HfApi, hf_hub_download, list_repo_files
 
+from gates import Gate
 from targets import PERIHELIA, SPACECRAFT
 
 REPO_ID = "luuow/meridian-helio-mirror"
@@ -269,6 +270,12 @@ def main() -> int:
         return 1
     print(f"[stage-3] perihelion={PERIHELION}")
 
+    with Gate("detect", PERIHELION, REPO_ID, api=api) as g:
+        rc = _main_inner(token, api, g)
+    return rc
+
+
+def _main_inner(token: str, api: HfApi, gate: Gate) -> int:
     out_dir = Path("helio_cache/events")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -296,6 +303,18 @@ def main() -> int:
     print(f"[stage-3] pushed events/ for {PERIHELION} as one commit")
 
     print("[stage-3] done.")
+    gate.n_inputs = int(len(pvi_df)) if not pvi_df.empty else 0
+    gate.n_outputs = int(
+        (0 if candidates.empty else len(candidates))
+        + (0 if probe_events.empty else len(probe_events))
+    )
+    gate.notes = {
+        "n_psp_events": 0 if candidates.empty else int(len(candidates)),
+        "n_probe_events_total": 0 if probe_events.empty else int(len(probe_events)),
+        "n_probes_with_events": (0 if probe_events.empty
+                                    else int(probe_events["spacecraft"].nunique())),
+        "n_jwst_aggregates": 0 if jwst_agg.empty else int(len(jwst_agg)),
+    }
     return 0
 
 
