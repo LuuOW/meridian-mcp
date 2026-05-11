@@ -12,7 +12,7 @@ gets to claim once the item lands.
 
 ## v0.3 — HSO mode (in flight)
 
-### 0. Heliophysics System Observatory ingest — ⟳ scaffolded
+### 0. Heliophysics System Observatory ingest — ✓ validated on E20
 
 PSP × JWST-reflection alone has zero coincidences because of how
 infrequently JWST images a body at the right heliographic position vs
@@ -20,10 +20,26 @@ PSP's encounter. Real triangulation uses NASA/ESA's existing fleet —
 SolO, STEREO-A, Wind, ACE, DSCOVR, MAVEN — pulled from CDAWeb via
 pyspedas, all time-overlapping every PSP perihelion.
 
-- **Output impact:** instead of 0 coincidences, expect 20–50 per
-  perihelion. Real validation data for the ML residual layer falls out.
+- **Output impact:** 979 matched probe×probe coincidences on E20 alone
+  (vs the previous 0). Median match score 0.29 — tolerances are loose
+  but the structural pipeline now produces validation data.
 - **Status:** `probes.py` + multi-probe register / detect / coincide
-  shipped. First end-to-end run on E20 dispatched.
+  shipped. E20 end-to-end run confirms 5/6 probes load (MAVEN was the
+  only one with no CDAWeb data for that window — not a code issue).
+
+### 0b. Inner-heliosphere → outer-probe Parker transit exceeds perihelion window
+
+A 4-day perihelion window catches ACE↔DSCOVR (co-located at L1) and
+STEREO-A↔L1 monitors (sub-day transit), but PSP→SolO would need ~20 d
+at 400 km/s — so PSP-sourced events never appear in the coincidence
+list within a single perihelion. That's why the per-pair list only
+shows ACE/DSCOVR/STEREO-A, never PSP or SolO as source.
+
+- **Output impact:** the current "979 matches" is real but lopsided —
+  all matches are short-baseline. Long-baseline coincidences need a
+  wider window.
+- **Fix:** extend `PERIHELIA[X]` windows to ±14 d around perihelion, OR
+  introduce a separate "cross-perihelion" window for long-baseline pairs.
 
 ## v0.2 — bigger and more honest
 
