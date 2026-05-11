@@ -53,27 +53,31 @@ def fetch_psp_fields(t_start: str, t_stop: str) -> pd.DataFrame:
     })
 
 
-def fetch_psp_sweap_spc(t_start: str, t_stop: str) -> pd.DataFrame:
-    pyspedas.psp.spc(
+def fetch_psp_sweap_spi(t_start: str, t_stop: str) -> pd.DataFrame:
+    """SWEAP/SPAN-I L3 ion moments. SPC L3i is gappy post-E18 due to instrument
+    issues; SPAN-I has cleaner coverage at perihelion."""
+    pyspedas.psp.spi(
         trange=[t_start, t_stop],
-        datatype="l3i",
+        datatype="sf00_l3_mom",
         level="l3",
         time_clip=True,
     )
-    vp = pytplot.get_data("psp_spc_vp_moment_RTN")
-    np_ = pytplot.get_data("psp_spc_np_moment")
-    wp = pytplot.get_data("psp_spc_wp_moment")
+    vel = pytplot.get_data("psp_swp_spi_sf00_L3_VEL_RTN_SUN")
+    dens = pytplot.get_data("psp_swp_spi_sf00_L3_DENS")
+    temp = pytplot.get_data("psp_swp_spi_sf00_L3_TEMP")
     pytplot.del_data("*")
-    if vp is None or np_ is None:
+    if vel is None or dens is None:
         return pd.DataFrame()
-    return pd.DataFrame({
-        "time": pd.to_datetime(vp.times, unit="s"),
-        "v_R_km_s": vp.y[:, 0],
-        "v_T_km_s": vp.y[:, 1],
-        "v_N_km_s": vp.y[:, 2],
-        "n_p_cm3": np_.y,
-        "w_p_km_s": wp.y if wp is not None else float("nan"),
+    df = pd.DataFrame({
+        "time": pd.to_datetime(vel.times, unit="s"),
+        "v_R_km_s": vel.y[:, 0],
+        "v_T_km_s": vel.y[:, 1],
+        "v_N_km_s": vel.y[:, 2],
+        "n_p_cm3": dens.y,
     })
+    if temp is not None:
+        df["T_eV"] = temp.y
+    return df
 
 
 def fetch_ephemeris(naif_id: str, t_start: str, t_stop: str, step: str = "1h") -> pd.DataFrame:
@@ -104,14 +108,27 @@ def search_jwst(target_name: str, cap: int):
 
 
 def select_jwst_products(obs):
+    """Pick FITS science products before capping. Catalog/auxiliary files (cat.ecsv,
+    asn.json) match the SCIENCE+calib_level=3 mask but aren't actually the science
+    image/spectrum — preferring i2d/s3d/x1d FITS lands real reflectance data."""
     products = Observations.get_product_list(obs)
     if len(products) == 0:
         return products
-    mask = (products["productType"] == "SCIENCE") & (products["calib_level"] == 3)
-    sel = products[mask]
-    if len(sel) > JWST_FILE_CAP_PER_BODY:
-        sel = sel[:JWST_FILE_CAP_PER_BODY]
-    return sel
+    science = products[(products["productType"] == "SCIENCE") &
+                       (products["calib_level"] == 3)]
+    if len(science) == 0:
+        return science
+    fits_mask = [str(fn).endswith(".fits") for fn in science["productFilename"]]
+    fits_only = science[fits_mask]
+    if len(fits_only) == 0:
+        fits_only = science
+    preferred_suffixes = ("_i2d.fits", "_s3d.fits", "_x1d.fits", "_x1dints.fits")
+    pref_mask = [any(str(fn).endswith(s) for s in preferred_suffixes)
+                 for fn in fits_only["productFilename"]]
+    preferred = fits_only[pref_mask] if any(pref_mask) else fits_only
+    if len(preferred) > JWST_FILE_CAP_PER_BODY:
+        preferred = preferred[:JWST_FILE_CAP_PER_BODY]
+    return preferred
 
 
 def push(api: HfApi, local: Path, repo_path: str, message: str) -> None:
@@ -145,17 +162,19 @@ def pull_psp(api: HfApi, t_start: str, t_stop: str, out: Path) -> bool:
             print(f"[psp/fields] {day_str} failed: {e}", file=sys.stderr)
             traceback.print_exc()
     try:
-        print(f"[psp/sweap-spc] {t_start} → {t_stop}")
-        df = fetch_psp_sweap_spc(t_start, t_stop)
+        print(f"[psp/sweap-spi] {t_start} → {t_stop}")
+        df = fetch_psp_sweap_spi(t_start, t_stop)
         if not df.empty:
-            path = out / "psp" / f"sweap_spc_{PERIHELION}.parquet"
+            path = out / "psp" / f"sweap_spi_{PERIHELION}.parquet"
             path.parent.mkdir(parents=True, exist_ok=True)
             df.to_parquet(path, compression="snappy")
-            push(api, path, f"psp/sweap_spc_{PERIHELION}.parquet",
-                 f"stage-1: PSP SWEAP/SPC {PERIHELION}")
+            push(api, path, f"psp/sweap_spi_{PERIHELION}.parquet",
+                 f"stage-1: PSP SWEAP/SPAN-I {PERIHELION}")
             ok = True
+        else:
+            print("[psp/sweap-spi] empty frame (data gap at this perihelion)")
     except Exception as e:
-        print(f"[psp/sweap-spc] failed: {e}", file=sys.stderr)
+        print(f"[psp/sweap-spi] failed: {e}", file=sys.stderr)
         traceback.print_exc()
     return ok
 
