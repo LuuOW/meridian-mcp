@@ -47,7 +47,7 @@
   </button>
 
   <div id="navMenu" class="nav-menu" role="menu">
-    <a href="/" class="current">Home</a>
+    <a href="/">Home</a>
 
     <details class="nav-group" open>
       <summary class="nav-section">Showcase</summary>
@@ -87,6 +87,50 @@
       <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
     </details>
   </div>
+
+  <!-- Self-contained burger + current-link behaviour. Lives inside <nav>
+       so sync-nav.py treats it as part of the synced block — every page
+       gets the same wiring without needing a separate <script> import. -->
+  <script>
+  (function () {
+    var btn  = document.getElementById('burgerBtn')
+    var menu = document.getElementById('navMenu')
+    if (!btn || !menu) return
+    if (btn.dataset.wired) return
+    btn.dataset.wired = '1'
+
+    function toggle(open) {
+      var isOpen = open === undefined ? !menu.classList.contains('open') : open
+      menu.classList.toggle('open', isOpen)
+      btn.classList.toggle('open', isOpen)
+      btn.setAttribute('aria-expanded', String(isOpen))
+    }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); toggle() })
+    menu.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () { toggle(false) })
+    })
+    document.addEventListener('click', function (e) {
+      if (!menu.classList.contains('open')) return
+      if (!menu.contains(e.target) && !btn.contains(e.target)) toggle(false)
+    })
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') toggle(false)
+    })
+
+    // Mark the current page so the nav highlight follows location.
+    var here = location.pathname.replace(/\/index\.html$/, '/') || '/'
+    menu.querySelectorAll('a').forEach(function (a) {
+      var href = a.getAttribute('href')
+      if (!href) return
+      try {
+        var u = new URL(href, location.href)
+        if (u.host !== location.host) return
+        var target = u.pathname.replace(/\/index\.html$/, '/') || '/'
+        if (target === here) a.classList.add('current')
+      } catch (_) {}
+    })
+  })()
+  </script>
 </nav>
 
 <main id="main" class="hero-wrap">
