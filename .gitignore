@@ -9,3 +9,4 @@ data/prices.json
 coverage/
 dist/
 build/
+site/dist/
