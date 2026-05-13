@@ -133,6 +133,7 @@ function renderSystem(c, rank) {
 
     <div class="system-center ${c.pdb ? '' : 'empty'}">
       ${c.pdb ? `
+        <div class="system-viewport"></div>
         <button class="viewer-tool fullscreen-btn" type="button" aria-label="Toggle fullscreen" title="Fullscreen (Esc to exit)">
           <svg class="ico-expand" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
@@ -162,8 +163,9 @@ function renderSystem(c, rank) {
   })
   universe.appendChild(card)
 
-  const centerEl = card.querySelector('.system-center')
-  const fsBtn    = card.querySelector('.fullscreen-btn')
+  const centerEl   = card.querySelector('.system-center')
+  const viewportEl = card.querySelector('.system-viewport')
+  const fsBtn      = card.querySelector('.fullscreen-btn')
   if (fsBtn) {
     fsBtn.addEventListener('click', e => {
       e.stopPropagation()
@@ -171,14 +173,20 @@ function renderSystem(c, rank) {
     })
   }
 
-  if (!c.pdb) return
+  if (!c.pdb || !viewportEl) return
 
   // Mol* renders cartoon protein + ligand atoms in the same canvas;
-  // zoom reveals the molecules inside the structure.
-  mountProteinViewer(centerEl, c.pdb).catch(e => {
+  // zoom reveals the molecules inside the structure. The viewport
+  // div is a sibling of the fullscreen button, so when Mol* takes
+  // over its host on mount, the button stays untouched.
+  mountProteinViewer(viewportEl, c.pdb).catch(e => {
     console.warn('mol*', c.pdb, 'failed:', e?.message || e)
-    centerEl.classList.add('empty')
-    centerEl.textContent = `PDB ${c.pdb} failed`
+    viewportEl.textContent = `PDB ${c.pdb} failed`
+    viewportEl.style.display = 'flex'
+    viewportEl.style.alignItems = 'center'
+    viewportEl.style.justifyContent = 'center'
+    viewportEl.style.color = 'var(--dim)'
+    viewportEl.style.fontSize = '12px'
   })
 }
 
