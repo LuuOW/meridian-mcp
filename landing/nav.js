@@ -23,6 +23,12 @@ export function initBurgerNav() {
   const btn  = document.getElementById('burgerBtn')
   const menu = document.getElementById('navMenu')
   if (!btn || !menu) return
+  // The synced <nav> template carries an inline script that wires the
+  // same handlers and stamps data-wired. If it's already run, this
+  // module-level call is a no-op so we don't double-bind (which would
+  // cause every burger click to open-and-immediately-close).
+  if (btn.dataset.wired) return
+  btn.dataset.wired = '1'
   markCurrentNavLink()
 
   const toggle = (open) => {
@@ -48,8 +54,22 @@ export function initBurgerNav() {
 }
 
 // Fetch the live npm version from /api/version and stamp it onto any
-// matching elements. Pass element ids — typically heroVersion, versionBadge.
+// matching elements. /api/version doesn't exist on GH Pages (no API),
+// so we silently 404 in dev and only attempt the fetch in environments
+// where a backend might serve it. The data-loading attribute stays
+// where it is — the eyebrow text already reads `MCP server · vN.N.N`
+// statically, so a missing version just leaves the static version.
 export function loadVersionBadge(...ids) {
+  // GH Pages: no backend, no /api/*. Skip the fetch to avoid the
+  // cosmetic 404 in the console.
+  const host = location.host
+  if (host === 'ask-meridian.uk' || host === 'www.ask-meridian.uk') {
+    for (const id of ids) {
+      const el = document.getElementById(id)
+      if (el) el.removeAttribute('data-loading')
+    }
+    return
+  }
   fetch('/api/version', { cache: 'default' })
     .then(r => r.ok ? r.json() : null)
     .then(d => {
