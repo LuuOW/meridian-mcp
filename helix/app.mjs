@@ -215,6 +215,10 @@ function renderSystem(c, rank) {
             <path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>
           </svg>
         </button>
+        <div class="system-hud" hidden>
+          <div class="hud-name">${escapeHtml(c.name || '')}</div>
+          <div class="hud-selection"></div>
+        </div>
       ` : 'no PDB'}
     </div>
 
@@ -252,7 +256,15 @@ function renderSystem(c, rank) {
   // zoom reveals the molecules inside the structure. The viewport
   // div is a sibling of the fullscreen button, so when Mol* takes
   // over its host on mount, the button stays untouched.
-  mountProteinViewer(viewportEl, c.pdb, (sel) => showDetail(c, sel)).catch(e => {
+  //
+  // On atom click: show in BOTH the side detail panel (visible in
+  // normal view) AND the in-viewport HUD (visible while fullscreen,
+  // since the side panel is outside the fullscreen tree).
+  const onSelect = (sel) => {
+    showDetail(c, sel)
+    updateHud(centerEl, sel)
+  }
+  mountProteinViewer(viewportEl, c.pdb, onSelect).catch(e => {
     console.warn('mol*', c.pdb, 'failed:', e?.message || e)
     viewportEl.textContent = `PDB ${c.pdb} failed`
     viewportEl.style.display = 'flex'
@@ -416,6 +428,30 @@ function renderSelection(sel) {
     ${atomParts.length ? `<div class="sel-atom">${atomParts.join(' · ')}</div>` : ''}
   `
   box.hidden = false
+}
+
+// In-viewport HUD shown while the system-center is fullscreen — the
+// side detail panel is outside the fullscreen tree so the browser
+// hides it. The HUD lives inside .system-center so it follows the
+// viewport into fullscreen.
+function updateHud(centerEl, sel) {
+  const hud = centerEl?.querySelector?.('.system-hud')
+  if (!hud) return
+  if (!sel) { hud.hidden = true; return }
+  const friendly  = HET_LABEL[sel.compId] || sel.compId
+  const kindLabel = sel.kind === 'ligand' ? 'Ligand / cofactor' : 'Residue'
+  const seqPart   = sel.seqId  ? ` ${sel.seqId}` : ''
+  const chainPart = sel.asymId ? ` · chain ${escapeHtml(sel.asymId)}` : ''
+  const atomBits  = []
+  if (sel.atomName) atomBits.push(`atom ${escapeHtml(sel.atomName)}`)
+  if (sel.element)  atomBits.push(escapeHtml(sel.element))
+
+  hud.querySelector('.hud-selection').innerHTML = `
+    <div class="hud-kind">${kindLabel}</div>
+    <div class="hud-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
+    ${atomBits.length ? `<div class="hud-atom">${atomBits.join(' · ')}</div>` : ''}
+  `
+  hud.hidden = false
 }
 detail.querySelector('.detail-close').addEventListener('click', () => {
   detail.hidden = true
