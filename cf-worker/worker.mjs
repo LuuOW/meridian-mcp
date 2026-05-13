@@ -32,7 +32,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 
-import { PKG_VERSION, TOOLS, routeTask, routeTaskJson } from '../mcp/_lib/core.mjs'
+import { PKG_VERSION, TOOLS, routeTask, routeTaskJson, DEFAULTS } from '../mcp/_lib/core.mjs'
 import { orbitalClassify } from '../mcp/_lib/orbital.mjs'
 import {
   applyFittedCorrection, sgdUpdate, loadWeights, saveWeights, FEATURE_VERSION,
