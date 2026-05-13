@@ -22,6 +22,7 @@ mkdir -p "$DIST/helix" "$DIST/lens" "$DIST/lens/assets" \
 
 cp "$REPO/helix/index.html" "$DIST/helix/index.html"
 cp "$REPO/helix/app.mjs"    "$DIST/helix/app.mjs"
+cp "$REPO/helix/helix.css"  "$DIST/helix/helix.css"
 
 cp "$REPO/lens/index.html"        "$DIST/lens/index.html"
 cp "$REPO/lens/index.js"          "$DIST/lens/index.js"
@@ -30,9 +31,10 @@ cp "$REPO/lens/vlm.mjs"           "$DIST/lens/vlm.mjs"
 cp "$REPO/lens/meridian-route.mjs" "$DIST/lens/meridian-route.mjs"
 cp "$REPO/lens/assets/"*           "$DIST/lens/assets/"
 
-# Lens uses __BUILD_SHA__ as a cache-bust query on its module imports.
+# Cache-bust: replace __BUILD_SHA__ on every app file that uses it.
 COMMIT="$(cd "$REPO" && git rev-parse --short HEAD 2>/dev/null || echo local)"
-for f in "$DIST/lens/index.html" "$DIST/lens/index.js"; do
+for f in "$DIST/lens/index.html" "$DIST/lens/index.js" \
+         "$DIST/helix/index.html"; do
   sed -i.bak "s/__BUILD_SHA__/$COMMIT/g" "$f" && rm "$f.bak"
 done
 
