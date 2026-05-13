@@ -234,6 +234,56 @@ a:hover { color: #fff; }
   background: transparent !important;
 }
 
+/* ── Viewport tools (overlay buttons on the Mol* canvas) ───────────── */
+.viewer-tool {
+  position: absolute; top: 8px; right: 8px;
+  width: 32px; height: 32px;
+  background: rgba(10, 13, 20, 0.66);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 5;
+  opacity: 0;
+  backdrop-filter: blur(6px);
+  transition: opacity 0.18s ease, background 0.15s, border-color 0.15s, color 0.15s;
+}
+.system-center:hover .viewer-tool,
+.viewer-tool:focus-visible { opacity: 1; }
+.viewer-tool:hover {
+  background: rgba(167, 139, 250, 0.20);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.viewer-tool .ico-collapse { display: none; }
+
+/* Fullscreen state: viewport fills the whole screen, button stays
+   visible, expand icon swaps to collapse icon. */
+.system-center:fullscreen {
+  width: 100vw !important; height: 100vh !important;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 50%, rgba(124,58,237,0.18), transparent 70%),
+    var(--bg);
+  box-shadow: none;
+  transform: none;
+  top: 0; left: 0;
+}
+.system-center:fullscreen .viewer-tool {
+  opacity: 1; top: 16px; right: 16px;
+  width: 38px; height: 38px;
+}
+.system-center:fullscreen .viewer-tool .ico-expand   { display: none; }
+.system-center:fullscreen .viewer-tool .ico-collapse { display: block; }
+/* WebKit prefix for Safari */
+.system-center:-webkit-full-screen {
+  width: 100vw !important; height: 100vh !important;
+  border-radius: 0; transform: none; top: 0; left: 0;
+}
+.system-center:-webkit-full-screen .viewer-tool .ico-expand   { display: none; }
+.system-center:-webkit-full-screen .viewer-tool .ico-collapse { display: block; }
+
 /* Footer with scores + rationale snippet */
 .system-footer {
   position: absolute; bottom: 0; left: 0; right: 0;
