@@ -140,23 +140,24 @@ a:hover { color: #fff; }
 /* ── Stage ────────────────────────────────────────────────────── */
 .stage { position: fixed; inset: 76px 0 0 0; }
 
-/* Horizontal scroll of star-system cards. Each protein is its own
-   complete world. */
+/* Vertical scroll of star-system cards. One protein per row, big
+   enough that the structure dominates and the metadata reads
+   comfortably. */
 .universe {
-  position: absolute; inset: 12px 0 220px 0;
-  display: flex; gap: 28px;
+  position: absolute; inset: 12px 0 200px 0;
+  display: flex; flex-direction: column; gap: 28px;
   align-items: center;
-  padding: 24px 32px;
-  overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x mandatory;
+  padding: 24px 32px 40px;
+  overflow-y: auto; overflow-x: hidden;
+  scroll-snap-type: y mandatory;
   scrollbar-width: thin;
 }
-.universe::-webkit-scrollbar { height: 6px; }
+.universe::-webkit-scrollbar { width: 6px; }
 .universe::-webkit-scrollbar-thumb { background: rgba(155,182,234,0.2); border-radius: 3px; }
 
 .universe-empty {
   margin: auto;
-  max-width: 480px;
+  max-width: 520px;
   text-align: center;
   color: var(--dim);
   font-size: 14px; line-height: 1.6;
@@ -166,7 +167,8 @@ a:hover { color: #fff; }
 .system {
   position: relative;
   flex: 0 0 auto;
-  width: 360px; height: 440px;
+  width: min(720px, calc(100vw - 64px));
+  height: min(560px, calc(100vh - 280px));
   scroll-snap-align: center;
   border-radius: 22px;
   background:
@@ -295,46 +297,67 @@ a:hover { color: #fff; }
 .system-center:-webkit-full-screen .viewer-tool .ico-expand   { display: none; }
 .system-center:-webkit-full-screen .viewer-tool .ico-collapse { display: block; }
 
-/* In-viewport HUD — shows selection info while the .system-center is
-   fullscreen (the side detail panel is outside the fullscreen tree
-   and gets hidden by the browser). Hidden in normal view. */
+/* In-viewport HUD — a side panel inside the fullscreen viewport
+   showing the full detail card (the side panel is outside the
+   fullscreen tree and gets hidden by the browser). Carries protein
+   name + meta + scores + rationale, plus a click-to-select block
+   with a 2D molecular render of whatever the user just tapped. */
 .system-hud {
-  position: absolute; left: 50%; bottom: 24px;
-  transform: translateX(-50%);
-  min-width: 280px; max-width: min(560px, 90vw);
-  padding: 14px 18px;
+  position: absolute; top: 16px; right: 16px; bottom: 16px;
+  width: min(360px, 40vw);
+  padding: 20px 22px;
   background: rgba(10, 13, 20, 0.88);
-  border: 1px solid rgba(167, 139, 250, 0.45);
+  border: 1px solid rgba(167, 139, 250, 0.40);
   border-radius: 14px;
   box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 1px rgba(167,139,250,0.08);
   backdrop-filter: blur(10px);
   color: var(--text);
   z-index: 1100;
-  display: none;  /* hidden in normal view */
-  pointer-events: none;
+  display: none;
+  overflow-y: auto;
 }
-.system-center:fullscreen .system-hud { display: block; }
+.system-center:fullscreen .system-hud         { display: block; }
 .system-center:-webkit-full-screen .system-hud { display: block; }
-.system-center:fullscreen .system-hud[hidden],
-.system-center:-webkit-full-screen .system-hud[hidden] { display: none; }
 
 .system-hud .hud-name {
-  font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--accent); font-weight: 600;
-  margin-bottom: 6px;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.01em;
+  color: var(--text); margin-bottom: 4px;
 }
+.system-hud .hud-meta {
+  font-size: 12px; color: var(--muted); margin-bottom: 14px;
+}
+.system-hud .hud-scores {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+}
+.system-hud .hud-rationale {
+  font-size: 13.5px; color: var(--text-muted); line-height: 1.55;
+  margin-bottom: 18px;
+}
+.system-hud .hud-selection {
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  border-radius: 10px;
+  padding: 10px 12px 12px;
+}
+.system-hud .hud-selection[hidden] { display: none; }
 .system-hud .hud-kind {
   font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase;
-  color: rgba(167, 139, 250, 0.85); font-weight: 600;
+  color: rgba(167, 139, 250, 0.90); font-weight: 600;
   margin-bottom: 3px;
 }
 .system-hud .hud-comp {
-  font-size: 15px; line-height: 1.4; color: var(--text);
+  font-size: 14.5px; line-height: 1.4; color: var(--text);
 }
 .system-hud .hud-atom {
-  margin-top: 4px;
-  font-size: 12px; color: var(--muted);
+  margin-top: 3px;
+  font-size: 11.5px; color: var(--muted);
   font-family: var(--font-mono);
+}
+.system-hud canvas.hud-molecule {
+  display: block; width: 100%; height: 140px; margin-top: 10px;
+  background: rgba(6,8,15,0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(167,139,250,0.15);
 }
 
 /* Footer with scores + rationale snippet */
@@ -402,29 +425,38 @@ textarea:focus { outline: none; border-color: rgba(34,211,238,0.55); }
 .status.busy { color: var(--accent); }
 .status.error { color: var(--bad); }
 
-/* ── Detail panel ─────────────────────────────────────────────── */
+/* ── Detail panel — full-height slider from the right edge ───── */
 .detail {
-  position: absolute; right: 24px; top: 80px;
-  width: min(340px, calc(100vw - 32px));
-  padding: 18px 20px 20px;
+  position: fixed; top: 76px; right: 0; bottom: 0;
+  width: min(440px, calc(100vw - 24px));
+  padding: 22px 24px 200px;        /* bottom padding clears the input card */
+  border-radius: 16px 0 0 16px;
   z-index: 40;
-  transform: translateX(20px); opacity: 0;
-  transition: opacity 220ms, transform 220ms;
+  transform: translateX(100%);
+  transition: transform 280ms cubic-bezier(0.16,1,0.3,1);
   pointer-events: none;
+  overflow-y: auto;
 }
-.detail:not([hidden]) { opacity: 1; transform: translateX(0); pointer-events: auto; }
-.detail h2 { margin: 0 0 6px; font-size: 18px; }
+.detail:not([hidden]) { transform: translateX(0); pointer-events: auto; }
+.detail h2 { margin: 0 0 6px; font-size: 19px; }
 .detail-meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
 
 /* Selection block — appears when user clicks an atom/residue inside
-   the protein viewport. Highlighted so it stands out from the static
-   protein metadata above and the rationale below. */
+   the protein viewport. Includes a 2D ball-and-stick render of the
+   selected residue/ligand parsed live from the cached PDB. */
 .detail-selection {
   background: rgba(167, 139, 250, 0.08);
   border: 1px solid rgba(167, 139, 250, 0.25);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 10px 12px 12px;
   margin-bottom: 14px;
+}
+.detail-selection .sel-molecule {
+  display: block; width: 100%; height: 160px;
+  margin-top: 10px;
+  background: rgba(6,8,15,0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(167,139,250,0.15);
 }
 .detail-selection .sel-kind {
   font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase;

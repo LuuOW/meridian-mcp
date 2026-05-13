@@ -63,6 +63,7 @@ const burgerBtn = $('burgerBtn'), navMenu = $('navMenu')
 let lastResult = null
 let lastCandidates = []
 const systemViewers = new Map()   // pdb → Mol* Viewer
+const pdbTextCache  = new Map()   // pdb → raw PDB text (for residue lookups)
 
 // ── Burger menu (mirrors landing/nav.js initBurgerNav)
 function initBurger() {
@@ -116,6 +117,7 @@ async function mountProteinViewer(host, pdbId, onSelect) {
     fetch(`https://files.rcsb.org/download/${pdbId}.pdb`).then(r => r.text()),
     molstarReady(),
   ])
+  pdbTextCache.set(pdbId, pdbText)
   const viewer = await mol.Viewer.create(host, {
     layoutIsExpanded:       false,
     layoutShowControls:     false,
@@ -215,9 +217,19 @@ function renderSystem(c, rank) {
             <path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>
           </svg>
         </button>
-        <div class="system-hud" hidden>
-          <div class="hud-name">${escapeHtml(c.name || '')}</div>
-          <div class="hud-selection"></div>
+        <div class="system-hud">
+          <div class="hud-name">${escapeHtml(c.name || '')} · ${escapeHtml(c.uniprot || '')}</div>
+          <div class="hud-meta">${c.aa_len ?? '?'} aa · PDB ${escapeHtml(c.pdb || '—')}</div>
+          <div class="hud-scores">
+            ${c.llm_score   != null ? `<span class="score-pill">LLM ${c.llm_score}/100</span>` : ''}
+            ${c.route_score != null ? `<span class="score-pill warm">orbital ${Number(c.route_score).toFixed(2)}</span>` : ''}
+            ${c.classification?.class ? `<span class="score-pill dim">${escapeHtml(c.classification.class)}</span>` : ''}
+          </div>
+          <div class="hud-rationale">${escapeHtml(c.rationale || c.description || c.use || '')}</div>
+          <div class="hud-selection" hidden>
+            <div class="hud-sel-text"></div>
+            <canvas class="hud-molecule" width="220" height="160"></canvas>
+          </div>
         </div>
       ` : 'no PDB'}
     </div>
@@ -263,7 +275,7 @@ function renderSystem(c, rank) {
   // since the side panel is outside the fullscreen tree).
   const onSelect = (sel) => {
     showDetail(c, sel)
-    updateHud(centerEl, sel)
+    updateHud(centerEl, c, sel)
   }
   mountProteinViewer(viewportEl, c.pdb, onSelect).catch(e => {
     console.warn('mol*', c.pdb, 'failed:', e?.message || e)
@@ -391,6 +403,129 @@ desc.addEventListener('keydown', e => {
 })
 runBtn.addEventListener('click', () => { clearTimeout(debounceTimer); recommend() })
 
+// ── Parse a single residue out of cached PDB text + render its
+// atoms+bonds as 2D ball-and-stick. Reused by the side detail panel
+// AND the fullscreen HUD, so we draw real PDB coordinates of whatever
+// the user just clicked — not a stylized icon.
+const ATOM_COLOR = {
+  H:'#dddddd', C:'#3b3b3b', N:'#3050f8', O:'#cc0000',
+  S:'#f8c000', P:'#ff8000', F:'#90e050',
+  Fe:'#e06633', Zn:'#7d80b0', Ca:'#3dff00', Mg:'#8aff00',
+  Mn:'#9c7ac7', Cu:'#c88033', Na:'#ab5cf2', K:'#8f40d4', Cl:'#1ff01f',
+}
+const ATOM_RADIUS = {
+  H:0.32, C:0.55, N:0.55, O:0.55, S:0.7, P:0.7, F:0.5,
+  Fe:0.9, Zn:0.85, Ca:1.0, Mg:0.9, Mn:0.9, Cu:0.85, Na:1.0, K:1.1, Cl:0.75,
+}
+
+function parseResidueAtoms(pdbText, { asymId, seqId, compId }) {
+  const atoms = []
+  for (const line of pdbText.split('\n')) {
+    if (!line.startsWith('ATOM') && !line.startsWith('HETATM')) continue
+    const lineChain = line.slice(21, 22)
+    const lineSeq   = parseInt(line.slice(22, 26), 10)
+    const lineComp  = line.slice(17, 20).trim()
+    // Match by what we have — asymId or seqId may be undefined for ions
+    if (asymId && lineChain !== asymId) continue
+    if (seqId != null && lineSeq !== seqId) continue
+    if (compId && lineComp !== compId) continue
+    let el = line.slice(76, 78).trim()
+    if (!el) el = line.slice(12, 16).trim().replace(/\d/g, '').slice(0, 2)
+    el = (el[0] || '').toUpperCase() + (el.slice(1).toLowerCase() || '')
+    if (el === 'H') continue
+    atoms.push({
+      el,
+      x: parseFloat(line.slice(30, 38)),
+      y: parseFloat(line.slice(38, 46)),
+      z: parseFloat(line.slice(46, 54)),
+    })
+  }
+  if (!atoms.length) return null
+  const mean = a => a.reduce((s,v)=>s+v,0)/a.length
+  const cx = mean(atoms.map(a => a.x))
+  const cy = mean(atoms.map(a => a.y))
+  const cz = mean(atoms.map(a => a.z))
+  const centered = atoms.map(a => ({ el: a.el, x: a.x - cx, y: a.y - cy, z: a.z - cz }))
+  const bonds = []
+  for (let i = 0; i < centered.length; i++) {
+    for (let j = i + 1; j < centered.length; j++) {
+      const dx = centered[i].x - centered[j].x
+      const dy = centered[i].y - centered[j].y
+      const dz = centered[i].z - centered[j].z
+      if (dx*dx + dy*dy + dz*dz < 3.8) bonds.push([i, j])  // ~1.95 Å
+    }
+  }
+  return { atoms: centered, bonds }
+}
+
+function drawMolecule(canvas, model) {
+  if (!canvas) return
+  const dpr = window.devicePixelRatio || 1
+  const w = canvas.width  = canvas.clientWidth  * dpr
+  const h = canvas.height = canvas.clientHeight * dpr
+  const ctx = canvas.getContext('2d')
+  ctx.clearRect(0, 0, w, h)
+  if (!model || !model.atoms.length) return
+
+  const xs = model.atoms.map(a => a.x), ys = model.atoms.map(a => a.y)
+  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 2)
+  const padding = Math.min(w, h) * 0.12
+  const scale = (Math.min(w, h) - padding * 2) / span
+  const projected = model.atoms.map(a => ({
+    px: w / 2 + a.x * scale,
+    py: h / 2 - a.y * scale,
+    pr: (ATOM_RADIUS[a.el] || 0.6) * scale * 0.55,
+    z:  a.z || 0,
+    el: a.el,
+  }))
+
+  ctx.lineCap = 'round'
+  for (const [i, j] of model.bonds) {
+    const a = projected[i], b = projected[j]
+    if (!a || !b) continue
+    const g = ctx.createLinearGradient(a.px, a.py, b.px, b.py)
+    g.addColorStop(0, ATOM_COLOR[a.el] || '#999')
+    g.addColorStop(1, ATOM_COLOR[b.el] || '#999')
+    ctx.strokeStyle = g
+    ctx.lineWidth = Math.max(1, scale * 0.10)
+    ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke()
+  }
+  const order = projected.map((_, k) => k).sort((a, b) => projected[a].z - projected[b].z)
+  for (const k of order) {
+    const a = projected[k]
+    const base = ATOM_COLOR[a.el] || '#888'
+    const r = Math.max(a.pr, 2)
+    const g = ctx.createRadialGradient(a.px - r*0.35, a.py - r*0.35, r*0.15, a.px, a.py, r)
+    g.addColorStop(0,   lighten(base, 0.55))
+    g.addColorStop(0.6, base)
+    g.addColorStop(1,   darken(base, 0.5))
+    ctx.fillStyle = g
+    ctx.beginPath(); ctx.arc(a.px, a.py, r, 0, Math.PI * 2); ctx.fill()
+    ctx.strokeStyle = darken(base, 0.7)
+    ctx.lineWidth = Math.max(0.5, r * 0.06)
+    ctx.stroke()
+  }
+  // Element label inside single-atom compounds
+  if (model.atoms.length === 1) {
+    const a = projected[0]
+    ctx.fillStyle = '#0c0c12'
+    ctx.font = `${Math.round(a.pr * 0.95)}px -apple-system, system-ui, sans-serif`
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText(a.el, a.px, a.py + a.pr * 0.05)
+  }
+}
+function lighten(hex, t) { return mix(hex, '#ffffff', t) }
+function darken(hex, t)  { return mix(hex, '#000000', t) }
+function mix(a, b, t) {
+  const [ar, ag, ab] = parseHex(a), [br, bg, bb] = parseHex(b)
+  return `rgb(${Math.round(ar+(br-ar)*t)},${Math.round(ag+(bg-ag)*t)},${Math.round(ab+(bb-ab)*t)})`
+}
+function parseHex(h) {
+  const s = h.startsWith('#') ? h.slice(1) : h
+  if (s.length === 3) return s.split('').map(c => parseInt(c + c, 16))
+  return [parseInt(s.slice(0,2),16), parseInt(s.slice(2,4),16), parseInt(s.slice(4,6),16)]
+}
+
 // ── Detail panel — accepts an optional selection info from Mol* clicks
 function showDetail(c, sel = null) {
   $('detailTitle').textContent = `${c.name} · ${c.uniprot || c.slug}`
@@ -406,16 +541,16 @@ function showDetail(c, sel = null) {
   if (c.delivery_concern) notes += `<div class="concern">⚠ delivery: ${escapeHtml(c.delivery_concern)}</div>`
   $('detailNotes').innerHTML = notes
 
-  renderSelection(sel)
+  renderSelection(sel, c.pdb)
   detail.hidden = false
 }
 
-function renderSelection(sel) {
+function renderSelection(sel, pdbId) {
   const box = $('detailSelection')
   if (!box) return
-  if (!sel) { box.hidden = true; box.innerHTML = ''; return }
+  if (!sel) { box.hidden = true; return }
 
-  const friendly = HET_LABEL[sel.compId] || sel.compId
+  const friendly  = HET_LABEL[sel.compId] || sel.compId
   const kindLabel = sel.kind === 'ligand' ? 'Ligand / cofactor' : 'Residue'
   const seqPart   = sel.seqId   ? ` <span class="sel-num">${sel.seqId}</span>` : ''
   const chainPart = sel.asymId  ? ` <span class="sel-meta">chain ${escapeHtml(sel.asymId)}</span>` : ''
@@ -423,22 +558,41 @@ function renderSelection(sel) {
   if (sel.atomName) atomParts.push(`atom <strong>${escapeHtml(sel.atomName)}</strong>`)
   if (sel.element)  atomParts.push(`element <strong>${escapeHtml(sel.element)}</strong>`)
 
-  box.innerHTML = `
-    <div class="sel-kind">${kindLabel}</div>
-    <div class="sel-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
-    ${atomParts.length ? `<div class="sel-atom">${atomParts.join(' · ')}</div>` : ''}
-  `
+  const text = box.querySelector('.sel-text')
+  if (text) {
+    text.innerHTML = `
+      <div class="sel-kind">${kindLabel}</div>
+      <div class="sel-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
+      ${atomParts.length ? `<div class="sel-atom">${atomParts.join(' · ')}</div>` : ''}
+    `
+  }
+  // Render the 2D ball-and-stick of the actual selected residue/ligand
+  // by parsing its atoms out of the cached PDB text. Real coordinates,
+  // not idealized.
+  const canvas = box.querySelector('canvas.sel-molecule')
+  if (canvas && pdbId) {
+    const pdbText = pdbTextCache.get(pdbId)
+    if (pdbText) {
+      const model = parseResidueAtoms(pdbText, sel)
+      drawMolecule(canvas, model)
+      canvas.style.display = model ? '' : 'none'
+    }
+  }
   box.hidden = false
 }
 
-// In-viewport HUD shown while the system-center is fullscreen — the
-// side detail panel is outside the fullscreen tree so the browser
-// hides it. The HUD lives inside .system-center so it follows the
-// viewport into fullscreen.
-function updateHud(centerEl, sel) {
+// In-viewport HUD shown while .system-center is fullscreen — the side
+// detail panel is outside the fullscreen tree so the browser hides
+// it. The HUD lives inside .system-center, follows the viewport into
+// fullscreen, and carries the same content (protein metadata, scores,
+// rationale, plus the click-to-select block with a real 3D render of
+// the selected residue/ligand).
+function updateHud(centerEl, c, sel) {
   const hud = centerEl?.querySelector?.('.system-hud')
   if (!hud) return
-  if (!sel) { hud.hidden = true; return }
+  const selBox = hud.querySelector('.hud-selection')
+  if (!sel) { if (selBox) selBox.hidden = true; return }
+
   const friendly  = HET_LABEL[sel.compId] || sel.compId
   const kindLabel = sel.kind === 'ligand' ? 'Ligand / cofactor' : 'Residue'
   const seqPart   = sel.seqId  ? ` ${sel.seqId}` : ''
@@ -447,12 +601,24 @@ function updateHud(centerEl, sel) {
   if (sel.atomName) atomBits.push(`atom ${escapeHtml(sel.atomName)}`)
   if (sel.element)  atomBits.push(escapeHtml(sel.element))
 
-  hud.querySelector('.hud-selection').innerHTML = `
-    <div class="hud-kind">${kindLabel}</div>
-    <div class="hud-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
-    ${atomBits.length ? `<div class="hud-atom">${atomBits.join(' · ')}</div>` : ''}
-  `
-  hud.hidden = false
+  const text = selBox.querySelector('.hud-sel-text')
+  if (text) {
+    text.innerHTML = `
+      <div class="hud-kind">${kindLabel}</div>
+      <div class="hud-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
+      ${atomBits.length ? `<div class="hud-atom">${atomBits.join(' · ')}</div>` : ''}
+    `
+  }
+  const canvas = selBox.querySelector('canvas.hud-molecule')
+  if (canvas && c?.pdb) {
+    const pdbText = pdbTextCache.get(c.pdb)
+    if (pdbText) {
+      const model = parseResidueAtoms(pdbText, sel)
+      drawMolecule(canvas, model)
+      canvas.style.display = model ? '' : 'none'
+    }
+  }
+  selBox.hidden = false
 }
 detail.querySelector('.detail-close').addEventListener('click', () => {
   detail.hidden = true
