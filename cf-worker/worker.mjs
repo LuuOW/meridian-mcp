@@ -45,6 +45,7 @@ const BROWSER_ORIGIN_ALLOWLIST = new Set([
   'https://lens.ask-meridian.uk',
   'https://ask-meridian.uk',
   'https://photon.ask-meridian.uk',
+  'https://meridian.ask-meridian.uk',  // shared-origin host: lens/helix/miniapp/vision-lab
 ])
 
 const ISSUER          = 'https://mcp.ask-meridian.uk'
@@ -428,6 +429,151 @@ async function handleBrowserRoute(request, env) {
   }
 }
 
+// Browser-facing vision endpoint. Accepts a base64 image + a short
+// prompt, returns the model's text description. Used by helix (injury
+// photo) and miniapp/vision-lab (snap-and-ask). Wraps a vision-capable
+// GH Models endpoint; default GPT-4o-mini, swap via MERIDIAN_VISION_MODEL.
+async function handleVision(request, env) {
+  const origin = request.headers.get('origin') || ''
+  if (!BROWSER_ORIGIN_ALLOWLIST.has(origin)) {
+    return jsonResponse({ error: 'origin not allowed', origin }, { status: 403 })
+  }
+  if (!env.MERIDIAN_GITHUB_TOKEN) {
+    return jsonResponse({ error: 'server misconfigured: MERIDIAN_GITHUB_TOKEN secret unset' }, { status: 500 })
+  }
+
+  let body
+  try { body = await request.json() }
+  catch { return jsonResponse({ error: 'expected JSON body' }, { status: 400 }) }
+
+  const prompt   = String(body.prompt || 'Describe this image concisely.').slice(0, 800)
+  const imageUrl = String(body.image_url || body.image || '')
+  if (!imageUrl) return jsonResponse({ error: 'image_url required (https URL or data: URI)' }, { status: 400 })
+  if (imageUrl.length > 8 * 1024 * 1024) return jsonResponse({ error: 'image too large (max ~6 MB as data:URI)' }, { status: 413 })
+
+  const model    = env.MERIDIAN_VISION_MODEL || 'openai/gpt-4o-mini'
+  const endpoint = env.MERIDIAN_MODELS_ENDPOINT || 'https://models.github.ai/inference/chat/completions'
+  const ctrl     = new AbortController()
+  const timer    = setTimeout(() => ctrl.abort(), 30_000)
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.MERIDIAN_GITHUB_TOKEN}`,
+        'content-type': 'application/json',
+        'user-agent': `meridian-mcp/${PKG_VERSION}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 240,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl } },
+          ],
+        }],
+      }),
+      signal: ctrl.signal,
+    })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) return jsonResponse({ error: j.error?.message || j.message || `HTTP ${res.status}` }, { status: 502 })
+    const text = j.choices?.[0]?.message?.content
+    if (!text) return jsonResponse({ error: 'vision model returned empty content' }, { status: 502 })
+    return jsonResponse({ description: text, model })
+  } catch (e) {
+    return jsonResponse({ error: e.name === 'AbortError' ? 'timeout' : (e.message || String(e)) }, { status: 502 })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+// helix: rank therapeutic protein candidates for an injury description.
+// Browser sends the curated candidate table inline so the worker has no
+// hidden state. Uses the same text model as /v1/route (Llama-3.3-70B).
+async function handleHelix(request, env) {
+  const origin = request.headers.get('origin') || ''
+  if (!BROWSER_ORIGIN_ALLOWLIST.has(origin)) {
+    return jsonResponse({ error: 'origin not allowed', origin }, { status: 403 })
+  }
+  if (!env.MERIDIAN_GITHUB_TOKEN) {
+    return jsonResponse({ error: 'server misconfigured: MERIDIAN_GITHUB_TOKEN secret unset' }, { status: 500 })
+  }
+
+  let body
+  try { body = await request.json() }
+  catch { return jsonResponse({ error: 'expected JSON body' }, { status: 400 }) }
+
+  const desc       = String(body.injury_description || '').slice(0, 4000).trim()
+  const candidates = Array.isArray(body.candidates) ? body.candidates.slice(0, 200) : []
+  const limit      = Math.max(1, Math.min(10, parseInt(body.limit, 10) || 5))
+  if (!desc)               return jsonResponse({ error: 'injury_description required' }, { status: 400 })
+  if (!candidates.length)  return jsonResponse({ error: 'candidates table required' }, { status: 400 })
+
+  const table = candidates.map(p =>
+    `- ${p.name} (${p.uniprot}, ${p.aa_len ?? '?'} aa) — use: ${p.use}; notes: ${p.notes || ''}`
+  ).join('\n')
+
+  const system = `You are a research assistant helping triage therapeutic protein candidates for a clinical wet lab. You are NOT giving medical advice. Always disclose uncertainty. Output strict JSON only — no prose around it.`
+  const user = `Injury description:
+${desc}
+
+Therapeutic protein table (curated):
+${table}
+
+Task: pick the top ${limit} candidates for further investigation. Score each 0-100 on plausibility for THIS injury, give a one-sentence mechanism rationale, and flag any candidate where size/delivery is a known barrier.
+
+Output strict JSON:
+{
+  "injury_class": "<short class label>",
+  "candidates": [
+    {"uniprot": "...", "name": "...", "score": 0-100, "rationale": "...", "delivery_concern": null | "..."}
+  ],
+  "not_medical_advice": true
+}`
+
+  const model    = env.MERIDIAN_MODEL || 'meta/llama-3.3-70b-instruct'
+  const endpoint = env.MERIDIAN_MODELS_ENDPOINT || 'https://models.github.ai/inference/chat/completions'
+  const ctrl     = new AbortController()
+  const timer    = setTimeout(() => ctrl.abort(), 60_000)
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.MERIDIAN_GITHUB_TOKEN}`,
+        'content-type': 'application/json',
+        'user-agent': `meridian-mcp/${PKG_VERSION}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user',   content: user },
+        ],
+      }),
+      signal: ctrl.signal,
+    })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) return jsonResponse({ error: j.error?.message || j.message || `HTTP ${res.status}` }, { status: 502 })
+    const text = j.choices?.[0]?.message?.content
+    if (!text) return jsonResponse({ error: 'LLM returned empty content' }, { status: 502 })
+    let parsed
+    try { parsed = JSON.parse(text) }
+    catch {
+      const m = text.match(/\{[\s\S]*\}/)
+      if (!m) return jsonResponse({ error: 'no JSON in response', raw: text.slice(0, 200) }, { status: 502 })
+      parsed = JSON.parse(m[0])
+    }
+    return jsonResponse(parsed)
+  } catch (e) {
+    return jsonResponse({ error: e.name === 'AbortError' ? 'timeout' : (e.message || String(e)) }, { status: 502 })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 // Browser-facing feedback endpoint. Front-ends post the candidates
 // they showed the user and which one the user engaged with. The
 // Worker pulls fitted weights from KV, runs one pairwise-ranking
@@ -567,6 +713,12 @@ export default {
 
     if (url.pathname === '/v1/feedback' && request.method === 'POST')
       return handleBrowserFeedback(request, env)
+
+    if (url.pathname === '/v1/vision' && request.method === 'POST')
+      return handleVision(request, env)
+
+    if (url.pathname === '/v1/helix' && request.method === 'POST')
+      return handleHelix(request, env)
 
     // Read-only endpoint for the eval cron + dashboards. Returns the
     // current model's update count + version, no weights.
