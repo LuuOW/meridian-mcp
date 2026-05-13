@@ -2,10 +2,28 @@
 // Used by landing/index.html, miniapp/app.js, vision-lab/lab.js so the
 // behaviour stays consistent across all surfaces.
 
+// Mark the nav link whose href matches the current page with
+// class="current". Lets the (now identical) nav template stay
+// page-agnostic while still highlighting where the user is.
+export function markCurrentNavLink() {
+  const here = location.pathname.replace(/\/index\.html$/, '/') || '/'
+  document.querySelectorAll('#navMenu a').forEach(a => {
+    const href = a.getAttribute('href')
+    if (!href) return
+    try {
+      const u = new URL(href, location.href)
+      if (u.host !== location.host) return
+      const target = u.pathname.replace(/\/index\.html$/, '/') || '/'
+      if (target === here) a.classList.add('current')
+    } catch {}
+  })
+}
+
 export function initBurgerNav() {
   const btn  = document.getElementById('burgerBtn')
   const menu = document.getElementById('navMenu')
   if (!btn || !menu) return
+  markCurrentNavLink()
 
   const toggle = (open) => {
     const isOpen = open !== undefined ? open : !menu.classList.contains('open')
