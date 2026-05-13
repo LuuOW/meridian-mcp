@@ -224,13 +224,21 @@ a:hover { color: #fff; }
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; color: var(--dim); text-align: center; padding: 0 20px;
 }
-/* Mol*'s viewport canvas lives inside .system-center. Keep its CSS
-   bg transparent so our gradient is the visible background; the
-   Mol* setProps call sets renderer transparency on the WebGL side. */
-.system-center .msp-plugin,
-.system-center .msp-plugin-content,
-.system-center .msp-viewport,
-.system-center canvas {
+/* Mol* mounts inside .system-viewport (sibling of the fullscreen
+   button), so when it wipes its host's children on init it can't
+   take the button with it. */
+.system-viewport {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+/* Keep Mol*'s internal CSS bg transparent so our gradient on
+   .system-center is the visible background; the setProps call sets
+   renderer transparency on the WebGL side. */
+.system-viewport .msp-plugin,
+.system-viewport .msp-plugin-content,
+.system-viewport .msp-viewport,
+.system-viewport canvas {
   background: transparent !important;
 }
 
