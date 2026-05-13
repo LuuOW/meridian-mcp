@@ -123,23 +123,23 @@ a:hover { color: #fff; }
 .system-name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; flex: 1; }
 .system-uniprot { font-size: 11px; color: var(--dim); }
 
-/* Central protein structure (the star) */
+/* Central protein structure (the star) — square container so Mol*
+   shows the protein's NATURAL 3D shape (ribbons, helices, sheets),
+   not clipped into a circle. The glow stays radial. */
 .system-center {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 220px; height: 220px;
-  border-radius: 50%;
+  width: 240px; height: 240px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow:
-    0 0 60px rgba(34,211,238,0.22),
-    0 0 100px rgba(124,58,237,0.18),
-    inset 0 0 0 1px rgba(155,182,234,0.10);
-  background: radial-gradient(circle at 50% 40%, rgba(124,58,237,0.20), rgba(6,8,15,0.95) 70%);
+  /* radial glow lives outside the box via filter, not inset bg */
+  filter: drop-shadow(0 0 30px rgba(34,211,238,0.22)) drop-shadow(0 0 60px rgba(124,58,237,0.15));
   z-index: 3;
 }
 .system-center.empty {
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; color: var(--dim); text-align: center; padding: 0 20px;
+  background: radial-gradient(circle at 50% 40%, rgba(124,58,237,0.18), rgba(6,8,15,0.85) 70%);
 }
 
 /* Orbital ring containing compound molecules */
@@ -185,22 +185,18 @@ a:hover { color: #fff; }
   from { transform: rotate(0deg); }
   to   { transform: rotate(-360deg); }
 }
+/* The compound icon is now a 2D canvas where we draw the real
+   ball-and-stick: atoms as shaded spheres, bonds as lines, Z-sorted
+   for depth. No WebGL — saves contexts so Mol* can keep rendering
+   the proteins. */
 .compound-icon {
-  width: 38px; height: 38px;
-  background: rgba(16,19,28,0.85);
-  border-radius: 50%;
+  width: 56px; height: 56px;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 12px rgba(34,211,238,0.25), inset 0 0 0 1px rgba(155,182,234,0.3);
-  overflow: hidden;
+  filter: drop-shadow(0 0 8px rgba(34,211,238,0.25));
 }
-.compound-icon img,
-.compound-icon svg { width: 70%; height: 70%; filter: invert(1) brightness(1.4); opacity: 0.92; }
-.compound-icon.atom {
-  background: radial-gradient(circle at 38% 32%, #fff3d4, #b6925d 55%, #6d4d20);
-  color: #1c1004;
-  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
-  filter: none;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+.compound-icon canvas {
+  width: 100%; height: 100%;
+  image-rendering: -webkit-optimize-contrast;
 }
 .compound-label {
   font-size: 9.5px; color: var(--muted);
