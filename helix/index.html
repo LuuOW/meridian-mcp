@@ -12,18 +12,53 @@
 </head>
 <body>
 
-<nav class="topbar">
-  <a class="brand" href="/"><span class="brand-glyph">◎</span> meridian</a>
-  <div class="brand-sub">helix · each protein is its own star system</div>
-  <button id="burgerBtn" class="burger" aria-label="Open menu" aria-expanded="false">
-    <span></span><span></span><span></span>
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand">◎ Meridian</a>
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
   </button>
-  <div id="navMenu" class="nav-menu">
-    <a href="/">home</a>
-    <a href="/lens/">lens</a>
-    <a href="/miniapp/">miniapp</a>
-    <a href="/miniapp/vision-lab/">vision-lab</a>
-    <a href="https://github.com/LuuOW/meridian-mcp" target="_blank" rel="noopener">source</a>
+
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Showcase</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app current" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Each predicted protein is its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/lens">GitHub · lens</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
   </div>
 </nav>
 

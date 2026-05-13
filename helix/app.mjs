@@ -46,13 +46,20 @@ let lastCandidates = []
 let MolstarMod = null
 const systemPlugins = new Map()   // pdb → Mol* plugin
 
-// ── Burger menu
+// ── Burger menu (mirrors landing/nav.js initBurgerNav)
 function initBurger() {
+  if (!burgerBtn || !navMenu) return
   const toggle = (open) => {
     const isOpen = open !== undefined ? open : !navMenu.classList.contains('open')
     navMenu.classList.toggle('open', isOpen)
     burgerBtn.classList.toggle('open', isOpen)
     burgerBtn.setAttribute('aria-expanded', String(isOpen))
+    if (isOpen) {
+      const first = navMenu.querySelector('a')
+      if (first) setTimeout(() => first.focus(), 50)
+    } else {
+      burgerBtn.focus()
+    }
   }
   burgerBtn.addEventListener('click', e => { e.stopPropagation(); toggle() })
   navMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)))
@@ -94,16 +101,27 @@ async function makePluginAt(host) {
   })
 }
 
-// Fetch PDB text once and hand it to BOTH Mol* (for the protein render)
-// and our HET parser (for compound coordinates). One network round-trip,
-// shared parsing. Returns the parsed compound list.
+// Fetch PDB text once, hand it to BOTH Mol* (for the protein cartoon)
+// and our HET parser (for compound orbits). Custom representation
+// builder — polymer-only cartoon — skips the default preset's
+// ligand-CCD lookups which 404 on noisy/unusual HETs and create
+// console clutter. Compounds appear in orbit, not in the central
+// view, so the cartoon-only render is also visually cleaner.
 async function loadProteinAndExtractHETs(host, pdbId) {
   const pdbText = await (await fetch(`https://files.rcsb.org/download/${pdbId}.pdb`)).text()
   const plugin = await makePluginAt(host)
   systemPlugins.set(pdbId, plugin)
   const data = await plugin.builders.data.rawData({ data: pdbText, label: pdbId }, { state: { isGhost: true } })
   const traj = await plugin.builders.structure.parseTrajectory(data, 'pdb')
-  await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
+  const model = await plugin.builders.structure.createModel(traj)
+  const structure = await plugin.builders.structure.createStructure(model)
+  const polymer = await plugin.builders.structure.tryCreateComponentStatic(structure, 'polymer')
+  if (polymer) {
+    await plugin.builders.structure.representation.addRepresentation(polymer, {
+      type:  'cartoon',
+      color: 'chain-id',
+    })
+  }
   return parseHETsFromPdb(pdbText)
 }
 
