@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#0a0d14">
+<title>Meridian — Try the router</title>
+<meta name="description" content="Type a task. See which candidates the router picks and why.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260509f">
+<link rel="stylesheet" href="/miniapp/miniapp.css">
+</head>
+<body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<nav class="nav" aria-label="Primary">
+  <a href="/" class="brand">◎ Meridian</a>
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Showcase</summary>
+      <a href="/miniapp/" class="nav-app current" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Candidate orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="/blog/">Blog</a>
+      <a href="/docs/">Docs</a>
+      <a href="/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/lens">GitHub · lens</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+</nav>
+
+<main id="main" class="mini-wrap">
+  <header class="mini-head">
+    <span class="eyebrow">Live demo</span>
+    <h1>Type a task. See which candidates the router picks.</h1>
+    <p class="lead">
+      Describe what you're trying to do — or scan a real-world object. An LLM authors fresh
+      candidates for your task and the orbital engine classifies each into a celestial class.
+    </p>
+  </header>
+
+  <div class="meta-bar">
+  </div>
+
+  <section class="ask-card" aria-labelledby="taskLabel">
+    <label for="taskInput" id="taskLabel" class="sr-only">Task description</label>
+    <div class="input-frame">
+      <textarea
+        id="taskInput"
+        class="task-input"
+        placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
+        rows="3"
+        maxlength="800"
+        aria-describedby="taskHelp"></textarea>
+    </div>
+    <p id="taskHelp" class="sr-only">Describe what you are trying to build. The router generates 5 candidates, then assigns each a celestial class.</p>
+    <div class="ask-controls">
+      <button id="askBtn" class="btn btn-primary">Find compatible candidates →</button>
+      <button id="arBtn" class="ar-pill" type="button" aria-label="Scan a real-world object with the camera (uses object detection)">
+        <span class="ar-pill-icon" aria-hidden="true">📷</span>
+        <span class="ar-pill-label">Scan an object</span>
+      </button>
+    </div>
+
+    <div class="examples">
+      <span class="examples-label">Try:</span>
+      <button class="ex-chip" data-task="Set up rate limiting on a public API endpoint with Redis">Rate limit a public API</button>
+      <button class="ex-chip" data-task="Stake a position on a prediction market on World Chain using ethers.js">DeFi staking on World Chain</button>
+      <button class="ex-chip" data-task="Write a SKILL.md authoring guide for new contributors">Author a SKILL.md</button>
+      <button class="ex-chip" data-task="Run a difference-in-differences analysis on rollout impact">Causal analysis of a rollout</button>
+    </div>
+  </section>
+
+  <section id="arSection" class="ar-section" hidden>
+    <div class="ar-stage">
+      <video id="arVideo" class="ar-video" playsinline muted autoplay></video>
+      <canvas id="arOverlay" class="ar-overlay" aria-label="Object detection overlay"></canvas>
+      <div class="ar-controls">
+        <span class="ar-status" id="arStatus">initializing…</span>
+        <button id="arCloseBtn" class="btn-ghost btn-sm">close ✕</button>
+      </div>
+      <div class="ar-detections" id="arDetections" hidden></div>
+    </div>
+    <p class="ar-foot">
+      Frames stay in your browser. Only the detected object class is sent to the router.
+      Powered by <code>tf.js + COCO-SSD</code> (80 classes).
+    </p>
+  </section>
+
+  <section id="resultsSection" class="results-section" hidden>
+    <div class="mini-galaxy-frame">
+      <canvas id="miniGalaxyCanvas" class="mini-galaxy-canvas" aria-label="Visualization of routed candidates as orbiting planets"></canvas>
+      <div class="mini-galaxy-controls">
+        <span class="mini-galaxy-label">view</span>
+        <div class="mode-toggle" role="tablist" aria-label="2D / 3D view">
+          <button id="mode2d" class="mode-btn active" role="tab" aria-selected="true">2D</button>
+          <button id="mode3d" class="mode-btn" role="tab" aria-selected="false">3D</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-header">
+      <h2>Results</h2>
+      <div id="resultsMeta" class="results-meta" role="status" aria-live="polite"></div>
+    </div>
+    <ol id="resultsList" class="results-list" aria-live="polite" aria-busy="false"></ol>
+  </section>
+
+  <footer class="mini-foot">
+    <p>
+      <strong>About this demo:</strong> the router here uses lexical + IDF scoring
+      with orbital-class boosts (planet/trojan/moon/asteroid/comet) — a JS approximation
+      of the full orbital algorithm in the
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm package</a>,
+      which adds transformer embeddings and Python-based physics scoring.
+      With <code>🪐 dynamic</code> on, an LLM (Llama-3.1-8b via Workers AI) generates
+      additional candidates which are scored alongside the static corpus.
+    </p>
+  </footer>
+</main>
+
+<!-- Candidate detail side panel -->
+<aside id="candidatePanel" class="candidate-panel" hidden aria-hidden="true">
+  <div class="candidate-panel-backdrop" id="candidatePanelBackdrop"></div>
+  <div class="candidate-panel-body">
+    <header class="candidate-panel-header">
+      <div class="candidate-panel-title-row">
+        <h3 id="candidatePanelTitle"></h3>
+        <span class="candidate-panel-class" id="candidatePanelClass"></span>
+      </div>
+      <button id="candidatePanelClose" class="btn-ghost btn-sm" aria-label="Close candidate panel">✕</button>
+    </header>
+
+    <div class="candidate-panel-scroll">
+      <section class="candidate-panel-why" id="candidatePanelWhy">
+        <!-- score breakdown chart + decision rule injected by JS -->
+      </section>
+
+      <section class="candidate-panel-content" id="candidatePanelContent">
+        <!-- candidate description + body markdown injected by JS -->
+      </section>
+    </div>
+  </div>
+</aside>
+
+<script type="module" src="/miniapp/app.js"></script>
+</body>
+</html>
