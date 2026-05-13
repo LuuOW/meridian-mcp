@@ -14,6 +14,27 @@
 const API_BASE   = 'https://mcp.ask-meridian.uk'
 const TIMEOUT_MS = 60_000
 
+// Friendly labels for HET codes (ligands, cofactors, ions, glycans).
+const HET_LABEL = {
+  FE:  'iron',         ZN:  'zinc',          CA:  'calcium',     MG:  'magnesium',
+  MN:  'manganese',    CU:  'copper',        NA:  'sodium',      K:   'potassium',
+  CL:  'chloride',     BR:  'bromide',       IOD: 'iodide',      F:   'fluoride',
+  NAG: 'NAG (glycan)', BMA: 'mannose',       GAL: 'galactose',   FUC: 'fucose',
+  MAN: 'mannose',      NDG: 'GlcNAc',        SIA: 'sialic acid',
+  HEM: 'heme',         HEC: 'heme C',        FAD: 'FAD',         NAD: 'NAD',
+  CO3: 'carbonate',    SO4: 'sulfate',       PO4: 'phosphate',   CIT: 'citrate',
+  ATP: 'ATP',          ADP: 'ADP',           AMP: 'AMP',         GTP: 'GTP',
+  HOH: 'water',
+}
+
+// Standard amino acid 3-letter codes — anything not in here is treated
+// as a HETATM ligand/cofactor for selection labelling.
+const STANDARD_AA = new Set([
+  'ALA','ARG','ASN','ASP','CYS','GLU','GLN','GLY','HIS','ILE',
+  'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL',
+  'MSE','PYL','SEC',
+])
+
 // PDB ids per UniProt. Compounds are auto-extracted from each PDB at
 // render time — no hardcoded `compounds:` field anymore. Whatever
 // HETATM records are in the structure (minus crystallization noise)
@@ -84,11 +105,13 @@ function molstarReady() {
 
 // Mount a Mol* viewer in `host` and load the PDB by id. The viewer
 // shows protein cartoon + ligand ball-and-stick in the same canvas
-// — zooming reveals the bound molecules + their atoms, no separate
-// orbit layer needed. Canvas background is made transparent so the
-// card's CSS gradient shows through and the render reads as part
-// of the Meridian aesthetic.
-async function mountProteinViewer(host, pdbId) {
+// — zooming reveals the bound molecules + their atoms.
+//
+// `onSelect(info)` fires each time the user clicks an atom inside the
+// viewport; info describes the clicked residue or ligand (compId,
+// seqId, chain, atomName, element). Empty clicks (background) are
+// suppressed so rotate/zoom interactions don't open the detail panel.
+async function mountProteinViewer(host, pdbId, onSelect) {
   const [pdbText, mol] = await Promise.all([
     fetch(`https://files.rcsb.org/download/${pdbId}.pdb`).then(r => r.text()),
     molstarReady(),
@@ -107,8 +130,6 @@ async function mountProteinViewer(host, pdbId) {
     emdbProvider:           'rcsb',
   })
   systemViewers.set(pdbId, viewer)
-  // Transparent canvas so the card's radial gradient bleeds through.
-  // setProps is async-tolerant; failures here only affect aesthetics.
   try {
     viewer.plugin.canvas3d?.setProps({
       transparentBackground: true,
@@ -116,6 +137,58 @@ async function mountProteinViewer(host, pdbId) {
     })
   } catch (e) { /* non-fatal */ }
   await viewer.loadStructureFromData(pdbText, 'pdb')
+
+  // Click-to-inspect: subscribe to the plugin's interaction stream and
+  // unpack whatever's under the cursor.
+  if (onSelect) {
+    try {
+      viewer.plugin.behaviors.interaction.click.subscribe(evt => {
+        const info = describeLoci(evt?.current?.loci)
+        if (info) onSelect(info)
+      })
+    } catch (e) {
+      console.warn('click subscribe failed:', e?.message || e)
+    }
+  }
+}
+
+// Extract a residue/atom description from a Mol* Loci. The UMD bundle
+// exposes the internal model classes under window.molstar, but the
+// surface isn't stable across versions — every property access is
+// guarded so a layout change downgrades to "selected" rather than
+// crashing.
+function describeLoci(loci) {
+  if (!loci) return null
+  const M = window.molstar
+  const SEL = M?.StructureElement
+  try {
+    if (!SEL?.Loci?.is?.(loci))         return null
+    if (SEL.Loci.isEmpty(loci))         return null
+    const loc = SEL.Loci.getFirstLocation
+      ? SEL.Loci.getFirstLocation(loci)
+      : null
+    if (!loc?.unit) return null
+
+    const e = loc.element
+    const m = loc.unit.model?.atomicHierarchy
+    if (!m) return null
+
+    const safe = (fn) => { try { return fn() } catch { return undefined } }
+    const compId   = safe(() => m.atoms.label_comp_id.value(e))
+    const atomName = safe(() => m.atoms.label_atom_id.value(e))
+    const element  = safe(() => m.atoms.type_symbol.value(e))
+    const residueIdx = safe(() => m.residueAtomSegments.index[e])
+    const seqId    = residueIdx != null ? safe(() => m.residues.label_seq_id.value(residueIdx)) : undefined
+    const chainIdx = safe(() => m.chainAtomSegments.index[e])
+    const asymId   = chainIdx != null ? safe(() => m.chains.label_asym_id.value(chainIdx)) : undefined
+
+    if (!compId) return null
+    const kind = STANDARD_AA.has(String(compId).toUpperCase()) ? 'residue' : 'ligand'
+    return { kind, compId, atomName, element, seqId, asymId }
+  } catch (e) {
+    console.warn('describeLoci:', e?.message || e)
+    return null
+  }
 }
 
 // ── Render a single star system card
@@ -179,7 +252,7 @@ function renderSystem(c, rank) {
   // zoom reveals the molecules inside the structure. The viewport
   // div is a sibling of the fullscreen button, so when Mol* takes
   // over its host on mount, the button stays untouched.
-  mountProteinViewer(viewportEl, c.pdb).catch(e => {
+  mountProteinViewer(viewportEl, c.pdb, (sel) => showDetail(c, sel)).catch(e => {
     console.warn('mol*', c.pdb, 'failed:', e?.message || e)
     viewportEl.textContent = `PDB ${c.pdb} failed`
     viewportEl.style.display = 'flex'
@@ -305,8 +378,8 @@ desc.addEventListener('keydown', e => {
 })
 runBtn.addEventListener('click', () => { clearTimeout(debounceTimer); recommend() })
 
-// ── Detail panel
-function showDetail(c) {
+// ── Detail panel — accepts an optional selection info from Mol* clicks
+function showDetail(c, sel = null) {
   $('detailTitle').textContent = `${c.name} · ${c.uniprot || c.slug}`
   $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'}`
   $('detailRationale').textContent = c.rationale || c.description || ''
@@ -319,9 +392,35 @@ function showDetail(c) {
   let notes = `<div>${escapeHtml(c.notes || '')}</div>`
   if (c.delivery_concern) notes += `<div class="concern">⚠ delivery: ${escapeHtml(c.delivery_concern)}</div>`
   $('detailNotes').innerHTML = notes
+
+  renderSelection(sel)
   detail.hidden = false
 }
-detail.querySelector('.detail-close').addEventListener('click', () => { detail.hidden = true })
+
+function renderSelection(sel) {
+  const box = $('detailSelection')
+  if (!box) return
+  if (!sel) { box.hidden = true; box.innerHTML = ''; return }
+
+  const friendly = HET_LABEL[sel.compId] || sel.compId
+  const kindLabel = sel.kind === 'ligand' ? 'Ligand / cofactor' : 'Residue'
+  const seqPart   = sel.seqId   ? ` <span class="sel-num">${sel.seqId}</span>` : ''
+  const chainPart = sel.asymId  ? ` <span class="sel-meta">chain ${escapeHtml(sel.asymId)}</span>` : ''
+  const atomParts = []
+  if (sel.atomName) atomParts.push(`atom <strong>${escapeHtml(sel.atomName)}</strong>`)
+  if (sel.element)  atomParts.push(`element <strong>${escapeHtml(sel.element)}</strong>`)
+
+  box.innerHTML = `
+    <div class="sel-kind">${kindLabel}</div>
+    <div class="sel-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
+    ${atomParts.length ? `<div class="sel-atom">${atomParts.join(' · ')}</div>` : ''}
+  `
+  box.hidden = false
+}
+detail.querySelector('.detail-close').addEventListener('click', () => {
+  detail.hidden = true
+  renderSelection(null)
+})
 
 // ── Helpers
 function pill(text, cls = '') {

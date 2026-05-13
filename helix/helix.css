@@ -373,6 +373,37 @@ textarea:focus { outline: none; border-color: rgba(34,211,238,0.55); }
 .detail:not([hidden]) { opacity: 1; transform: translateX(0); pointer-events: auto; }
 .detail h2 { margin: 0 0 6px; font-size: 18px; }
 .detail-meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+
+/* Selection block — appears when user clicks an atom/residue inside
+   the protein viewport. Highlighted so it stands out from the static
+   protein metadata above and the rationale below. */
+.detail-selection {
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.detail-selection .sel-kind {
+  font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase;
+  color: rgba(167, 139, 250, 0.85); font-weight: 600;
+  margin-bottom: 4px;
+}
+.detail-selection .sel-comp {
+  font-size: 15px; color: var(--text); line-height: 1.4;
+}
+.detail-selection .sel-num {
+  color: var(--accent); font-weight: 600;
+}
+.detail-selection .sel-meta {
+  color: var(--muted); font-size: 13px;
+}
+.detail-selection .sel-atom {
+  margin-top: 6px;
+  font-size: 12px; color: var(--muted);
+  font-family: var(--font-mono);
+}
+.detail-selection .sel-atom strong { color: var(--text); font-weight: 600; }
 .detail-rationale { margin: 0 0 14px; font-size: 14px; line-height: 1.55; }
 .detail-scores { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .detail-scores .pill {
