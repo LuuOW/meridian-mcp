@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d14">
 <title>helix — Meridian</title>
-<meta name="description" content="Vision/text → top therapeutic protein candidates rendered as real molecular structures. Powered by Llama-3.3-70B + GPT-4o-mini.">
+<meta name="description" content="Vision/text → top therapeutic protein candidates rendered as star systems. Each protein is its own world, with real ligands and cofactors orbiting.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/helix/helix.css?v=__BUILD_SHA__">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar@4.7.0/build/viewer/molstar.css">
@@ -14,7 +14,7 @@
 
 <nav class="topbar">
   <a class="brand" href="/"><span class="brand-glyph">◎</span> meridian</a>
-  <div class="brand-sub">helix · therapeutic protein recommender</div>
+  <div class="brand-sub">helix · each protein is its own star system</div>
   <button id="burgerBtn" class="burger" aria-label="Open menu" aria-expanded="false">
     <span></span><span></span><span></span>
   </button>
@@ -28,13 +28,9 @@
 </nav>
 
 <main class="stage">
-  <!-- Central protein + orbiting molecule moons -->
-  <div class="protein-system">
-    <div class="orbits" id="orbits" aria-hidden="true">
-      <!-- moon nodes appended at runtime -->
-    </div>
-    <div id="molstar" class="molstar-host empty" aria-label="Top candidate 3D structure">
-      <span class="center-hint">describe an injury — top candidate's structure renders here</span>
+  <div id="universe" class="universe">
+    <div class="universe-empty">
+      <p>Describe an injury below. Each recommended protein renders as its own star system — the protein at center, its real chemical compounds in orbit.</p>
     </div>
   </div>
 

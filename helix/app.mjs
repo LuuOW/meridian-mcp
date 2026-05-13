@@ -1,46 +1,64 @@
-// helix front-end — molecular-orbit view.
+// helix front-end — one star system per predicted protein.
 //
-// The top candidate's PDB renders as a big 3D structure at center.
-// Other candidates orbit around it as small 3D molecular renders
-// (not dots) — same Mol* engine, separate plugin instances per moon.
-// Click a moon → it swaps to center.
+// Each candidate gets its own complete world rendered as a card:
+//   • star at center: the protein's 3D structure (Mol* cartoon)
+//   • orbiting bodies: the protein's REAL chemical components — the
+//     ligands, cofactors, ions, and glycans actually present in the
+//     PDB file (HETATM records), each shown as its 2D molecular
+//     structure from RCSB's Chemical Component Dictionary.
 //
-// Server-side classifier loop: /v1/helix runs Llama-3.3-70B for
-// ranking, then orbitalClassify() inside cf-worker positions each
-// protein with the project's canonical physics signature. Front-end
-// receives both LLM and orbital scores per candidate.
+// Server-side classifier loop unchanged: /v1/helix runs Llama-3.3-70B
+// for ranking + rationale, then orbitalClassify() positions each
+// protein with the project's canonical physics signature.
 
 const API_BASE   = 'https://mcp.ask-meridian.uk'
 const TIMEOUT_MS = 60_000
 
-// PDB ids mapped per UniProt so each protein has a structure to render.
+// PDB ids + the meaningful HET codes present in each structure.
+// HET codes are the 3-letter chemical-component IDs PDB uses for any
+// non-standard residue: ligands, cofactors, ions, glycans. I've
+// dropped crystallization artifacts (SO4 sulfate, CL chloride from
+// buffer, EDO, GOL etc.) so only biologically-meaningful compounds
+// show in orbit. Empty array = no notable HETs in the structure.
 const SEED_PROTEINS = [
-  { uniprot: 'P01133', pdb: '1JL9', name: 'EGF',         use: 'corneal abrasion, skin re-epithelialization', aa_len: 53,   notes: 'small, stable, FDA-approved as recombinant' },
-  { uniprot: 'P21583', pdb: '1QQK', name: 'KGF/FGF-7',   use: 'skin burn, mucositis',                         aa_len: 194,  notes: 'palifermin is approved biologic' },
-  { uniprot: 'P09038', pdb: '1BFF', name: 'bFGF/FGF-2',  use: 'skin wound, angiogenesis',                     aa_len: 288,  notes: 'trafermin is approved in Japan' },
-  { uniprot: 'P02788', pdb: '1LFG', name: 'Lactoferrin', use: 'ocular dryness, antimicrobial',                aa_len: 710,  notes: 'OTC topical in some markets' },
-  { uniprot: 'Q6UWN8', pdb: '4WTI', name: 'Lubricin',    use: 'corneal lubrication',                          aa_len: 1404, notes: 'recombinant in clinical trials for dry eye' },
-  { uniprot: 'P01308', pdb: '3I40', name: 'Insulin',     use: 'corneal nerve regeneration (off-label)',       aa_len: 110,  notes: 'small, stable' },
-  { uniprot: 'P05230', pdb: '1AFC', name: 'aFGF/FGF-1',  use: 'wound healing, neural regeneration',           aa_len: 155,  notes: 'recombinant in trials' },
-  { uniprot: 'P14210', pdb: '1NK1', name: 'HGF',         use: 'corneal endothelial regen',                    aa_len: 728,  notes: 'large, delivery challenging' },
-  { uniprot: 'P10145', pdb: '5D14', name: 'IL-8',        use: 'modulates neutrophil response — NOT therapeutic alone', aa_len: 99, notes: 'included as negative control' },
-  { uniprot: 'P01023', pdb: '1BV8', name: 'Alpha-2-M',   use: 'protease inhibitor, anti-inflammatory',        aa_len: 1474, notes: 'large; topical delivery hard' },
+  { uniprot: 'P01133', pdb: '1JL9', name: 'EGF',         compounds: [],                use: 'corneal abrasion, skin re-epithelialization', aa_len: 53,   notes: 'small, stable, FDA-approved as recombinant' },
+  { uniprot: 'P21583', pdb: '1QQK', name: 'KGF/FGF-7',   compounds: [],                use: 'skin burn, mucositis',                         aa_len: 194,  notes: 'palifermin is approved biologic' },
+  { uniprot: 'P09038', pdb: '1BFF', name: 'bFGF/FGF-2',  compounds: [],                use: 'skin wound, angiogenesis',                     aa_len: 288,  notes: 'trafermin is approved in Japan' },
+  { uniprot: 'P02788', pdb: '1LFG', name: 'Lactoferrin', compounds: ['FE', 'CO3'],     use: 'ocular dryness, antimicrobial',                aa_len: 710,  notes: 'OTC topical in some markets' },
+  { uniprot: 'Q6UWN8', pdb: '4WTI', name: 'Lubricin',    compounds: ['NAG'],           use: 'corneal lubrication',                          aa_len: 1404, notes: 'recombinant in clinical trials for dry eye' },
+  { uniprot: 'P01308', pdb: '3I40', name: 'Insulin',     compounds: ['ZN'],            use: 'corneal nerve regeneration (off-label)',       aa_len: 110,  notes: 'small, stable' },
+  { uniprot: 'P05230', pdb: '1AFC', name: 'aFGF/FGF-1',  compounds: [],                use: 'wound healing, neural regeneration',           aa_len: 155,  notes: 'recombinant in trials' },
+  { uniprot: 'P14210', pdb: '1NK1', name: 'HGF',         compounds: ['NAG', 'BMA'],    use: 'corneal endothelial regen',                    aa_len: 728,  notes: 'large, delivery challenging' },
+  { uniprot: 'P10145', pdb: '5D14', name: 'IL-8',        compounds: [],                use: 'modulates neutrophil response — NOT therapeutic alone', aa_len: 99, notes: 'included as negative control' },
+  { uniprot: 'P01023', pdb: '1BV8', name: 'Alpha-2-M',   compounds: ['ZN', 'CIT'],     use: 'protease inhibitor, anti-inflammatory',        aa_len: 1474, notes: 'large; topical delivery hard' },
 ]
+
+// Friendly labels per HET code. Falls back to the code itself if missing.
+const COMPOUND_LABELS = {
+  FE:  'iron',
+  ZN:  'zinc',
+  CO3: 'carbonate',
+  NAG: 'NAG (glycan)',
+  BMA: 'mannose',
+  CIT: 'citrate',
+  HOH: 'water',
+}
+// Single-atom ions render as a labeled disc instead of fetching the
+// (trivial) SVG. Looks cleaner at small sizes.
+const ATOM_GLYPHS = { FE: 'Fe', ZN: 'Zn', CA: 'Ca', MG: 'Mg', MN: 'Mn', CU: 'Cu', NA: 'Na', K: 'K' }
 
 // ── DOM
 const $ = id => document.getElementById(id)
 const desc = $('desc'), runBtn = $('run')
 const statusEl = $('status'), debugEl = $('debug')
 const imgInput = $('img-input'), imgPreview = $('img-preview')
-const molstarHost = $('molstar'), orbitsEl = $('orbits')
-const detail = $('detailPanel')
+const universe = $('universe'), detail = $('detailPanel')
 const burgerBtn = $('burgerBtn'), navMenu = $('navMenu')
 
 let lastResult = null
 let lastCandidates = []
-let MolstarMod = null            // shared module exports
-let centerPlugin = null          // central big Mol*
-const moonPlugins = new Map()    // pdb → plugin instance
+let MolstarMod = null
+const systemPlugins = new Map()   // pdb → Mol* plugin
 
 // ── Burger menu
 function initBurger() {
@@ -67,10 +85,10 @@ async function loadMolstarMod() {
   return MolstarMod
 }
 
-async function makePlugin(target, big = false) {
+async function mountSystemMolstar(host, pdbId) {
   const m = await loadMolstarMod()
-  return m.createPluginUI({
-    target,
+  const plugin = await m.createPluginUI({
+    target: host,
     spec: {
       ...m.DefaultPluginUISpec(),
       layout: {
@@ -88,74 +106,92 @@ async function makePlugin(target, big = false) {
     },
     render: m.renderReact18,
   })
-}
-
-async function loadInto(plugin, pdbId) {
-  await plugin.clear()
+  systemPlugins.set(pdbId, plugin)
   const url = `https://files.rcsb.org/download/${pdbId}.pdb`
   const data = await plugin.builders.data.download({ url, isBinary: false }, { state: { isGhost: true } })
   const traj = await plugin.builders.structure.parseTrajectory(data, 'pdb')
   await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
+  return plugin
 }
 
-// ── Central protein
-async function loadCenter(pdbId) {
-  if (!centerPlugin) {
-    // Clear the empty-state hint and the host's inline children before
-    // mounting Mol* (it owns the host element).
-    molstarHost.innerHTML = ''
-    molstarHost.classList.remove('empty')
-    centerPlugin = await makePlugin(molstarHost, true)
-  }
-  molstarHost.classList.add('swapping')
-  try { await loadInto(centerPlugin, pdbId) }
-  finally { setTimeout(() => molstarHost.classList.remove('swapping'), 250) }
-}
+// ── Render a single star system card
+function renderSystem(c, rank) {
+  const card = document.createElement('article')
+  card.className = 'system'
+  card.dataset.slug = c.slug
 
-// ── Orbiting moons (small molecular renders, not dots)
-async function renderOrbits(moons) {
-  orbitsEl.innerHTML = ''
-  const n = moons.length
-  if (!n) return
+  card.innerHTML = `
+    <header class="system-header">
+      <span class="system-rank">${rank + 1}</span>
+      <span class="system-name">${escapeHtml(c.name || '?')}</span>
+      <span class="system-uniprot">${escapeHtml(c.uniprot || '')}</span>
+    </header>
 
-  // Two concentric rings if we have >4 moons; otherwise one ring.
-  const radiusPx = (i) => {
-    const vmin = Math.min(window.innerWidth, window.innerHeight) / 100
-    const ringIdx = (n > 4 && i >= Math.ceil(n / 2)) ? 1 : 0
-    return ringIdx === 0 ? 24 * vmin : 28 * vmin
-  }
+    <div class="system-orbits"></div>
+    <div class="system-center ${c.pdb ? '' : 'empty'}">
+      ${c.pdb ? '' : 'no PDB'}
+    </div>
 
-  moons.forEach((c, i) => {
-    const angle = (360 / n) * i
+    <footer class="system-footer">
+      <div class="system-scores">
+        ${c.llm_score   != null ? `<span class="score-pill">LLM ${c.llm_score}/100</span>` : ''}
+        ${c.route_score != null ? `<span class="score-pill warm">orbital ${Number(c.route_score).toFixed(2)}</span>` : ''}
+        ${c.classification?.class ? `<span class="score-pill dim">${escapeHtml(c.classification.class)}</span>` : ''}
+      </div>
+      <div class="system-rationale">${escapeHtml(c.rationale || c.description || c.use || '')}</div>
+    </footer>
+  `
+
+  card.addEventListener('click', () => showDetail(c))
+  universe.appendChild(card)
+
+  // Render compound orbits
+  const orbitsEl = card.querySelector('.system-orbits')
+  const compounds = c.compounds || []
+  compounds.forEach((code, i) => {
+    const angle = (360 / Math.max(compounds.length, 1)) * i
     const el = document.createElement('div')
-    el.className = 'moon'
+    el.className = 'compound'
     el.style.setProperty('--angle',  `${angle}deg`)
-    el.style.setProperty('--radius', `${radiusPx(i)}px`)
-    el.dataset.slug = c.slug
-    el.title = `${c.name} · click to focus`
+    el.style.setProperty('--radius', '130px')
+    el.title = COMPOUND_LABELS[code] || code
+
+    // RCSB CCD SVGs aren't publicly hosted at predictable URLs, and PDBe
+    // has CORS issues for direct img loads. Unify to a labeled glyph
+    // disc — single-atom ions show the element symbol (Fe, Zn, …),
+    // multi-atom compounds show the 3-letter HET code in a chip
+    // (CO3, NAG, BMA, CIT).
+    const glyph    = ATOM_GLYPHS[code] || code
+    const iconHtml = `<div class="compound-icon atom">${escapeHtml(glyph)}</div>`
+
     el.innerHTML = `
-      <div class="moon-body">
-        <div class="moon-canvas" id="moon-canvas-${c.pdb || i}"></div>
-        <div class="moon-label">${escapeHtml(c.name || c.uniprot || '?')}</div>
+      <div class="compound-body">
+        ${iconHtml}
+        <div class="compound-label">${escapeHtml(COMPOUND_LABELS[code] || code)}</div>
       </div>
     `
-    el.addEventListener('click', () => focusCandidate(c.slug))
     orbitsEl.appendChild(el)
   })
 
-  // Now lazy-init Mol* for each moon canvas. Run in parallel; each one
-  // is small (~30 KB PDB + a WebGL context). 5 contexts is fine.
-  for (const c of moons) {
-    const canvas = document.getElementById(`moon-canvas-${c.pdb || c.slug}`)
-    if (!canvas || !c.pdb) continue
-    makePlugin(canvas).then(p => {
-      moonPlugins.set(c.pdb, p)
-      return loadInto(p, c.pdb)
-    }).catch(e => {
-      console.warn('moon', c.pdb, 'failed:', e?.message || e)
-      canvas.style.opacity = 0.3
+  // Lazy-mount Mol* for the central protein
+  if (c.pdb) {
+    const centerEl = card.querySelector('.system-center')
+    mountSystemMolstar(centerEl, c.pdb).catch(e => {
+      console.warn('mol*', c.pdb, 'failed:', e?.message || e)
+      centerEl.classList.add('empty')
+      centerEl.textContent = `PDB ${c.pdb} failed`
     })
   }
+}
+
+function clearUniverse() {
+  // Tear down existing Mol* plugins before wiping the DOM, otherwise
+  // we leak WebGL contexts. 5+ stale contexts → browser drops the page.
+  for (const [, plugin] of systemPlugins) {
+    try { plugin.dispose() } catch {}
+  }
+  systemPlugins.clear()
+  universe.innerHTML = ''
 }
 
 // ── Recommend flow
@@ -172,10 +208,9 @@ async function recommend() {
     lastResult = json
     debugEl.textContent = JSON.stringify(json, null, 2)
 
-    // Merge LLM/orbital fields with seed metadata (pdb id, aa_len, notes).
     const cands = (json.candidates || []).slice(0, 5).map(c => {
       const seed = SEED_PROTEINS.find(s => s.uniprot === (c.uniprot || c.slug)) || {}
-      return { ...seed, ...c, slug: c.slug || c.uniprot, pdb: seed.pdb }
+      return { ...seed, ...c, slug: c.slug || c.uniprot, pdb: seed.pdb, compounds: seed.compounds || [] }
     })
     lastCandidates = cands
     if (!cands.length) {
@@ -183,36 +218,16 @@ async function recommend() {
       return
     }
 
-    setStatus(`${cands.length} candidates · top: ${cands[0].name}`, '')
+    clearUniverse()
+    cands.forEach((c, i) => renderSystem(c, i))
 
-    // Center = top-1; moons = rest. Load center first, then orbits.
-    if (cands[0]?.pdb) {
-      await loadCenter(cands[0].pdb).catch(e => {
-        setStatus(`center structure ${cands[0].pdb} failed: ${e.message}`, 'error')
-      })
-    }
-    renderOrbits(cands.slice(1))
+    setStatus(`${cands.length} systems · top: ${cands[0].name}`, '')
   } catch (e) {
     setStatus(`failed: ${e.message}`, 'error')
     console.error(e)
   } finally {
     runBtn.disabled = false
   }
-}
-
-// ── Focus a candidate (click moon → swap to center, push old center out)
-async function focusCandidate(slug) {
-  const c = lastCandidates.find(x => x.slug === slug)
-  if (!c) return
-  showDetail(c)
-  if (!c.pdb || lastCandidates[0]?.slug === slug) return
-
-  // Reorder lastCandidates so this one is at index 0.
-  const oldTop = lastCandidates[0]
-  lastCandidates = [c, oldTop, ...lastCandidates.filter(x => x.slug !== slug && x.slug !== oldTop.slug)]
-
-  await loadCenter(c.pdb).catch(e => setStatus(`focus ${c.pdb} failed: ${e.message}`, 'error'))
-  renderOrbits(lastCandidates.slice(1))
 }
 
 // ── Vision flow
@@ -239,7 +254,7 @@ imgInput.addEventListener('change', async () => {
   }
 })
 
-// ── Auto-fire: Cmd/Ctrl+Enter, or 1.5 s idle debounce
+// ── Auto-fire
 let debounceTimer = null
 function debouncedRecommend() {
   clearTimeout(debounceTimer)
@@ -252,27 +267,21 @@ desc.addEventListener('input', () => {
 })
 desc.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-    e.preventDefault()
-    clearTimeout(debounceTimer)
-    recommend()
+    e.preventDefault(); clearTimeout(debounceTimer); recommend()
   }
 })
-runBtn.addEventListener('click', () => {
-  clearTimeout(debounceTimer)
-  recommend()
-})
+runBtn.addEventListener('click', () => { clearTimeout(debounceTimer); recommend() })
 
 // ── Detail panel
 function showDetail(c) {
   $('detailTitle').textContent = `${c.name} · ${c.uniprot || c.slug}`
-  $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'}`
+  $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'} · compounds: ${(c.compounds || []).join(', ') || 'none'}`
   $('detailRationale').textContent = c.rationale || c.description || ''
 
   const scores = $('detailScores'); scores.innerHTML = ''
-  if (c.llm_score != null)   scores.appendChild(pill(`LLM ${c.llm_score}/100`))
+  if (c.llm_score   != null) scores.appendChild(pill(`LLM ${c.llm_score}/100`))
   if (c.route_score != null) scores.appendChild(pill(`orbital ${Number(c.route_score).toFixed(2)}`))
-  const klass = c.classification?.class
-  if (klass) scores.appendChild(pill(klass, 'warm'))
+  if (c.classification?.class) scores.appendChild(pill(c.classification.class, 'warm'))
 
   let notes = `<div>${escapeHtml(c.notes || '')}</div>`
   if (c.delivery_concern) notes += `<div class="concern">⚠ delivery: ${escapeHtml(c.delivery_concern)}</div>`
