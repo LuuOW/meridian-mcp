@@ -519,9 +519,82 @@ textarea:focus { outline: none; border-color: rgba(34,211,238,0.55); }
 .debug summary { cursor: pointer; }
 .debug pre { color: var(--muted); font: 11px/1.4 ui-monospace, Menlo, monospace; margin: 6px 0 0; }
 
-@media (max-width: 640px) {
+/* ── Mobile (≤ 720 px) ────────────────────────────────────────── */
+@media (max-width: 720px) {
   .brand-sub { display: none; }
-  .system { width: 88vw; height: 60vh; }
-  .system-center { width: 50vw; height: 50vw; max-width: 220px; max-height: 220px; }
-  .detail { top: auto; bottom: 230px; right: 16px; left: 16px; width: auto; }
+  .nav { padding: 14px 16px; }
+  .brand { font-size: 16px; }
+
+  /* Stage: trim the bottom reservation so cards get more vertical
+     space; input card is shorter on mobile anyway. */
+  .stage { inset: 70px 0 0 0; }
+
+  /* Universe: tighter side padding, full-width cards. */
+  .universe {
+    inset: 8px 0 180px 0;
+    padding: 16px 12px 28px;
+    gap: 20px;
+  }
+  .system {
+    width: calc(100vw - 24px);
+    height: min(620px, calc(100vh - 220px));
+    border-radius: 18px;
+  }
+  .system-header { top: 10px; left: 14px; right: 14px; }
+  .system-name { font-size: 16px; }
+  .system-uniprot { font-size: 10.5px; }
+  .system-center { top: 48px; left: 5%; right: 5%; bottom: 96px; }
+  .system-footer { padding: 10px 14px 12px; }
+  .score-pill { font-size: 10px; padding: 2px 7px; }
+  .system-rationale { font-size: 11px; -webkit-line-clamp: 2; }
+
+  /* Viewer tool button: smaller, still tappable */
+  .viewer-tool { top: 8px; right: 8px; width: 36px; height: 36px; }
+
+  /* Detail panel: full-width drawer sliding from the right.
+     Bottom margin clears the input card. */
+  .detail {
+    top: 64px; right: 0; bottom: 0;
+    width: 100vw;
+    border-radius: 16px 0 0 0;
+    padding: 18px 18px 160px;
+  }
+  .detail h2 { font-size: 17px; }
+
+  /* Input card: tighter and lower */
+  .input-card {
+    bottom: 12px;
+    padding: 12px;
+    width: calc(100vw - 16px);
+  }
+  textarea { min-height: 56px; font-size: 13.5px; }
+  .input-row.controls { gap: 8px; }
+  .btn { padding: 8px 12px; font-size: 12.5px; }
+  .status { font-size: 11px; min-width: 0; }
+
+  /* Fullscreen HUD: docks to the bottom as a sheet on phones so the
+     protein stays visible above it. Right-side panel is unreadable
+     in portrait. */
+  .system-hud {
+    top: auto;
+    left: 12px; right: 12px; bottom: 12px;
+    width: auto;
+    max-height: 45vh;
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+  .system-hud .hud-name { font-size: 15px; }
+  .system-hud .hud-rationale { font-size: 12.5px; margin-bottom: 12px; }
+  .system-hud canvas.hud-molecule { height: 110px; }
+
+  /* Debug card: tighter, doesn't overlap input */
+  .debug { bottom: auto; top: 70px; left: 12px; max-width: 200px; max-height: 160px; }
+}
+
+/* ── Extra-small phones (≤ 420 px) ──────────────────────────────── */
+@media (max-width: 420px) {
+  .system { width: calc(100vw - 16px); border-radius: 14px; }
+  .system-center { left: 4%; right: 4%; }
+  .input-card { width: calc(100vw - 12px); bottom: 8px; }
+  .detail { padding: 16px 16px 160px; }
 }
