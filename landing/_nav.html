@@ -49,45 +49,58 @@
 
   <!-- Self-contained burger + current-link behaviour. Lives inside <nav>
        so sync-nav.py treats it as part of the synced block — every page
-       gets the same wiring without needing a separate <script> import. -->
+       gets the same wiring without needing a separate <script> import.
+       Re-runs on DOMContentLoaded too so it survives module-script
+       races and weird parse orders. -->
   <script>
   (function () {
-    var btn  = document.getElementById('burgerBtn')
-    var menu = document.getElementById('navMenu')
-    if (!btn || !menu) return
-    if (btn.dataset.wired) return
-    btn.dataset.wired = '1'
+    function setup() {
+      var btn  = document.getElementById('burgerBtn')
+      var menu = document.getElementById('navMenu')
+      if (!btn || !menu) return
+      if (btn.dataset.wired) return
+      btn.dataset.wired = '1'
 
-    function toggle(open) {
-      var isOpen = open === undefined ? !menu.classList.contains('open') : open
-      menu.classList.toggle('open', isOpen)
-      btn.classList.toggle('open', isOpen)
-      btn.setAttribute('aria-expanded', String(isOpen))
+      function toggle(open) {
+        var isOpen = open === undefined ? !menu.classList.contains('open') : open
+        menu.classList.toggle('open', isOpen)
+        btn.classList.toggle('open', isOpen)
+        btn.setAttribute('aria-expanded', String(isOpen))
+      }
+      // Click handler; do NOT stopPropagation — the document-level
+      // close-on-outside listener below already checks btn.contains, so
+      // clicking the button itself never triggers a close. Keeping the
+      // event propagating lets us hear it in the console.
+      btn.addEventListener('click', function () { toggle() })
+      menu.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () { toggle(false) })
+      })
+      document.addEventListener('click', function (e) {
+        if (!menu.classList.contains('open')) return
+        if (!menu.contains(e.target) && !btn.contains(e.target)) toggle(false)
+      })
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') toggle(false)
+      })
+
+      // Mark the current page so the nav highlight follows location.
+      var here = location.pathname.replace(/\/index\.html$/, '/') || '/'
+      menu.querySelectorAll('a').forEach(function (a) {
+        var href = a.getAttribute('href')
+        if (!href) return
+        try {
+          var u = new URL(href, location.href)
+          if (u.host !== location.host) return
+          var target = u.pathname.replace(/\/index\.html$/, '/') || '/'
+          if (target === here) a.classList.add('current')
+        } catch (_) {}
+      })
     }
-    btn.addEventListener('click', function (e) { e.stopPropagation(); toggle() })
-    menu.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', function () { toggle(false) })
-    })
-    document.addEventListener('click', function (e) {
-      if (!menu.classList.contains('open')) return
-      if (!menu.contains(e.target) && !btn.contains(e.target)) toggle(false)
-    })
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') toggle(false)
-    })
-
-    // Mark the current page so the nav highlight follows location.
-    var here = location.pathname.replace(/\/index\.html$/, '/') || '/'
-    menu.querySelectorAll('a').forEach(function (a) {
-      var href = a.getAttribute('href')
-      if (!href) return
-      try {
-        var u = new URL(href, location.href)
-        if (u.host !== location.host) return
-        var target = u.pathname.replace(/\/index\.html$/, '/') || '/'
-        if (target === here) a.classList.add('current')
-      } catch (_) {}
-    })
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setup, { once: true })
+    } else {
+      setup()
+    }
   })()
   </script>
 </nav>
