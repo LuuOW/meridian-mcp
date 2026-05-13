@@ -1,0 +1,18 @@
+# dependencies
+node_modules/
+
+# secrets — never commit
+.env
+.env.*
+
+# fly state
+.fly/
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# backup files (sed -i.bak etc.)
+*.bak
