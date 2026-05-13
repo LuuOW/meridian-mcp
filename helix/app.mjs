@@ -11,6 +11,8 @@
 // for ranking + rationale, then orbitalClassify() positions each
 // protein with the project's canonical physics signature.
 
+import { drawCompound } from './molecules.mjs'
+
 const API_BASE   = 'https://mcp.ask-meridian.uk'
 const TIMEOUT_MS = 60_000
 
@@ -156,13 +158,10 @@ function renderSystem(c, rank) {
     el.style.setProperty('--radius', '130px')
     el.title = COMPOUND_LABELS[code] || code
 
-    // RCSB CCD SVGs aren't publicly hosted at predictable URLs, and PDBe
-    // has CORS issues for direct img loads. Unify to a labeled glyph
-    // disc — single-atom ions show the element symbol (Fe, Zn, …),
-    // multi-atom compounds show the 3-letter HET code in a chip
-    // (CO3, NAG, BMA, CIT).
-    const glyph    = ATOM_GLYPHS[code] || code
-    const iconHtml = `<div class="compound-icon atom">${escapeHtml(glyph)}</div>`
+    // 2D canvas ball-and-stick from helix/molecules.mjs — atoms as
+    // shaded spheres, bonds as lines. No WebGL contexts (those are
+    // saved for the 5 protein Mol* renderers).
+    const iconHtml = `<div class="compound-icon"><canvas width="56" height="56"></canvas></div>`
 
     el.innerHTML = `
       <div class="compound-body">
@@ -171,6 +170,8 @@ function renderSystem(c, rank) {
       </div>
     `
     orbitsEl.appendChild(el)
+    const canvas = el.querySelector('canvas')
+    if (canvas) drawCompound(canvas, code)
   })
 
   // Lazy-mount Mol* for the central protein
