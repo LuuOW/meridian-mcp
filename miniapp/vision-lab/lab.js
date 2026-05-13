@@ -19,23 +19,17 @@
 // uninvolved; only the routing call leaves the browser, and that call
 // goes to the operator-paid Meridian MCP, not to the user's machine.
 
-// transformers.js doesn't expose VLMs through the pipeline() abstraction —
-// you have to load the processor + model classes directly. This is the
-// canonical SmolVLM/Moondream pattern from the HF docs.
-import {
-  AutoProcessor,
-  AutoTokenizer,
-  AutoModelForImageTextToText,
-  RawImage,
-  TextStreamer,
-  env,
-} from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5'
+// Inference now runs server-side at mcp.ask-meridian.uk/v1/vision
+// (GPT-4o-mini via GH Models). No transformers.js download, no
+// WebGPU compile — the captured frame goes up as a data: URI and the
+// description comes back as plain text.
 
 import { MiniGalaxy }        from '/miniapp/mini-galaxy.js'
 import { renderPhysicsPanel } from '/miniapp/physics-panel.js'
 import { routeTask, routeTaskStream, sendFeedback } from '/miniapp/api.js'
-import { MODELS as CANONICAL_MODELS } from '/_lib/models.mjs'
 import { escapeHTML, renderMarkdown } from '/miniapp/_md.js'
+
+const VISION_ENDPOINT = 'https://mcp.ask-meridian.uk/v1/vision'
 
 // nav.js lives in the landing repo (ask-meridian.uk), not the shared
 // origin. Vision-lab runs standalone here so the nav burger is a no-op.
@@ -87,17 +81,16 @@ try {
   console.warn('vision-lab: OPFS unavailable, falling back to Cache API:', e.message)
 }
 
-// Canonical vision model only — keeps the shared-origin cache to ONE
-// SmolVLM download across lens / helix / vision-lab. The legacy 500M
-// and Moondream2 variants are retired here; the picker UI defaults to
-// smolvlm and the alternate row is hidden in index.html.
+// Server-side vision: one model label exposed so the existing UI badges
+// keep working; the worker decides the actual model (GPT-4o-mini default,
+// swappable via the MERIDIAN_VISION_MODEL env var).
 const MODELS = {
   smolvlm: {
-    id:     CANONICAL_MODELS.vision.id,
-    label:  CANONICAL_MODELS.vision.label,
-    family: CANONICAL_MODELS.vision.family,
-    dtype:  CANONICAL_MODELS.vision.dtypes?.webgpu || 'fp16',
-    expected_size_mb: 250,
+    id:     'gpt-4o-mini',
+    label:  'GPT-4o-mini (server)',
+    family: 'server',
+    dtype:  null,
+    expected_size_mb: 0,
   },
 }
 
@@ -254,45 +247,14 @@ async function startSetup() {
 }
 
 async function loadModel(key) {
+  // Server-side: no download, no compile. Set sentinels so ask() runs.
   const m = MODELS[key]
-  $('progressText').textContent = `Fetching ${m.label} (~${m.expected_size_mb} MB compressed)…`
-  const seenFiles = new Map()
-  const totalBytes = m.expected_size_mb * 1024 * 1024
-  let loadedBytes = 0
-
-  const progress_callback = (p) => {
-    if (p.status === 'progress') {
-      const prev = seenFiles.get(p.file) || 0
-      loadedBytes += (p.loaded - prev)
-      seenFiles.set(p.file, p.loaded)
-      const pct = Math.min(99, Math.round(loadedBytes / totalBytes * 100))
-      $('progressBar').value = pct
-      $('progressText').textContent = `${m.label} — ${p.file}`
-      $('progressDetail').textContent = `${(loadedBytes / (1024 ** 2)).toFixed(1)} MB · ~${pct}%`
-    } else if (p.status === 'done') {
-      $('progressDetail').textContent = `${p.file} ready ✓`
-    } else if (p.status === 'ready') {
-      $('progressBar').value = 100
-      $('progressText').textContent = 'Compiling shaders for WebGPU…'
-    }
-  }
-
-  // SmolVLM's processor includes its own tokenizer (used by apply_chat_template).
-  // Moondream's processor is image-only, so we load the tokenizer separately.
-  processor = await AutoProcessor.from_pretrained(m.id, { progress_callback })
-  if (m.family === 'moondream') {
-    tokenizer = await AutoTokenizer.from_pretrained(m.id, { progress_callback })
-  } else {
-    tokenizer = null
-  }
-  model     = await AutoModelForImageTextToText.from_pretrained(m.id, {
-    device: 'webgpu',
-    dtype:  m.dtype,
-    progress_callback,
-  })
-
+  processor = { server: true }
+  tokenizer = null
+  model     = { server: true }
   $('progressBar').value = 100
-  $('progressText').textContent = m.label + ' loaded ✓'
+  $('progressText').textContent = `${m.label} ready (server-side)`
+  $('progressDetail').textContent = 'no local model — inference at mcp.ask-meridian.uk/v1/vision'
 }
 
 async function openCamera() {
@@ -380,56 +342,15 @@ async function ask(prompt) {
 
   const t0 = performance.now()
   try {
-    const image  = await RawImage.fromURL(imgURL)
-    const family = MODELS[modelKey].family
-
-    let inputs, decoder, promptLen
-    if (family === 'moondream') {
-      // Moondream's vision encoder emits 729 features (SigLIP 378×378 / 14 px
-      // patches → 27×27). The Llava-style merger in transformers.js does a 1:1
-      // replace, so input_ids must carry 729 <image> placeholders.
-      const NUM_IMAGE_TOKENS = 729
-      const promptText  = `${'<image>'.repeat(NUM_IMAGE_TOKENS)}\n\nQuestion: ${prompt}\n\nAnswer:`
-      const text_inputs   = tokenizer(promptText)
-      const visual_inputs = await processor(image)
-      inputs    = { ...text_inputs, ...visual_inputs }
-      decoder   = tokenizer
-      promptLen = text_inputs.input_ids.dims.at(-1)
-    } else {
-      // SmolVLM: chat template via processor.apply_chat_template (its own tokenizer)
-      const messages = [
-        { role: 'user', content: [{ type: 'image' }, { type: 'text', text: prompt }] },
-      ]
-      const text = processor.apply_chat_template(messages, { add_generation_prompt: true })
-      inputs    = await processor(text, [image], { return_tensors: 'pt' })
-      decoder   = processor
-      promptLen = inputs.input_ids.dims.at(-1)
-    }
-
-    const streamer = new TextStreamer(decoder.tokenizer || decoder, {
-      skip_prompt: true,
-      skip_special_tokens: true,
-      callback_function: (chunk) => {
-        $('answer').textContent += chunk
-      },
+    const res = await fetch(VISION_ENDPOINT, {
+      method:  'POST',
+      headers: { 'content-type': 'application/json' },
+      body:    JSON.stringify({ image_url: imgURL, prompt }),
     })
-
-    const generated_ids = await model.generate({
-      ...inputs,
-      max_new_tokens: 160,
-      do_sample:      false,
-      streamer,
-    })
-
-    // Fallback decode if streaming didn't fire
-    if (!$('answer').textContent.trim()) {
-      const newTokens = generated_ids.slice(null, [promptLen, null])
-      const decoded   = decoder.batch_decode(newTokens, { skip_special_tokens: true })
-      $('answer').textContent = (decoded[0] || '').trim()
-    }
-
-    lastAnswer = $('answer').textContent.trim()
-    // (multi-turn history disabled for Phase 1 — see comment above)
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`)
+    $('answer').textContent = (j.description || '').trim()
+    lastAnswer = $('answer').textContent
 
     const ms = Math.round(performance.now() - t0)
     $('latencyBadge').textContent = `${(ms / 1000).toFixed(1)}s`
