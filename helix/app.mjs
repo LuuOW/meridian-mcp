@@ -101,27 +101,22 @@ async function makePluginAt(host) {
   })
 }
 
-// Fetch PDB text once, hand it to BOTH Mol* (for the protein cartoon)
-// and our HET parser (for compound orbits). Custom representation
-// builder — polymer-only cartoon — skips the default preset's
-// ligand-CCD lookups which 404 on noisy/unusual HETs and create
-// console clutter. Compounds appear in orbit, not in the central
-// view, so the cartoon-only render is also visually cleaner.
+// Fetch PDB text once and hand it to BOTH Mol* (for the protein render)
+// and our HET parser (for compound coordinates). One network round-trip,
+// shared parsing.
+//
+// We keep applyPreset('default') because the manual polymer-only chain
+// (tryCreateComponentStatic + addRepresentation) silently produces an
+// empty viewport in Mol* 4.7. The default preset triggers some
+// auxiliary CCD lookups that 404 on a few HET codes — those errors are
+// cosmetic console noise and don't affect the protein render.
 async function loadProteinAndExtractHETs(host, pdbId) {
   const pdbText = await (await fetch(`https://files.rcsb.org/download/${pdbId}.pdb`)).text()
   const plugin = await makePluginAt(host)
   systemPlugins.set(pdbId, plugin)
   const data = await plugin.builders.data.rawData({ data: pdbText, label: pdbId }, { state: { isGhost: true } })
   const traj = await plugin.builders.structure.parseTrajectory(data, 'pdb')
-  const model = await plugin.builders.structure.createModel(traj)
-  const structure = await plugin.builders.structure.createStructure(model)
-  const polymer = await plugin.builders.structure.tryCreateComponentStatic(structure, 'polymer')
-  if (polymer) {
-    await plugin.builders.structure.representation.addRepresentation(polymer, {
-      type:  'cartoon',
-      color: 'chain-id',
-    })
-  }
+  await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
   return parseHETsFromPdb(pdbText)
 }
 
