@@ -295,6 +295,48 @@ a:hover { color: #fff; }
 .system-center:-webkit-full-screen .viewer-tool .ico-expand   { display: none; }
 .system-center:-webkit-full-screen .viewer-tool .ico-collapse { display: block; }
 
+/* In-viewport HUD — shows selection info while the .system-center is
+   fullscreen (the side detail panel is outside the fullscreen tree
+   and gets hidden by the browser). Hidden in normal view. */
+.system-hud {
+  position: absolute; left: 50%; bottom: 24px;
+  transform: translateX(-50%);
+  min-width: 280px; max-width: min(560px, 90vw);
+  padding: 14px 18px;
+  background: rgba(10, 13, 20, 0.88);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 1px rgba(167,139,250,0.08);
+  backdrop-filter: blur(10px);
+  color: var(--text);
+  z-index: 1100;
+  display: none;  /* hidden in normal view */
+  pointer-events: none;
+}
+.system-center:fullscreen .system-hud { display: block; }
+.system-center:-webkit-full-screen .system-hud { display: block; }
+.system-center:fullscreen .system-hud[hidden],
+.system-center:-webkit-full-screen .system-hud[hidden] { display: none; }
+
+.system-hud .hud-name {
+  font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600;
+  margin-bottom: 6px;
+}
+.system-hud .hud-kind {
+  font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase;
+  color: rgba(167, 139, 250, 0.85); font-weight: 600;
+  margin-bottom: 3px;
+}
+.system-hud .hud-comp {
+  font-size: 15px; line-height: 1.4; color: var(--text);
+}
+.system-hud .hud-atom {
+  margin-top: 4px;
+  font-size: 12px; color: var(--muted);
+  font-family: var(--font-mono);
+}
+
 /* Footer with scores + rationale snippet */
 .system-footer {
   position: absolute; bottom: 0; left: 0; right: 0;
