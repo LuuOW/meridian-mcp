@@ -235,27 +235,30 @@ a:hover { color: #fff; }
 }
 
 /* ── Viewport tools (overlay buttons on the Mol* canvas) ───────────── */
+/* z-index bumped high so it sits above every layer Mol* mounts. */
 .viewer-tool {
-  position: absolute; top: 8px; right: 8px;
-  width: 32px; height: 32px;
-  background: rgba(10, 13, 20, 0.66);
-  border: 1px solid rgba(167, 139, 250, 0.28);
+  position: absolute; top: 10px; right: 10px;
+  width: 34px; height: 34px;
+  background: rgba(10, 13, 20, 0.82);
+  border: 1px solid rgba(167, 139, 250, 0.45);
   border-radius: 8px;
-  color: var(--text-muted);
+  color: var(--text);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  z-index: 5;
-  opacity: 0;
+  z-index: 1000;
+  opacity: 0.85;
   backdrop-filter: blur(6px);
-  transition: opacity 0.18s ease, background 0.15s, border-color 0.15s, color 0.15s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: opacity 0.15s, background 0.15s, border-color 0.15s, transform 0.12s;
 }
 .system-center:hover .viewer-tool,
 .viewer-tool:focus-visible { opacity: 1; }
 .viewer-tool:hover {
-  background: rgba(167, 139, 250, 0.20);
+  background: rgba(167, 139, 250, 0.28);
   border-color: var(--accent);
-  color: var(--text);
+  transform: scale(1.06);
 }
+.viewer-tool:active { transform: scale(0.96); }
 .viewer-tool .ico-collapse { display: none; }
 
 /* Fullscreen state: viewport fills the whole screen, button stays
