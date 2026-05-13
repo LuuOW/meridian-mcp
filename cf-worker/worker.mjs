@@ -492,6 +492,80 @@ async function handleVision(request, env) {
 // helix: rank therapeutic protein candidates for an injury description.
 // Browser sends the curated candidate table inline so the worker has no
 // hidden state. Uses the same text model as /v1/route (Llama-3.3-70B).
+// /v1/helix-explain — given a protein + a selected residue/ligand
+// (compId, seqId, asymId, atomName, element), generate 1-2 sentences
+// of biological role for that specific selection. Used by the helix
+// frontend to backfill the detail panel + fullscreen HUD after click.
+async function handleHelixExplain(request, env) {
+  const origin = request.headers.get('origin') || ''
+  if (!BROWSER_ORIGIN_ALLOWLIST.has(origin)) {
+    return jsonResponse({ error: 'origin not allowed', origin }, { status: 403 })
+  }
+  if (!env.MERIDIAN_GITHUB_TOKEN) {
+    return jsonResponse({ error: 'server misconfigured: MERIDIAN_GITHUB_TOKEN secret unset' }, { status: 500 })
+  }
+
+  let body
+  try { body = await request.json() }
+  catch { return jsonResponse({ error: 'expected JSON body' }, { status: 400 }) }
+
+  const proteinName = String(body.protein_name || '').slice(0, 120)
+  const uniprot     = String(body.uniprot || '').slice(0, 20)
+  const pdb         = String(body.pdb || '').slice(0, 6)
+  const sel         = body.selection || {}
+  if (!proteinName || !sel.compId) {
+    return jsonResponse({ error: 'protein_name and selection.compId required' }, { status: 400 })
+  }
+
+  const selDesc = [
+    sel.kind === 'ligand' ? 'Ligand/cofactor' : 'Residue',
+    sel.compId,
+    sel.seqId  ? `at sequence position ${sel.seqId}` : '',
+    sel.asymId ? `on chain ${sel.asymId}`            : '',
+    sel.atomName ? `(atom ${sel.atomName})`          : '',
+    sel.element  ? `[element ${sel.element}]`        : '',
+  ].filter(Boolean).join(' ')
+
+  const sys = `You are a structural-biology assistant. Given a therapeutic protein and one specific selected residue or ligand within its experimentally-determined PDB structure, explain in 1-2 concise sentences what role THAT SPECIFIC selection plays in the protein's biological function — focus on the position, not generic descriptions. If it is a known catalytic residue, binding-site contact, metal coordination, glycosylation site, disulfide partner, or structural feature, mention it specifically. If the position has no notable role, say "no specifically noted role at this position" — do not pad. Do not repeat what the protein does overall; the user already knows that.`
+
+  const user = `Protein: ${proteinName}${uniprot ? ` (UniProt ${uniprot})` : ''}${pdb ? `, PDB ${pdb}` : ''}
+Selection: ${selDesc}
+
+What does this specific selection do in this protein?`
+
+  const model    = env.MERIDIAN_MODEL || DEFAULTS.model
+  const endpoint = env.MERIDIAN_MODELS_ENDPOINT || DEFAULTS.endpoint
+  const ctrl     = new AbortController()
+  const timer    = setTimeout(() => ctrl.abort(), 25_000)
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.MERIDIAN_GITHUB_TOKEN}`,
+        'content-type': 'application/json',
+        'user-agent': `meridian-mcp/${PKG_VERSION}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user',   content: user },
+        ],
+      }),
+      signal: ctrl.signal,
+    })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) return jsonResponse({ error: j.error?.message || `HTTP ${res.status}` }, { status: 502 })
+    const description = (j.choices?.[0]?.message?.content || '').trim()
+    return jsonResponse({ description, model })
+  } catch (e) {
+    return jsonResponse({ error: e.name === 'AbortError' ? 'timeout' : (e.message || String(e)) }, { status: 502 })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function handleHelix(request, env) {
   const origin = request.headers.get('origin') || ''
   if (!BROWSER_ORIGIN_ALLOWLIST.has(origin)) {
@@ -761,6 +835,9 @@ export default {
 
     if (url.pathname === '/v1/vision' && request.method === 'POST')
       return handleVision(request, env)
+
+    if (url.pathname === '/v1/helix-explain' && request.method === 'POST')
+      return handleHelixExplain(request, env)
 
     if (url.pathname === '/v1/helix' && request.method === 'POST')
       return handleHelix(request, env)

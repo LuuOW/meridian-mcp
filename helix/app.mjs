@@ -316,6 +316,7 @@ function renderSystem(c, rank) {
   const onSelect = (sel) => {
     showDetail(c, sel)
     updateHud(centerEl, c, sel)
+    explainSelection(c, sel, centerEl)
   }
   mountProteinViewer(viewportEl, c.pdb, onSelect).catch(e => {
     console.warn('mol*', c.pdb, 'failed:', e?.message || e)
@@ -443,6 +444,49 @@ desc.addEventListener('keydown', e => {
 })
 runBtn.addEventListener('click', () => { clearTimeout(debounceTimer); recommend() })
 
+// ── LLM-explained selection (cached). Fires after the initial render
+// of selection info so the panel + HUD show metadata immediately and
+// the prose backfills when the worker responds. Keyed by
+// (pdbId, asymId, seqId, compId) so repeat clicks are instant.
+const explainCache = new Map()
+
+async function explainSelection(c, sel, centerEl) {
+  const key = `${c.pdb}:${sel.asymId || ''}:${sel.seqId || ''}:${sel.compId}`
+  const panelTarget = document.querySelector('#detailSelection .sel-explanation')
+  const hudTarget   = centerEl?.querySelector('.hud-sel-explanation')
+  const setText = (text, cls = '') => {
+    if (panelTarget) { panelTarget.textContent = text; panelTarget.className = 'sel-explanation' + (cls ? ' ' + cls : '') }
+    if (hudTarget)   { hudTarget.textContent   = text; hudTarget.className   = 'hud-sel-explanation' + (cls ? ' ' + cls : '') }
+  }
+
+  if (explainCache.has(key)) {
+    setText(explainCache.get(key))
+    return
+  }
+  setText('Asking the model what this does here…', 'loading')
+
+  try {
+    const res = await fetch(API_BASE + '/v1/helix-explain', {
+      method:  'POST',
+      headers: { 'content-type': 'application/json' },
+      body:    JSON.stringify({
+        protein_name: c.name,
+        uniprot:      c.uniprot,
+        pdb:          c.pdb,
+        selection:    sel,
+      }),
+    })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`)
+    const desc = String(j.description || '').trim()
+    if (!desc) throw new Error('empty description')
+    explainCache.set(key, desc)
+    setText(desc)
+  } catch (e) {
+    setText(`Couldn't generate explanation: ${e.message}`, 'failed')
+  }
+}
+
 // ── Parse a single residue out of cached PDB text + render its
 // atoms+bonds as 2D ball-and-stick. Reused by the side detail panel
 // AND the fullscreen HUD, so we draw real PDB coordinates of whatever
@@ -566,8 +610,14 @@ function parseHex(h) {
   return [parseInt(s.slice(0,2),16), parseInt(s.slice(2,4),16), parseInt(s.slice(4,6),16)]
 }
 
-// ── Detail panel — accepts an optional selection info from Mol* clicks
+// ── Detail panel — accepts an optional selection info from Mol* clicks.
+// Order matters: unhide the panel BEFORE rendering, so the canvas
+// inside the selection block has non-zero clientWidth/Height. With
+// hidden=true on any ancestor, descendants compute to display:none
+// and any layout-dependent drawing produces a blank 0×0 canvas.
 function showDetail(c, sel = null) {
+  detail.hidden = false
+
   $('detailTitle').textContent = `${c.name} · ${c.uniprot || c.slug}`
   $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'}`
   $('detailRationale').textContent = c.rationale || c.description || ''
@@ -582,7 +632,6 @@ function showDetail(c, sel = null) {
   $('detailNotes').innerHTML = notes
 
   renderSelection(sel, c.pdb)
-  detail.hidden = false
 }
 
 function renderSelection(sel, pdbId) {
@@ -604,11 +653,12 @@ function renderSelection(sel, pdbId) {
       <div class="sel-kind">${kindLabel}</div>
       <div class="sel-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
       ${atomParts.length ? `<div class="sel-atom">${atomParts.join(' · ')}</div>` : ''}
+      <div class="sel-explanation"></div>
     `
   }
-  // Render the 2D ball-and-stick of the actual selected residue/ligand
-  // by parsing its atoms out of the cached PDB text. Real coordinates,
-  // not idealized.
+  // Unhide the box BEFORE drawing the canvas — clientWidth/Height
+  // need a non-hidden parent chain to compute.
+  box.hidden = false
   const canvas = box.querySelector('canvas.sel-molecule')
   if (canvas && pdbId) {
     const pdbText = pdbTextCache.get(pdbId)
@@ -618,7 +668,6 @@ function renderSelection(sel, pdbId) {
       canvas.style.display = model ? '' : 'none'
     }
   }
-  box.hidden = false
 }
 
 // In-viewport HUD shown while .system-center is fullscreen — the side
@@ -647,6 +696,7 @@ function updateHud(centerEl, c, sel) {
       <div class="hud-kind">${kindLabel}</div>
       <div class="hud-comp">${escapeHtml(friendly)}${seqPart}${chainPart}</div>
       ${atomBits.length ? `<div class="hud-atom">${atomBits.join(' · ')}</div>` : ''}
+      <div class="hud-sel-explanation"></div>
     `
   }
   const canvas = selBox.querySelector('canvas.hud-molecule')
