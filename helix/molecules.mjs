@@ -1,15 +1,16 @@
-// Compact 3D molecular models for the HET codes helix uses.
+// Live extraction of compound coordinates from a fetched PDB.
 //
-// Each entry lists atoms (element + x/y/z in Angstroms) and bonds
-// (pairs of atom indices). Coordinates are simplified ideal geometries
-// — close enough to look like the real compound at thumbnail scale,
-// not real PDB-ideal-coords.
+// The PDB file we hand to Mol* for the protein render already contains
+// every ligand and cofactor at experimentally-determined positions —
+// the HETATM records. Parsing the same text twice (once for Mol*,
+// once for our compound thumbnails) avoids an extra fetch AND gives
+// us real geometry per structure instead of idealized lookups.
 //
-// drawCompound() renders one model into a 2D canvas as ball-and-stick
-// with Jmol-style atom colors, lambert shading, and Z-sorted draw
-// order. Uses no WebGL contexts — small enough to render dozens.
+// drawCompound() renders one compound into a 2D canvas as ball-and-stick
+// with Jmol atom colors, lambert-shaded spheres, and Z-sorted draw
+// order. Uses no WebGL contexts.
 
-// Jmol atom colors (CPK with HF additions).
+// Jmol-style CPK colors (with HF additions).
 const ATOM_COLOR = {
   H:  '#dddddd', C:  '#3b3b3b', N:  '#3050f8', O:  '#cc0000',
   S:  '#f8c000', P:  '#ff8000', F:  '#90e050',
@@ -21,148 +22,141 @@ const ATOM_RADIUS = {
   Fe: 0.9, Zn: 0.85, Ca: 1.0, Mg: 0.9, Mn: 0.9, Cu: 0.85, Na: 1.0, K: 1.1,
 }
 
-// ── Ideal geometries (Å) for the compounds in the helix seed table.
-// CO3, NAG, BMA, CIT use simplified topology — visually correct,
-// chemically close-enough for thumbnail rendering.
-export const COMPOUND_MODELS = {
-  // Iron(III) — single atom.
-  FE: {
-    atoms: [{ el: 'Fe', x: 0, y: 0, z: 0 }],
-    bonds: [],
-  },
-  // Zinc(II) — single atom.
-  ZN: {
-    atoms: [{ el: 'Zn', x: 0, y: 0, z: 0 }],
-    bonds: [],
-  },
-  // Carbonate CO3²⁻ — planar trigonal.
-  CO3: {
-    atoms: [
-      { el: 'C', x: 0,     y: 0,     z: 0 },
-      { el: 'O', x: 1.28,  y: 0,     z: 0 },
-      { el: 'O', x: -0.64, y: 1.11,  z: 0 },
-      { el: 'O', x: -0.64, y: -1.11, z: 0 },
-    ],
-    bonds: [[0, 1], [0, 2], [0, 3]],
-  },
-  // N-acetylglucosamine (NAG) — simplified pyranose ring + N-acetyl.
-  // 6-membered ring (5 C + 1 O) in chair conformation, with the OHs
-  // and N-acetyl substituents.
-  NAG: {
-    atoms: [
-      // pyranose ring (chair: alternate Z)
-      { el: 'C', x:  1.25, y:  0.72, z:  0.18 },  // C1
-      { el: 'C', x:  1.25, y: -0.72, z: -0.18 },  // C2
-      { el: 'C', x:  0,    y: -1.44, z:  0.18 },  // C3
-      { el: 'C', x: -1.25, y: -0.72, z: -0.18 },  // C4
-      { el: 'C', x: -1.25, y:  0.72, z:  0.18 },  // C5
-      { el: 'O', x:  0,    y:  1.44, z: -0.18 },  // O5 (ring O)
-      // substituents
-      { el: 'O', x:  2.45, y:  1.42, z: -0.30 },  // O1 (anomeric)
-      { el: 'N', x:  2.45, y: -1.42, z:  0.45 },  // N (acetylamine)
-      { el: 'O', x:  0,    y: -2.85, z: -0.45 },  // O3
-      { el: 'O', x: -2.45, y: -1.42, z:  0.45 },  // O4
-      { el: 'C', x: -2.45, y:  1.42, z: -0.30 },  // C6
-      { el: 'O', x: -3.65, y:  0.7,  z:  0.0 },   // O6
-      // acetyl
-      { el: 'C', x:  3.7,  y: -0.7,  z:  0.0 },   // C=O
-      { el: 'O', x:  3.7,  y:  0.55, z: -0.3 },   // =O
-      { el: 'C', x:  4.9,  y: -1.4,  z:  0.3 },   // CH3
-    ],
-    bonds: [
-      [0,1],[1,2],[2,3],[3,4],[4,5],[5,0],   // ring
-      [0,6],[1,7],[2,8],[3,9],[4,10],[10,11],
-      [7,12],[12,13],[12,14],
-    ],
-  },
-  // β-D-mannose (BMA) — same pyranose skeleton, simpler substituents.
-  BMA: {
-    atoms: [
-      { el: 'C', x:  1.25, y:  0.72, z:  0.18 },
-      { el: 'C', x:  1.25, y: -0.72, z: -0.18 },
-      { el: 'C', x:  0,    y: -1.44, z:  0.18 },
-      { el: 'C', x: -1.25, y: -0.72, z: -0.18 },
-      { el: 'C', x: -1.25, y:  0.72, z:  0.18 },
-      { el: 'O', x:  0,    y:  1.44, z: -0.18 },
-      { el: 'O', x:  2.45, y:  1.42, z: -0.30 },
-      { el: 'O', x:  2.45, y: -1.42, z:  0.45 },
-      { el: 'O', x:  0,    y: -2.85, z: -0.45 },
-      { el: 'O', x: -2.45, y: -1.42, z:  0.45 },
-      { el: 'C', x: -2.45, y:  1.42, z: -0.30 },
-      { el: 'O', x: -3.65, y:  0.7,  z:  0.0 },
-    ],
-    bonds: [
-      [0,1],[1,2],[2,3],[3,4],[4,5],[5,0],
-      [0,6],[1,7],[2,8],[3,9],[4,10],[10,11],
-    ],
-  },
-  // Citrate (CIT) — branched tricarboxylic acid (HO-C central with
-  // CH₂-COOH on each side and -COOH on the central C).
-  CIT: {
-    atoms: [
-      // central
-      { el: 'C', x:  0,    y:  0,    z:  0 },     // C3 (central, with OH)
-      { el: 'O', x:  0,    y:  1.5,  z:  0 },     // -OH
-      // central -COOH
-      { el: 'C', x:  0,    y: -1.5,  z:  0 },     // C(=O)
-      { el: 'O', x:  1.2,  y: -2.1,  z:  0 },     // =O
-      { el: 'O', x: -1.2,  y: -2.1,  z:  0 },     // -OH
-      // arm 1
-      { el: 'C', x:  1.5,  y:  0.5,  z:  0 },     // CH2
-      { el: 'C', x:  3.0,  y:  0,    z:  0 },     // C(=O)
-      { el: 'O', x:  4.0,  y:  0.8,  z:  0 },     // =O
-      { el: 'O', x:  3.2,  y: -1.25, z:  0 },     // -OH
-      // arm 2
-      { el: 'C', x: -1.5,  y:  0.5,  z:  0 },
-      { el: 'C', x: -3.0,  y:  0,    z:  0 },
-      { el: 'O', x: -4.0,  y:  0.8,  z:  0 },
-      { el: 'O', x: -3.2,  y: -1.25, z:  0 },
-    ],
-    bonds: [
-      [0,1],[0,2],[2,3],[2,4],
-      [0,5],[5,6],[6,7],[6,8],
-      [0,9],[9,10],[10,11],[10,12],
-    ],
-  },
+// HET codes that are almost always crystallographic noise, not biology.
+// Tight list — keeps SO4/CIT/NAG (which can be real binders) in scope.
+const HET_DENYLIST = new Set([
+  'HOH',                                                     // water
+  'GOL', 'EDO', 'PEG', 'PG4', 'PGE', 'P6G', 'MPD',           // cryoprotectants
+  'BME', 'DMS', 'DMF', 'IMD', 'IPA',                         // solvents
+  'ACT', 'FMT', 'MES', 'EPE', 'TRS', 'BU3', 'TLA',           // buffers
+])
+
+// Friendly labels for codes we know; falls back to the 3-letter code.
+const HET_LABEL = {
+  FE:  'iron',         ZN:  'zinc',          CA:  'calcium',     MG:  'magnesium',
+  MN:  'manganese',    CU:  'copper',        NA:  'sodium',      K:   'potassium',
+  NAG: 'NAG (glycan)', BMA: 'mannose',       GAL: 'galactose',   FUC: 'fucose',
+  MAN: 'mannose',      NDG: 'GlcNAc',        SIA: 'sialic acid',
+  HEM: 'heme',         HEC: 'heme C',        FAD: 'FAD',         NAD: 'NAD',
+  CO3: 'carbonate',    SO4: 'sulfate',       PO4: 'phosphate',   CIT: 'citrate',
+  ATP: 'ATP',          ADP: 'ADP',           AMP: 'AMP',         GTP: 'GTP',
 }
 
-// Single-atom fallback for unknown HET codes (water, etc.).
-const UNKNOWN_MODEL = { atoms: [{ el: 'C', x: 0, y: 0, z: 0 }], bonds: [] }
+export function labelFor(code) { return HET_LABEL[code] || code }
+
+// Parse HETATM records out of a PDB text. Returns one entry per unique
+// HET code (deduped — many structures contain repeated instances; we
+// show one representative). Atoms are centered on the residue centroid
+// so the renderer sees coords near origin. Bonds are derived by
+// distance threshold (1.9 Å covalent) — fast, robust, doesn't need
+// CONECT records which many PDBs omit for organics.
+export function parseHETsFromPdb(pdbText, { maxPerStructure = 6, skipHydrogens = true } = {}) {
+  const residues = new Map()   // chain:resSeq:resName → { code, atoms[] }
+
+  for (const line of pdbText.split('\n')) {
+    if (!line.startsWith('HETATM')) continue
+    const resName = line.slice(17, 20).trim()
+    if (HET_DENYLIST.has(resName)) continue
+
+    // Element field (cols 77-78) is optional; fall back to deriving
+    // from the atom-name column.
+    let element = line.slice(76, 78).trim()
+    if (!element) {
+      element = line.slice(12, 16).trim().replace(/\d/g, '').slice(0, 2)
+    }
+    element = (element[0] || '').toUpperCase() + (element.slice(1).toLowerCase() || '')
+    if (skipHydrogens && element === 'H') continue
+
+    const chain  = line.slice(21, 22)
+    const resSeq = parseInt(line.slice(22, 26), 10)
+    const key = `${chain}:${resSeq}:${resName}`
+
+    if (!residues.has(key)) residues.set(key, { code: resName, atoms: [] })
+    residues.get(key).atoms.push({
+      el: element,
+      x:  parseFloat(line.slice(30, 38)),
+      y:  parseFloat(line.slice(38, 46)),
+      z:  parseFloat(line.slice(46, 54)),
+    })
+  }
+
+  const unique = new Map()
+  for (const r of residues.values()) {
+    if (unique.has(r.code)) continue                          // first instance per code
+    if (r.atoms.length === 0) continue
+    // Center on centroid so the 2D renderer doesn't have to.
+    const cx = mean(r.atoms.map(a => a.x))
+    const cy = mean(r.atoms.map(a => a.y))
+    const cz = mean(r.atoms.map(a => a.z))
+    const atoms = r.atoms.map(a => ({ el: a.el, x: a.x - cx, y: a.y - cy, z: a.z - cz }))
+    const bonds = bondsByDistance(atoms, 1.95)
+    unique.set(r.code, {
+      code:  r.code,
+      label: HET_LABEL[r.code] || r.code,
+      atoms,
+      bonds,
+    })
+    if (unique.size >= maxPerStructure) break
+  }
+  return [...unique.values()]
+}
+
+function bondsByDistance(atoms, threshold) {
+  const out = []
+  const t2 = threshold * threshold
+  for (let i = 0; i < atoms.length; i++) {
+    for (let j = i + 1; j < atoms.length; j++) {
+      const dx = atoms[i].x - atoms[j].x
+      const dy = atoms[i].y - atoms[j].y
+      const dz = atoms[i].z - atoms[j].z
+      if (dx*dx + dy*dy + dz*dz < t2) out.push([i, j])
+    }
+  }
+  return out
+}
+
+function mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0 }
 
 // ── 2D renderer ───────────────────────────────────────────────────────
-// Projects atoms via simple orthographic (z used only for size + draw
-// order), draws bonds as straight lines, atoms as radial-gradient
-// shaded discs. Tight enough for 56×56 thumbnails.
-export function drawCompound(canvas, hetCode) {
-  const model = COMPOUND_MODELS[hetCode] || UNKNOWN_MODEL
+// Project atoms via orthographic (z used for size+order), bonds as
+// 2-tone gradient lines, atoms as radial-gradient shaded discs.
+// Accepts either a parsed { atoms, bonds, code } model or a HET code
+// (legacy — falls back to a single-atom placeholder).
+export function drawCompound(canvas, modelOrCode) {
+  const model = typeof modelOrCode === 'string'
+    ? { code: modelOrCode, atoms: [{ el: 'C', x: 0, y: 0, z: 0 }], bonds: [] }
+    : modelOrCode
+
   const dpr = window.devicePixelRatio || 1
-  const w = canvas.width  = canvas.clientWidth * dpr
+  const w = canvas.width  = canvas.clientWidth  * dpr
   const h = canvas.height = canvas.clientHeight * dpr
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0, 0, w, h)
 
-  // Fit bounding box of atoms into canvas with padding.
+  if (!model.atoms.length) return
+
+  // Fit bounding box.
   const xs = model.atoms.map(a => a.x), ys = model.atoms.map(a => a.y)
   const minX = Math.min(...xs, 0), maxX = Math.max(...xs, 0)
   const minY = Math.min(...ys, 0), maxY = Math.max(...ys, 0)
   const span = Math.max(maxX - minX, maxY - minY, 2)
-  const padding = w * 0.16
+  const padding = w * 0.18
   const scale = (w - padding * 2) / span
   const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2
-  const project = (a) => ({
+
+  const projected = model.atoms.map(a => ({
     px: w / 2 + (a.x - cx) * scale,
-    // canvas Y is inverted vs. chem Y
     py: h / 2 - (a.y - cy) * scale,
     pr: (ATOM_RADIUS[a.el] || 0.6) * scale * 0.55,
     z: a.z || 0,
     el: a.el,
-  })
-  const projected = model.atoms.map(project)
+  }))
 
-  // 1. Bonds first — drawn as 2-tone lines.
+  // Bonds first.
   ctx.lineCap = 'round'
   for (const [i, j] of model.bonds) {
     const a = projected[i], b = projected[j]
+    if (!a || !b) continue
     const grad = ctx.createLinearGradient(a.px, a.py, b.px, b.py)
     grad.addColorStop(0, ATOM_COLOR[a.el] || '#999')
     grad.addColorStop(1, ATOM_COLOR[b.el] || '#999')
@@ -171,8 +165,7 @@ export function drawCompound(canvas, hetCode) {
     ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke()
   }
 
-  // 2. Atoms — sorted back-to-front by z, drawn with radial-gradient
-  //    spheres for a hint of 3D depth.
+  // Atoms back-to-front.
   const order = projected.map((_, k) => k).sort((a, b) => projected[a].z - projected[b].z)
   for (const k of order) {
     const a = projected[k]
@@ -182,19 +175,17 @@ export function drawCompound(canvas, hetCode) {
       a.px - r * 0.35, a.py - r * 0.35, r * 0.15,
       a.px,            a.py,            r
     )
-    grad.addColorStop(0, lighten(base, 0.55))
+    grad.addColorStop(0,   lighten(base, 0.55))
     grad.addColorStop(0.6, base)
-    grad.addColorStop(1, darken(base, 0.5))
+    grad.addColorStop(1,   darken(base, 0.5))
     ctx.fillStyle = grad
     ctx.beginPath(); ctx.arc(a.px, a.py, r, 0, Math.PI * 2); ctx.fill()
-    // subtle rim
     ctx.strokeStyle = darken(base, 0.7)
     ctx.lineWidth = Math.max(0.5, r * 0.06)
     ctx.stroke()
   }
 
-  // Element label for single-atom compounds (Fe, Zn) — drawn in the
-  // center so the viewer reads the symbol at a glance.
+  // Element label for single-atom compounds.
   if (model.atoms.length === 1) {
     const a = projected[0]
     ctx.fillStyle = '#0c0c12'
@@ -209,15 +200,10 @@ function lighten(hex, t) { return mix(hex, '#ffffff', t) }
 function darken(hex, t)  { return mix(hex, '#000000', t) }
 function mix(a, b, t) {
   const [ar, ag, ab] = parseHex(a), [br, bg, bb] = parseHex(b)
-  const r = Math.round(ar + (br - ar) * t)
-  const g = Math.round(ag + (bg - ag) * t)
-  const bl = Math.round(ab + (bb - ab) * t)
-  return `rgb(${r},${g},${bl})`
+  return `rgb(${Math.round(ar + (br - ar) * t)},${Math.round(ag + (bg - ag) * t)},${Math.round(ab + (bb - ab) * t)})`
 }
 function parseHex(h) {
   const s = h.startsWith('#') ? h.slice(1) : h
-  const n = s.length === 3
-    ? s.split('').map(c => parseInt(c + c, 16))
-    : [parseInt(s.slice(0,2),16), parseInt(s.slice(2,4),16), parseInt(s.slice(4,6),16)]
-  return n
+  if (s.length === 3) return s.split('').map(c => parseInt(c + c, 16))
+  return [parseInt(s.slice(0,2),16), parseInt(s.slice(2,4),16), parseInt(s.slice(4,6),16)]
 }
