@@ -11,8 +11,6 @@
 // for ranking + rationale, then orbitalClassify() positions each
 // protein with the project's canonical physics signature.
 
-import { drawCompound, parseHETsFromPdb, labelFor } from './molecules.mjs'
-
 const API_BASE   = 'https://mcp.ask-meridian.uk'
 const TIMEOUT_MS = 60_000
 
@@ -84,11 +82,13 @@ function molstarReady() {
   })
 }
 
-// Fetch PDB text once and hand it to BOTH Mol* (for the protein render)
-// and our HET parser (for compound coordinates). One network round-trip,
-// shared parsing. Uses the prebuilt window.molstar.Viewer API — the
-// npm package's createPluginUI path requires a bundler we don't have.
-async function loadProteinAndExtractHETs(host, pdbId) {
+// Mount a Mol* viewer in `host` and load the PDB by id. The viewer
+// shows protein cartoon + ligand ball-and-stick in the same canvas
+// — zooming reveals the bound molecules + their atoms, no separate
+// orbit layer needed. Canvas background is made transparent so the
+// card's CSS gradient shows through and the render reads as part
+// of the Meridian aesthetic.
+async function mountProteinViewer(host, pdbId) {
   const [pdbText, mol] = await Promise.all([
     fetch(`https://files.rcsb.org/download/${pdbId}.pdb`).then(r => r.text()),
     molstarReady(),
@@ -107,8 +107,15 @@ async function loadProteinAndExtractHETs(host, pdbId) {
     emdbProvider:           'rcsb',
   })
   systemViewers.set(pdbId, viewer)
+  // Transparent canvas so the card's radial gradient bleeds through.
+  // setProps is async-tolerant; failures here only affect aesthetics.
+  try {
+    viewer.plugin.canvas3d?.setProps({
+      transparentBackground: true,
+      renderer: { backgroundColor: 0x000000 },
+    })
+  } catch (e) { /* non-fatal */ }
   await viewer.loadStructureFromData(pdbText, 'pdb')
-  return parseHETsFromPdb(pdbText)
 }
 
 // ── Render a single star system card
@@ -124,7 +131,6 @@ function renderSystem(c, rank) {
       <span class="system-uniprot">${escapeHtml(c.uniprot || '')}</span>
     </header>
 
-    <div class="system-orbits"></div>
     <div class="system-center ${c.pdb ? '' : 'empty'}">
       ${c.pdb ? '' : 'no PDB'}
     </div>
@@ -142,40 +148,17 @@ function renderSystem(c, rank) {
   card.addEventListener('click', () => showDetail(c))
   universe.appendChild(card)
 
-  const orbitsEl = card.querySelector('.system-orbits')
   const centerEl = card.querySelector('.system-center')
-
   if (!c.pdb) return
 
-  // Fetch the PDB once, render the protein, extract HETs, then place
-  // the orbiting compounds. Each compound's atom coords come from the
-  // same PDB Mol* is showing — so what you see in orbit is literally
-  // what's bound to the protein in the experimental structure.
-  loadProteinAndExtractHETs(centerEl, c.pdb)
-    .then(compounds => {
-      compounds.forEach((mol, i) => {
-        const angle = (360 / Math.max(compounds.length, 1)) * i
-        const el = document.createElement('div')
-        el.className = 'compound'
-        el.style.setProperty('--angle',  `${angle}deg`)
-        el.style.setProperty('--radius', '130px')
-        el.title = mol.label
-        el.innerHTML = `
-          <div class="compound-body">
-            <div class="compound-icon"><canvas width="56" height="56"></canvas></div>
-            <div class="compound-label">${escapeHtml(mol.label)}</div>
-          </div>
-        `
-        orbitsEl.appendChild(el)
-        const canvas = el.querySelector('canvas')
-        if (canvas) drawCompound(canvas, mol)
-      })
-    })
-    .catch(e => {
-      console.warn('mol*', c.pdb, 'failed:', e?.message || e)
-      centerEl.classList.add('empty')
-      centerEl.textContent = `PDB ${c.pdb} failed`
-    })
+  // Mol* renders cartoon protein + ligand atoms in the same canvas;
+  // zoom reveals the molecules inside the structure. No separate
+  // orbit layer needed.
+  mountProteinViewer(centerEl, c.pdb).catch(e => {
+    console.warn('mol*', c.pdb, 'failed:', e?.message || e)
+    centerEl.classList.add('empty')
+    centerEl.textContent = `PDB ${c.pdb} failed`
+  })
 }
 
 function clearUniverse() {

@@ -23,7 +23,6 @@ mkdir -p "$DIST/helix" "$DIST/lens" "$DIST/lens/assets" \
 cp "$REPO/helix/index.html"    "$DIST/helix/index.html"
 cp "$REPO/helix/app.mjs"       "$DIST/helix/app.mjs"
 cp "$REPO/helix/helix.css"     "$DIST/helix/helix.css"
-cp "$REPO/helix/molecules.mjs" "$DIST/helix/molecules.mjs"
 
 cp "$REPO/lens/index.html"        "$DIST/lens/index.html"
 cp "$REPO/lens/index.js"          "$DIST/lens/index.js"
