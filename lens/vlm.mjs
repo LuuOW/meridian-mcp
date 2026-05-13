@@ -1,31 +1,24 @@
-// lens-specific vision-language wrapper.
+// lens vision-language helpers (server-side inference).
 //
-// The reusable bits (model load, IDB version pin, WebGPU/WASM fallback,
-// persistent storage) live in /_lib/edge-inference.mjs and are shared
-// with helix / future browser apps under meridian.ask-meridian.uk.
+// The WebXR scene capture stays client-side — Three.js renders the
+// player's POV to an offscreen target. The captured frame is then
+// uploaded as a data URI to mcp.ask-meridian.uk/v1/vision (GPT-4o-mini
+// via GH Models). The lens UX is preserved; only the inference moved.
 //
-// This file keeps only what lens uniquely needs:
-//   • WebXR scene capture (Three.js render-to-texture from the player POV)
-//   • Webcam stream + frame capture (DOM camera path)
-//   • describeImage — token-streaming chat that matches the lens UX
-//
-// The export surface matches the prior lens/vlm.mjs API exactly, so
-// index.js consumes it unchanged.
+// Public API matches the prior in-browser version exactly so the 1690
+// LOC index.js consumes it unchanged.
 
 import * as THREE from 'three'
-import { RawImage, TextStreamer } from '@huggingface/transformers'
 
-import { loadVision, isLoaded, requestPersistentStorage as reqPersist }
-  from '/_lib/edge-inference.mjs'
+const API_BASE = 'https://mcp.ask-meridian.uk'
 
-// ── Re-exports from _lib ─────────────────────────────────────────────
-export const requestPersistentStorage = reqPersist
-export const isVlmReady = () => isLoaded('vision')
-
-// loadVlm matches the old signature (onProgress / onStatus). Returns
-// { processor, model, device } — same shape index.js was destructuring.
-export function loadVlm({ onProgress, onStatus } = {}) {
-  return loadVision({ onProgress, onStatus })
+// Stubbed — server-side inference doesn't need model preloading.
+export function loadVlm(/* { onProgress, onStatus } */) {
+  return Promise.resolve({ device: 'server' })
+}
+export function isVlmReady() { return true }
+export async function requestPersistentStorage() {
+  return { supported: false, persisted: false, server: true }
 }
 
 // ── Webcam capture ───────────────────────────────────────────────────
@@ -34,14 +27,12 @@ let _cameraVideo  = null
 
 export async function requestCamera({ facingMode = 'environment' } = {}) {
   if (_cameraVideo && _cameraStream?.active) return _cameraVideo
-  if (!navigator.mediaDevices?.getUserMedia)
-    throw new Error('getUserMedia not supported')
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia not supported')
 
   let stream
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: facingMode }, width: 1280, height: 720 },
-      audio: false,
+      video: { facingMode: { ideal: facingMode }, width: 1280, height: 720 }, audio: false,
     })
   } catch {
     stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
@@ -49,9 +40,7 @@ export async function requestCamera({ facingMode = 'environment' } = {}) {
   _cameraStream = stream
 
   const video = document.createElement('video')
-  video.autoplay = true
-  video.playsInline = true
-  video.muted = true
+  video.autoplay = true; video.playsInline = true; video.muted = true
   video.srcObject = stream
   video.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;'
   document.body.appendChild(video)
@@ -82,24 +71,16 @@ const _camCanvas = (typeof OffscreenCanvas !== 'undefined')
   ? new OffscreenCanvas(384, 384)
   : Object.assign(document.createElement('canvas'), { width: 384, height: 384 })
 
+// Returns a data: URI of the current camera frame at `size`×`size`.
+// Replaces the prior RawImage return — /v1/vision wants a URI.
 export function captureCameraFrame(size = 384) {
   if (!_cameraVideo) throw new Error('camera not requested')
   if (_camCanvas.width !== size) { _camCanvas.width = size; _camCanvas.height = size }
   const ctx = _camCanvas.getContext('2d')
-
   const vw = _cameraVideo.videoWidth, vh = _cameraVideo.videoHeight
   const side = Math.min(vw, vh)
-  const sx = (vw - side) / 2, sy = (vh - side) / 2
-  ctx.drawImage(_cameraVideo, sx, sy, side, side, 0, 0, size, size)
-
-  const data = ctx.getImageData(0, 0, size, size).data
-  const rgb = new Uint8ClampedArray(size * size * 3)
-  for (let i = 0, j = 0; i < data.length; i += 4, j += 3) {
-    rgb[j]     = data[i]
-    rgb[j + 1] = data[i + 1]
-    rgb[j + 2] = data[i + 2]
-  }
-  return new RawImage(rgb, size, size, 3)
+  ctx.drawImage(_cameraVideo, (vw - side) / 2, (vh - side) / 2, side, side, 0, 0, size, size)
+  return canvasToDataUri(_camCanvas)
 }
 
 // ── Scene capture (WebXR) ────────────────────────────────────────────
@@ -140,55 +121,56 @@ export function captureSceneFrame({ renderer, scene, player, size = 384 }) {
   renderer.setRenderTarget(prevTarget)
   renderer.xr.enabled = prevXrEnabled
 
-  // WebGL origin is bottom-left, image-space is top-left — flip.
-  const flipped = new Uint8ClampedArray(_capPixels.length)
+  // WebGL origin is bottom-left, image-space is top-left — flip + drop alpha.
+  const out = (typeof OffscreenCanvas !== 'undefined')
+    ? new OffscreenCanvas(size, size)
+    : Object.assign(document.createElement('canvas'), { width: size, height: size })
+  const ctx = out.getContext('2d')
+  const id  = ctx.createImageData(size, size)
   const stride = size * 4
   for (let y = 0; y < size; y++) {
     const src = (size - 1 - y) * stride
-    flipped.set(_capPixels.subarray(src, src + stride), y * stride)
+    id.data.set(_capPixels.subarray(src, src + stride), y * stride)
   }
-
-  const rgb = new Uint8ClampedArray(size * size * 3)
-  for (let i = 0, j = 0; i < flipped.length; i += 4, j += 3) {
-    rgb[j]     = flipped[i]
-    rgb[j + 1] = flipped[i + 1]
-    rgb[j + 2] = flipped[i + 2]
-  }
-  return new RawImage(rgb, size, size, 3)
+  ctx.putImageData(id, 0, 0)
+  return canvasToDataUri(out)
 }
 
 // ── Inference ────────────────────────────────────────────────────────
-// Same prompt / sampling defaults the lens UX was tuned around.
-export async function describeImage(image, prompt, { onToken, signal, maxTokens = 96 } = {}) {
-  const { processor, model } = await loadVision()
-  if (signal?.aborted) throw new DOMException('aborted', 'AbortError')
+// Streams the model output via a single fetch (no token-level streaming
+// from /v1/vision today — could be added with SSE later). onToken is
+// called once with the final answer for callers that expected streaming.
+export async function describeImage(imageDataUri, prompt, { onToken, signal, maxTokens = 96 } = {}) {
+  const ctrl = new AbortController()
+  if (signal) signal.addEventListener('abort', () => ctrl.abort(), { once: true })
+  const timer = setTimeout(() => ctrl.abort(), 60_000)
+  try {
+    const res = await fetch(API_BASE + '/v1/vision', {
+      method:  'POST',
+      headers: { 'content-type': 'application/json' },
+      body:    JSON.stringify({ image_url: imageDataUri, prompt }),
+      signal:  ctrl.signal,
+    })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`)
+    const text = (j.description || '').trim()
+    onToken?.(text, text)
+    return text
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
-  const messages = [{
-    role: 'user',
-    content: [{ type: 'image' }, { type: 'text', text: prompt }],
-  }]
-  const text = processor.apply_chat_template(messages, { add_generation_prompt: true })
-  const inputs = await processor(text, [image])
-
-  let buffer = ''
-  const streamer = new TextStreamer(processor.tokenizer, {
-    skip_prompt: true,
-    skip_special_tokens: true,
-    callback_function: (chunk) => {
-      buffer += chunk
-      onToken?.(buffer, chunk)
-    },
-  })
-
-  await model.generate({
-    ...inputs,
-    max_new_tokens:    maxTokens,
-    do_sample:         true,
-    temperature:       0.5,
-    top_p:             0.9,
-    repetition_penalty: 1.0,
-    streamer,
-  })
-
-  return buffer.replace(/^\s*Assistant:\s*/i, '').trim()
+// ── helpers ──────────────────────────────────────────────────────────
+async function canvasToDataUri(canvas) {
+  if (canvas.convertToBlob) {
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 })
+    return new Promise((res, rej) => {
+      const fr = new FileReader()
+      fr.onload = () => res(fr.result)
+      fr.onerror = rej
+      fr.readAsDataURL(blob)
+    })
+  }
+  return canvas.toDataURL('image/jpeg', 0.85)
 }

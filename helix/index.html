@@ -30,21 +30,14 @@
   pre { background: #0c0f17; border: 1px solid var(--border); border-radius: 8px; padding: 10px; overflow-x: auto; font: 12px/1.4 ui-monospace, Menlo, monospace; }
 </style>
 
-<script type="importmap">
-{
-  "imports": {
-    "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5/+esm",
-    "_lib/models.mjs":           "/_lib/models.mjs",
-    "_lib/edge-inference.mjs":   "/_lib/edge-inference.mjs"
-  }
-}
-</script>
+<!-- No models cached locally; inference runs at mcp.ask-meridian.uk/v1/*. -->
+
 </head>
 <body>
 
 <main class="wrap">
   <h1>◎ helix</h1>
-  <p class="lead">Describe an injury (or paste a photo) → top 5 therapeutic protein candidates with predicted structures. Everything runs in your browser after a one-time ~2 GB model download.</p>
+  <p class="lead">Describe an injury (or paste a photo) → top 5 therapeutic protein candidates. Powered by Llama-3.3-70B + GPT-4o-mini via the Meridian gateway.</p>
 
   <div class="card">
     <label for="desc"><strong>Injury description</strong></label>
@@ -61,8 +54,8 @@
 
     <div class="row" style="margin-top: 12px;">
       <button id="run" disabled>Recommend proteins</button>
-      <button id="load" class="ghost">Load models (one-time ~2 GB)</button>
-      <span id="status" class="status">models not loaded</span>
+      <button id="load" class="ghost">Use server inference</button>
+      <span id="status" class="status">ready (server-side, no download)</span>
     </div>
     <progress id="prog" value="0" max="100" hidden></progress>
   </div>
@@ -81,10 +74,5 @@
 </main>
 
 <script type="module" src="/helix/app.mjs"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(e => console.warn('SW:', e))
-  }
-</script>
 </body>
 </html>
