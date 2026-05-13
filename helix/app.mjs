@@ -232,12 +232,13 @@ function renderSystem(c, rank) {
     </footer>
   `
 
-  // Card click → open detail, but ignore clicks inside the 3D viewport
-  // so users can rotate/zoom/fullscreen without triggering the panel.
-  card.addEventListener('click', e => {
-    if (e.target.closest('.system-center')) return
-    showDetail(c)
-  })
+  // Card click → open the detail panel with general protein info.
+  // Drags don't fire a `click` (DOM only emits it for quick taps with
+  // minimal movement), so rotate gestures inside the Mol* canvas stay
+  // separate from this handler. Atom clicks ALSO fire Mol*'s
+  // subscription below, which calls showDetail(c, sel) right after to
+  // enrich the same panel with selection-specific info.
+  card.addEventListener('click', () => showDetail(c))
   universe.appendChild(card)
 
   const centerEl   = card.querySelector('.system-center')
