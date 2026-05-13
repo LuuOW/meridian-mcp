@@ -202,15 +202,14 @@ a:hover { color: #fff; }
 .system-name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; flex: 1; }
 .system-uniprot { font-size: 11px; color: var(--dim); }
 
-/* Central protein structure — Mol* mounts here. Sized to fill most
-   of the card. Transparent Mol* canvas (set in app.mjs) lets the
-   radial gradient on this container bleed through, so the render
-   reads as part of the Meridian aesthetic. Mol* itself renders
-   cartoon protein + ligand ball-and-stick; zoom in to see atoms. */
+/* Central protein structure — Mol* mounts here. Filled box with
+   top/left/right/bottom anchors so we always sit between the header
+   and footer regardless of card dimensions (no aspect-ratio
+   overflow). Mol*'s WebGL canvas fits the box; the box's gradient
+   shows through because the Mol* canvas is set transparent. */
 .system-center {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, calc(-50% - 18px));
-  width: 84%; aspect-ratio: 1 / 1;
+  position: absolute;
+  top: 54px; left: 7%; right: 7%; bottom: 102px;
   border-radius: 14px;
   overflow: hidden;
   background:
