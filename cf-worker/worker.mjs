@@ -33,6 +33,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 
 import { PKG_VERSION, TOOLS, routeTask, routeTaskJson } from '../mcp/_lib/core.mjs'
+import { orbitalClassify } from '../mcp/_lib/orbital.mjs'
 import {
   applyFittedCorrection, sgdUpdate, loadWeights, saveWeights, FEATURE_VERSION,
 } from './online_learning.mjs'
@@ -565,6 +566,50 @@ Output strict JSON:
       const m = text.match(/\{[\s\S]*\}/)
       if (!m) return jsonResponse({ error: 'no JSON in response', raw: text.slice(0, 200) }, { status: 502 })
       parsed = JSON.parse(m[0])
+    }
+    // Closing the loop: run the same orbital classifier the /v1/route
+    // pipeline uses, so helix's galaxy view positions each protein with
+    // the project's canonical physics signature. Each LLM-ranked entry
+    // is reshaped as a candidate (slug = UniProt id, keywords drawn
+    // from the source row), then orbitalClassify ranks them. The LLM
+    // score and orbital route_score are surfaced together — the LLM
+    // owns medical plausibility, the classifier owns spatial layout.
+    try {
+      const byUniprot = new Map(candidates.map(c => [c.uniprot, c]))
+      const protCandidates = (parsed.candidates || []).map(c => {
+        const src = byUniprot.get(c.uniprot) || {}
+        const kw = String(src.use || '')
+          .toLowerCase()
+          .split(/[,\s]+/)
+          .filter(w => w.length > 2)
+          .slice(0, 10)
+        return {
+          slug:        c.uniprot,
+          name:        c.name || src.name || c.uniprot,
+          description: c.rationale || src.use || '',
+          keywords:    kw,
+          body:        `## ${c.name || src.name}\n\n${c.rationale || ''}\n\n**Notes:** ${src.notes || ''}\n**Size:** ${src.aa_len || '?'} aa`,
+          // Carry LLM-side payload through to the front-end.
+          llm_score:        c.score ?? null,
+          delivery_concern: c.delivery_concern || null,
+          uniprot:          c.uniprot,
+        }
+      })
+      const ranked = orbitalClassify(protCandidates, desc)
+      // orbitalClassify only carries slug + classifier-derived fields;
+      // re-attach the LLM-side payload by uniprot so the front-end can
+      // surface both scores side-by-side on the detail panel.
+      const llmByUniprot = new Map((parsed.candidates || []).map(c => [c.uniprot, c]))
+      parsed.candidates = ranked.map(r => ({
+        ...r,
+        uniprot:          r.slug,
+        llm_score:        llmByUniprot.get(r.slug)?.score ?? null,
+        rationale:        llmByUniprot.get(r.slug)?.rationale ?? r.description,
+        delivery_concern: llmByUniprot.get(r.slug)?.delivery_concern || null,
+      }))
+      parsed.candidates_generated = protCandidates.length
+    } catch (e) {
+      console.warn('orbital classify failed (non-fatal):', e?.message || e)
     }
     return jsonResponse(parsed)
   } catch (e) {

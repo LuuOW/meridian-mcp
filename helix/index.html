@@ -4,75 +4,65 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="theme-color" content="#0a0d14">
-<title>helix — therapeutic protein recommender</title>
-<meta name="description" content="Vision/text → top therapeutic protein candidates. Runs entirely in your browser after a one-time model download.">
+<title>helix — Meridian</title>
+<meta name="description" content="Vision/text → top therapeutic protein candidates rendered as an orbital galaxy. Powered by Llama-3.3-70B + GPT-4o-mini via the Meridian gateway.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<style>
-  :root { --bg:#0a0d14; --card:#10131c; --border:#1f2937; --fg:#e5e7eb; --muted:#94a3b8; --accent:#22d3ee; }
-  * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--fg); margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
-  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px; }
-  h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
-  .lead { color: var(--muted); margin: 0 0 28px; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-bottom: 16px; }
-  textarea, input[type=text] { width: 100%; background: #0c0f17; color: var(--fg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font: inherit; }
-  textarea { min-height: 110px; resize: vertical; }
-  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-  button { background: var(--accent); color: #062028; border: 0; border-radius: 8px; padding: 10px 18px; font: 600 14px/1 inherit; cursor: pointer; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
-  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-  .status { color: var(--muted); font-size: 13px; }
-  progress { width: 100%; height: 6px; margin-top: 8px; }
-  .protein { padding: 12px 0; border-bottom: 1px solid var(--border); }
-  .protein:last-child { border-bottom: 0; }
-  .protein h3 { margin: 0 0 4px; font-size: 16px; }
-  .protein .meta { color: var(--muted); font-size: 13px; }
-  pre { background: #0c0f17; border: 1px solid var(--border); border-radius: 8px; padding: 10px; overflow-x: auto; font: 12px/1.4 ui-monospace, Menlo, monospace; }
-</style>
-
-<!-- No models cached locally; inference runs at mcp.ask-meridian.uk/v1/*. -->
-
+<link rel="stylesheet" href="/helix/helix.css?v=__BUILD_SHA__">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/molstar@4.7.0/build/viewer/molstar.css">
 </head>
 <body>
 
-<main class="wrap">
-  <h1>◎ helix</h1>
-  <p class="lead">Describe an injury (or paste a photo) → top 5 therapeutic protein candidates. Powered by Llama-3.3-70B + GPT-4o-mini via the Meridian gateway.</p>
+<nav class="topbar">
+  <a class="brand" href="/"><span class="brand-glyph">◎</span> meridian</a>
+  <div class="brand-sub">helix · therapeutic protein recommender</div>
+  <button id="burgerBtn" class="burger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <div id="navMenu" class="nav-menu">
+    <a href="/">home</a>
+    <a href="/lens/">lens</a>
+    <a href="/miniapp/">miniapp</a>
+    <a href="/miniapp/vision-lab/">vision-lab</a>
+    <a href="https://github.com/LuuOW/meridian-mcp" target="_blank" rel="noopener">source</a>
+  </div>
+</nav>
 
-  <div class="card">
-    <label for="desc"><strong>Injury description</strong></label>
-    <textarea id="desc" placeholder="e.g. 2 cm laceration on left forearm, 5 mm deep, bleeding stopped. Or: corneal abrasion, lower right quadrant, watery eye, photophobia."></textarea>
+<main class="stage">
+  <canvas id="galaxy"></canvas>
+  <div id="molstar" class="molstar-host" aria-label="Predicted protein structure"></div>
+  <div id="centerHint" class="center-hint">structure of top candidate will render here</div>
 
-    <div class="row" style="margin-top: 10px;">
-      <label class="ghost" style="cursor: pointer; padding: 8px 14px; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); font-weight: 600; font-size: 14px;">
-        Add photo
+  <section id="inputCard" class="input-card glass">
+    <div class="input-row">
+      <textarea id="desc" placeholder="Describe the injury — e.g. corneal abrasion, lower right quadrant, sharp pain on blink, photophobia. Cmd/Ctrl+Enter to send."></textarea>
+    </div>
+    <div class="input-row controls">
+      <label class="btn ghost icon-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg>
         <input id="img-input" type="file" accept="image/*" capture="environment" hidden>
+        photo
       </label>
-      <img id="img-preview" alt="" style="height: 56px; width: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); display: none;">
-      <span id="vlm-status" class="status"></span>
+      <img id="img-preview" alt="" />
+      <span id="status" class="status">idle</span>
+      <button id="run" class="btn primary">recommend ↵</button>
     </div>
+  </section>
 
-    <div class="row" style="margin-top: 12px;">
-      <button id="run" disabled>Recommend proteins</button>
-      <button id="load" class="ghost">Use server inference</button>
-      <span id="status" class="status">ready (server-side, no download)</span>
-    </div>
-    <progress id="prog" value="0" max="100" hidden></progress>
-  </div>
+  <aside id="detailPanel" class="detail glass" hidden>
+    <button class="detail-close" aria-label="Close">×</button>
+    <h2 id="detailTitle"></h2>
+    <div id="detailMeta" class="detail-meta"></div>
+    <p id="detailRationale" class="detail-rationale"></p>
+    <div id="detailScores" class="detail-scores"></div>
+    <div id="detailNotes" class="detail-notes"></div>
+  </aside>
 
-  <div class="card" id="results" hidden>
-    <strong>Top candidates</strong>
-    <div id="proteins"></div>
-  </div>
-
-  <div class="card">
-    <details>
-      <summary class="status">debug / cache state</summary>
-      <pre id="debug">(empty)</pre>
-    </details>
-  </div>
+  <details class="debug glass">
+    <summary>debug / raw JSON</summary>
+    <pre id="debug">(empty)</pre>
+  </details>
 </main>
 
-<script type="module" src="/helix/app.mjs"></script>
+<script type="module" src="/helix/app.mjs?v=__BUILD_SHA__"></script>
 </body>
 </html>
