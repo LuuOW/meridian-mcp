@@ -132,7 +132,16 @@ function renderSystem(c, rank) {
     </header>
 
     <div class="system-center ${c.pdb ? '' : 'empty'}">
-      ${c.pdb ? '' : 'no PDB'}
+      ${c.pdb ? `
+        <button class="viewer-tool fullscreen-btn" type="button" aria-label="Toggle fullscreen" title="Fullscreen (Esc to exit)">
+          <svg class="ico-expand" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
+          </svg>
+          <svg class="ico-collapse" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>
+          </svg>
+        </button>
+      ` : 'no PDB'}
     </div>
 
     <footer class="system-footer">
@@ -145,21 +154,60 @@ function renderSystem(c, rank) {
     </footer>
   `
 
-  card.addEventListener('click', () => showDetail(c))
+  // Card click → open detail, but ignore clicks inside the 3D viewport
+  // so users can rotate/zoom/fullscreen without triggering the panel.
+  card.addEventListener('click', e => {
+    if (e.target.closest('.system-center')) return
+    showDetail(c)
+  })
   universe.appendChild(card)
 
   const centerEl = card.querySelector('.system-center')
+  const fsBtn    = card.querySelector('.fullscreen-btn')
+  if (fsBtn) {
+    fsBtn.addEventListener('click', e => {
+      e.stopPropagation()
+      toggleFullscreen(centerEl)
+    })
+  }
+
   if (!c.pdb) return
 
   // Mol* renders cartoon protein + ligand atoms in the same canvas;
-  // zoom reveals the molecules inside the structure. No separate
-  // orbit layer needed.
+  // zoom reveals the molecules inside the structure.
   mountProteinViewer(centerEl, c.pdb).catch(e => {
     console.warn('mol*', c.pdb, 'failed:', e?.message || e)
     centerEl.classList.add('empty')
     centerEl.textContent = `PDB ${c.pdb} failed`
   })
 }
+
+// ── Fullscreen ───────────────────────────────────────────────────────
+async function toggleFullscreen(el) {
+  try {
+    if (document.fullscreenElement === el) {
+      await document.exitFullscreen()
+    } else if (el.requestFullscreen) {
+      await el.requestFullscreen()
+    }
+  } catch (e) {
+    console.warn('fullscreen failed:', e?.message || e)
+  }
+}
+
+// Mol* tracks element size via ResizeObserver but a manual nudge after
+// the fullscreen transition guarantees the canvas re-fits without a
+// momentary blank frame.
+function resizeAllViewers() {
+  for (const [, v] of systemViewers) {
+    try {
+      v.plugin?.handleResize?.()
+      v.plugin?.canvas3d?.handleResize?.()
+    } catch {}
+  }
+}
+document.addEventListener('fullscreenchange',     resizeAllViewers)
+document.addEventListener('webkitfullscreenchange', resizeAllViewers)
 
 function clearUniverse() {
   // Tear down existing Mol* viewers before wiping the DOM, otherwise
