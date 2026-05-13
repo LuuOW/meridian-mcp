@@ -1,25 +1,19 @@
-// helix front-end — galaxy view orchestrator.
+// helix front-end — molecular-orbit view.
 //
-// Flow:
-//   1. user types injury (or adds photo)
-//   2. (auto on Cmd/Ctrl+Enter or button) POST /v1/helix → ranked
-//      proteins with orbital classification
-//   3. top-1 protein's PDB renders in the central Mol* host (the "star")
-//   4. all candidates render as orbiting planets via miniapp's MiniGalaxy
-//   5. click a planet → detail panel slides in with LLM score, orbital
-//      route_score, delivery flags
+// The top candidate's PDB renders as a big 3D structure at center.
+// Other candidates orbit around it as small 3D molecular renders
+// (not dots) — same Mol* engine, separate plugin instances per moon.
+// Click a moon → it swaps to center.
 //
-// Models behind the curtain: Llama-3.3-70B for ranking + rationale,
-// GPT-4o-mini for photo description, classifier is mcp/_lib/orbital.mjs
-// running in the cf-worker. Zero ML in the browser.
-
-import { MiniGalaxy } from '/miniapp/mini-galaxy.js'
+// Server-side classifier loop: /v1/helix runs Llama-3.3-70B for
+// ranking, then orbitalClassify() inside cf-worker positions each
+// protein with the project's canonical physics signature. Front-end
+// receives both LLM and orbital scores per candidate.
 
 const API_BASE   = 'https://mcp.ask-meridian.uk'
 const TIMEOUT_MS = 60_000
 
-// PDB ids hand-mapped per UniProt so the central Mol* viewer has
-// something to load. Picked the canonical structure for each.
+// PDB ids mapped per UniProt so each protein has a structure to render.
 const SEED_PROTEINS = [
   { uniprot: 'P01133', pdb: '1JL9', name: 'EGF',         use: 'corneal abrasion, skin re-epithelialization', aa_len: 53,   notes: 'small, stable, FDA-approved as recombinant' },
   { uniprot: 'P21583', pdb: '1QQK', name: 'KGF/FGF-7',   use: 'skin burn, mucositis',                         aa_len: 194,  notes: 'palifermin is approved biologic' },
@@ -38,16 +32,17 @@ const $ = id => document.getElementById(id)
 const desc = $('desc'), runBtn = $('run')
 const statusEl = $('status'), debugEl = $('debug')
 const imgInput = $('img-input'), imgPreview = $('img-preview')
-const galaxyCanvas = $('galaxy'), molstarHost = $('molstar'), centerHint = $('centerHint')
+const molstarHost = $('molstar'), orbitsEl = $('orbits')
 const detail = $('detailPanel')
 const burgerBtn = $('burgerBtn'), navMenu = $('navMenu')
 
 let lastResult = null
 let lastCandidates = []
-let molstarPlugin = null
-let galaxy = null
+let MolstarMod = null            // shared module exports
+let centerPlugin = null          // central big Mol*
+const moonPlugins = new Map()    // pdb → plugin instance
 
-// ── Burger menu (mirrors landing's initBurgerNav, inlined)
+// ── Burger menu
 function initBurger() {
   const toggle = (open) => {
     const isOpen = open !== undefined ? open : !navMenu.classList.contains('open')
@@ -65,22 +60,19 @@ function initBurger() {
 }
 initBurger()
 
-// ── Galaxy renderer
-galaxy = new MiniGalaxy(galaxyCanvas, {
-  mode: '3d',
-  onPlanetClick: (slug) => showDetail(slug),
-})
+// ── Mol* lazy bootstrap
+async function loadMolstarMod() {
+  if (MolstarMod) return MolstarMod
+  MolstarMod = await import('https://cdn.jsdelivr.net/npm/molstar@4.7.0/+esm')
+  return MolstarMod
+}
 
-// ── Mol* lazy bootstrap. The plugin is ~1.8 MB JS; load once on first
-// successful /v1/helix response. Until then the central spot shows a
-// soft glow + hint text.
-async function ensureMolstar() {
-  if (molstarPlugin) return molstarPlugin
-  const mod = await import('https://cdn.jsdelivr.net/npm/molstar@4.7.0/+esm')
-  molstarPlugin = await mod.createPluginUI({
-    target: molstarHost,
+async function makePlugin(target, big = false) {
+  const m = await loadMolstarMod()
+  return m.createPluginUI({
+    target,
     spec: {
-      ...mod.DefaultPluginUISpec(),
+      ...m.DefaultPluginUISpec(),
       layout: {
         initial: {
           isExpanded: false,
@@ -88,24 +80,82 @@ async function ensureMolstar() {
           regionState: { left: 'hidden', right: 'hidden', top: 'hidden', bottom: 'hidden' },
         },
       },
-      config: [[mod.PluginConfig.Viewport.ShowControls, false],
-               [mod.PluginConfig.Viewport.ShowSelectionMode, false]],
+      config: [
+        [m.PluginConfig.Viewport.ShowControls, false],
+        [m.PluginConfig.Viewport.ShowSelectionMode, false],
+        [m.PluginConfig.Viewport.ShowExpand, false],
+      ],
     },
-    render: mod.renderReact18,
+    render: m.renderReact18,
   })
-  return molstarPlugin
 }
 
-async function loadStructure(pdbId) {
-  const plugin = await ensureMolstar()
-  centerHint.classList.add('hidden')
-  molstarHost.classList.remove('empty')
-  // Clear previous, then load fresh
+async function loadInto(plugin, pdbId) {
   await plugin.clear()
   const url = `https://files.rcsb.org/download/${pdbId}.pdb`
   const data = await plugin.builders.data.download({ url, isBinary: false }, { state: { isGhost: true } })
   const traj = await plugin.builders.structure.parseTrajectory(data, 'pdb')
   await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
+}
+
+// ── Central protein
+async function loadCenter(pdbId) {
+  if (!centerPlugin) {
+    // Clear the empty-state hint and the host's inline children before
+    // mounting Mol* (it owns the host element).
+    molstarHost.innerHTML = ''
+    molstarHost.classList.remove('empty')
+    centerPlugin = await makePlugin(molstarHost, true)
+  }
+  molstarHost.classList.add('swapping')
+  try { await loadInto(centerPlugin, pdbId) }
+  finally { setTimeout(() => molstarHost.classList.remove('swapping'), 250) }
+}
+
+// ── Orbiting moons (small molecular renders, not dots)
+async function renderOrbits(moons) {
+  orbitsEl.innerHTML = ''
+  const n = moons.length
+  if (!n) return
+
+  // Two concentric rings if we have >4 moons; otherwise one ring.
+  const radiusPx = (i) => {
+    const vmin = Math.min(window.innerWidth, window.innerHeight) / 100
+    const ringIdx = (n > 4 && i >= Math.ceil(n / 2)) ? 1 : 0
+    return ringIdx === 0 ? 24 * vmin : 28 * vmin
+  }
+
+  moons.forEach((c, i) => {
+    const angle = (360 / n) * i
+    const el = document.createElement('div')
+    el.className = 'moon'
+    el.style.setProperty('--angle',  `${angle}deg`)
+    el.style.setProperty('--radius', `${radiusPx(i)}px`)
+    el.dataset.slug = c.slug
+    el.title = `${c.name} · click to focus`
+    el.innerHTML = `
+      <div class="moon-body">
+        <div class="moon-canvas" id="moon-canvas-${c.pdb || i}"></div>
+        <div class="moon-label">${escapeHtml(c.name || c.uniprot || '?')}</div>
+      </div>
+    `
+    el.addEventListener('click', () => focusCandidate(c.slug))
+    orbitsEl.appendChild(el)
+  })
+
+  // Now lazy-init Mol* for each moon canvas. Run in parallel; each one
+  // is small (~30 KB PDB + a WebGL context). 5 contexts is fine.
+  for (const c of moons) {
+    const canvas = document.getElementById(`moon-canvas-${c.pdb || c.slug}`)
+    if (!canvas || !c.pdb) continue
+    makePlugin(canvas).then(p => {
+      moonPlugins.set(c.pdb, p)
+      return loadInto(p, c.pdb)
+    }).catch(e => {
+      console.warn('moon', c.pdb, 'failed:', e?.message || e)
+      canvas.style.opacity = 0.3
+    })
+  }
 }
 
 // ── Recommend flow
@@ -122,27 +172,47 @@ async function recommend() {
     lastResult = json
     debugEl.textContent = JSON.stringify(json, null, 2)
 
-    const cands = (json.candidates || []).slice(0, 7)
-    lastCandidates = cands.map(c => {
-      const seed = SEED_PROTEINS.find(s => s.uniprot === (c.uniprot || c.slug))
-      return { ...c, ...seed, slug: c.slug || c.uniprot }
+    // Merge LLM/orbital fields with seed metadata (pdb id, aa_len, notes).
+    const cands = (json.candidates || []).slice(0, 5).map(c => {
+      const seed = SEED_PROTEINS.find(s => s.uniprot === (c.uniprot || c.slug)) || {}
+      return { ...seed, ...c, slug: c.slug || c.uniprot, pdb: seed.pdb }
     })
-    galaxy.setCandidates(lastCandidates)
+    lastCandidates = cands
+    if (!cands.length) {
+      setStatus('no candidates returned', 'error')
+      return
+    }
 
-    const top = lastCandidates[0]
-    if (top?.pdb) {
-      setStatus(`top: ${top.name} (PDB ${top.pdb})`, '')
-      await loadStructure(top.pdb).catch(e => {
-        setStatus(`structure ${top.pdb} failed: ${e.message}`, 'error')
+    setStatus(`${cands.length} candidates · top: ${cands[0].name}`, '')
+
+    // Center = top-1; moons = rest. Load center first, then orbits.
+    if (cands[0]?.pdb) {
+      await loadCenter(cands[0].pdb).catch(e => {
+        setStatus(`center structure ${cands[0].pdb} failed: ${e.message}`, 'error')
       })
     }
-    setStatus(`${lastCandidates.length} candidates · click a planet`, '')
+    renderOrbits(cands.slice(1))
   } catch (e) {
     setStatus(`failed: ${e.message}`, 'error')
     console.error(e)
   } finally {
     runBtn.disabled = false
   }
+}
+
+// ── Focus a candidate (click moon → swap to center, push old center out)
+async function focusCandidate(slug) {
+  const c = lastCandidates.find(x => x.slug === slug)
+  if (!c) return
+  showDetail(c)
+  if (!c.pdb || lastCandidates[0]?.slug === slug) return
+
+  // Reorder lastCandidates so this one is at index 0.
+  const oldTop = lastCandidates[0]
+  lastCandidates = [c, oldTop, ...lastCandidates.filter(x => x.slug !== slug && x.slug !== oldTop.slug)]
+
+  await loadCenter(c.pdb).catch(e => setStatus(`focus ${c.pdb} failed: ${e.message}`, 'error'))
+  renderOrbits(lastCandidates.slice(1))
 }
 
 // ── Vision flow
@@ -161,7 +231,6 @@ imgInput.addEventListener('change', async () => {
     })
     desc.value = description + (desc.value ? '\n\n' + desc.value : '')
     setStatus('photo described — review and send', '')
-    // Auto-trigger after a short pause so user sees the description first
     debouncedRecommend()
   } catch (e) {
     setStatus(`describe failed: ${e.message}`, 'error')
@@ -170,7 +239,7 @@ imgInput.addEventListener('change', async () => {
   }
 })
 
-// ── UX: Cmd/Ctrl+Enter sends; idle debounce auto-sends after 1.5 s
+// ── Auto-fire: Cmd/Ctrl+Enter, or 1.5 s idle debounce
 let debounceTimer = null
 function debouncedRecommend() {
   clearTimeout(debounceTimer)
@@ -178,7 +247,7 @@ function debouncedRecommend() {
   debounceTimer = setTimeout(() => recommend(), 1500)
 }
 desc.addEventListener('input', () => {
-  setStatus('typing… (auto-send in 1.5 s, or Cmd+Enter)', '')
+  setStatus('typing… auto-send in 1.5 s, or Cmd+Enter', '')
   debouncedRecommend()
 })
 desc.addEventListener('keydown', e => {
@@ -194,28 +263,21 @@ runBtn.addEventListener('click', () => {
 })
 
 // ── Detail panel
-function showDetail(slug) {
-  const c = lastCandidates.find(x => x.slug === slug)
-  if (!c) return
-  $('detailTitle').textContent = `${c.name} · ${c.uniprot}`
+function showDetail(c) {
+  $('detailTitle').textContent = `${c.name} · ${c.uniprot || c.slug}`
   $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'}`
   $('detailRationale').textContent = c.rationale || c.description || ''
 
   const scores = $('detailScores'); scores.innerHTML = ''
-  if (c.llm_score != null) scores.appendChild(pill(`LLM ${c.llm_score}/100`))
-  if (c.route_score != null) scores.appendChild(pill(`orbital ${c.route_score.toFixed(2)}`))
-  if (c.classification?.class) scores.appendChild(pill(c.classification.class, 'warm'))
+  if (c.llm_score != null)   scores.appendChild(pill(`LLM ${c.llm_score}/100`))
+  if (c.route_score != null) scores.appendChild(pill(`orbital ${Number(c.route_score).toFixed(2)}`))
+  const klass = c.classification?.class
+  if (klass) scores.appendChild(pill(klass, 'warm'))
 
   let notes = `<div>${escapeHtml(c.notes || '')}</div>`
   if (c.delivery_concern) notes += `<div class="concern">⚠ delivery: ${escapeHtml(c.delivery_concern)}</div>`
   $('detailNotes').innerHTML = notes
   detail.hidden = false
-
-  // Click on a different planet replaces the center structure too
-  if (c.pdb && c.pdb !== lastResult?.__currentPdb) {
-    lastResult.__currentPdb = c.pdb
-    loadStructure(c.pdb).catch(() => {})
-  }
 }
 detail.querySelector('.detail-close').addEventListener('click', () => { detail.hidden = true })
 
@@ -256,6 +318,3 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
 }
-
-// Mark hint as empty-state at boot
-molstarHost.classList.add('empty')

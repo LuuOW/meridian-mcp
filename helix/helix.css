@@ -1,7 +1,7 @@
 :root {
-  --bg:       #05070d;
-  --panel:    rgba(16, 19, 28, 0.72);
-  --panel-2:  rgba(31, 39, 64, 0.6);
+  --bg:       #06080f;
+  --bg-soft:  #0c1020;
+  --panel:    rgba(16, 19, 28, 0.78);
   --border:   rgba(155, 182, 234, 0.18);
   --text:     #e9eef7;
   --muted:    #9bb6ea;
@@ -10,18 +10,19 @@
   --warm:     #ffa276;
   --good:     #6ee7b7;
   --bad:      #f57b8a;
-  --glow:     0 0 24px rgba(124, 58, 237, 0.25), 0 0 60px rgba(34, 211, 238, 0.12);
+  --orbit-fg: rgba(155, 182, 234, 0.12);
 }
 
 * { box-sizing: border-box; }
 html, body {
   margin: 0; height: 100%;
-  background: radial-gradient(ellipse at 60% 20%, #11173a 0%, var(--bg) 55%);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 50%, rgba(124,58,237,0.10), transparent 70%),
+    var(--bg);
   color: var(--text); overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-
 a { color: var(--muted); text-decoration: none; }
 a:hover { color: #fff; }
 
@@ -31,22 +32,19 @@ a:hover { color: #fff; }
   padding: 0 20px;
   display: flex; align-items: center; gap: 14px;
   z-index: 50;
-  background: linear-gradient(to bottom, rgba(5,7,13,0.92), rgba(5,7,13,0.4) 80%, transparent);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(to bottom, rgba(6,8,15,0.92), transparent);
+  backdrop-filter: blur(6px);
 }
 .brand { font-weight: 600; letter-spacing: 0.04em; color: var(--text); font-size: 17px; }
 .brand-glyph { color: var(--warm); margin-right: 4px; }
-.brand-sub { color: var(--dim); font-size: 13px; letter-spacing: 0.02em; }
+.brand-sub { color: var(--dim); font-size: 13px; }
 .burger {
   margin-left: auto;
   width: 36px; height: 36px; background: transparent; border: 1px solid var(--border);
   border-radius: 8px; cursor: pointer; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 4px;
 }
-.burger span {
-  display: block; width: 16px; height: 1.5px; background: var(--text);
-  transition: transform 200ms, opacity 200ms;
-}
+.burger span { display: block; width: 16px; height: 1.5px; background: var(--text); transition: transform 200ms, opacity 200ms; }
 .burger.open span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
 .burger.open span:nth-child(2) { opacity: 0; }
 .burger.open span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
@@ -56,8 +54,7 @@ a:hover { color: #fff; }
   padding: 8px; min-width: 160px;
   display: flex; flex-direction: column; gap: 2px;
   opacity: 0; pointer-events: none; transform: translateY(-6px);
-  transition: opacity 180ms, transform 180ms;
-  backdrop-filter: blur(12px);
+  transition: opacity 180ms, transform 180ms; backdrop-filter: blur(12px);
   z-index: 51;
 }
 .nav-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
@@ -66,29 +63,102 @@ a:hover { color: #fff; }
 
 /* ── Stage ────────────────────────────────────────────────────── */
 .stage { position: fixed; inset: 0; }
-#galaxy { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
+/* The whole protein-with-orbits cluster, centered. Tight scale —
+   takes ~58vmin so the molecular structure dominates the view. */
+.protein-system {
+  position: absolute; top: 50%; left: 50%;
+  width: 58vmin; height: 58vmin;
+  transform: translate(-50%, calc(-50% - 20px));   /* lift slightly above input card */
+  pointer-events: none;
+}
+
+/* Central protein structure (Mol*) — big, the actual subject. */
 .molstar-host {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: min(38vmin, 360px); height: min(38vmin, 360px);
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 38vmin; height: 38vmin;
+  max-width: 460px; max-height: 460px;
   border-radius: 50%; overflow: hidden;
-  box-shadow: var(--glow);
   pointer-events: auto;
-  /* Sit above galaxy canvas but allow click-through to galaxy outside circle */
-  z-index: 10;
+  box-shadow:
+    0 0 80px rgba(34,211,238,0.18),
+    0 0 160px rgba(124,58,237,0.18),
+    inset 0 0 0 1px rgba(155, 182, 234, 0.10);
+  background: radial-gradient(circle at 50% 40%, rgba(124,58,237,0.18), rgba(6,8,15,0.95) 70%);
+  z-index: 12;
+  transition: filter 400ms;
 }
-.molstar-host.empty {
-  display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at 50% 40%, rgba(124,58,237,0.35), rgba(5,7,13,0) 70%);
-  border: 1px dashed var(--border);
-}
+.molstar-host.swapping { filter: blur(6px) brightness(0.7); }
+.molstar-host.empty { display: flex; align-items: center; justify-content: center; }
 .center-hint {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  color: var(--dim); font-size: 12px; letter-spacing: 0.04em; text-align: center;
-  pointer-events: none; z-index: 11;
-  max-width: 280px;
+  color: var(--dim); font-size: 12.5px; letter-spacing: 0.04em;
+  text-align: center; padding: 0 20px; max-width: 80%;
 }
-.center-hint.hidden { opacity: 0; transition: opacity 400ms; }
+
+/* Orbits container — rotating wheel. Moons placed on the rim. */
+.orbits {
+  position: absolute; inset: 0;
+  animation: orbit-rotate 60s linear infinite;
+  transform-origin: center;
+}
+@keyframes orbit-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.orbits::before, .orbits::after {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  border: 1px dashed var(--orbit-fg);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.orbits::before { width: 76%; height: 76%; }
+.orbits::after  { width: 96%; height: 96%; }
+
+/* Each moon is a small Mol* render of one candidate. */
+.moon {
+  position: absolute; top: 50%; left: 50%;
+  width: 92px; height: 92px;
+  transform-origin: center;
+  /* angle + radius set per-moon via CSS vars */
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--angle))
+    translateY(calc(var(--radius) * -1))
+    rotate(calc(var(--angle) * -1));
+  pointer-events: auto;
+  cursor: pointer;
+}
+/* Counter-rotate the moon body so labels stay upright while parent spins */
+.moon-body {
+  width: 100%; height: 100%; position: relative;
+  animation: moon-counter 60s linear infinite;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+@keyframes moon-counter {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+.moon-canvas {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 40% 35%, rgba(155,182,234,0.18), rgba(6,8,15,0.95) 65%);
+  box-shadow: 0 0 18px rgba(34,211,238,0.18), inset 0 0 0 1px rgba(155,182,234,0.18);
+  transition: transform 200ms, box-shadow 200ms;
+}
+.moon:hover .moon-canvas {
+  transform: scale(1.12);
+  box-shadow: 0 0 28px rgba(34,211,238,0.45), inset 0 0 0 1px rgba(34,211,238,0.5);
+}
+.moon-label {
+  margin-top: 4px;
+  color: var(--muted); font-size: 10.5px; letter-spacing: 0.04em;
+  text-align: center; white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+}
 
 /* ── Input card ───────────────────────────────────────────────── */
 .glass {
@@ -102,13 +172,13 @@ a:hover { color: #fff; }
   position: absolute; left: 50%; transform: translateX(-50%);
   bottom: 24px;
   width: min(640px, calc(100vw - 32px));
-  padding: 16px;
+  padding: 14px;
   z-index: 30;
 }
 .input-row { display: flex; gap: 10px; align-items: center; }
 .input-row.controls { margin-top: 10px; flex-wrap: wrap; }
 textarea {
-  width: 100%; min-height: 70px; resize: vertical;
+  width: 100%; min-height: 60px; max-height: 140px; resize: vertical;
   background: rgba(12, 15, 23, 0.7); color: var(--text);
   border: 1px solid var(--border); border-radius: 10px;
   padding: 10px 12px;
@@ -126,40 +196,32 @@ textarea:focus { outline: none; border-color: rgba(34,211,238,0.55); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .btn.primary { background: var(--accent); color: #062028; box-shadow: 0 4px 18px rgba(34,211,238,0.35); }
 .btn.ghost   { background: transparent; color: var(--accent); border: 1px solid rgba(34,211,238,0.4); }
-.icon-btn    { cursor: pointer; }
 
 #img-preview { display: none; height: 32px; width: 32px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
 #img-preview.shown { display: inline-block; }
 
-.status {
-  font-size: 12px; color: var(--dim);
-  flex: 1; min-width: 140px; text-align: right;
-}
+.status { font-size: 12px; color: var(--dim); flex: 1; min-width: 140px; text-align: right; }
 .status.busy { color: var(--accent); }
 .status.error { color: var(--bad); }
 
 /* ── Detail panel ─────────────────────────────────────────────── */
 .detail {
   position: absolute; right: 24px; top: 80px;
-  width: min(360px, calc(100vw - 32px));
+  width: min(340px, calc(100vw - 32px));
   padding: 18px 20px 20px;
   z-index: 40;
   transform: translateX(20px); opacity: 0;
   transition: opacity 220ms, transform 220ms;
   pointer-events: none;
 }
-.detail:not([hidden]) {
-  opacity: 1; transform: translateX(0);
-  pointer-events: auto;
-}
-.detail h2 { margin: 0 0 6px; font-size: 18px; letter-spacing: -0.01em; }
+.detail:not([hidden]) { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.detail h2 { margin: 0 0 6px; font-size: 18px; }
 .detail-meta { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
-.detail-rationale { margin: 0 0 14px; font-size: 14px; line-height: 1.55; color: var(--text); }
-.detail-scores { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.detail-rationale { margin: 0 0 14px; font-size: 14px; line-height: 1.55; }
+.detail-scores { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .detail-scores .pill {
   background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.3);
   border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--accent);
-  letter-spacing: 0.02em;
 }
 .detail-scores .pill.warm { background: rgba(255,162,118,0.08); border-color: rgba(255,162,118,0.32); color: var(--warm); }
 .detail-notes { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
@@ -185,6 +247,9 @@ textarea:focus { outline: none; border-color: rgba(34,211,238,0.55); }
 
 @media (max-width: 640px) {
   .brand-sub { display: none; }
-  .detail { top: auto; bottom: 200px; right: 16px; left: 16px; width: auto; }
-  .molstar-host { width: 50vmin; height: 50vmin; }
+  .protein-system { width: 80vmin; height: 80vmin; }
+  .molstar-host { width: 48vmin; height: 48vmin; }
+  .moon { width: 70px; height: 70px; }
+  .moon-canvas { width: 60px; height: 60px; }
+  .detail { top: auto; bottom: 170px; right: 16px; left: 16px; width: auto; }
 }
