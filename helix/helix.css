@@ -200,85 +200,38 @@ a:hover { color: #fff; }
 .system-name { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; flex: 1; }
 .system-uniprot { font-size: 11px; color: var(--dim); }
 
-/* Central protein structure (the star) — square container so Mol*
-   shows the protein's NATURAL 3D shape (ribbons, helices, sheets),
-   not clipped into a circle. The glow stays radial. */
+/* Central protein structure — Mol* mounts here. Sized to fill most
+   of the card. Transparent Mol* canvas (set in app.mjs) lets the
+   radial gradient on this container bleed through, so the render
+   reads as part of the Meridian aesthetic. Mol* itself renders
+   cartoon protein + ligand ball-and-stick; zoom in to see atoms. */
 .system-center {
   position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 240px; height: 240px;
+  transform: translate(-50%, calc(-50% - 18px));
+  width: 84%; aspect-ratio: 1 / 1;
   border-radius: 14px;
   overflow: hidden;
-  /* radial glow lives outside the box via filter, not inset bg */
-  filter: drop-shadow(0 0 30px rgba(34,211,238,0.22)) drop-shadow(0 0 60px rgba(124,58,237,0.15));
+  background:
+    radial-gradient(circle at 50% 40%, rgba(124,58,237,0.30), rgba(34,211,238,0.05) 55%, rgba(6,8,15,0) 80%),
+    radial-gradient(ellipse at 50% 60%, rgba(167,139,250,0.10), transparent 75%);
+  box-shadow:
+    0 0 40px rgba(124,58,237,0.20),
+    0 0 80px rgba(34,211,238,0.10),
+    inset 0 0 0 1px rgba(167,139,250,0.16);
   z-index: 3;
 }
 .system-center.empty {
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; color: var(--dim); text-align: center; padding: 0 20px;
-  background: radial-gradient(circle at 50% 40%, rgba(124,58,237,0.18), rgba(6,8,15,0.85) 70%);
 }
-
-/* Orbital ring containing compound molecules */
-.system-orbits {
-  position: absolute; top: 50%; left: 50%;
-  width: 100%; height: 100%;
-  transform: translate(-50%, -50%);
-  animation: orbit-spin 40s linear infinite;
-  z-index: 2;
-  pointer-events: none;
-}
-.system-orbits::before {
-  content: ''; position: absolute; top: 50%; left: 50%;
-  width: 80%; height: 80%;
-  border: 1px dashed var(--orbit-fg); border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-@keyframes orbit-spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to   { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* A compound molecule orbiting. `--angle` + `--radius` per-instance */
-.compound {
-  position: absolute; top: 50%; left: 50%;
-  width: 54px; height: 54px;
-  transform-origin: center;
-  transform:
-    translate(-50%, -50%)
-    rotate(var(--angle))
-    translateY(calc(var(--radius) * -1))
-    rotate(calc(var(--angle) * -1));
-  pointer-events: auto;
-}
-.compound-body {
-  width: 100%; height: 100%;
-  animation: compound-counter 40s linear infinite;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 2px;
-}
-@keyframes compound-counter {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(-360deg); }
-}
-/* The compound icon is now a 2D canvas where we draw the real
-   ball-and-stick: atoms as shaded spheres, bonds as lines, Z-sorted
-   for depth. No WebGL — saves contexts so Mol* can keep rendering
-   the proteins. */
-.compound-icon {
-  width: 56px; height: 56px;
-  display: flex; align-items: center; justify-content: center;
-  filter: drop-shadow(0 0 8px rgba(34,211,238,0.25));
-}
-.compound-icon canvas {
-  width: 100%; height: 100%;
-  image-rendering: -webkit-optimize-contrast;
-}
-.compound-label {
-  font-size: 9.5px; color: var(--muted);
-  letter-spacing: 0.04em; white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+/* Mol*'s viewport canvas lives inside .system-center. Keep its CSS
+   bg transparent so our gradient is the visible background; the
+   Mol* setProps call sets renderer transparency on the WebGL side. */
+.system-center .msp-plugin,
+.system-center .msp-plugin-content,
+.system-center .msp-viewport,
+.system-center canvas {
+  background: transparent !important;
 }
 
 /* Footer with scores + rationale snippet */
