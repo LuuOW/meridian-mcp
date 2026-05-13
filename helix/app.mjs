@@ -140,55 +140,95 @@ async function mountProteinViewer(host, pdbId, onSelect) {
   } catch (e) { /* non-fatal */ }
   await viewer.loadStructureFromData(pdbText, 'pdb')
 
-  // Click-to-inspect: subscribe to the plugin's interaction stream and
-  // unpack whatever's under the cursor.
+  // Click-to-inspect: try multiple subscription paths because the UMD
+  // bundle's interaction stream lives at different keys across Mol*
+  // versions. Whichever fires, we extract via describeLoci.
   if (onSelect) {
-    try {
-      viewer.plugin.behaviors.interaction.click.subscribe(evt => {
-        const info = describeLoci(evt?.current?.loci)
-        if (info) onSelect(info)
-      })
-    } catch (e) {
-      console.warn('click subscribe failed:', e?.message || e)
+    const handler = (evt) => {
+      const loci = evt?.current?.loci ?? evt?.loci ?? evt
+      const info = describeLoci(loci)
+      if (info) onSelect(info)
+    }
+    const tryPaths = [
+      () => viewer.plugin.behaviors?.interaction?.click,
+      () => viewer.plugin.behaviors?.interaction?.selectionMode,
+      () => viewer.plugin.canvas3d?.input?.click,
+      () => viewer.plugin.managers?.interactivity?.click,
+    ]
+    for (const get of tryPaths) {
+      try {
+        const stream = get()
+        if (stream?.subscribe) {
+          stream.subscribe(handler)
+          console.debug('[helix] click stream subscribed via', get.toString())
+          break
+        }
+      } catch {}
     }
   }
 }
 
 // Extract a residue/atom description from a Mol* Loci. The UMD bundle
-// exposes the internal model classes under window.molstar, but the
-// surface isn't stable across versions — every property access is
-// guarded so a layout change downgrades to "selected" rather than
-// crashing.
+// doesn't expose StructureElement / StructureProperties on its
+// namespace, so we walk the loci's `elements` array directly. The
+// shape is documented at https://molstar.org/docs as
+// { kind, structure, elements: [{ unit, indices }] }.
 function describeLoci(loci) {
-  if (!loci) return null
-  const M = window.molstar
-  const SEL = M?.StructureElement
+  if (!loci) {
+    console.debug('[helix] click loci: null')
+    return null
+  }
+  if (loci.kind === 'empty-loci') return null
+
   try {
-    if (!SEL?.Loci?.is?.(loci))         return null
-    if (SEL.Loci.isEmpty(loci))         return null
-    const loc = SEL.Loci.getFirstLocation
-      ? SEL.Loci.getFirstLocation(loci)
-      : null
-    if (!loc?.unit) return null
+    const els = loci.elements
+    if (!Array.isArray(els) || !els.length) {
+      console.debug('[helix] click loci: no elements', loci.kind, Object.keys(loci))
+      return null
+    }
+    const el = els[0]
+    const unit = el.unit
+    if (!unit?.model?.atomicHierarchy) {
+      console.debug('[helix] click loci: no atomicHierarchy on unit')
+      return null
+    }
 
-    const e = loc.element
-    const m = loc.unit.model?.atomicHierarchy
-    if (!m) return null
+    // The "indices" field is a Mol* SortedRanges/OrderedSet; the
+    // public getter is .elements[0] in current versions.
+    let atomIdx = null
+    const idx = el.indices
+    if (idx) {
+      if (Array.isArray(idx?.elements)) atomIdx = idx.elements[0]
+      else if (typeof idx.first === 'number') atomIdx = idx.first
+      else if (typeof idx.offset === 'number') atomIdx = idx.offset
+      else if (typeof idx[0] === 'number') atomIdx = idx[0]
+    }
+    // Last-ditch: pick the first atom of the unit.
+    if (atomIdx == null && unit.elements) {
+      atomIdx = Array.isArray(unit.elements) ? unit.elements[0] : unit.elements[0]
+    }
+    if (atomIdx == null) {
+      console.debug('[helix] click loci: no atom index resolved')
+      return null
+    }
 
+    const m = unit.model.atomicHierarchy
     const safe = (fn) => { try { return fn() } catch { return undefined } }
-    const compId   = safe(() => m.atoms.label_comp_id.value(e))
-    const atomName = safe(() => m.atoms.label_atom_id.value(e))
-    const element  = safe(() => m.atoms.type_symbol.value(e))
-    const residueIdx = safe(() => m.residueAtomSegments.index[e])
+
+    const compId   = safe(() => m.atoms.label_comp_id.value(atomIdx))
+    const atomName = safe(() => m.atoms.label_atom_id.value(atomIdx))
+    const element  = safe(() => m.atoms.type_symbol.value(atomIdx))
+    const residueIdx = safe(() => m.residueAtomSegments.index[atomIdx])
     const seqId    = residueIdx != null ? safe(() => m.residues.label_seq_id.value(residueIdx)) : undefined
-    const chainIdx = safe(() => m.chainAtomSegments.index[e])
+    const chainIdx = safe(() => m.chainAtomSegments.index[atomIdx])
     const asymId   = chainIdx != null ? safe(() => m.chains.label_asym_id.value(chainIdx)) : undefined
 
+    console.debug('[helix] click extracted:', { compId, atomName, element, seqId, asymId })
     if (!compId) return null
     const kind = STANDARD_AA.has(String(compId).toUpperCase()) ? 'residue' : 'ligand'
     return { kind, compId, atomName, element, seqId, asymId }
   } catch (e) {
-    console.warn('describeLoci:', e?.message || e)
+    console.warn('[helix] describeLoci failed:', e?.message || e, e?.stack)
     return null
   }
 }
