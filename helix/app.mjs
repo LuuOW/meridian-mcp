@@ -11,43 +11,27 @@
 // for ranking + rationale, then orbitalClassify() positions each
 // protein with the project's canonical physics signature.
 
-import { drawCompound } from './molecules.mjs'
+import { drawCompound, parseHETsFromPdb, labelFor } from './molecules.mjs'
 
 const API_BASE   = 'https://mcp.ask-meridian.uk'
 const TIMEOUT_MS = 60_000
 
-// PDB ids + the meaningful HET codes present in each structure.
-// HET codes are the 3-letter chemical-component IDs PDB uses for any
-// non-standard residue: ligands, cofactors, ions, glycans. I've
-// dropped crystallization artifacts (SO4 sulfate, CL chloride from
-// buffer, EDO, GOL etc.) so only biologically-meaningful compounds
-// show in orbit. Empty array = no notable HETs in the structure.
+// PDB ids per UniProt. Compounds are auto-extracted from each PDB at
+// render time — no hardcoded `compounds:` field anymore. Whatever
+// HETATM records are in the structure (minus crystallization noise)
+// show up as orbiting molecules.
 const SEED_PROTEINS = [
-  { uniprot: 'P01133', pdb: '1JL9', name: 'EGF',         compounds: [],                use: 'corneal abrasion, skin re-epithelialization', aa_len: 53,   notes: 'small, stable, FDA-approved as recombinant' },
-  { uniprot: 'P21583', pdb: '1QQK', name: 'KGF/FGF-7',   compounds: [],                use: 'skin burn, mucositis',                         aa_len: 194,  notes: 'palifermin is approved biologic' },
-  { uniprot: 'P09038', pdb: '1BFF', name: 'bFGF/FGF-2',  compounds: [],                use: 'skin wound, angiogenesis',                     aa_len: 288,  notes: 'trafermin is approved in Japan' },
-  { uniprot: 'P02788', pdb: '1LFG', name: 'Lactoferrin', compounds: ['FE', 'CO3'],     use: 'ocular dryness, antimicrobial',                aa_len: 710,  notes: 'OTC topical in some markets' },
-  { uniprot: 'Q6UWN8', pdb: '4WTI', name: 'Lubricin',    compounds: ['NAG'],           use: 'corneal lubrication',                          aa_len: 1404, notes: 'recombinant in clinical trials for dry eye' },
-  { uniprot: 'P01308', pdb: '3I40', name: 'Insulin',     compounds: ['ZN'],            use: 'corneal nerve regeneration (off-label)',       aa_len: 110,  notes: 'small, stable' },
-  { uniprot: 'P05230', pdb: '1AFC', name: 'aFGF/FGF-1',  compounds: [],                use: 'wound healing, neural regeneration',           aa_len: 155,  notes: 'recombinant in trials' },
-  { uniprot: 'P14210', pdb: '1NK1', name: 'HGF',         compounds: ['NAG', 'BMA'],    use: 'corneal endothelial regen',                    aa_len: 728,  notes: 'large, delivery challenging' },
-  { uniprot: 'P10145', pdb: '5D14', name: 'IL-8',        compounds: [],                use: 'modulates neutrophil response — NOT therapeutic alone', aa_len: 99, notes: 'included as negative control' },
-  { uniprot: 'P01023', pdb: '1BV8', name: 'Alpha-2-M',   compounds: ['ZN', 'CIT'],     use: 'protease inhibitor, anti-inflammatory',        aa_len: 1474, notes: 'large; topical delivery hard' },
+  { uniprot: 'P01133', pdb: '1JL9', name: 'EGF',         use: 'corneal abrasion, skin re-epithelialization', aa_len: 53,   notes: 'small, stable, FDA-approved as recombinant' },
+  { uniprot: 'P21583', pdb: '1QQK', name: 'KGF/FGF-7',   use: 'skin burn, mucositis',                         aa_len: 194,  notes: 'palifermin is approved biologic' },
+  { uniprot: 'P09038', pdb: '1BFF', name: 'bFGF/FGF-2',  use: 'skin wound, angiogenesis',                     aa_len: 288,  notes: 'trafermin is approved in Japan' },
+  { uniprot: 'P02788', pdb: '1LFG', name: 'Lactoferrin', use: 'ocular dryness, antimicrobial',                aa_len: 710,  notes: 'OTC topical in some markets' },
+  { uniprot: 'Q6UWN8', pdb: '4WTI', name: 'Lubricin',    use: 'corneal lubrication',                          aa_len: 1404, notes: 'recombinant in clinical trials for dry eye' },
+  { uniprot: 'P01308', pdb: '3I40', name: 'Insulin',     use: 'corneal nerve regeneration (off-label)',       aa_len: 110,  notes: 'small, stable' },
+  { uniprot: 'P05230', pdb: '1AFC', name: 'aFGF/FGF-1',  use: 'wound healing, neural regeneration',           aa_len: 155,  notes: 'recombinant in trials' },
+  { uniprot: 'P14210', pdb: '1NK1', name: 'HGF',         use: 'corneal endothelial regen',                    aa_len: 728,  notes: 'large, delivery challenging' },
+  { uniprot: 'P10145', pdb: '5D14', name: 'IL-8',        use: 'modulates neutrophil response — NOT therapeutic alone', aa_len: 99, notes: 'included as negative control' },
+  { uniprot: 'P01023', pdb: '1BV8', name: 'Alpha-2-M',   use: 'protease inhibitor, anti-inflammatory',        aa_len: 1474, notes: 'large; topical delivery hard' },
 ]
-
-// Friendly labels per HET code. Falls back to the code itself if missing.
-const COMPOUND_LABELS = {
-  FE:  'iron',
-  ZN:  'zinc',
-  CO3: 'carbonate',
-  NAG: 'NAG (glycan)',
-  BMA: 'mannose',
-  CIT: 'citrate',
-  HOH: 'water',
-}
-// Single-atom ions render as a labeled disc instead of fetching the
-// (trivial) SVG. Looks cleaner at small sizes.
-const ATOM_GLYPHS = { FE: 'Fe', ZN: 'Zn', CA: 'Ca', MG: 'Mg', MN: 'Mn', CU: 'Cu', NA: 'Na', K: 'K' }
 
 // ── DOM
 const $ = id => document.getElementById(id)
@@ -87,9 +71,9 @@ async function loadMolstarMod() {
   return MolstarMod
 }
 
-async function mountSystemMolstar(host, pdbId) {
+async function makePluginAt(host) {
   const m = await loadMolstarMod()
-  const plugin = await m.createPluginUI({
+  return m.createPluginUI({
     target: host,
     spec: {
       ...m.DefaultPluginUISpec(),
@@ -108,12 +92,19 @@ async function mountSystemMolstar(host, pdbId) {
     },
     render: m.renderReact18,
   })
+}
+
+// Fetch PDB text once and hand it to BOTH Mol* (for the protein render)
+// and our HET parser (for compound coordinates). One network round-trip,
+// shared parsing. Returns the parsed compound list.
+async function loadProteinAndExtractHETs(host, pdbId) {
+  const pdbText = await (await fetch(`https://files.rcsb.org/download/${pdbId}.pdb`)).text()
+  const plugin = await makePluginAt(host)
   systemPlugins.set(pdbId, plugin)
-  const url = `https://files.rcsb.org/download/${pdbId}.pdb`
-  const data = await plugin.builders.data.download({ url, isBinary: false }, { state: { isGhost: true } })
+  const data = await plugin.builders.data.rawData({ data: pdbText, label: pdbId }, { state: { isGhost: true } })
   const traj = await plugin.builders.structure.parseTrajectory(data, 'pdb')
   await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
-  return plugin
+  return parseHETsFromPdb(pdbText)
 }
 
 // ── Render a single star system card
@@ -147,42 +138,40 @@ function renderSystem(c, rank) {
   card.addEventListener('click', () => showDetail(c))
   universe.appendChild(card)
 
-  // Render compound orbits
   const orbitsEl = card.querySelector('.system-orbits')
-  const compounds = c.compounds || []
-  compounds.forEach((code, i) => {
-    const angle = (360 / Math.max(compounds.length, 1)) * i
-    const el = document.createElement('div')
-    el.className = 'compound'
-    el.style.setProperty('--angle',  `${angle}deg`)
-    el.style.setProperty('--radius', '130px')
-    el.title = COMPOUND_LABELS[code] || code
+  const centerEl = card.querySelector('.system-center')
 
-    // 2D canvas ball-and-stick from helix/molecules.mjs — atoms as
-    // shaded spheres, bonds as lines. No WebGL contexts (those are
-    // saved for the 5 protein Mol* renderers).
-    const iconHtml = `<div class="compound-icon"><canvas width="56" height="56"></canvas></div>`
+  if (!c.pdb) return
 
-    el.innerHTML = `
-      <div class="compound-body">
-        ${iconHtml}
-        <div class="compound-label">${escapeHtml(COMPOUND_LABELS[code] || code)}</div>
-      </div>
-    `
-    orbitsEl.appendChild(el)
-    const canvas = el.querySelector('canvas')
-    if (canvas) drawCompound(canvas, code)
-  })
-
-  // Lazy-mount Mol* for the central protein
-  if (c.pdb) {
-    const centerEl = card.querySelector('.system-center')
-    mountSystemMolstar(centerEl, c.pdb).catch(e => {
+  // Fetch the PDB once, render the protein, extract HETs, then place
+  // the orbiting compounds. Each compound's atom coords come from the
+  // same PDB Mol* is showing — so what you see in orbit is literally
+  // what's bound to the protein in the experimental structure.
+  loadProteinAndExtractHETs(centerEl, c.pdb)
+    .then(compounds => {
+      compounds.forEach((mol, i) => {
+        const angle = (360 / Math.max(compounds.length, 1)) * i
+        const el = document.createElement('div')
+        el.className = 'compound'
+        el.style.setProperty('--angle',  `${angle}deg`)
+        el.style.setProperty('--radius', '130px')
+        el.title = mol.label
+        el.innerHTML = `
+          <div class="compound-body">
+            <div class="compound-icon"><canvas width="56" height="56"></canvas></div>
+            <div class="compound-label">${escapeHtml(mol.label)}</div>
+          </div>
+        `
+        orbitsEl.appendChild(el)
+        const canvas = el.querySelector('canvas')
+        if (canvas) drawCompound(canvas, mol)
+      })
+    })
+    .catch(e => {
       console.warn('mol*', c.pdb, 'failed:', e?.message || e)
       centerEl.classList.add('empty')
       centerEl.textContent = `PDB ${c.pdb} failed`
     })
-  }
 }
 
 function clearUniverse() {
@@ -211,7 +200,7 @@ async function recommend() {
 
     const cands = (json.candidates || []).slice(0, 5).map(c => {
       const seed = SEED_PROTEINS.find(s => s.uniprot === (c.uniprot || c.slug)) || {}
-      return { ...seed, ...c, slug: c.slug || c.uniprot, pdb: seed.pdb, compounds: seed.compounds || [] }
+      return { ...seed, ...c, slug: c.slug || c.uniprot, pdb: seed.pdb }
     })
     lastCandidates = cands
     if (!cands.length) {
@@ -276,7 +265,7 @@ runBtn.addEventListener('click', () => { clearTimeout(debounceTimer); recommend(
 // ── Detail panel
 function showDetail(c) {
   $('detailTitle').textContent = `${c.name} · ${c.uniprot || c.slug}`
-  $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'} · compounds: ${(c.compounds || []).join(', ') || 'none'}`
+  $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'}`
   $('detailRationale').textContent = c.rationale || c.description || ''
 
   const scores = $('detailScores'); scores.innerHTML = ''
