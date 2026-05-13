@@ -43,8 +43,7 @@ const burgerBtn = $('burgerBtn'), navMenu = $('navMenu')
 
 let lastResult = null
 let lastCandidates = []
-let MolstarMod = null
-const systemPlugins = new Map()   // pdb → Mol* plugin
+const systemViewers = new Map()   // pdb → Mol* Viewer
 
 // ── Burger menu (mirrors landing/nav.js initBurgerNav)
 function initBurger() {
@@ -71,52 +70,44 @@ function initBurger() {
 }
 initBurger()
 
-// ── Mol* lazy bootstrap
-async function loadMolstarMod() {
-  if (MolstarMod) return MolstarMod
-  MolstarMod = await import('https://cdn.jsdelivr.net/npm/molstar@4.7.0/+esm')
-  return MolstarMod
-}
-
-async function makePluginAt(host) {
-  const m = await loadMolstarMod()
-  return m.createPluginUI({
-    target: host,
-    spec: {
-      ...m.DefaultPluginUISpec(),
-      layout: {
-        initial: {
-          isExpanded: false,
-          showControls: false,
-          regionState: { left: 'hidden', right: 'hidden', top: 'hidden', bottom: 'hidden' },
-        },
-      },
-      config: [
-        [m.PluginConfig.Viewport.ShowControls, false],
-        [m.PluginConfig.Viewport.ShowSelectionMode, false],
-        [m.PluginConfig.Viewport.ShowExpand, false],
-      ],
-    },
-    render: m.renderReact18,
+// Wait for window.molstar to land — the UMD bundle attaches on
+// DOMContentLoaded. Promise resolves the moment it's available.
+function molstarReady() {
+  return new Promise((resolve, reject) => {
+    if (window.molstar?.Viewer) return resolve(window.molstar)
+    let tries = 0
+    const t = setInterval(() => {
+      tries++
+      if (window.molstar?.Viewer) { clearInterval(t); resolve(window.molstar) }
+      else if (tries > 80) { clearInterval(t); reject(new Error('molstar bundle did not load')) }
+    }, 50)
   })
 }
 
 // Fetch PDB text once and hand it to BOTH Mol* (for the protein render)
 // and our HET parser (for compound coordinates). One network round-trip,
-// shared parsing.
-//
-// We keep applyPreset('default') because the manual polymer-only chain
-// (tryCreateComponentStatic + addRepresentation) silently produces an
-// empty viewport in Mol* 4.7. The default preset triggers some
-// auxiliary CCD lookups that 404 on a few HET codes — those errors are
-// cosmetic console noise and don't affect the protein render.
+// shared parsing. Uses the prebuilt window.molstar.Viewer API — the
+// npm package's createPluginUI path requires a bundler we don't have.
 async function loadProteinAndExtractHETs(host, pdbId) {
-  const pdbText = await (await fetch(`https://files.rcsb.org/download/${pdbId}.pdb`)).text()
-  const plugin = await makePluginAt(host)
-  systemPlugins.set(pdbId, plugin)
-  const data = await plugin.builders.data.rawData({ data: pdbText, label: pdbId }, { state: { isGhost: true } })
-  const traj = await plugin.builders.structure.parseTrajectory(data, 'pdb')
-  await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
+  const [pdbText, mol] = await Promise.all([
+    fetch(`https://files.rcsb.org/download/${pdbId}.pdb`).then(r => r.text()),
+    molstarReady(),
+  ])
+  const viewer = await mol.Viewer.create(host, {
+    layoutIsExpanded:       false,
+    layoutShowControls:     false,
+    layoutShowRemoteState:  false,
+    layoutShowSequence:     false,
+    layoutShowLog:          false,
+    layoutShowLeftPanel:    false,
+    viewportShowExpand:     false,
+    viewportShowSelectionMode: false,
+    viewportShowAnimation:  false,
+    pdbProvider:            'rcsb',
+    emdbProvider:           'rcsb',
+  })
+  systemViewers.set(pdbId, viewer)
+  await viewer.loadStructureFromData(pdbText, 'pdb')
   return parseHETsFromPdb(pdbText)
 }
 
@@ -188,12 +179,12 @@ function renderSystem(c, rank) {
 }
 
 function clearUniverse() {
-  // Tear down existing Mol* plugins before wiping the DOM, otherwise
+  // Tear down existing Mol* viewers before wiping the DOM, otherwise
   // we leak WebGL contexts. 5+ stale contexts → browser drops the page.
-  for (const [, plugin] of systemPlugins) {
-    try { plugin.dispose() } catch {}
+  for (const [, viewer] of systemViewers) {
+    try { viewer.dispose ? viewer.dispose() : viewer.plugin?.dispose?.() } catch {}
   }
-  systemPlugins.clear()
+  systemViewers.clear()
   universe.innerHTML = ''
 }
 
