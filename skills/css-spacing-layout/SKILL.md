@@ -228,3 +228,7 @@ This makes padding and border included in width/height calculations — essentia
 - Use logical properties (`padding-inline`, `margin-block`) for i18n compatibility
 - Explain spacing decisions briefly when non-obvious
 - Flag any margin collapsing risks in reviewed code
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #36._
