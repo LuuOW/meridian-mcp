@@ -122,3 +122,7 @@ Avoid:
 - [ ] Avoided large-model use where a smaller model is sufficient
 - [ ] Measured or estimated throughput per watt / per dollar when comparing options
 - [ ] Escalated to a higher-energy route only when correctness, risk, or ambiguity justifies it
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #95._
