@@ -368,3 +368,7 @@ class AppError(BaseModel):
 - [ ] Error codes defined as an enum — imported everywhere, not duplicated
 - [ ] Pact contracts committed to a broker — provider CI verifies them on each deploy
 - [ ] No copy-paste of schema shapes between services
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #83._
