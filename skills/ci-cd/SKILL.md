@@ -305,3 +305,7 @@ exit 1
 - [ ] Migrations run before app container starts
 - [ ] Deploy key is Ed25519 and scoped to one repo / one VPS
 - [ ] `pm2 reload` (not `restart`) for zero-downtime restarts
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #31._
