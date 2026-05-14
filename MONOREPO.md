@@ -17,20 +17,18 @@ in one place.
 | `helio-mirror/` | HF Dataset `luuow/meridian-helio-mirror` | workflow_dispatch in `.github/workflows/` |
 | `scripts/sync-nav.py` | — | run before landing deploy to DRY the nav across pages |
 
-## photon-route caveat
+## photon-route — automated mirror
 
-The Hugging Face Space at `huggingface.co/spaces/luuow/photon-route` is
-linked to `github.com/LuuOW/photon-route` for git-based sync. HF Spaces
-don't natively sync from a *subdirectory* of a different repo, so until
-that integration is reworked the photon-route content here is a copy
-maintained in-tree for nav consistency. Deploys still need to happen
-from the standalone `LuuOW/photon-route` repo. Options to revisit:
+`photon-route/` is the canonical source. On every push to `main` that
+touches `photon-route/**`, `.github/workflows/sync-photon-route.yml`
+runs `git subtree split` and force-pushes the result to
+`LuuOW/photon-route` main. The HF Space at
+`huggingface.co/spaces/luuow/photon-route` continues syncing from
+that standalone repo unchanged — it's now a derived artifact and
+nobody edits it directly.
 
-1. Add a GH Action in this repo that pushes `photon-route/` to a sync
-   branch on the standalone repo when it changes.
-2. Restructure the HF Space to use Spaces-native git sync from its
-   own HF-side repo and treat this monorepo subdir as the canonical
-   source via a deploy script.
+Required secret: `PHOTON_SYNC_PAT` (GH PAT with push access to
+`LuuOW/photon-route`).
 
 ## Archived standalone repos
 
@@ -40,5 +38,6 @@ Now living entirely in this monorepo (archived on GitHub):
 - `LuuOW/finance-mcp` → `meridian-mcp/finance-mcp/`
 - `LuuOW/pharmacy-mcp` → `meridian-mcp/pharmacy-mcp/`
 
-`LuuOW/photon-route` stays unarchived until the HF Space sync is
-reworked.
+`LuuOW/photon-route` stays unarchived because the HF Space pulls
+from it, but the workflow above keeps it auto-synced from the
+monorepo subdir.
