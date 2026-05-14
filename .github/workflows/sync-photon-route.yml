@@ -1,0 +1,41 @@
+name: Sync photon-route subdir → standalone repo
+
+# When the monorepo's photon-route/ changes, force-push that subtree
+# as the main branch of LuuOW/photon-route. The standalone repo is
+# the source HF Space pulls from; it's now a derived artifact of
+# this monorepo. Edit photon-route/ here only.
+
+on:
+  push:
+    branches: [main]
+    paths: ['photon-route/**']
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # subtree split needs full history
+
+      - name: Split photon-route subtree and push to standalone
+        env:
+          PAT: ${{ secrets.PHOTON_SYNC_PAT }}
+        run: |
+          if [ -z "$PAT" ]; then
+            echo "::error::PHOTON_SYNC_PAT secret missing"
+            exit 1
+          fi
+          git config user.email "monorepo-sync@meridian-mcp"
+          git config user.name  "meridian-mcp monorepo sync"
+
+          # Create a synthetic branch containing only photon-route/ history
+          git subtree split --prefix=photon-route -b photon-deploy
+
+          # Force-push as the standalone repo's main. The standalone is
+          # rewritten on every sync; its history mirrors monorepo's
+          # subtree split, not the original.
+          git push --force \
+            "https://x-access-token:${PAT}@github.com/LuuOW/photon-route.git" \
+            photon-deploy:main
