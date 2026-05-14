@@ -517,6 +517,15 @@ async function handleHelixExplain(request, env) {
     return jsonResponse({ error: 'protein_name and selection.compId required' }, { status: 400 })
   }
 
+  // Cache key is deterministic across users for the same selection — the
+  // upstream prompt depends only on these fields. Reuses the MCP_OAUTH KV
+  // namespace with a `helix-explain:` prefix so no new binding is needed.
+  const cacheKey = `helix-explain:${uniprot}:${pdb}:${sel.kind || ''}:${sel.asymId || ''}:${sel.seqId || ''}:${sel.compId}`
+  if (env.MCP_OAUTH) {
+    const cached = await env.MCP_OAUTH.get(cacheKey, 'json')
+    if (cached?.description) return jsonResponse({ ...cached, cached: true })
+  }
+
   const selDesc = [
     sel.kind === 'ligand' ? 'Ligand/cofactor' : 'Residue',
     sel.compId,
@@ -558,6 +567,9 @@ What does this specific selection do in this protein?`
     const j = await res.json().catch(() => ({}))
     if (!res.ok) return jsonResponse({ error: j.error?.message || `HTTP ${res.status}` }, { status: 502 })
     const description = (j.choices?.[0]?.message?.content || '').trim()
+    if (env.MCP_OAUTH && description) {
+      await env.MCP_OAUTH.put(cacheKey, JSON.stringify({ description, model }), { expirationTtl: 2592000 })
+    }
     return jsonResponse({ description, model })
   } catch (e) {
     return jsonResponse({ error: e.name === 'AbortError' ? 'timeout' : (e.message || String(e)) }, { status: 502 })

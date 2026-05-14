@@ -69,6 +69,10 @@ jobs:
         run: npm run test:ui
         env:
           CI: 'true'
+          # Only the daily cron and manual dispatch are allowed to burn GH Models
+          # quota. workflow_run (every Pages deploy) skips the live-LLM tests so
+          # pushes don't drain /v1/helix capacity needed by users + atom-clicks.
+          LIVE_LLM: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '1' || '' }}
 
       - name: Upload Playwright report on failure
         if: failure()
