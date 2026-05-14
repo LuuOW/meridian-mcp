@@ -285,3 +285,7 @@ async def _execute_tool(self, tool, block) -> ToolResult:
 - [ ] `record_tool_call` before execution — captures intent even if the tool crashes
 - [ ] API key never appears in `messages` array — stays in `RunContext` only
 - [ ] `pm2 stop <agent>` confirmed before editing `.env` — no live calls during changes
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #19._
