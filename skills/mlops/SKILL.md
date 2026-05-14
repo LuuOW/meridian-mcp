@@ -70,3 +70,7 @@ Define pipelines with the KFP SDK v2 (`kfp.dsl`). Components are containerized f
 Use `KubernetesPodOperator` for GPU training tasks — avoids Airflow worker resource contention. Pass model registry URIs via XCom (keep XComs small — only metadata, not tensors). `ExternalTaskSensor` for cross-DAG dependencies (e.g., feature materialization DAG must complete before training DAG starts). Use `params` + `trigger_dagrun` for parameterized retraining triggered by drift alerts. Set `on_failure_callback` to post to PagerDuty/Slack and tag the MLflow run as failed for traceability.
 
 Gotcha: Airflow retries will re-run training tasks, which can waste GPU hours. Use `retries=0` on expensive compute tasks and `retries=3` only on lightweight I/O tasks like data validation sensors.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #65._
