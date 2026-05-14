@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server — Meridian Blog</title>
+<meta name="description" content="We tried to run a 1.1 GB vision model in the user's browser. Most users have 16 GB of RAM and four other tabs. Here's what worked (Mol* 3D protein rendering, SmolVLM in VR), what broke (Moondream2 as default, the Cache API on Safari), and the rule we use now to decide what runs where.">
+<meta property="og:title" content="Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server">
+<meta property="og:description" content="WebGPU vision models, OPFS caching, Mol* rendering, and the pivot to server-side inference — with the commits.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260514a">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
+
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item nav-apps" data-dropdown>
+      <button type="button" class="nav-inline-link nav-apps-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="appsMenu">
+        Apps <span class="caret" aria-hidden="true">▾</span>
+      </button>
+      <div id="appsMenu" class="nav-apps-menu" role="menu">
+        <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      </div>
+    </li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
+  </ul>
+
+  <button type="button" id="cmdkBtn" class="cmdk-trigger" aria-label="Open search palette">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="cmdk-label">Search</span>
+    <kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+
+  <a href="https://github.com/LuuOW/meridian-mcp" class="nav-gh-link" aria-label="View on GitHub" target="_blank" rel="noopener">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Apps</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+
+  <div id="cmdk" class="cmdk" hidden aria-modal="true" role="dialog" aria-label="Search">
+    <div class="cmdk-backdrop" data-cmdk-close></div>
+    <div class="cmdk-panel">
+      <div class="cmdk-input-row">
+        <svg aria-hidden="true" class="cmdk-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="cmdkInput" class="cmdk-input" type="search" placeholder="Search apps, docs, blog…" autocomplete="off" spellcheck="false" aria-label="Search">
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <ul id="cmdkList" class="cmdk-list" role="listbox"></ul>
+      <div class="cmdk-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
+    </div>
+  </div>
+
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛︎"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}];</script>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-14 · 8 min read · new</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server
+    </h1>
+
+    <p class="lead" style="font-size: 17px; color: var(--text-muted);">
+      We tried to run a 1.1&nbsp;GB vision-language model in the user's browser. Most users have 16&nbsp;GB of RAM and four other tabs. This is what worked (Mol* protein rendering, SmolVLM in VR), what broke (Moondream2 as the default, the Cache API on Safari), and the rule we use now to decide what runs where.
+    </p>
+
+    <h2>The pitch</h2>
+
+    <p>
+      In-browser inference is supposed to be the obvious win: zero per-call cost, no server quota to throttle, frames never leave the device, latency at the speed of <code>navigator.gpu</code>. <a href="https://huggingface.co/docs/transformers.js">Transformers.js v3</a> made it real for vision-language models, WebGPU lifted us off the WASM floor, and the Hugging Face CDN gave us the weights for free. We started building like we'd never need a server again.
+    </p>
+
+    <p>
+      Two apps proved it could work:
+    </p>
+
+    <ul>
+      <li><strong>vision-lab</strong> — a browser app that does VQA on the user's camera. Default model: <code>Moondream2</code> (1.1&nbsp;GB). Fallback: <code>SmolVLM-500M</code>. Both shipped via <code>@huggingface/transformers@3.7.5</code>, both running on WebGPU when available, WASM when not.</li>
+      <li><strong>helix</strong> — therapeutic-protein recommender. Top candidates are rendered as their own real 3D star systems using <a href="https://molstar.org">Mol*</a>: protein cartoon at the center, ligands and cofactors as ball-and-stick atoms. Clicking an atom inspects its residue in a side panel — a real PDB query, not a stylised icon.</li>
+    </ul>
+
+    <p>
+      Then we found the ceiling.
+    </p>
+
+    <h2>The ceiling: 1.1 GB on disk is not 1.1 GB in memory</h2>
+
+    <p>
+      The Moondream2 weight file is 1.1&nbsp;GB. The actual working set after the loader does its job — decompress, tokenizer init, copy to GPU buffers, KV cache pre-allocation — sits at roughly <strong>3–4×</strong> the on-disk size. On a 16&nbsp;GB MacBook with VS Code, Slack, four Chrome tabs, and Spotify already resident, the first inference run reliably crashed the tab.
+    </p>
+
+    <p>
+      We didn't know this on day one. We knew it after the third user reported that vision-lab "freezes my whole laptop." Two commits tell the story:
+    </p>
+
+    <pre><code>096ed76  vision-lab: re-add SmolVLM as the default low-RAM option, keep Moondream
+c35a797  vision-lab: OPFS-backed model cache so reloads don't redownload</code></pre>
+
+    <p>
+      The first one is the public admission: Moondream is great but it cannot be the default. The second one is what we learned about persistence.
+    </p>
+
+    <h2>The persistence trap: the Cache API silently lies to you</h2>
+
+    <p>
+      The HuggingFace transformers.js loader writes models to the browser Cache API by default. This works for small models. It does not work for large ones. From the comment in <code>miniapp/vision-lab/lab.js</code>:
+    </p>
+
+    <pre><code>// OPFS-backed cache. The default Cache API silently drops large entries
+// when quota is tight (especially on Safari) — OPFS is persistent by design
+// and handles GB-sized model files reliably.</code></pre>
+
+    <p>
+      Safari was the worst, but Chrome did it too under pressure. Users would download 1.1&nbsp;GB on first visit, come back tomorrow expecting the cached model, and watch it download again. The download progress bar is a long way to fall before you give up.
+    </p>
+
+    <p>
+      We wrote a tiny <code>OPFSCache</code> shim and pointed transformers.js at it:
+    </p>
+
+    <pre><code>class OPFSCache {
+  static async open() {
+    if (typeof navigator?.storage?.getDirectory !== 'function')
+      throw new Error('OPFS not available')
+    const root = await navigator.storage.getDirectory()
+    const dir  = await root.getDirectoryHandle('hf-models', { create: true })
+    return new OPFSCache(dir)
+  }
+  async match(req) {
+    try {
+      const fh   = await this.dir.getFileHandle(this._key(req))
+      const file = await fh.getFile()
+      return new Response(file, { status: 200, headers: { 'content-length': String(file.size) } })
+    } catch { return undefined }
+  }
+  async put(req, response) {
+    const buf = await response.arrayBuffer()
+    const fh  = await this.dir.getFileHandle(this._key(req), { create: true })
+    const w   = await fh.createWritable()
+    await w.write(buf); await w.close()
+  }
+}
+
+env.customCache     = await OPFSCache.open()
+env.useCustomCache  = true
+env.useBrowserCache = false</code></pre>
+
+    <p>
+      OPFS (the <a href="https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system">Origin Private File System</a>) is the underrated storage layer of the modern web. It is persistent by design, it handles GB-sized blobs without flinching, and it ignores the Cache API's invisible quota games. We pair it with <code>navigator.storage.persist()</code> so the OS doesn't evict under memory pressure.
+    </p>
+
+    <div class="callout">
+      <strong>Rule we now apply everywhere:</strong> any browser blob over ~50&nbsp;MB goes through OPFS, never the Cache API. The eviction silence is worse than no storage at all — users blame your app, not their browser.
+    </div>
+
+    <h2>The pivot</h2>
+
+    <p>
+      OPFS solved persistence. It did not solve the RAM ceiling. Moondream still crashed 16&nbsp;GB machines. SmolVLM at 500&nbsp;MB was fine, but its answers were noticeably weaker than a hosted model, and the first-visit 500&nbsp;MB download still cost us users on slow connections. We made the call:
+    </p>
+
+    <pre><code>977e9bc  pivot: rip WebGPU stack, route all inference server-side via GH Models</code></pre>
+
+    <p>
+      Vision-lab now POSTs the captured frame as a <code>data:</code> URI to <code>mcp.ask-meridian.uk/v1/vision</code>, which forwards to GPT-4o-mini through GitHub Models. The Cloudflare worker pays for inference with a single PAT (operator-pays); the user never downloads weights, never compiles a WebGPU pipeline, and the first frame returns in roughly the time it takes the camera to focus.
+    </p>
+
+    <p>
+      What we gave up: the frame leaves the device. For our use case (public photo VQA, no PII) that was an acceptable trade. For a different app — medical imaging, say — we'd have made a different call. The point isn't that server-side is "better." The point is that the privacy benefit of in-browser inference is only real if the model is also <em>fast and usable</em>, and 1.1&nbsp;GB on 16&nbsp;GB Macs is neither.
+    </p>
+
+    <h2>What we kept in the browser: 3D rendering (helix)</h2>
+
+    <p>
+      Here's the punchline the pivot commit hides: <strong>we ripped the inference stack, not WebGPU</strong>. Mol* still runs locally in helix. Three.js still runs locally in lens. WebGPU is excellent at the thing it was actually designed for.
+    </p>
+
+    <p>
+      Helix renders each top-ranked therapeutic protein as its own real 3D structure — cartoon backbone, ligand ball-and-stick, click-to-inspect residues. The whole apparatus is one CDN script tag (Mol* UMD bundle, ~5&nbsp;MB) lazy-loaded on first card open:
+    </p>
+
+    <pre><code>// helix/app.mjs — lazy-load the 5 MB Mol* UMD bundle on first use
+// instead of blocking initial paint with a synchronous &lt;script&gt;.
+let _molstarLoadPromise = null
+function molstarReady() {
+  if (window.molstar?.Viewer) return Promise.resolve(window.molstar)
+  if (!_molstarLoadPromise) {
+    _molstarLoadPromise = new Promise((resolve, reject) => {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = 'https://cdn.jsdelivr.net/npm/molstar@4.7.0/build/viewer/molstar.css'
+      document.head.appendChild(link)
+      const s = document.createElement('script')
+      s.src = 'https://cdn.jsdelivr.net/npm/molstar@4.7.0/build/viewer/molstar.js'
+      s.async = true
+      s.onload = () => resolve(window.molstar)
+      document.head.appendChild(s)
+    })
+  }
+  return _molstarLoadPromise
+}</code></pre>
+
+    <p>
+      Why does this work when in-browser inference didn't? Because 3D rendering hits the GPU pipeline the way it was designed to be hit. Mol*'s working set per protein is tens of MB on the GPU, not hundreds. The PDB text we fetch from RCSB is 50–500&nbsp;KB per structure, cached in a JS <code>Map</code> for residue lookups. Nothing has to be streamed, decompressed, or quantised at runtime. The GPU sips, it doesn't gulp.
+    </p>
+
+    <p>
+      That doesn't mean it was easy. The commit log is a small chronicle of papercuts:
+    </p>
+
+    <pre><code>a392eab  helix: switch Mol* to UMD viewer bundle (the /+esm URL is 404)
+a0b51ae  helix: revert Mol* to applyPreset('default') — render was empty
+6b33afe  helix: silence Mol* CCD 404s; match landing nav exactly
+9e95503  helix: trust Mol* to render molecules; theme the viewport bg
+d5658a7  helix: nest Mol* in .system-viewport so the fullscreen button survives</code></pre>
+
+    <p>
+      <code>/+esm</code> URLs 404 on Mol*'s npm distribution — we had to fall back to the UMD viewer bundle. <code>applyPreset('default')</code> behaviour drifted between versions and left empty canvases. Mol* logs noisy 404s for missing Chemical Component Dictionary entries on unusual ligands. None of these were architectural blockers — they were engineering chores. Inference RAM is an architectural blocker. The difference matters.
+    </p>
+
+    <h2>What else we kept: SmolVLM in VR (lens)</h2>
+
+    <p>
+      Lens is helix's weird cousin: vision-lab inside WebXR. You point at a real-world object with a VR controller, raycast hits a hotspot, the VLM describes what you're looking at, and the answer floats in 3D as a candidate skill routed through the orbital classifier.
+    </p>
+
+    <p>
+      We kept SmolVLM-500M running in the browser here, against the rule above. Why? <strong>Latency.</strong> A 200&nbsp;ms round-trip to a server kills VR presence. A camera frame → SmolVLM → answer pipeline that runs locally feels instant; a network hop never will. The 500&nbsp;MB download cost is acceptable because the user opted into a VR experience and they understand they're loading a model for it. It's not a casual visit. The capability check on entry surfaces WebGPU and OPFS state explicitly:
+    </p>
+
+    <pre><code>// lens/index.js — capability gate
+let xr = !!navigator.xr
+let gpu = false
+try { gpu = !!(await navigator.gpu?.requestAdapter()) } catch {}
+let opfs = false
+try { opfs = !!(navigator.storage && await navigator.storage.getDirectory()) } catch {}
+
+set('cap-webgpu', gpu, gpu ? 'WebGPU · fp16 inference' : 'WebGPU · falls back to WASM (slower)')
+set('cap-opfs',   opfs, opfs ? 'OPFS · model survives eviction' : 'OPFS · model re-downloads each visit')</code></pre>
+
+    <p>
+      WASM fallback is 5–10× slower than WebGPU for fp16 inference on these models. We treat the WebGPU adapter check as a hard gate inside lens, not a soft fallback. WASM SmolVLM in VR feels broken; better to refuse than to ship slow.
+    </p>
+
+    <h2>The rule we landed on</h2>
+
+    <div class="rule">
+      <strong>Render on the client. Infer on the server. Run inference in the browser only when latency is the constraint and the model fits in ~500&nbsp;MB.</strong>
+    </div>
+
+    <p>
+      As a 2×2:
+    </p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Model ≤ 500 MB</th><th>Model > 500 MB</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Latency-critical<br>(VR, interactive 3D)</th>
+          <td>Browser ✓ (lens · SmolVLM)</td>
+          <td>Server + lighter local model</td>
+        </tr>
+        <tr>
+          <th>Latency-tolerant<br>(one-shot Q&amp;A)</th>
+          <td>Server (no first-visit wait)</td>
+          <td>Server, no contest</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Rendering follows a different rule entirely — GPU pipelines handle it well even with consumer RAM, and the bundle costs (5&nbsp;MB Mol*, ~600&nbsp;KB Three.js) are amortised on a single async script tag. Lazy-load them and you pay nothing on the gate page.
+    </p>
+
+    <h2>Things we'd do differently if we started over</h2>
+
+    <ul>
+      <li><strong>Never ship a &gt;500&nbsp;MB model as the default in a multi-context page.</strong> Vision-lab originally ran Moondream2 alongside a Three.js scene and a WebGL canvas. Three competing GPU contexts on a 16&nbsp;GB machine stutters everything, even when no single context is over budget on its own.</li>
+      <li><strong>Start with OPFS, never the Cache API, for anything above ~50&nbsp;MB.</strong> The eviction silence is worse than "browser doesn't have storage." Users blame your app.</li>
+      <li><strong>Treat the WebGPU adapter as a hard gate.</strong> WASM-fallback inference for a half-gig model is 5–10× slower and will feel broken. Better to push to server than to ship a slow-path that users associate with you.</li>
+      <li><strong>Lazy-load 3D libraries.</strong> The 5&nbsp;MB Mol* bundle was free as long as we deferred it to first viewer mount. Loading it at boot doubled helix's time-to-interactive on the gate page.</li>
+      <li><strong>The pivot is not a failure mode.</strong> "Rip WebGPU inference" sounds like a retreat in a commit message. It wasn't. We kept WebGPU for what it's good at and stopped fighting it for what it isn't — yet.</li>
+    </ul>
+
+    <h2>Closing</h2>
+
+    <p>
+      In-browser inference is real, useful, and underrated — for workloads that fit in the window. Three things make a workload fit: the model is ≤ 500&nbsp;MB, latency matters more than first-visit wait, and you've checkpointed weights to OPFS. Outside that window, a Cloudflare Worker forwarding to a hosted model gives you the same UX with zero RAM risk and zero first-visit download.
+    </p>
+
+    <p>
+      The mental model isn't "WebGPU lost to the server." It's that WebGPU is great at rendering (its actual job today) and decent at inference (its hopeful future job, that consumer RAM doesn't quite support yet). Build for the version of the GPU stack you have, not the one you wish you had.
+    </p>
+
+    <p>
+      Source for the apps:
+      <a href="https://github.com/LuuOW/meridian-mcp">github.com/LuuOW/meridian-mcp</a> — see
+      <code>miniapp/vision-lab/lab.js</code> for the OPFS cache,
+      <code>helix/app.mjs</code> for the lazy-loaded Mol* viewer,
+      <code>lens/index.js</code> for the WebXR + SmolVLM path,
+      and commit <code>977e9bc</code> for the pivot itself.
+    </p>
+
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>
