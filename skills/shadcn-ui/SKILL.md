@@ -261,3 +261,7 @@ const categoryColor: Record<string, string> = {
 - Keep business logic out of `src/components/ui`.
 - Regenerate upstream components intentionally — do not blindly overwrite local customisations.
 - Test keyboard and screen-reader paths after each component update.
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #88._
