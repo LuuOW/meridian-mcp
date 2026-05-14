@@ -102,3 +102,7 @@ A brief passes the voice test when:
 - Removing any sentence loses information.
 
 If any sentence reads like it could appear unchanged in a grant application, rewrite it for clarity and specificity.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #84._
