@@ -226,3 +226,7 @@ ufw status verbose
 - [ ] External `nmap` or `curl` confirms Docker ports (6333, 6379, 27017) are unreachable
 - [ ] `nginx -t && systemctl reload nginx` runs after every snippet change
 - [ ] Peer table in project-docs updated with each new client added
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #103._
