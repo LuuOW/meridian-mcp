@@ -288,3 +288,7 @@ async def lifespan(app):
 - [ ] `JWT_SECRET_KEY` generated with `openssl rand -hex 32` in production
 - [ ] Frontend env vars centralised in one `config.ts` — no inline `import.meta.env`
 - [ ] `get_settings()` wrapped in `@lru_cache` — no repeated file reads
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #49._
