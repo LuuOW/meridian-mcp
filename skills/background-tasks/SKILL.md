@@ -212,3 +212,7 @@ redis-cli -n 1 lrange jobs:dead 0 -1
 - [ ] Workers and beat have `restart: unless-stopped` in compose
 - [ ] Dead-letter queue for failed jobs — inspect instead of silent drops
 - [ ] Queue depth monitored — alert if `llen` > threshold
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #26._
