@@ -181,3 +181,7 @@ Recursion lets a proof verify another proof inside a circuit, enabling proof agg
 - **Nondeterministic circuits**: two valid witnesses for the same public input break soundness.
 - **Trusted setup leakage**: if toxic waste from Phase 1 is compromised, the prover can generate false proofs.
 - **Hash function mismatch**: using keccak inside a circuit is expensive (~90k constraints per hash). Prefer Poseidon (< 300 constraints) or MiMC for in-circuit hashing.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #107._
