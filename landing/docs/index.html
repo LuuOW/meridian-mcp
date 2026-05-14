@@ -720,8 +720,9 @@ claude mcp add meridian meridian-mcp \
   }'</code></pre>
   <p>
     Each POST runs one pairwise-ranking SGD step (logistic ranking loss over (chosen,
-    every-other) pairs, lr 0.02, L2 0.001) against a 24-feature vector per candidate: 8 physics
-    scalars, 6 class one-hot, 3 star-system one-hot, 3 token-hit features, route_score
+    every-other) pairs, lr 0.02, L2 0.001) against a 25-feature vector per candidate:
+    9 physics scalars (the 8 originals plus <code>coherence_time</code> added in 3.1.0),
+    6 class one-hot, 3 star-system one-hot, 3 token-hit features, route_score
     normalised by batch max, rank position, has-parent, habitable-zone. The fitted
     correction multiplies <code>route_score</code> by a bounded sigmoid:
   </p>
