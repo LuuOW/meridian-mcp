@@ -38,13 +38,25 @@ Dark-mode first. No light variant.
 
 ## How to use
 
-**Reference, not runtime.** The live apps (`landing/`, `miniapp/`, `helix/`, `lens/`, `photon-route/`, `helio-mirror/`) already ship their own bundled styles. Treat this directory as the source-of-truth for visual decisions; pull from it when:
+**Canonical, and live.** The full token set + semantic type classes are now in the runtime CSS for every live surface:
 
-1. Adding a new surface — start from the closest `ui_kits/` kit.
-2. Aligning an existing surface — diff its tokens against `tokens.css`; the file is the canonical set.
+| Surface | CSS file | Status |
+|---|---|---|
+| `ask-meridian.uk/` (marketing) | `landing/style.css` | DS tokens + `.t-*` classes injected |
+| `ask-meridian.uk/docs` | `landing/docs/style.css` | DS tokens + `.t-*` classes + keyframes injected |
+| `ask-meridian.uk/miniapp` | `miniapp/miniapp.css` | DS tokens + `.t-*` classes injected |
+| Helix (`meridian.ask-meridian.uk/helix`) | `helix/helix.css` | DS tokens + `.t-*` classes + keyframes injected |
+| Lens (`meridian.ask-meridian.uk/lens`) | `lens/index.html` `<style>` | DS tokens + keyframes injected (warm-orange accent preserved) |
+| Photon-route (`photon.ask-meridian.uk`) | `photon-route/pages/index.html` `<style>` | DS tokens + keyframes injected (existing cyan/indigo scheme preserved) |
+
+So any live page can now use `var(--shadow-card)`, `var(--grad-hero)`, `var(--class-comet)`, `.t-display`, `.t-eyebrow`, `.t-grad`, etc., without bringing in an extra stylesheet.
+
+Workflow:
+1. Adding a new surface — start from the closest `ui_kits/` kit; copy `tokens.css` into the new surface's CSS.
+2. Editing an existing surface — reach for the named tokens first (e.g., `var(--shadow-card-hover)`) before inventing values.
 3. Designing a new component — check `preview/` first; the primitives there are the building blocks.
 
-When a value here diverges from a live app's CSS, the live app wins for that release but a follow-up should re-sync. Keep the system one source of truth.
+When a value drifts between a live file and `tokens.css`, the live file wins for that release but a follow-up should re-sync. Keep one source of truth.
 
 ## Brand foundations (quick reference)
 
