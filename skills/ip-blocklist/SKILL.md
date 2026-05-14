@@ -166,3 +166,7 @@ curl -s -X POST \
 - [ ] Allowlist-based access on admin endpoints — safer than blocklist-only
 - [ ] Auto-block script tested in dry-run mode before cron deployment
 - [ ] `iptables-save` called after every dynamic block to survive reboot
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #59._
