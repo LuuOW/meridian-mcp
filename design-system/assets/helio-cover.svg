@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff6c2"></stop>
+      <stop offset="35%" stop-color="#f5a623"></stop>
+      <stop offset="100%" stop-color="#a03a00" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#15171c"></stop>
+      <stop offset="100%" stop-color="#080a0e"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#bg)"></rect>
+  <g fill="#9aa0a6" opacity="0.6">
+    <circle cx="120" cy="80" r="0.9"></circle><circle cx="220" cy="40" r="0.7"></circle><circle cx="340" cy="120" r="0.8"></circle>
+    <circle cx="500" cy="60" r="0.9"></circle><circle cx="620" cy="120" r="0.7"></circle><circle cx="720" cy="80" r="0.8"></circle>
+    <circle cx="60" cy="200" r="0.6"></circle><circle cx="160" cy="380" r="0.9"></circle><circle cx="380" cy="420" r="0.7"></circle>
+    <circle cx="540" cy="400" r="0.8"></circle><circle cx="680" cy="360" r="0.6"></circle><circle cx="760" cy="260" r="0.9"></circle>
+  </g>
+  <g transform="translate(400 240)">
+    <ellipse cx="0" cy="0" rx="90" ry="42" fill="none" stroke="#3a8dde" stroke-opacity="0.30" stroke-width="1"></ellipse>
+    <ellipse cx="0" cy="0" rx="155" ry="68" fill="none" stroke="#3a8dde" stroke-opacity="0.30" stroke-width="1"></ellipse>
+    <ellipse cx="0" cy="0" rx="220" ry="96" fill="none" stroke="#3a8dde" stroke-opacity="0.30" stroke-width="1"></ellipse>
+    <ellipse cx="0" cy="0" rx="300" ry="130" fill="none" stroke="#3a8dde" stroke-opacity="0.20" stroke-width="1"></ellipse>
+    <circle cx="0" cy="0" r="42" fill="url(#sun)"></circle>
+    <circle cx="0" cy="0" r="14" fill="#f5a623"></circle>
+    <g fill="#e15554">
+      <circle cx="-78" cy="22" r="3.2"></circle>
+    </g>
+    <g fill="#9aa0a6">
+      <circle cx="138" cy="-34" r="2.2"></circle>
+    </g>
+    <g fill="#cd853f">
+      <circle cx="-200" cy="58" r="5.5"></circle>
+    </g>
+    <g fill="#e1c98c">
+      <circle cx="280" cy="-44" r="5.0"></circle>
+    </g>
+  </g>
+  <g transform="translate(400 240)">
+    <g stroke="#a5b4fc" stroke-opacity="0.8" stroke-width="1" fill="none">
+      <path d="M 0 0 Q -45 -10 -78 22"></path>
+      <path d="M 0 0 Q 80 -22 138 -34"></path>
+      <path d="M 0 0 Q -130 32 -200 58"></path>
+      <path d="M 0 0 Q 180 -28 280 -44"></path>
+    </g>
+  </g>
+  <text x="48" y="58" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="13" fill="#9aa0a6" letter-spacing="0.12em">HELIOCAST</text>
+  <text x="48" y="84" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" fill="#6c727a" letter-spacing="0.06em">PSP × JWST → irradiance @ body</text>
+</svg>

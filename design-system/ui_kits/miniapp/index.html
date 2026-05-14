@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Meridian — Try the router</title>
+<link rel="icon" type="image/svg+xml" href="../../assets/logo-meridian.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* === TOKENS (inlined from colors_and_type.css) === */
+/* ──────────────────────────────────────────────────────────────────────────
+   MERIDIAN — Colors & Type tokens
+   Lifted directly from landing/style.css + miniapp/miniapp.css in the
+   LuuOW/meridian-mcp monorepo. Dark-mode first; no light variant.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── BACKGROUNDS ───────────────────────────────────────────────── */
+  --bg:               #0a0d14;   /* deep space — the canonical page bg */
+  --bg-deep:          #06080f;   /* darker for inset surfaces */
+  --bg-card:          rgba(18, 23, 36, 0.7);   /* translucent card on the radial-gradient body */
+  --bg-code:          #0f1220;   /* code blocks + textareas */
+
+  /* The page wash itself — three stacked radial-gradients over a flat
+     vertical fade. Use as `background: var(--bg-page);` on body. */
+  --bg-page:
+    radial-gradient(1400px 700px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(900px 500px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+
+  /* ── TEXT ──────────────────────────────────────────────────────── */
+  --text:             #e6ecf5;   /* primary */
+  --text-muted:       #8a94a6;   /* secondary body, lead, captions */
+  --text-faint:       #5d6778;   /* tertiary — eyebrow labels, footnote */
+
+  /* ── BORDERS ───────────────────────────────────────────────────── */
+  --border:           rgba(148, 163, 184, 0.14);
+  --border-2:         rgba(148, 163, 184, 0.22);
+  --border-violet:    rgba(167, 139, 250, 0.35);
+
+  /* ── BRAND ACCENTS ─────────────────────────────────────────────── */
+  --accent:           #a78bfa;   /* neon-violet — the brand primary */
+  --accent-d:         #8b5cf6;   /* violet-deep — gradient endpoint */
+  --accent-2:         #10b981;   /* mint — "live" status, success */
+  --astro:            #38bdf8;   /* sky — secondary accent, links */
+  --pink:             #f472b6;   /* hot-pink — comet class, decorative */
+
+  /* ── NEON PALETTE (the four anchors of every glow + gradient) ─── */
+  --neon-violet:      #a78bfa;
+  --neon-cyan:        #38bdf8;
+  --neon-mint:        #10b981;
+  --neon-pink:        #f472b6;
+  --glow-violet:      rgba(167, 139, 250, 0.55);
+  --glow-cyan:        rgba(56, 189, 248, 0.45);
+
+  /* ── CELESTIAL CLASS COLORS ────────────────────────────────────── */
+  --class-planet:     #7dd3fc;   /* sky-300  — stable, glowing core */
+  --class-moon:       #cbd5e1;   /* slate-300 — quiet satellite */
+  --class-trojan:     #c4b5fd;   /* violet-300 — companions */
+  --class-asteroid:   #fcd34d;   /* amber-300 — small + bright */
+  --class-comet:      #f9a8d4;   /* pink-300 — dynamic, tail */
+  --class-irregular:  #d8b4fe;   /* purple-300 — oddball */
+
+  /* ── STAR-SYSTEM TINTS ─────────────────────────────────────────── */
+  --system-forge:     #f97316;   /* orange — execution / build */
+  --system-signal:    #38bdf8;   /* cyan — telemetry / observe */
+  --system-mind:      #a78bfa;   /* violet — reason / model */
+
+  /* ── GRADIENTS ─────────────────────────────────────────────────── */
+  --grad-hero:        linear-gradient(90deg, #a78bfa, #38bdf8 60%, #10b981);
+  --grad-btn:         linear-gradient(180deg, #a78bfa, #8b5cf6);
+  --grad-price:       linear-gradient(180deg, #ddd6fe, #a78bfa 70%, #8b5cf6);
+
+  /* ── SPACING (4 px base) ──────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+  --section-y: clamp(48px, 8vw, 96px);
+
+  /* ── RADII ─────────────────────────────────────────────────────── */
+  --r-1:    6px;
+  --r-2:   10px;
+  --r-3:   14px;
+  --r-pill: 999px;
+
+  /* ── ELEVATION / GLOWS ─────────────────────────────────────────── */
+  --shadow-card:      0 0 18px rgba(167, 139, 250, 0.06);
+  --shadow-card-hover: 0 0 0 1px rgba(167, 139, 250, 0.35),
+                       0 0 28px rgba(167, 139, 250, 0.20);
+  --shadow-btn:       0 0 0 1px rgba(167, 139, 250, 0.45),
+                      0 0 14px 2px rgba(167, 139, 250, 0.35),
+                      0 0 28px 6px rgba(167, 139, 250, 0.18);
+  --shadow-panel:     -8px 0 40px rgba(0, 0, 0, 0.5),
+                      -1px 0 24px rgba(167, 139, 250, 0.18);
+
+  /* ── MOTION ────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    0.15s;
+  --dur-base:    0.25s;
+  --dur-slow:    0.5s;
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────────────── */
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — display down to caption. Headings are tight-tracked
+     and balanced; body is slack at 1.65 line-height. */
+  --fs-display:   clamp(36px, 6vw, 60px);
+  --fs-h1:        clamp(28px, 5vw, 40px);
+  --fs-h2:        clamp(22px, 3.5vw, 32px);
+  --fs-h3:        17px;
+  --fs-lead:      17px;
+  --fs-body:      15px;
+  --fs-small:     13.5px;
+  --fs-caption:   12px;
+  --fs-eyebrow:   11.5px;   /* mono, all-caps, 0.18em tracking */
+  --fs-code:      13.5px;
+
+  --lh-tight:     1.05;
+  --lh-snug:      1.15;
+  --lh-base:      1.65;
+  --lh-mono:      1.7;
+
+  --tracking-tight:   -0.025em;
+  --tracking-tight-2: -0.02em;
+  --tracking-eyebrow: 0.18em;
+  --tracking-section: 0.12em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SEMANTIC TYPE — apply these classes anywhere in the system.
+   ────────────────────────────────────────────────────────────────────────── */
+.t-display {
+  font-family: var(--font-body);
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h1 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h2 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h2);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h3 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h3);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.t-lead {
+  font-family: var(--font-body);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-base);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+.t-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-base);
+  color: var(--text);
+}
+.t-small {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  line-height: var(--lh-mono);
+  color: #a5b4fc;
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* The signature gradient text — used on hero phrase + price values. */
+.t-grad {
+  background: var(--grad-hero);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FONTS — Meridian uses the system Inter + JetBrains Mono stacks. Both are
+   loaded from Google Fonts because the codebase only declares them by name
+   in `font-family` (no /fonts/*.ttf shipped). If you need offline fidelity,
+   self-host these two families and they'll drop straight in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+
+
+/* Meridian miniapp — extracted + condensed from miniapp/miniapp.css.
+   Depends on colors_and_type.css for tokens. */
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg-page);
+  min-height: 100vh; color: var(--text);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+
+/* ── NAV ─────────────────────────────────────────────────────────────── */
+.nav {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 18px; padding: 14px 28px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; backdrop-filter: blur(12px);
+  background: rgba(10,13,20,0.85); z-index: 10;
+}
+.brand { font-weight: 700; font-size: 17px; color: var(--accent); }
+.nav-inline { list-style: none; padding: 0; margin: 0; display: flex; gap: 8px; }
+.nav-inline-link {
+  background: transparent; border: none; color: var(--text-muted);
+  font-family: inherit; font-size: 14px; padding: 6px 10px;
+  cursor: pointer; border-radius: 8px; transition: color 0.15s, background 0.15s;
+}
+.nav-inline-link:hover { color: var(--text); background: rgba(167,139,250,0.06); }
+.nav-inline-link .caret { font-size: 10px; margin-left: 4px; color: var(--text-faint); }
+.cmdk-trigger {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 10px 6px 12px; border-radius: 8px;
+  border: 1px solid var(--border-2); background: rgba(15,18,32,0.6);
+  color: var(--text-muted); font-family: inherit; font-size: 13px;
+  cursor: pointer;
+}
+.cmdk-trigger:hover { border-color: var(--accent); color: var(--text); }
+.cmdk-kbd {
+  font-family: var(--font-mono); font-size: 11px; background: rgba(148,163,184,0.12);
+  padding: 1px 6px; border-radius: 4px; color: var(--text-muted);
+}
+.nav-gh-link { color: var(--text-muted); display: inline-flex; align-items: center; }
+.nav-gh-link:hover { color: var(--text); }
+.burger {
+  position: relative;
+  display: inline-flex; width: 36px; height: 36px;
+  background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 10px; cursor: pointer; padding: 0;
+}
+.burger span { position: absolute; left: 9px; right: 9px; height: 2px; background: var(--text); border-radius: 1px; }
+.burger span:nth-child(1) { top: 12px; }
+.burger span:nth-child(2) { top: 17px; }
+.burger span:nth-child(3) { top: 22px; }
+
+@media (max-width: 720px) {
+  .nav-inline, .cmdk-trigger { display: none; }
+  .nav { padding: 12px 16px; }
+}
+
+/* ── HEAD ────────────────────────────────────────────────────────────── */
+.mini-wrap {
+  max-width: 880px; margin: 0 auto;
+  padding: clamp(28px, 6vw, 56px) clamp(14px, 4vw, 24px) clamp(48px, 9vw, 96px);
+}
+.mini-head { text-align: center; margin-bottom: clamp(20px, 4vw, 32px); }
+.mini-head h1 {
+  font-size: clamp(24px, 5.5vw, 40px);
+  letter-spacing: -0.02em; line-height: 1.15;
+  margin: 14px 0 14px; font-weight: 700; text-wrap: balance;
+}
+.mini-head .lead {
+  max-width: 580px; margin: 0 auto;
+  font-size: clamp(14px, 2.4vw, 16px); color: var(--text-muted);
+  text-wrap: pretty;
+}
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 11.5px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent); padding: 5px 14px;
+  border: 1px solid var(--border-2); border-radius: 999px;
+  background: rgba(167,139,250,0.05);
+  white-space: nowrap;
+}
+
+/* ── META BAR ────────────────────────────────────────────────────────── */
+.meta-bar {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin: 0 0 14px; align-items: center; justify-content: space-between;
+}
+.quota-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 999px;
+  background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.25);
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+}
+.quota-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: #10b981; box-shadow: 0 0 8px currentColor;
+}
+.model-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 8px 5px 14px; border-radius: 999px;
+  background: rgba(56,189,248,0.05);
+  border: 1px solid rgba(56,189,248,0.2);
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);
+  cursor: pointer;
+}
+.model-pill-label {
+  text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--text-faint); font-size: 10px;
+}
+.model-pill select {
+  background: transparent; border: none; color: var(--text);
+  font-family: inherit; font-size: 12px; outline: none; cursor: pointer;
+  padding: 4px 6px;
+}
+.model-pill select option { background: var(--bg-code); color: var(--text); }
+
+/* ── ASK CARD ────────────────────────────────────────────────────────── */
+.ask-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: clamp(16px, 3vw, 22px);
+  backdrop-filter: blur(8px);
+  margin-bottom: clamp(20px, 4vw, 28px);
+}
+.input-frame {
+  position: relative; border-radius: 12px; padding: 1.5px;
+  background: linear-gradient(180deg, rgba(167,139,250,0.18), rgba(56,189,248,0.10));
+}
+.input-frame::before {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit;
+  background: conic-gradient(from var(--neon-angle), transparent 0%, var(--neon-violet) 25%, var(--neon-cyan) 50%, var(--neon-mint) 65%, transparent 80%);
+  opacity: 0.55; animation: neonRotate 8s linear infinite; filter: blur(0.5px); z-index: 0;
+}
+.input-frame:focus-within::before { opacity: 1; animation-duration: 5s; }
+.task-input {
+  position: relative; z-index: 1;
+  display: block; width: 100%;
+  background: var(--bg-code); border: none; border-radius: 10.5px;
+  color: var(--text); font-family: var(--font-body);
+  font-size: clamp(14px, 2.4vw, 15px); line-height: 1.55;
+  padding: 14px 16px; resize: none; min-height: 96px; outline: none;
+  box-sizing: border-box;
+}
+.task-input::placeholder { color: var(--text-faint); }
+.task-input:focus { box-shadow: inset 0 0 0 1px rgba(167,139,250,0.35), inset 0 0 22px rgba(167,139,250,0.10); }
+
+.ask-controls { display: flex; gap: 10px; margin-top: 14px; }
+.ask-controls .btn-primary { flex: 1; }
+@media (max-width: 520px) {
+  .ask-controls { flex-direction: column; }
+  .ar-pill { width: 100%; }
+}
+
+@property --neon-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes neonRotate { to { --neon-angle: 360deg; } }
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: inherit; cursor: pointer; transition: all 0.15s;
+}
+.btn-primary {
+  position: relative; padding: 11px 22px; min-height: 44px;
+  border-radius: 12px;
+  font-size: 14.5px; font-weight: 600;
+  background: linear-gradient(180deg, #a78bfa, #8b5cf6);
+  color: #0a0d14;
+  border: 1px solid rgba(167,139,250,0.55);
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px rgba(167,139,250,0.45),
+    0 0 14px 2px rgba(167,139,250,0.35),
+    0 0 28px 6px rgba(167,139,250,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.btn-primary::before {
+  content: ''; position: absolute; inset: -2px; border-radius: inherit;
+  background: conic-gradient(from var(--neon-angle), var(--neon-violet), var(--neon-cyan), var(--neon-mint), var(--neon-pink), var(--neon-violet));
+  opacity: 0.30; filter: blur(8px); z-index: -1;
+  animation: neonRotate 6s linear infinite;
+}
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.55; cursor: progress; }
+.btn-ghost {
+  background: transparent; color: var(--text);
+  border: 1px solid var(--border-2);
+  border-radius: 10px; padding: 6px 12px; min-height: 36px;
+  font-size: 13px; cursor: pointer;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 4px 10px; font-size: 12px; min-height: 32px; }
+
+.ar-pill {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 16px; min-height: 44px; border-radius: 12px;
+  background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.35);
+  color: var(--accent);
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  isolation: isolate;
+}
+.ar-pill::before {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit;
+  background: conic-gradient(from var(--neon-angle), var(--neon-violet), var(--neon-cyan), var(--neon-mint), var(--neon-pink), var(--neon-violet));
+  opacity: 0.18; filter: blur(6px); z-index: -1;
+  animation: neonRotate 9s linear infinite;
+}
+.ar-pill:hover { background: rgba(167,139,250,0.12); border-color: var(--accent); }
+
+/* ── EXAMPLES ────────────────────────────────────────────────────────── */
+.examples {
+  margin-top: 18px; padding-top: 16px;
+  border-top: 1px dashed var(--border);
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+}
+.examples-label {
+  font-size: 11.5px; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: 0.15em;
+  font-weight: 600; margin-right: 4px;
+}
+.ex-chip {
+  background: rgba(167,139,250,0.08);
+  border: 1px solid rgba(167,139,250,0.25);
+  color: var(--accent); border-radius: 999px;
+  padding: 7px 14px; font-size: 12.5px; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.ex-chip:hover {
+  background: rgba(167,139,250,0.18); border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(167,139,250,0.35);
+}
+
+/* ── GALAXY ──────────────────────────────────────────────────────────── */
+.mini-galaxy-frame {
+  position: relative;
+  border-radius: 14px; overflow: hidden;
+  margin-bottom: 16px;
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  box-shadow: 0 0 22px rgba(167,139,250,0.12), inset 0 0 28px rgba(56,189,248,0.05);
+  background: #06080f;
+  aspect-ratio: 21 / 9;
+}
+.mini-galaxy-canvas { display: block; width: 100%; height: 100%; cursor: default; }
+.mini-galaxy-controls {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px;
+  background: rgba(10,13,20,0.65);
+  border: 1px solid rgba(148,163,184,0.18);
+  border-radius: 999px; backdrop-filter: blur(8px);
+}
+.mini-galaxy-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.2em; }
+.mode-toggle { display: inline-flex; background: rgba(15,18,32,0.85); border-radius: 999px; padding: 2px; }
+.mode-btn {
+  background: transparent; border: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  color: var(--text-muted); padding: 4px 10px; border-radius: 999px;
+}
+.mode-btn.active {
+  background: linear-gradient(180deg, rgba(167,139,250,0.85), rgba(139,92,246,0.95));
+  color: #0a0d14;
+  box-shadow: 0 0 0 1px rgba(167,139,250,0.6), 0 0 12px rgba(167,139,250,0.45);
+}
+
+/* ── RESULTS ─────────────────────────────────────────────────────────── */
+.results-section { margin-top: 12px; }
+.results-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px; flex-wrap: wrap;
+}
+.results-header h2 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+.results-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+.results-meta .conf-strong { color: var(--accent-2); }
+
+.results-list { list-style: none; padding: 0; margin: 0; counter-reset: rank; }
+.result-item {
+  position: relative; counter-increment: rank;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px 14px 56px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.result-item:hover {
+  border-color: var(--accent);
+  transform: translateX(2px);
+  box-shadow: 0 0 24px rgba(167,139,250,0.18);
+}
+.result-item::before {
+  content: counter(rank);
+  position: absolute; top: 14px; left: 14px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  background: rgba(167,139,250,0.12); color: var(--accent);
+  border: 1px solid rgba(167,139,250,0.3);
+}
+.result-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
+.result-slug { font-family: var(--font-mono); font-size: 14.5px; font-weight: 600; color: var(--text); word-break: break-word; }
+.result-score { font-family: var(--font-mono); font-size: 12px; color: var(--accent); background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); padding: 2px 8px; border-radius: 6px; }
+.result-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; margin: 0 0 8px; }
+.result-why { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
+
+.result-class {
+  font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+  padding: 1px 6px; border-radius: 999px; margin-left: 6px;
+}
+.result-class[data-class="planet"]    { background: rgba(56,189,248,0.12);  color: #7dd3fc; }
+.result-class[data-class="moon"]      { background: rgba(148,163,184,0.14); color: #cbd5e1; }
+.result-class[data-class="trojan"]    { background: rgba(167,139,250,0.14); color: #c4b5fd; }
+.result-class[data-class="asteroid"]  { background: rgba(251,191,36,0.12);  color: #fcd34d; }
+.result-class[data-class="comet"]     { background: rgba(244,114,182,0.12); color: #f9a8d4; }
+.result-class[data-class="irregular"] { background: rgba(192,132,252,0.14); color: #d8b4fe; }
+
+@keyframes resultItemIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.result-item-in { animation: resultItemIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+.loading-pulse {
+  font-family: var(--font-mono);
+  background: linear-gradient(90deg, var(--neon-violet), var(--neon-cyan), var(--neon-mint), var(--neon-violet));
+  background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: loadingShift 2.5s linear infinite;
+  font-size: 14px; font-weight: 600;
+}
+@keyframes loadingShift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+
+/* ── CANDIDATE PANEL ─────────────────────────────────────────────────── */
+.candidate-panel { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
+.candidate-panel[aria-hidden="false"] { pointer-events: auto; }
+.candidate-panel-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(6,8,15,0.6); backdrop-filter: blur(2px);
+  opacity: 0; transition: opacity 0.25s ease;
+}
+.candidate-panel[aria-hidden="false"] .candidate-panel-backdrop { opacity: 1; }
+.candidate-panel-body {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: min(520px, 92vw);
+  background: linear-gradient(180deg, #0e1220 0%, #08090f 100%);
+  border-left: 1px solid rgba(167,139,250,0.35);
+  box-shadow: -8px 0 40px rgba(0,0,0,0.5), -1px 0 24px rgba(167,139,250,0.18);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.candidate-panel[aria-hidden="false"] .candidate-panel-body { transform: translateX(0); }
+.candidate-panel-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.candidate-panel-title-row { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.candidate-panel-header h3 { font-family: var(--font-mono); font-size: 17px; margin: 0; word-break: break-word; }
+.candidate-panel-class {
+  display: inline-flex; align-self: flex-start;
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px;
+}
+.candidate-panel-class[data-class="planet"]    { background: rgba(56,189,248,0.16);  color: #7dd3fc; border: 1px solid rgba(56,189,248,0.35); }
+.candidate-panel-class[data-class="moon"]      { background: rgba(148,163,184,0.16); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.35); }
+.candidate-panel-class[data-class="trojan"]    { background: rgba(167,139,250,0.16); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.35); }
+.candidate-panel-class[data-class="asteroid"]  { background: rgba(251,191,36,0.14);  color: #fcd34d; border: 1px solid rgba(251,191,36,0.30); }
+.candidate-panel-class[data-class="comet"]     { background: rgba(244,114,182,0.14); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.30); }
+.candidate-panel-class[data-class="irregular"] { background: rgba(192,132,252,0.16); color: #d8b4fe; border: 1px solid rgba(192,132,252,0.35); }
+
+.candidate-panel-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(167,139,250,0.25) transparent; }
+.candidate-panel-scroll::-webkit-scrollbar { width: 6px; }
+.candidate-panel-scroll::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.25); border-radius: 3px; }
+
+.candidate-panel-why { padding: 16px 22px; border-bottom: 1px solid var(--border); }
+.candidate-panel-why h4 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--text-faint); margin: 0 0 10px; font-weight: 700;
+}
+.score-breakdown {
+  display: grid; grid-template-columns: max-content 1fr max-content;
+  gap: 4px 12px; align-items: center;
+  font-family: var(--font-mono); font-size: 12px;
+}
+.score-breakdown .label { color: var(--text-muted); }
+.score-breakdown .bar { display: block; height: 6px; background: rgba(148,163,184,0.12); border-radius: 999px; overflow: hidden; }
+.score-breakdown .bar-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--neon-violet), var(--neon-cyan)); border-radius: 999px; transition: width 0.4s ease; }
+.score-breakdown .bar-fill.phys { background: linear-gradient(90deg, var(--neon-mint), var(--neon-cyan)); }
+.score-breakdown .val { color: var(--text); text-align: right; min-width: 38px; }
+
+.decision-rule {
+  margin-top: 14px; padding: 10px 12px;
+  background: rgba(167,139,250,0.06);
+  border: 1px dashed rgba(167,139,250,0.25);
+  border-radius: 8px; font-size: 12.5px; color: var(--text-muted); line-height: 1.55;
+}
+.decision-rule strong { color: var(--accent); font-weight: 600; }
+
+.candidate-panel-content { padding: 16px 22px 24px; font-size: 14px; line-height: 1.7; }
+.candidate-tagline {
+  font-size: 14px; color: var(--text-muted); line-height: 1.55;
+  margin: 0 0 14px; padding: 0 0 14px;
+  border-bottom: 1px dashed var(--border);
+}
+.candidate-md h2 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.18em;
+  font-weight: 700; color: var(--accent);
+  margin: 18px 0 8px;
+}
+.candidate-md p { margin: 0 0 10px; }
+.candidate-md ul, .candidate-md ol { padding-left: 22px; margin: 0 0 12px; }
+.candidate-md li { margin-bottom: 4px; }
+.candidate-md pre {
+  background: var(--bg-code); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; overflow-x: auto;
+  font-size: 12.5px; line-height: 1.6; margin: 8px 0;
+}
+.candidate-md pre code { color: #a5b4fc; font-family: var(--font-mono); }
+
+.candidate-keywords {
+  margin-top: 22px; padding-top: 14px;
+  border-top: 1px dashed var(--border); line-height: 2.1;
+}
+.candidate-keywords .kw-label {
+  display: block; font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600;
+  color: var(--text-faint); margin-bottom: 6px;
+}
+.candidate-keywords code {
+  font-size: 11.5px; padding: 2px 8px; margin-right: 4px;
+  background: rgba(167,139,250,0.10); color: #c4b5fd;
+  border: 1px solid rgba(167,139,250,0.22);
+  border-radius: 999px; font-family: var(--font-mono);
+}
+
+/* ── FOOTER ──────────────────────────────────────────────────────────── */
+.mini-foot {
+  padding: 18px 22px;
+  background: rgba(167,139,250,0.04);
+  border: 1px dashed rgba(167,139,250,0.2);
+  border-radius: 10px;
+  font-size: 13px; color: var(--text-muted); line-height: 1.6;
+}
+.mini-foot strong { color: var(--text); }
+.mini-foot code {
+  background: rgba(148,163,184,0.12); padding: 2px 6px; border-radius: 4px;
+  font-size: 12px; color: #ddd6fe; font-family: var(--font-mono);
+}
+
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+// ──── Nav.jsx ────
+function Nav() {
+  return (
+    <nav className="nav" aria-label="Primary">
+      <a href="#" className="brand">◎ Meridian</a>
+      <ul className="nav-inline">
+        <li><button className="nav-inline-link" type="button">Apps <span className="caret">▾</span></button></li>
+        <li><a href="#" className="nav-inline-link">Docs</a></li>
+        <li><a href="#" className="nav-inline-link">Blog</a></li>
+      </ul>
+      <button className="cmdk-trigger" type="button" aria-label="Open search palette">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <span className="cmdk-label">Search</span>
+        <kbd className="cmdk-kbd">⌘K</kbd>
+      </button>
+      <a href="#" className="nav-gh-link" aria-label="View on GitHub">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
+        </svg>
+      </a>
+      <button className="burger" type="button" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  );
+}
+
+window.Nav = Nav;
+
+
+// ──── AskCard.jsx ────
+function AskCard({ task, setTask, onAsk, busy }) {
+  const examples = [
+    'Set up rate limiting on a public API endpoint with Redis',
+    'Stake a position on a prediction market on World Chain using ethers.js',
+    'Write a SKILL.md authoring guide for new contributors',
+    'Run a difference-in-differences analysis on rollout impact',
+  ];
+  const labels = ['Rate limit a public API', 'DeFi staking on World Chain', 'Author a SKILL.md', 'Causal analysis of a rollout'];
+
+  return (
+    <section className="ask-card">
+      <div className="input-frame">
+        <textarea
+          className="task-input"
+          placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
+          rows="3"
+          maxLength="800"
+          value={task}
+          onChange={e => setTask(e.target.value)}
+        />
+      </div>
+      <div className="ask-controls">
+        <button className="btn btn-primary" onClick={onAsk} disabled={busy}>
+          {busy ? 'Routing…' : 'Find compatible candidates →'}
+        </button>
+        <button className="ar-pill" type="button" aria-label="Scan a real-world object">
+          <span className="ar-pill-icon">📷</span>
+          <span className="ar-pill-label">Scan an object</span>
+        </button>
+      </div>
+      <div className="examples">
+        <span className="examples-label">Try:</span>
+        {examples.map((ex, i) => (
+          <button key={i} className="ex-chip" onClick={() => setTask(ex)}>{labels[i]}</button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+window.AskCard = AskCard;
+
+
+// ──── MetaBar.jsx ────
+function MetaBar() {
+  return (
+    <div className="meta-bar">
+      <span className="quota-pill"><span className="quota-dot"></span>4 / 5 calls today</span>
+      <label className="model-pill">
+        <span className="model-pill-label">model</span>
+        <select defaultValue="llama-3.3-70b">
+          <option value="llama-3.3-70b">llama-3.3-70b</option>
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="phi-4">phi-4</option>
+        </select>
+      </label>
+    </div>
+  );
+}
+
+window.MetaBar = MetaBar;
+
+
+// ──── MiniGalaxy.jsx ────
+// Simplified mini-galaxy: 2D mode of the production mini-galaxy.js.
+// Renders the orbit + central star + candidate planets, twinkling stars.
+
+const RING_COLORS = [
+  { ring: 'rgba(167, 139, 250, 0.55)', planet: '#c4b5fd', glow: 'rgba(167, 139, 250, 0.45)' },
+  { ring: 'rgba(56, 189, 248, 0.55)',  planet: '#7dd3fc', glow: 'rgba(56, 189, 248, 0.45)' },
+  { ring: 'rgba(16, 185, 129, 0.55)',  planet: '#6ee7b7', glow: 'rgba(16, 185, 129, 0.45)' },
+  { ring: 'rgba(244, 114, 182, 0.55)', planet: '#f9a8d4', glow: 'rgba(244, 114, 182, 0.45)' },
+  { ring: 'rgba(251, 191, 36, 0.55)',  planet: '#fcd34d', glow: 'rgba(251, 191, 36, 0.45)' },
+];
+
+function MiniGalaxy({ candidates, onPlanetClick }) {
+  const canvasRef = React.useRef(null);
+  const stateRef  = React.useRef({ t: 0, stars: null, hover: null, candidates: [] });
+  stateRef.current.candidates = candidates;
+  stateRef.current.onPlanetClick = onPlanetClick;
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const state = stateRef.current;
+    state.stars = Array.from({ length: 180 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: 0.4 + Math.random() * 1.4, tw: Math.random() * Math.PI * 2,
+      hue: Math.random() < 0.18 ? 'cyan' : (Math.random() < 0.4 ? 'violet' : 'white'),
+    }));
+
+    function resize() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const r = canvas.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      canvas.width = r.width * dpr; canvas.height = r.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas._w = r.width; canvas._h = r.height;
+    }
+    const ro = new ResizeObserver(resize); ro.observe(canvas); resize();
+
+    function planetPositions() {
+      const cx = canvas._w / 2, cy = canvas._h / 2;
+      const ru = Math.min(canvas._w, canvas._h * 2.4) * 0.13;
+      return state.candidates.slice(0, 5).map((c, i) => {
+        const orbit = 1 + i * 0.55;
+        const speed = 0.18 - i * 0.018;
+        const phase = i * 0.9 + ((i * 0.37) % 1);
+        const a = state.t * speed + phase;
+        return {
+          slug: c.slug,
+          x: cx + Math.cos(a) * orbit * ru,
+          y: cy + Math.sin(a) * orbit * ru,
+          size: Math.max(2.4, 6 - i * 0.45),
+          orbit: orbit * ru, color: RING_COLORS[i % RING_COLORS.length],
+        };
+      });
+    }
+
+    function hit(mx, my) {
+      const ps = planetPositions();
+      let best = null, bestD = Infinity;
+      for (const p of ps) {
+        const d = Math.hypot(mx - p.x, my - p.y);
+        if (d <= p.size + 8 && d < bestD) { best = p; bestD = d; }
+      }
+      return best;
+    }
+
+    function onMove(e) {
+      const r = canvas.getBoundingClientRect();
+      const h = hit(e.clientX - r.left, e.clientY - r.top);
+      state.hover = h ? h.slug : null;
+      canvas.style.cursor = h ? 'pointer' : 'default';
+    }
+    function onClick(e) {
+      const r = canvas.getBoundingClientRect();
+      const h = hit(e.clientX - r.left, e.clientY - r.top);
+      if (h && state.onPlanetClick) state.onPlanetClick(h.slug);
+    }
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseleave', () => { state.hover = null; canvas.style.cursor = 'default'; });
+    canvas.addEventListener('click', onClick);
+
+    let lastT = 0, raf = 0;
+    function loop(now) {
+      const dt = Math.min(0.06, (now - lastT) / 1000); lastT = now;
+      state.t += dt;
+      draw();
+      raf = requestAnimationFrame(loop);
+    }
+    function draw() {
+      const w = canvas._w, h = canvas._h;
+      if (!w || !h) return;
+      // bg
+      const g = ctx.createRadialGradient(w*0.5, h*0.4, 0, w*0.5, h*0.5, Math.max(w,h)*0.85);
+      g.addColorStop(0, 'rgba(28,22,50,1)'); g.addColorStop(0.5, 'rgba(12,13,30,1)'); g.addColorStop(1, 'rgba(6,8,15,1)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      const n = ctx.createRadialGradient(w*0.7, h*0.3, 0, w*0.7, h*0.3, Math.max(w,h)*0.5);
+      n.addColorStop(0, 'rgba(167,139,250,0.18)'); n.addColorStop(1, 'rgba(167,139,250,0)');
+      ctx.fillStyle = n; ctx.fillRect(0, 0, w, h);
+      const n2 = ctx.createRadialGradient(w*0.2, h*0.75, 0, w*0.2, h*0.75, Math.max(w,h)*0.45);
+      n2.addColorStop(0, 'rgba(56,189,248,0.12)'); n2.addColorStop(1, 'rgba(56,189,248,0)');
+      ctx.fillStyle = n2; ctx.fillRect(0, 0, w, h);
+      // stars
+      for (const s of state.stars) {
+        const tw = (Math.sin(state.t * 1.4 + s.tw) + 1) * 0.5;
+        const a = 0.35 + tw * 0.6;
+        const px = ((s.x + state.t * 0.004) % 1) * w; const py = s.y * h;
+        const tone = s.hue === 'violet' ? '167,139,250' : s.hue === 'cyan' ? '56,189,248' : '255,255,255';
+        ctx.fillStyle = `rgba(${tone},${a})`;
+        ctx.beginPath(); ctx.arc(px, py, s.r, 0, Math.PI*2); ctx.fill();
+      }
+      const cx = w/2, cy = h/2;
+      // sun
+      const sg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22);
+      sg.addColorStop(0, 'rgba(255,224,156,1)'); sg.addColorStop(0.4, 'rgba(252,211,77,0.55)'); sg.addColorStop(1, 'rgba(252,211,77,0)');
+      ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, Math.PI*2); ctx.fill();
+      if (!state.candidates.length) {
+        ctx.fillStyle = 'rgba(148,163,184,0.45)';
+        ctx.font = '11px ui-monospace, monospace'; ctx.textAlign = 'center';
+        ctx.fillText('// awaiting query', cx, cy + 56);
+        return;
+      }
+      const ps = planetPositions();
+      // orbits
+      for (const p of ps) {
+        ctx.strokeStyle = p.color.ring; ctx.lineWidth = 0.8;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath(); ctx.arc(cx, cy, p.orbit, 0, Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // planets
+      for (const p of ps) {
+        const isHover = state.hover === p.slug;
+        const gl = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * (isHover ? 4.5 : 3));
+        gl.addColorStop(0, p.color.glow); gl.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gl;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (isHover ? 4.5 : 3), 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = p.color.planet;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 0.6; ctx.stroke();
+        if (isHover) {
+          ctx.font = '11px ui-monospace, monospace'; ctx.textAlign = 'center';
+          ctx.fillStyle = 'rgba(230,236,245,0.98)';
+          ctx.fillText(p.slug, p.x, p.y - p.size - 8);
+        }
+      }
+    }
+    raf = requestAnimationFrame(loop);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }, []);
+
+  return (
+    <div className="mini-galaxy-frame">
+      <canvas ref={canvasRef} className="mini-galaxy-canvas" aria-label="Routed candidates orbiting" />
+      <div className="mini-galaxy-controls">
+        <span className="mini-galaxy-label">view</span>
+        <div className="mode-toggle" role="tablist">
+          <button className="mode-btn active">2D</button>
+          <button className="mode-btn">3D</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+window.MiniGalaxy = MiniGalaxy;
+
+
+// ──── ResultsList.jsx ────
+function ResultItem({ rank, slug, cls, score, desc, why, onClick }) {
+  return (
+    <li className="result-item result-item-in" onClick={onClick} tabIndex="0">
+      <div className="result-head">
+        <span className="result-slug">
+          {slug}
+          <span className="result-class" data-class={cls}>{cls}</span>
+        </span>
+        <span className="result-score">{score.toFixed(3)}</span>
+      </div>
+      <p className="result-desc">{desc}</p>
+      <div className="result-why">{why}</div>
+    </li>
+  );
+}
+
+function ResultsList({ candidates, onSelect }) {
+  if (!candidates.length) return null;
+  return (
+    <section className="results-section">
+      <div className="results-header">
+        <h2>Results</h2>
+        <div className="results-meta" role="status">
+          {candidates.length} candidates · classifier <span className="conf-strong">strong</span>
+        </div>
+      </div>
+      <ol className="results-list">
+        {candidates.map((c, i) => (
+          <ResultItem
+            key={c.slug}
+            rank={i + 1}
+            slug={c.slug}
+            cls={c.class}
+            score={c.route_score}
+            desc={c.tagline}
+            why={c.why}
+            onClick={() => onSelect(c)}
+          />
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+window.ResultsList = ResultsList;
+
+
+// ──── CandidatePanel.jsx ────
+function ScoreBreakdown({ physics, decision }) {
+  const entries = Object.entries(physics);
+  return (
+    <section className="candidate-panel-why">
+      <h4>Physics signature · why this class?</h4>
+      <div className="score-breakdown">
+        {entries.map(([key, val]) => (
+          <React.Fragment key={key}>
+            <span className="label">{key}</span>
+            <span className="bar"><span className="bar-fill phys" style={{ width: `${Math.max(2, val * 100)}%` }}/></span>
+            <span className="val">{val.toFixed(2)}</span>
+          </React.Fragment>
+        ))}
+      </div>
+      <div className="decision-rule">
+        <strong>Decision:</strong> {decision}
+      </div>
+    </section>
+  );
+}
+
+function CandidatePanel({ candidate, open, onClose }) {
+  if (!candidate) return null;
+  return (
+    <aside className="candidate-panel" aria-hidden={!open}>
+      <div className="candidate-panel-backdrop" onClick={onClose} />
+      <div className="candidate-panel-body">
+        <header className="candidate-panel-header">
+          <div className="candidate-panel-title-row">
+            <h3>{candidate.slug}</h3>
+            <span className="candidate-panel-class" data-class={candidate.class}>{candidate.class}</span>
+          </div>
+          <button className="btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </header>
+        <div className="candidate-panel-scroll">
+          <ScoreBreakdown physics={candidate.physics} decision={candidate.decision} />
+          <section className="candidate-panel-content">
+            <p className="candidate-tagline">{candidate.tagline}</p>
+            <div className="candidate-md">
+              <h2>Use it for</h2>
+              <ul>
+                {candidate.useFor.map((u, i) => <li key={i}>{u}</li>)}
+              </ul>
+              <h2>Workflow</h2>
+              <ol>
+                {candidate.workflow.map((w, i) => <li key={i}>{w}</li>)}
+              </ol>
+              {candidate.snippet && (
+                <>
+                  <h2>Snippet</h2>
+                  <pre><code>{candidate.snippet}</code></pre>
+                </>
+              )}
+            </div>
+            <div className="candidate-keywords">
+              <span className="kw-label">Top token hits</span>
+              {candidate.keywords.map(k => <code key={k}>{k}</code>)}
+            </div>
+          </section>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+window.CandidatePanel = CandidatePanel;
+
+
+// ──── data.jsx ────
+// Five sample routed candidates — one per celestial class — for the demo.
+window.SAMPLE_CANDIDATES = [
+  {
+    slug: 'stripe-webhook-tests',
+    class: 'planet',
+    route_score: 0.847,
+    tagline: 'End-to-end webhook fixtures with signed payloads, Stripe CLI replay, and an Express handler harness.',
+    why: 'mass 0.78 · scope 0.91 · indep 0.84 → planet (min^1.5 = 0.61)',
+    physics: {
+      mass: 0.78, scope: 0.91, independence: 0.84,
+      cross_domain: 0.22, fragmentation: 0.12, drag: 0.08,
+    },
+    decision: 'min(mass, scope, indep)^1.5 = 0.61, dominates other class scores.',
+    useFor: [
+      'Verifying Stripe webhook signature handling across multiple Stripe API versions',
+      'Replaying recorded webhook payloads against a local Express server',
+      'Asserting idempotency of charge.succeeded handlers',
+    ],
+    workflow: [
+      'Generate a signed test payload with stripe-cli `trigger`',
+      'POST to your /webhooks endpoint with the canonical timestamp + sig header',
+      'Assert side-effects via supertest + a stubbed database',
+    ],
+    snippet: 'import { stripe } from "../stripe.test-utils.ts"\nconst sig = stripe.webhooks.generateTestHeaderString({ payload, secret })',
+    keywords: ['webhook', 'stripe', 'express', 'idempotency', 'supertest', 'signature'],
+  },
+  {
+    slug: 'jest-supertest-integration',
+    class: 'trojan',
+    route_score: 0.612,
+    tagline: 'Generic Express HTTP integration testing — Jest + supertest, with database teardown and snapshot fixtures.',
+    why: 'dep_ratio 0.71 · sibling to stripe-webhook-tests · fragmentation 0.18',
+    physics: {
+      mass: 0.42, scope: 0.55, independence: 0.31,
+      cross_domain: 0.18, fragmentation: 0.18, dep_ratio: 0.71,
+    },
+    decision: 'dep_ratio × 𝟙[parent] × (1 − fragmentation) = 0.58.',
+    useFor: [
+      'Smoke-testing any REST endpoint in an Express + TypeScript app',
+      'Asserting status codes, headers, and JSON shapes',
+    ],
+    workflow: [
+      'Boot the app in-process with `app.listen(0)`',
+      'Hit it via `request(app).post("/endpoint")`',
+      'Snapshot the response with toMatchInlineSnapshot()',
+    ],
+    keywords: ['supertest', 'jest', 'express', 'integration', 'snapshot'],
+  },
+  {
+    slug: 'webhook-signature-spec',
+    class: 'moon',
+    route_score: 0.498,
+    tagline: 'Reference document on HMAC-SHA256 webhook signature schemes — Stripe, GitHub, Slack, Vercel.',
+    why: 'low independence 0.22 · orbits parent stripe-webhook-tests',
+    physics: {
+      mass: 0.34, scope: 0.28, independence: 0.22,
+      cross_domain: 0.14, fragmentation: 0.05,
+    },
+    decision: '2 × max(0, ½ − indep) × 𝟙[parent] × (1 − mass/2) = 0.46.',
+    useFor: [
+      'Cross-referencing how different providers sign webhook bodies',
+      'Choosing a canonical timestamp format for your own webhook scheme',
+    ],
+    workflow: [
+      'Look up the provider in the table',
+      'Copy the canonical-string template',
+      'Implement verification with timing-safe equality',
+    ],
+    keywords: ['hmac', 'sha256', 'webhook', 'signature', 'timing-safe'],
+  },
+  {
+    slug: 'observability-tap-pattern',
+    class: 'asteroid',
+    route_score: 0.391,
+    tagline: 'A tiny, focused pattern for tapping observable streams in test code without polluting prod.',
+    why: 'small mass 0.21 · sharp · broad — fires across many scopes',
+    physics: {
+      mass: 0.21, scope: 0.77, independence: 0.83,
+      cross_domain: 0.31, fragmentation: 0.05,
+    },
+    decision: '2.5 × max(0, 0.55 − mass) × scope × indep = 0.54.',
+    useFor: ['Capturing emitted events during a test without rewiring prod listeners'],
+    workflow: ['Wrap the emitter', 'Forward + record', 'Assert on the record buffer'],
+    keywords: ['observable', 'rxjs', 'event', 'spy', 'pattern'],
+  },
+  {
+    slug: 'load-testing-with-k6',
+    class: 'comet',
+    route_score: 0.318,
+    tagline: 'Long-tail performance work — Grafana k6 scripts for endpoint smoke tests, dashboards, thresholds.',
+    why: 'cross_domain 0.62 · drag 0.71 · escapes the test-suite scope',
+    physics: {
+      mass: 0.48, scope: 0.62, independence: 0.57,
+      cross_domain: 0.62, fragmentation: 0.22, drag: 0.71,
+    },
+    decision: 'drag × cross_domain × (1 − dep_ratio) = 0.48.',
+    useFor: ['Running pre-deploy smoke tests against staging webhook endpoints'],
+    workflow: ['Write a k6 script', 'Run against staging', 'Block deploy on threshold breach'],
+    keywords: ['k6', 'load', 'staging', 'threshold', 'grafana'],
+  },
+];
+
+
+</script>
+
+<script type="text/babel">
+function App() {
+  const { Nav, AskCard, MetaBar, MiniGalaxy, ResultsList, CandidatePanel } = window;
+  const [task, setTask] = React.useState('Write integration tests for a Stripe webhook handler in a TypeScript Express app');
+  const [busy, setBusy] = React.useState(false);
+  const [results, setResults] = React.useState([]);
+  const [selected, setSelected] = React.useState(null);
+
+  async function ask() {
+    if (!task.trim()) return;
+    setBusy(true);
+    setSelected(null);
+    setResults([]);
+    // Fake routing animation — 1.2s
+    await new Promise(r => setTimeout(r, 1200));
+    setResults(window.SAMPLE_CANDIDATES);
+    setBusy(false);
+  }
+
+  return (
+    <>
+      <Nav />
+      <main id="main" className="mini-wrap">
+        <header className="mini-head">
+          <span className="eyebrow">Live demo</span>
+          <h1>Type a task. See which candidates the router picks.</h1>
+          <p className="lead">
+            Describe what you're trying to do — or scan a real-world object. An LLM authors fresh
+            candidates for your task and the orbital engine classifies each into a celestial class.
+          </p>
+        </header>
+
+        <MetaBar />
+        <AskCard task={task} setTask={setTask} onAsk={ask} busy={busy} />
+
+        {(busy || results.length > 0) && (
+          <section className="results-section" style={{ marginTop: 24 }}>
+            <MiniGalaxy candidates={results} onPlanetClick={(slug) => {
+              const c = results.find(r => r.slug === slug);
+              if (c) setSelected(c);
+            }} />
+            {busy ? (
+              <div className="loading-pulse" style={{ textAlign: 'center', padding: 24 }}>
+                routing in progress · llama-3.3-70b authoring candidates
+              </div>
+            ) : (
+              <ResultsList candidates={results} onSelect={setSelected} />
+            )}
+          </section>
+        )}
+
+        <footer className="mini-foot" style={{ marginTop: 48 }}>
+          <p>
+            <strong>About this demo:</strong> the in-browser router uses lexical + IDF scoring
+            with orbital-class boosts. With dynamic mode on, the page POSTs to
+            <code> mcp.ask-meridian.uk/v1/route</code> — Llama-3.3-70B via GitHub Models
+            authors fresh candidates and the operator-paid Worker scores them.
+          </p>
+        </footer>
+      </main>
+
+      <CandidatePanel candidate={selected} open={!!selected} onClose={() => setSelected(null)} />
+    </>
+  );
+}
+
+// Wait briefly for all babel src= scripts to finish populating window.*
+// (they fetch concurrently and may not be ready when this inline script runs).
+function tryRender() {
+  const needed = ['Nav','AskCard','MetaBar','MiniGalaxy','ResultsList','CandidatePanel','SAMPLE_CANDIDATES'];
+  if (needed.every(k => window[k])) {
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  } else {
+    setTimeout(tryRender, 30);
+  }
+}
+tryRender();
+</script>
+
+</body>
+</html>

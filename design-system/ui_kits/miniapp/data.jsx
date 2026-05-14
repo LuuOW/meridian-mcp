@@ -1,0 +1,101 @@
+// Five sample routed candidates — one per celestial class — for the demo.
+window.SAMPLE_CANDIDATES = [
+  {
+    slug: 'stripe-webhook-tests',
+    class: 'planet',
+    route_score: 0.847,
+    tagline: 'End-to-end webhook fixtures with signed payloads, Stripe CLI replay, and an Express handler harness.',
+    why: 'mass 0.78 · scope 0.91 · indep 0.84 → planet (min^1.5 = 0.61)',
+    physics: {
+      mass: 0.78, scope: 0.91, independence: 0.84,
+      cross_domain: 0.22, fragmentation: 0.12, drag: 0.08,
+    },
+    decision: 'min(mass, scope, indep)^1.5 = 0.61, dominates other class scores.',
+    useFor: [
+      'Verifying Stripe webhook signature handling across multiple Stripe API versions',
+      'Replaying recorded webhook payloads against a local Express server',
+      'Asserting idempotency of charge.succeeded handlers',
+    ],
+    workflow: [
+      'Generate a signed test payload with stripe-cli `trigger`',
+      'POST to your /webhooks endpoint with the canonical timestamp + sig header',
+      'Assert side-effects via supertest + a stubbed database',
+    ],
+    snippet: 'import { stripe } from "../stripe.test-utils.ts"\nconst sig = stripe.webhooks.generateTestHeaderString({ payload, secret })',
+    keywords: ['webhook', 'stripe', 'express', 'idempotency', 'supertest', 'signature'],
+  },
+  {
+    slug: 'jest-supertest-integration',
+    class: 'trojan',
+    route_score: 0.612,
+    tagline: 'Generic Express HTTP integration testing — Jest + supertest, with database teardown and snapshot fixtures.',
+    why: 'dep_ratio 0.71 · sibling to stripe-webhook-tests · fragmentation 0.18',
+    physics: {
+      mass: 0.42, scope: 0.55, independence: 0.31,
+      cross_domain: 0.18, fragmentation: 0.18, dep_ratio: 0.71,
+    },
+    decision: 'dep_ratio × 𝟙[parent] × (1 − fragmentation) = 0.58.',
+    useFor: [
+      'Smoke-testing any REST endpoint in an Express + TypeScript app',
+      'Asserting status codes, headers, and JSON shapes',
+    ],
+    workflow: [
+      'Boot the app in-process with `app.listen(0)`',
+      'Hit it via `request(app).post("/endpoint")`',
+      'Snapshot the response with toMatchInlineSnapshot()',
+    ],
+    keywords: ['supertest', 'jest', 'express', 'integration', 'snapshot'],
+  },
+  {
+    slug: 'webhook-signature-spec',
+    class: 'moon',
+    route_score: 0.498,
+    tagline: 'Reference document on HMAC-SHA256 webhook signature schemes — Stripe, GitHub, Slack, Vercel.',
+    why: 'low independence 0.22 · orbits parent stripe-webhook-tests',
+    physics: {
+      mass: 0.34, scope: 0.28, independence: 0.22,
+      cross_domain: 0.14, fragmentation: 0.05,
+    },
+    decision: '2 × max(0, ½ − indep) × 𝟙[parent] × (1 − mass/2) = 0.46.',
+    useFor: [
+      'Cross-referencing how different providers sign webhook bodies',
+      'Choosing a canonical timestamp format for your own webhook scheme',
+    ],
+    workflow: [
+      'Look up the provider in the table',
+      'Copy the canonical-string template',
+      'Implement verification with timing-safe equality',
+    ],
+    keywords: ['hmac', 'sha256', 'webhook', 'signature', 'timing-safe'],
+  },
+  {
+    slug: 'observability-tap-pattern',
+    class: 'asteroid',
+    route_score: 0.391,
+    tagline: 'A tiny, focused pattern for tapping observable streams in test code without polluting prod.',
+    why: 'small mass 0.21 · sharp · broad — fires across many scopes',
+    physics: {
+      mass: 0.21, scope: 0.77, independence: 0.83,
+      cross_domain: 0.31, fragmentation: 0.05,
+    },
+    decision: '2.5 × max(0, 0.55 − mass) × scope × indep = 0.54.',
+    useFor: ['Capturing emitted events during a test without rewiring prod listeners'],
+    workflow: ['Wrap the emitter', 'Forward + record', 'Assert on the record buffer'],
+    keywords: ['observable', 'rxjs', 'event', 'spy', 'pattern'],
+  },
+  {
+    slug: 'load-testing-with-k6',
+    class: 'comet',
+    route_score: 0.318,
+    tagline: 'Long-tail performance work — Grafana k6 scripts for endpoint smoke tests, dashboards, thresholds.',
+    why: 'cross_domain 0.62 · drag 0.71 · escapes the test-suite scope',
+    physics: {
+      mass: 0.48, scope: 0.62, independence: 0.57,
+      cross_domain: 0.62, fragmentation: 0.22, drag: 0.71,
+    },
+    decision: 'drag × cross_domain × (1 − dep_ratio) = 0.48.',
+    useFor: ['Running pre-deploy smoke tests against staging webhook endpoints'],
+    workflow: ['Write a k6 script', 'Run against staging', 'Block deploy on threshold breach'],
+    keywords: ['k6', 'load', 'staging', 'threshold', 'grafana'],
+  },
+];

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>helio · Meridian</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* ──────────────────────────────────────────────────────────────────────────
+   MERIDIAN — Colors & Type tokens
+   Lifted directly from landing/style.css + miniapp/miniapp.css in the
+   LuuOW/meridian-mcp monorepo. Dark-mode first; no light variant.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── BACKGROUNDS ───────────────────────────────────────────────── */
+  --bg:               #0a0d14;   /* deep space — the canonical page bg */
+  --bg-deep:          #06080f;   /* darker for inset surfaces */
+  --bg-card:          rgba(18, 23, 36, 0.7);   /* translucent card on the radial-gradient body */
+  --bg-code:          #0f1220;   /* code blocks + textareas */
+
+  /* The page wash itself — three stacked radial-gradients over a flat
+     vertical fade. Use as `background: var(--bg-page);` on body. */
+  --bg-page:
+    radial-gradient(1400px 700px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(900px 500px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+
+  /* ── TEXT ──────────────────────────────────────────────────────── */
+  --text:             #e6ecf5;   /* primary */
+  --text-muted:       #8a94a6;   /* secondary body, lead, captions */
+  --text-faint:       #5d6778;   /* tertiary — eyebrow labels, footnote */
+
+  /* ── BORDERS ───────────────────────────────────────────────────── */
+  --border:           rgba(148, 163, 184, 0.14);
+  --border-2:         rgba(148, 163, 184, 0.22);
+  --border-violet:    rgba(167, 139, 250, 0.35);
+
+  /* ── BRAND ACCENTS ─────────────────────────────────────────────── */
+  --accent:           #a78bfa;   /* neon-violet — the brand primary */
+  --accent-d:         #8b5cf6;   /* violet-deep — gradient endpoint */
+  --accent-2:         #10b981;   /* mint — "live" status, success */
+  --astro:            #38bdf8;   /* sky — secondary accent, links */
+  --pink:             #f472b6;   /* hot-pink — comet class, decorative */
+
+  /* ── NEON PALETTE (the four anchors of every glow + gradient) ─── */
+  --neon-violet:      #a78bfa;
+  --neon-cyan:        #38bdf8;
+  --neon-mint:        #10b981;
+  --neon-pink:        #f472b6;
+  --glow-violet:      rgba(167, 139, 250, 0.55);
+  --glow-cyan:        rgba(56, 189, 248, 0.45);
+
+  /* ── CELESTIAL CLASS COLORS ────────────────────────────────────── */
+  --class-planet:     #7dd3fc;   /* sky-300  — stable, glowing core */
+  --class-moon:       #cbd5e1;   /* slate-300 — quiet satellite */
+  --class-trojan:     #c4b5fd;   /* violet-300 — companions */
+  --class-asteroid:   #fcd34d;   /* amber-300 — small + bright */
+  --class-comet:      #f9a8d4;   /* pink-300 — dynamic, tail */
+  --class-irregular:  #d8b4fe;   /* purple-300 — oddball */
+
+  /* ── STAR-SYSTEM TINTS ─────────────────────────────────────────── */
+  --system-forge:     #f97316;   /* orange — execution / build */
+  --system-signal:    #38bdf8;   /* cyan — telemetry / observe */
+  --system-mind:      #a78bfa;   /* violet — reason / model */
+
+  /* ── GRADIENTS ─────────────────────────────────────────────────── */
+  --grad-hero:        linear-gradient(90deg, #a78bfa, #38bdf8 60%, #10b981);
+  --grad-btn:         linear-gradient(180deg, #a78bfa, #8b5cf6);
+  --grad-price:       linear-gradient(180deg, #ddd6fe, #a78bfa 70%, #8b5cf6);
+
+  /* ── SPACING (4 px base) ──────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+  --section-y: clamp(48px, 8vw, 96px);
+
+  /* ── RADII ─────────────────────────────────────────────────────── */
+  --r-1:    6px;
+  --r-2:   10px;
+  --r-3:   14px;
+  --r-pill: 999px;
+
+  /* ── ELEVATION / GLOWS ─────────────────────────────────────────── */
+  --shadow-card:      0 0 18px rgba(167, 139, 250, 0.06);
+  --shadow-card-hover: 0 0 0 1px rgba(167, 139, 250, 0.35),
+                       0 0 28px rgba(167, 139, 250, 0.20);
+  --shadow-btn:       0 0 0 1px rgba(167, 139, 250, 0.45),
+                      0 0 14px 2px rgba(167, 139, 250, 0.35),
+                      0 0 28px 6px rgba(167, 139, 250, 0.18);
+  --shadow-panel:     -8px 0 40px rgba(0, 0, 0, 0.5),
+                      -1px 0 24px rgba(167, 139, 250, 0.18);
+
+  /* ── MOTION ────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    0.15s;
+  --dur-base:    0.25s;
+  --dur-slow:    0.5s;
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────────────── */
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — display down to caption. Headings are tight-tracked
+     and balanced; body is slack at 1.65 line-height. */
+  --fs-display:   clamp(36px, 6vw, 60px);
+  --fs-h1:        clamp(28px, 5vw, 40px);
+  --fs-h2:        clamp(22px, 3.5vw, 32px);
+  --fs-h3:        17px;
+  --fs-lead:      17px;
+  --fs-body:      15px;
+  --fs-small:     13.5px;
+  --fs-caption:   12px;
+  --fs-eyebrow:   11.5px;   /* mono, all-caps, 0.18em tracking */
+  --fs-code:      13.5px;
+
+  --lh-tight:     1.05;
+  --lh-snug:      1.15;
+  --lh-base:      1.65;
+  --lh-mono:      1.7;
+
+  --tracking-tight:   -0.025em;
+  --tracking-tight-2: -0.02em;
+  --tracking-eyebrow: 0.18em;
+  --tracking-section: 0.12em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SEMANTIC TYPE — apply these classes anywhere in the system.
+   ────────────────────────────────────────────────────────────────────────── */
+.t-display {
+  font-family: var(--font-body);
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h1 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h2 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h2);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h3 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h3);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.t-lead {
+  font-family: var(--font-body);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-base);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+.t-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-base);
+  color: var(--text);
+}
+.t-small {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  line-height: var(--lh-mono);
+  color: #a5b4fc;
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* The signature gradient text — used on hero phrase + price values. */
+.t-grad {
+  background: var(--grad-hero);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FONTS — Meridian uses the system Inter + JetBrains Mono stacks. Both are
+   loaded from Google Fonts because the codebase only declares them by name
+   in `font-family` (no /fonts/*.ttf shipped). If you need offline fidelity,
+   self-host these two families and they'll drop straight in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg-page); min-height: 100vh; color: var(--text); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* SHARED NAV */
+.nav { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 14px 28px; border-bottom: 1px solid var(--border); position: sticky; top: 0; backdrop-filter: blur(12px); background: rgba(10,13,20,0.85); z-index: 10; }
+.brand { font-weight: 700; font-size: 17px; color: var(--accent); text-decoration: none; }
+.nav-inline { list-style: none; padding: 0; margin: 0; display: flex; gap: 8px; }
+.nav-inline-link { background: transparent; border: none; color: var(--text-muted); font-family: inherit; font-size: 14px; padding: 6px 10px; cursor: pointer; border-radius: 8px; text-decoration: none; }
+.nav-inline-link:hover { color: var(--text); background: rgba(167,139,250,0.06); }
+.nav-inline-link .caret { font-size: 10px; margin-left: 4px; color: var(--text-faint); }
+.cmdk-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px 6px 12px; border-radius: 8px; border: 1px solid var(--border-2); background: rgba(15,18,32,0.6); color: var(--text-muted); font-family: inherit; font-size: 13px; cursor: pointer; }
+.cmdk-kbd { font-family: var(--font-mono); font-size: 11px; background: rgba(148,163,184,0.12); padding: 1px 6px; border-radius: 4px; color: var(--text-muted); }
+.nav-gh-link { color: var(--text-muted); display: inline-flex; }
+.nav-gh-link:hover { color: var(--text); }
+@media (max-width: 900px) { .nav-inline, .cmdk-trigger { display: none; } .nav { padding: 12px 16px; } }
+
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 36px 24px 80px; }
+.eyebrow { display: inline-block; position: relative; padding: 5px 14px 5px 30px; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #10b981; border: 1px solid rgba(16,185,129,0.45); border-radius: 999px; box-shadow: 0 0 22px rgba(16,185,129,0.22); white-space: nowrap; }
+.eyebrow::after { content: ''; position: absolute; left: 12px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: #10b981; animation: ping 1.6s cubic-bezier(0.4,0,0.2,1) infinite; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.65); transform: scale(0.92); } 60% { box-shadow: 0 0 0 10px rgba(16,185,129,0); transform: scale(1.05); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); transform: scale(0.92); } }
+h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; margin: 14px 0 14px; text-wrap: balance; }
+.grad { background: linear-gradient(90deg, #f59e0b, #f97316 50%, #fcd34d); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.lead { font-size: 16px; color: var(--text-muted); max-width: 640px; margin: 0 0 32px; line-height: 1.55; }
+
+/* Stage pipeline strip */
+.pipeline { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 32px; }
+.stage-card { padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; backdrop-filter: blur(8px); position: relative; }
+.stage-card .num { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+.stage-card .nm { font-size: 13px; font-weight: 600; margin: 4px 0 2px; }
+.stage-card .at { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); }
+.stage-card.done .nm { color: var(--accent-2); }
+.stage-card.done::after { content: '✓'; position: absolute; top: 8px; right: 10px; color: var(--accent-2); font-size: 12px; }
+.stage-card.running .nm { color: var(--accent); }
+.stage-card.running::after { content: ''; position: absolute; top: 10px; right: 12px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulseDot 1.2s ease-in-out infinite; }
+@keyframes pulseDot { 50% { opacity: 0.3; transform: scale(0.7); } }
+.stage-card.pending .nm { color: var(--text-faint); }
+@media (max-width: 760px) { .pipeline { grid-template-columns: repeat(3, 1fr); } }
+
+/* Body cards grid */
+.bodies { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 36px; }
+.body-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px 18px;
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  isolation: isolate;
+}
+.body-card::before {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: var(--body-glow, radial-gradient(circle, rgba(251,191,36,0.35), transparent 70%));
+  filter: blur(6px); z-index: 0;
+}
+.body-card > * { position: relative; z-index: 1; }
+.body-card.warm { border-color: rgba(251,191,36,0.30); }
+.body-card.warm::before { background: radial-gradient(circle, rgba(251,191,36,0.35), transparent 70%); }
+.body-card.cool { border-color: rgba(56,189,248,0.30); }
+.body-card.cool::before { background: radial-gradient(circle, rgba(56,189,248,0.30), transparent 70%); }
+.body-card.cold { border-color: rgba(148,163,184,0.30); }
+.body-card.cold::before { background: radial-gradient(circle, rgba(148,163,184,0.20), transparent 70%); }
+
+.body-name { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.16em; font-weight: 600; }
+.body-irr { font-family: var(--font-mono); font-size: 38px; font-weight: 700; letter-spacing: -0.02em; margin: 4px 0 2px; line-height: 1.05; }
+.body-irr .unit { font-size: 13px; color: var(--text-muted); margin-left: 6px; letter-spacing: 0; }
+.body-delta { font-family: var(--font-mono); font-size: 11px; }
+.body-delta.up { color: var(--accent-2); }
+.body-delta.down { color: #f87171; }
+
+.body-meta {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  display: flex; justify-content: space-between; gap: 8px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--text-muted);
+}
+.body-meta .label { color: var(--text-faint); }
+
+/* 24h forecast sparkline */
+.body-spark { margin-top: 12px; height: 60px; width: 100%; }
+.spark-area { fill: var(--spark-fill, rgba(251,191,36,0.15)); }
+.spark-line { fill: none; stroke: var(--spark-stroke, #fcd34d); stroke-width: 1.5; }
+
+/* Recent events table */
+.events { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; backdrop-filter: blur(8px); overflow: hidden; }
+.events h3 { margin: 0; padding: 16px 22px; font-size: 14px; letter-spacing: -0.005em; border-bottom: 1px solid var(--border); }
+.events h3 .badge { display: inline-block; font-family: var(--font-mono); font-size: 10.5px; padding: 2px 8px; border-radius: 999px; background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.35); color: var(--accent); margin-left: 8px; letter-spacing: 0.1em; }
+.events table { width: 100%; border-collapse: collapse; }
+.events th, .events td { padding: 10px 22px; font-size: 13px; text-align: left; border-top: 1px solid var(--border); }
+.events th { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; padding-top: 12px; padding-bottom: 12px; }
+.events td { color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; }
+.events td.body-tag { color: var(--text); }
+.events td.psp-evt { color: var(--accent); }
+.events td.jwst-evt { color: #fcd34d; }
+.events tr:hover td { background: rgba(167,139,250,0.04); }
+
+.caveat { margin-top: 24px; padding: 14px 18px; background: rgba(251,191,36,0.06); border: 1px dashed rgba(251,191,36,0.4); border-radius: 10px; font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+.caveat strong { color: #fcd34d; }
+
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="#" class="brand">◎ Meridian</a>
+  <ul class="nav-inline">
+    <li><button class="nav-inline-link">Apps <span class="caret">▾</span></button></li>
+    <li><a href="#" class="nav-inline-link">Docs</a></li>
+    <li><a href="#" class="nav-inline-link">Blog</a></li>
+  </ul>
+  <button class="cmdk-trigger" type="button">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span>Search</span><kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+  <a href="#" class="nav-gh-link" aria-label="GitHub">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+</nav>
+
+<main class="wrap">
+  <span class="eyebrow">Perihelion · E22 · live</span>
+  <h1>Solar irradiance, <span class="grad">triangulated.</span></h1>
+  <p class="lead">PSP measures the Sun directly; JWST observes bodies that reflect it. Cross-correlate to forecast 24 h irradiance delivered to each body — Mars, Jupiter, Saturn — with B-field + plasma + reflectance signatures.</p>
+
+  <h3 style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 12px;">Pipeline · 6 stages</h3>
+  <div class="pipeline">
+    <div class="stage-card done"><div class="num">1</div><div class="nm">pull</div><div class="at">PSP · JWST · ephemeris</div></div>
+    <div class="stage-card done"><div class="num">2</div><div class="nm">register</div><div class="at">heliocentric coords</div></div>
+    <div class="stage-card done"><div class="num">3</div><div class="nm">detect</div><div class="at">PVI · reflectance</div></div>
+    <div class="stage-card done"><div class="num">4</div><div class="nm">coincide</div><div class="at">14 events matched</div></div>
+    <div class="stage-card running"><div class="num">5</div><div class="nm">calibrate</div><div class="at">running · 38s</div></div>
+    <div class="stage-card pending"><div class="num">6</div><div class="nm">forecast</div><div class="at">queued</div></div>
+  </div>
+
+  <div class="bodies">
+    <div class="body-card warm" style="--spark-fill: rgba(251,191,36,0.18); --spark-stroke: #fcd34d;">
+      <div class="body-name">☿ · Mercury</div>
+      <div class="body-irr">9120<span class="unit">W/m²</span></div>
+      <div class="body-delta up">↑ +3.2% · 24h forecast</div>
+      <svg class="body-spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path class="spark-area" d="M 0 50 L 20 45 L 40 42 L 60 40 L 80 38 L 100 36 L 120 32 L 140 28 L 160 24 L 180 20 L 200 18 L 200 60 L 0 60 Z"/>
+        <path class="spark-line" d="M 0 50 L 20 45 L 40 42 L 60 40 L 80 38 L 100 36 L 120 32 L 140 28 L 160 24 L 180 20 L 200 18"/>
+      </svg>
+      <div class="body-meta"><span><span class="label">PSP corr</span> 0.84</span><span><span class="label">events</span> 6</span></div>
+    </div>
+
+    <div class="body-card warm" style="--spark-fill: rgba(248,113,113,0.16); --spark-stroke: #fb7185;">
+      <div class="body-name">♂ · Mars</div>
+      <div class="body-irr">580<span class="unit">W/m²</span></div>
+      <div class="body-delta up">↑ +1.4% · 24h forecast</div>
+      <svg class="body-spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path class="spark-area" d="M 0 30 L 20 35 L 40 38 L 60 36 L 80 32 L 100 28 L 120 26 L 140 30 L 160 33 L 180 30 L 200 24 L 200 60 L 0 60 Z"/>
+        <path class="spark-line" d="M 0 30 L 20 35 L 40 38 L 60 36 L 80 32 L 100 28 L 120 26 L 140 30 L 160 33 L 180 30 L 200 24"/>
+      </svg>
+      <div class="body-meta"><span><span class="label">PSP corr</span> 0.71</span><span><span class="label">events</span> 4</span></div>
+    </div>
+
+    <div class="body-card cool" style="--spark-fill: rgba(167,139,250,0.16); --spark-stroke: #c4b5fd;">
+      <div class="body-name">♃ · Jupiter</div>
+      <div class="body-irr">51<span class="unit">W/m²</span></div>
+      <div class="body-delta down">↓ −0.6% · 24h forecast</div>
+      <svg class="body-spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path class="spark-area" d="M 0 22 L 20 24 L 40 28 L 60 30 L 80 32 L 100 31 L 120 33 L 140 36 L 160 38 L 180 36 L 200 32 L 200 60 L 0 60 Z"/>
+        <path class="spark-line" d="M 0 22 L 20 24 L 40 28 L 60 30 L 80 32 L 100 31 L 120 33 L 140 36 L 160 38 L 180 36 L 200 32"/>
+      </svg>
+      <div class="body-meta"><span><span class="label">PSP corr</span> 0.58</span><span><span class="label">events</span> 3</span></div>
+    </div>
+
+    <div class="body-card cold" style="--spark-fill: rgba(56,189,248,0.14); --spark-stroke: #7dd3fc;">
+      <div class="body-name">♄ · Saturn</div>
+      <div class="body-irr">14<span class="unit">W/m²</span></div>
+      <div class="body-delta up">↑ +0.3% · 24h forecast</div>
+      <svg class="body-spark" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <path class="spark-area" d="M 0 32 L 20 30 L 40 28 L 60 27 L 80 28 L 100 26 L 120 24 L 140 26 L 160 22 L 180 24 L 200 21 L 200 60 L 0 60 Z"/>
+        <path class="spark-line" d="M 0 32 L 20 30 L 40 28 L 60 27 L 80 28 L 100 26 L 120 24 L 140 26 L 160 22 L 180 24 L 200 21"/>
+      </svg>
+      <div class="body-meta"><span><span class="label">PSP corr</span> 0.42</span><span><span class="label">events</span> 1</span></div>
+    </div>
+  </div>
+
+  <div class="events">
+    <h3>Recent coincidences <span class="badge">14 PSP ↔ JWST</span></h3>
+    <table>
+      <thead><tr><th>t (UTC)</th><th>body</th><th>PSP signature</th><th>JWST excursion</th><th>lag</th><th>r</th></tr></thead>
+      <tbody>
+        <tr><td>05-12 22:14</td><td class="body-tag">♂ Mars</td><td class="psp-evt">B-jump · 38 nT</td><td class="jwst-evt">F277W · +2.1σ</td><td>+18.4 h</td><td>0.81</td></tr>
+        <tr><td>05-12 19:02</td><td class="body-tag">☿ Mercury</td><td class="psp-evt">SEP onset · &gt;10 MeV</td><td class="jwst-evt">F444W · +3.2σ</td><td>+04.2 h</td><td>0.88</td></tr>
+        <tr><td>05-12 11:38</td><td class="body-tag">♃ Jupiter</td><td class="psp-evt">v-spike · 612 km/s</td><td class="jwst-evt">F356W · +1.4σ</td><td>+34.1 h</td><td>0.63</td></tr>
+        <tr><td>05-11 23:55</td><td class="body-tag">♂ Mars</td><td class="psp-evt">n-drop · −22%</td><td class="jwst-evt">F277W · −1.8σ</td><td>+19.8 h</td><td>0.71</td></tr>
+        <tr><td>05-11 06:12</td><td class="body-tag">☿ Mercury</td><td class="psp-evt">PVI &gt; 6</td><td class="jwst-evt">F444W · +2.6σ</td><td>+04.6 h</td><td>0.79</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="caveat">
+    <strong>What's not in stage 5:</strong> per-body reflectance calibration is heuristic — PSP-corr values are SDP cross-correlations only, not albedo-aware. Forecast (stage 6) will land when calibration finishes; until then the 24 h projection is a linear extrapolation over the last 6 events.
+  </div>
+</main>
+
+
+</body></html>

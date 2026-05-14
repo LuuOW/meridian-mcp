@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>photon-route</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* ──────────────────────────────────────────────────────────────────────────
+   MERIDIAN — Colors & Type tokens
+   Lifted directly from landing/style.css + miniapp/miniapp.css in the
+   LuuOW/meridian-mcp monorepo. Dark-mode first; no light variant.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── BACKGROUNDS ───────────────────────────────────────────────── */
+  --bg:               #0a0d14;   /* deep space — the canonical page bg */
+  --bg-deep:          #06080f;   /* darker for inset surfaces */
+  --bg-card:          rgba(18, 23, 36, 0.7);   /* translucent card on the radial-gradient body */
+  --bg-code:          #0f1220;   /* code blocks + textareas */
+
+  /* The page wash itself — three stacked radial-gradients over a flat
+     vertical fade. Use as `background: var(--bg-page);` on body. */
+  --bg-page:
+    radial-gradient(1400px 700px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(900px 500px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+
+  /* ── TEXT ──────────────────────────────────────────────────────── */
+  --text:             #e6ecf5;   /* primary */
+  --text-muted:       #8a94a6;   /* secondary body, lead, captions */
+  --text-faint:       #5d6778;   /* tertiary — eyebrow labels, footnote */
+
+  /* ── BORDERS ───────────────────────────────────────────────────── */
+  --border:           rgba(148, 163, 184, 0.14);
+  --border-2:         rgba(148, 163, 184, 0.22);
+  --border-violet:    rgba(167, 139, 250, 0.35);
+
+  /* ── BRAND ACCENTS ─────────────────────────────────────────────── */
+  --accent:           #a78bfa;   /* neon-violet — the brand primary */
+  --accent-d:         #8b5cf6;   /* violet-deep — gradient endpoint */
+  --accent-2:         #10b981;   /* mint — "live" status, success */
+  --astro:            #38bdf8;   /* sky — secondary accent, links */
+  --pink:             #f472b6;   /* hot-pink — comet class, decorative */
+
+  /* ── NEON PALETTE (the four anchors of every glow + gradient) ─── */
+  --neon-violet:      #a78bfa;
+  --neon-cyan:        #38bdf8;
+  --neon-mint:        #10b981;
+  --neon-pink:        #f472b6;
+  --glow-violet:      rgba(167, 139, 250, 0.55);
+  --glow-cyan:        rgba(56, 189, 248, 0.45);
+
+  /* ── CELESTIAL CLASS COLORS ────────────────────────────────────── */
+  --class-planet:     #7dd3fc;   /* sky-300  — stable, glowing core */
+  --class-moon:       #cbd5e1;   /* slate-300 — quiet satellite */
+  --class-trojan:     #c4b5fd;   /* violet-300 — companions */
+  --class-asteroid:   #fcd34d;   /* amber-300 — small + bright */
+  --class-comet:      #f9a8d4;   /* pink-300 — dynamic, tail */
+  --class-irregular:  #d8b4fe;   /* purple-300 — oddball */
+
+  /* ── STAR-SYSTEM TINTS ─────────────────────────────────────────── */
+  --system-forge:     #f97316;   /* orange — execution / build */
+  --system-signal:    #38bdf8;   /* cyan — telemetry / observe */
+  --system-mind:      #a78bfa;   /* violet — reason / model */
+
+  /* ── GRADIENTS ─────────────────────────────────────────────────── */
+  --grad-hero:        linear-gradient(90deg, #a78bfa, #38bdf8 60%, #10b981);
+  --grad-btn:         linear-gradient(180deg, #a78bfa, #8b5cf6);
+  --grad-price:       linear-gradient(180deg, #ddd6fe, #a78bfa 70%, #8b5cf6);
+
+  /* ── SPACING (4 px base) ──────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+  --section-y: clamp(48px, 8vw, 96px);
+
+  /* ── RADII ─────────────────────────────────────────────────────── */
+  --r-1:    6px;
+  --r-2:   10px;
+  --r-3:   14px;
+  --r-pill: 999px;
+
+  /* ── ELEVATION / GLOWS ─────────────────────────────────────────── */
+  --shadow-card:      0 0 18px rgba(167, 139, 250, 0.06);
+  --shadow-card-hover: 0 0 0 1px rgba(167, 139, 250, 0.35),
+                       0 0 28px rgba(167, 139, 250, 0.20);
+  --shadow-btn:       0 0 0 1px rgba(167, 139, 250, 0.45),
+                      0 0 14px 2px rgba(167, 139, 250, 0.35),
+                      0 0 28px 6px rgba(167, 139, 250, 0.18);
+  --shadow-panel:     -8px 0 40px rgba(0, 0, 0, 0.5),
+                      -1px 0 24px rgba(167, 139, 250, 0.18);
+
+  /* ── MOTION ────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    0.15s;
+  --dur-base:    0.25s;
+  --dur-slow:    0.5s;
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────────────── */
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — display down to caption. Headings are tight-tracked
+     and balanced; body is slack at 1.65 line-height. */
+  --fs-display:   clamp(36px, 6vw, 60px);
+  --fs-h1:        clamp(28px, 5vw, 40px);
+  --fs-h2:        clamp(22px, 3.5vw, 32px);
+  --fs-h3:        17px;
+  --fs-lead:      17px;
+  --fs-body:      15px;
+  --fs-small:     13.5px;
+  --fs-caption:   12px;
+  --fs-eyebrow:   11.5px;   /* mono, all-caps, 0.18em tracking */
+  --fs-code:      13.5px;
+
+  --lh-tight:     1.05;
+  --lh-snug:      1.15;
+  --lh-base:      1.65;
+  --lh-mono:      1.7;
+
+  --tracking-tight:   -0.025em;
+  --tracking-tight-2: -0.02em;
+  --tracking-eyebrow: 0.18em;
+  --tracking-section: 0.12em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SEMANTIC TYPE — apply these classes anywhere in the system.
+   ────────────────────────────────────────────────────────────────────────── */
+.t-display {
+  font-family: var(--font-body);
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h1 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h2 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h2);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h3 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h3);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.t-lead {
+  font-family: var(--font-body);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-base);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+.t-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-base);
+  color: var(--text);
+}
+.t-small {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  line-height: var(--lh-mono);
+  color: #a5b4fc;
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* The signature gradient text — used on hero phrase + price values. */
+.t-grad {
+  background: var(--grad-hero);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FONTS — Meridian uses the system Inter + JetBrains Mono stacks. Both are
+   loaded from Google Fonts because the codebase only declares them by name
+   in `font-family` (no /fonts/*.ttf shipped). If you need offline fidelity,
+   self-host these two families and they'll drop straight in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg-page); min-height: 100vh; color: var(--text); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.nav { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 14px 28px; border-bottom: 1px solid var(--border); position: sticky; top: 0; backdrop-filter: blur(12px); background: rgba(10,13,20,0.85); z-index: 10; }
+.brand { font-weight: 700; font-size: 17px; color: var(--accent); text-decoration: none; }
+.nav-inline { list-style: none; padding: 0; margin: 0; display: flex; gap: 8px; }
+.nav-inline-link { background: transparent; border: none; color: var(--text-muted); font-family: inherit; font-size: 14px; padding: 6px 10px; cursor: pointer; border-radius: 8px; text-decoration: none; }
+.nav-inline-link:hover { color: var(--text); background: rgba(167,139,250,0.06); }
+.nav-inline-link .caret { font-size: 10px; margin-left: 4px; color: var(--text-faint); }
+.cmdk-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px 6px 12px; border-radius: 8px; border: 1px solid var(--border-2); background: rgba(15,18,32,0.6); color: var(--text-muted); font-family: inherit; font-size: 13px; cursor: pointer; }
+.cmdk-kbd { font-family: var(--font-mono); font-size: 11px; background: rgba(148,163,184,0.12); padding: 1px 6px; border-radius: 4px; color: var(--text-muted); }
+.nav-gh-link { color: var(--text-muted); display: inline-flex; }
+.nav-gh-link:hover { color: var(--text); }
+@media (max-width: 900px) { .nav-inline, .cmdk-trigger { display: none; } .nav { padding: 12px 16px; } }
+
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 36px 24px 80px; }
+
+.eyebrow { display: inline-block; font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #38bdf8; padding: 5px 14px; border: 1px solid rgba(56,189,248,0.45); border-radius: 999px; background: rgba(56,189,248,0.06); margin-bottom: 16px; }
+.eyebrow.research { color: #fcd34d; border-color: rgba(251,191,36,0.40); background: rgba(251,191,36,0.05); margin-left: 8px; }
+
+h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; margin: 14px 0 14px; text-wrap: balance; }
+.grad { background: linear-gradient(90deg, #38bdf8, #a78bfa 60%, #10b981); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.lead { font-size: 16px; color: var(--text-muted); max-width: 640px; margin: 0 0 32px; line-height: 1.55; }
+.lead code { background: rgba(148,163,184,0.12); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #ddd6fe; font-family: var(--font-mono); }
+
+/* Search row */
+.search {
+  position: relative; isolation: isolate;
+  display: flex; align-items: stretch; gap: 0;
+  background: var(--bg-card); border: 1px solid rgba(56,189,248,0.30);
+  border-radius: 14px; backdrop-filter: blur(8px);
+  margin-bottom: 14px;
+  padding: 3px;
+}
+.search::before {
+  content: ''; position: absolute; inset: -1px;
+  border-radius: inherit; padding: 1px;
+  background: conic-gradient(from var(--neon-angle), transparent 0%, rgba(56,189,248,0.55) 25%, rgba(167,139,250,0.5) 50%, transparent 75%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0.55; animation: neonRotate 10s linear infinite; pointer-events: none;
+}
+.search input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font-family: var(--font-mono); font-size: 15px;
+  padding: 14px 18px;
+}
+.search input::placeholder { color: var(--text-faint); }
+.search button {
+  background: #38bdf8; color: #0a0d14;
+  border: none; border-radius: 11px;
+  padding: 0 20px; font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: filter 0.15s;
+}
+.search button:hover { filter: brightness(1.1); }
+
+.search-meta {
+  display: flex; gap: 14px; align-items: center; justify-content: space-between;
+  margin-bottom: 22px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+}
+.search-meta .backend { padding: 2px 10px; border-radius: 999px; background: rgba(56,189,248,0.10); border: 1px solid rgba(56,189,248,0.30); color: var(--astro); }
+.search-meta .backend.stub { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.30); color: #fcd34d; }
+.search-meta .timing { color: var(--text-faint); }
+
+/* Layout: results + Wigner state */
+.layout { display: grid; grid-template-columns: 1fr 280px; gap: 22px; }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+
+.results { display: flex; flex-direction: column; gap: 12px; }
+.result {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px 14px 60px;
+  counter-increment: rank;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.result::before {
+  counter-reset: list-rank;
+  content: counter(rank);
+  position: absolute; top: 18px; left: 14px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(56,189,248,0.10); color: var(--astro);
+  border: 1px solid rgba(56,189,248,0.30);
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+}
+.result:hover { transform: translateX(2px); border-color: rgba(56,189,248,0.45); box-shadow: 0 0 22px rgba(56,189,248,0.16); }
+.result-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.result-title { font-size: 14.5px; font-weight: 600; color: var(--text); }
+.result-fidelity {
+  font-family: var(--font-mono); font-size: 12px;
+  padding: 2px 8px; border-radius: 6px;
+  background: rgba(56,189,248,0.08);
+  border: 1px solid rgba(56,189,248,0.20);
+  color: var(--astro);
+  white-space: nowrap;
+}
+.result-meta {
+  display: flex; gap: 10px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.result-meta .tag { padding: 1px 7px; border-radius: 999px; background: rgba(167,139,250,0.08); color: var(--accent); }
+.result-snippet {
+  font-size: 13px; color: var(--text-muted); line-height: 1.5;
+  margin: 0 0 6px;
+}
+.result-snippet code { background: rgba(148,163,184,0.10); padding: 1px 4px; border-radius: 3px; color: #ddd6fe; font-family: var(--font-mono); font-size: 12px; }
+.result-encoding {
+  margin-top: 8px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--text-faint);
+  display: flex; gap: 14px; flex-wrap: wrap;
+}
+.result-encoding span span { color: var(--text); }
+
+.results { counter-reset: rank; }
+
+/* Right rail — Wigner state visualization */
+.wigner {
+  background: var(--bg-card);
+  border: 1px solid rgba(56,189,248,0.30);
+  border-radius: 14px; padding: 16px;
+  height: fit-content;
+  backdrop-filter: blur(8px);
+}
+.wigner h3 {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 12px; font-weight: 700;
+}
+.wigner-canvas { width: 100%; aspect-ratio: 1; background: #06080f; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; position: relative; overflow: hidden; }
+.wigner-canvas svg { width: 100%; height: 100%; }
+.params { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; font-family: var(--font-mono); font-size: 11px; }
+.params .lbl { color: var(--text-faint); }
+.params .val { color: var(--text); text-align: right; }
+.params .group { grid-column: 1 / -1; padding-top: 6px; margin-top: 4px; border-top: 1px dashed var(--border); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; }
+
+.note { margin-top: 28px; padding: 14px 18px; background: rgba(251,191,36,0.05); border: 1px dashed rgba(251,191,36,0.32); border-radius: 10px; font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+.note strong { color: #fcd34d; }
+.note code { background: rgba(148,163,184,0.12); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #ddd6fe; font-family: var(--font-mono); }
+
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="#" class="brand">◎ Meridian</a>
+  <ul class="nav-inline">
+    <li><button class="nav-inline-link">Apps <span class="caret">▾</span></button></li>
+    <li><a href="#" class="nav-inline-link">Docs</a></li>
+    <li><a href="#" class="nav-inline-link">Blog</a></li>
+  </ul>
+  <button class="cmdk-trigger" type="button">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span>Search</span><kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+  <a href="#" class="nav-gh-link" aria-label="GitHub">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+</nav>
+
+<main class="wrap">
+  <span class="eyebrow">⚛︎ photon-route</span><span class="eyebrow research">Research artifact · day-1 scaffold</span>
+  <h1>CV photonic retrieval, <span class="grad">in Fock space.</span></h1>
+  <p class="lead">
+    Each document is encoded as a small Strawberry Fields program — words contribute squeezing and displacement to alternating bosonic modes, sentence length controls beam-splitter mixing. Retrieval ranks by closed-form <code>Gaussian-state fidelity</code> (Banchi-Braunstein-Pirandola).
+  </p>
+
+  <div class="search">
+    <input type="text" value="what happens when light hits a barrier">
+    <button>rank →</button>
+  </div>
+  <div class="search-meta">
+    <span><span class="backend">backend · gaussian</span> · 3 modes · 12 cutoff</span>
+    <span class="timing">ranked 142 documents · 38 ms</span>
+  </div>
+
+  <div class="layout">
+    <div class="results">
+      <article class="result">
+        <div class="result-head">
+          <span class="result-title">Total internal reflection in optical fibers</span>
+          <span class="result-fidelity">F · 0.918</span>
+        </div>
+        <div class="result-meta">
+          <span class="tag">quant-ph/0612043</span>
+          <span>arXiv · 2006</span>
+          <span>3 modes</span>
+        </div>
+        <p class="result-snippet">When light traveling in a dense medium meets a less dense boundary at an angle exceeding the critical angle, <code>θ_c = arcsin(n_2/n_1)</code>, all incident energy is reflected. Underlies fiber-optic confinement.</p>
+        <div class="result-encoding">
+          <span><span class="lbl">‖α‖</span> <span>1.82</span></span>
+          <span><span class="lbl">r̄</span> <span>0.54</span></span>
+          <span><span class="lbl">BS-θ</span> <span>π/4.2</span></span>
+        </div>
+      </article>
+
+      <article class="result">
+        <div class="result-head">
+          <span class="result-title">Beam-splitter dynamics for continuous-variable states</span>
+          <span class="result-fidelity">F · 0.872</span>
+        </div>
+        <div class="result-meta">
+          <span class="tag">quant-ph/9712018</span>
+          <span>arXiv · 1997</span>
+          <span>4 modes</span>
+        </div>
+        <p class="result-snippet">A barrier with partial transmission acts as a beam-splitter on the photonic mode. For Gaussian inputs, the output is Gaussian with covariance transformed by the symplectic <code>BS(θ)</code> matrix.</p>
+        <div class="result-encoding">
+          <span><span class="lbl">‖α‖</span> <span>2.11</span></span>
+          <span><span class="lbl">r̄</span> <span>0.71</span></span>
+          <span><span class="lbl">BS-θ</span> <span>π/3.8</span></span>
+        </div>
+      </article>
+
+      <article class="result">
+        <div class="result-head">
+          <span class="result-title">Refraction and Snell's law from photon momentum</span>
+          <span class="result-fidelity">F · 0.741</span>
+        </div>
+        <div class="result-meta">
+          <span class="tag">physics/0608254</span>
+          <span>arXiv · 2006</span>
+          <span>3 modes</span>
+        </div>
+        <p class="result-snippet">Photon momentum changes direction at a refractive boundary by conservation of the tangential component, recovering <code>n_1 sin θ_1 = n_2 sin θ_2</code> in the geometric-optics limit.</p>
+        <div class="result-encoding">
+          <span><span class="lbl">‖α‖</span> <span>1.04</span></span>
+          <span><span class="lbl">r̄</span> <span>0.38</span></span>
+          <span><span class="lbl">BS-θ</span> <span>π/5.6</span></span>
+        </div>
+      </article>
+
+      <article class="result">
+        <div class="result-head">
+          <span class="result-title">Frustrated total internal reflection</span>
+          <span class="result-fidelity">F · 0.612</span>
+        </div>
+        <div class="result-meta">
+          <span class="tag">quant-ph/0405089</span>
+          <span>arXiv · 2004</span>
+          <span>2 modes</span>
+        </div>
+        <p class="result-snippet">Evanescent coupling across a sub-wavelength gap lets light tunnel through a barrier that would otherwise totally reflect — the optical analog of quantum-mechanical barrier penetration.</p>
+        <div class="result-encoding">
+          <span><span class="lbl">‖α‖</span> <span>0.92</span></span>
+          <span><span class="lbl">r̄</span> <span>0.62</span></span>
+          <span><span class="lbl">BS-θ</span> <span>π/7.1</span></span>
+        </div>
+      </article>
+    </div>
+
+    <aside class="wigner">
+      <h3>Query · Wigner function (mode 0)</h3>
+      <div class="wigner-canvas">
+        <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <radialGradient id="wignerPos">
+              <stop offset="0%" stop-color="#fcd34d" stop-opacity="0.9"/>
+              <stop offset="40%" stop-color="#f59e0b" stop-opacity="0.6"/>
+              <stop offset="70%" stop-color="#a78bfa" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- Axes -->
+          <line x1="20" y1="100" x2="180" y2="100" stroke="rgba(148,163,184,0.2)" stroke-width="0.5"/>
+          <line x1="100" y1="20" x2="100" y2="180" stroke="rgba(148,163,184,0.2)" stroke-width="0.5"/>
+          <!-- Squeezed coherent state — elliptical "thumbprint" off-center -->
+          <ellipse cx="118" cy="86" rx="28" ry="14" transform="rotate(25 118 86)" fill="url(#wignerPos)"/>
+          <ellipse cx="118" cy="86" rx="40" ry="22" transform="rotate(25 118 86)" fill="none" stroke="rgba(252,211,77,0.3)" stroke-width="0.5"/>
+          <ellipse cx="118" cy="86" rx="56" ry="32" transform="rotate(25 118 86)" fill="none" stroke="rgba(252,211,77,0.15)" stroke-width="0.5"/>
+          <!-- Axis labels -->
+          <text x="184" y="103" font-family="ui-monospace,monospace" font-size="8" fill="#5d6778">q</text>
+          <text x="97" y="18" font-family="ui-monospace,monospace" font-size="8" fill="#5d6778">p</text>
+          <!-- Origin marker -->
+          <circle cx="100" cy="100" r="1.2" fill="#5d6778"/>
+        </svg>
+      </div>
+      <div class="params">
+        <span class="lbl">displacement α</span><span class="val">1.82 ∠ 0.45</span>
+        <span class="lbl">squeezing r</span><span class="val">0.54</span>
+        <span class="lbl">squeezing φ</span><span class="val">0.31</span>
+        <div class="group">3-mode program</div>
+        <span class="lbl">cutoff</span><span class="val">N=12</span>
+        <span class="lbl">BS layers</span><span class="val">2</span>
+        <span class="lbl">BS angles</span><span class="val">π/4.2, π/3.1</span>
+        <div class="group">SF backend</div>
+        <span class="lbl">type</span><span class="val">gaussian</span>
+        <span class="lbl">compile</span><span class="val">12 ms</span>
+      </div>
+    </aside>
+  </div>
+
+  <div class="note">
+    <strong>Day-1 scaffold</strong> — the pipeline is end-to-end correct in shape but numerical results are placeholders until: encoding is replaced with a learned parameter map (today's params are <code>SHA-256</code>-derived), a real eval set of ~200–500 query-doc pairs over arXiv quant-ph is built, and a non-Gaussian element (PNR measurement on a subset of modes) is added to escape Gaussian classical-simulability.
+  </div>
+</main>
+
+
+</body></html>

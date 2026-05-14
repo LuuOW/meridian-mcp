@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<style>
+/* === TOKENS (inlined from colors_and_type.css) === */
+/* ──────────────────────────────────────────────────────────────────────────
+   MERIDIAN — Colors & Type tokens
+   Lifted directly from landing/style.css + miniapp/miniapp.css in the
+   LuuOW/meridian-mcp monorepo. Dark-mode first; no light variant.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── BACKGROUNDS ───────────────────────────────────────────────── */
+  --bg:               #0a0d14;   /* deep space — the canonical page bg */
+  --bg-deep:          #06080f;   /* darker for inset surfaces */
+  --bg-card:          rgba(18, 23, 36, 0.7);   /* translucent card on the radial-gradient body */
+  --bg-code:          #0f1220;   /* code blocks + textareas */
+
+  /* The page wash itself — three stacked radial-gradients over a flat
+     vertical fade. Use as `background: var(--bg-page);` on body. */
+  --bg-page:
+    radial-gradient(1400px 700px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(900px 500px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+
+  /* ── TEXT ──────────────────────────────────────────────────────── */
+  --text:             #e6ecf5;   /* primary */
+  --text-muted:       #8a94a6;   /* secondary body, lead, captions */
+  --text-faint:       #5d6778;   /* tertiary — eyebrow labels, footnote */
+
+  /* ── BORDERS ───────────────────────────────────────────────────── */
+  --border:           rgba(148, 163, 184, 0.14);
+  --border-2:         rgba(148, 163, 184, 0.22);
+  --border-violet:    rgba(167, 139, 250, 0.35);
+
+  /* ── BRAND ACCENTS ─────────────────────────────────────────────── */
+  --accent:           #a78bfa;   /* neon-violet — the brand primary */
+  --accent-d:         #8b5cf6;   /* violet-deep — gradient endpoint */
+  --accent-2:         #10b981;   /* mint — "live" status, success */
+  --astro:            #38bdf8;   /* sky — secondary accent, links */
+  --pink:             #f472b6;   /* hot-pink — comet class, decorative */
+
+  /* ── NEON PALETTE (the four anchors of every glow + gradient) ─── */
+  --neon-violet:      #a78bfa;
+  --neon-cyan:        #38bdf8;
+  --neon-mint:        #10b981;
+  --neon-pink:        #f472b6;
+  --glow-violet:      rgba(167, 139, 250, 0.55);
+  --glow-cyan:        rgba(56, 189, 248, 0.45);
+
+  /* ── CELESTIAL CLASS COLORS ────────────────────────────────────── */
+  --class-planet:     #7dd3fc;   /* sky-300  — stable, glowing core */
+  --class-moon:       #cbd5e1;   /* slate-300 — quiet satellite */
+  --class-trojan:     #c4b5fd;   /* violet-300 — companions */
+  --class-asteroid:   #fcd34d;   /* amber-300 — small + bright */
+  --class-comet:      #f9a8d4;   /* pink-300 — dynamic, tail */
+  --class-irregular:  #d8b4fe;   /* purple-300 — oddball */
+
+  /* ── STAR-SYSTEM TINTS ─────────────────────────────────────────── */
+  --system-forge:     #f97316;   /* orange — execution / build */
+  --system-signal:    #38bdf8;   /* cyan — telemetry / observe */
+  --system-mind:      #a78bfa;   /* violet — reason / model */
+
+  /* ── GRADIENTS ─────────────────────────────────────────────────── */
+  --grad-hero:        linear-gradient(90deg, #a78bfa, #38bdf8 60%, #10b981);
+  --grad-btn:         linear-gradient(180deg, #a78bfa, #8b5cf6);
+  --grad-price:       linear-gradient(180deg, #ddd6fe, #a78bfa 70%, #8b5cf6);
+
+  /* ── SPACING (4 px base) ──────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+  --section-y: clamp(48px, 8vw, 96px);
+
+  /* ── RADII ─────────────────────────────────────────────────────── */
+  --r-1:    6px;
+  --r-2:   10px;
+  --r-3:   14px;
+  --r-pill: 999px;
+
+  /* ── ELEVATION / GLOWS ─────────────────────────────────────────── */
+  --shadow-card:      0 0 18px rgba(167, 139, 250, 0.06);
+  --shadow-card-hover: 0 0 0 1px rgba(167, 139, 250, 0.35),
+                       0 0 28px rgba(167, 139, 250, 0.20);
+  --shadow-btn:       0 0 0 1px rgba(167, 139, 250, 0.45),
+                      0 0 14px 2px rgba(167, 139, 250, 0.35),
+                      0 0 28px 6px rgba(167, 139, 250, 0.18);
+  --shadow-panel:     -8px 0 40px rgba(0, 0, 0, 0.5),
+                      -1px 0 24px rgba(167, 139, 250, 0.18);
+
+  /* ── MOTION ────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    0.15s;
+  --dur-base:    0.25s;
+  --dur-slow:    0.5s;
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────────────── */
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — display down to caption. Headings are tight-tracked
+     and balanced; body is slack at 1.65 line-height. */
+  --fs-display:   clamp(36px, 6vw, 60px);
+  --fs-h1:        clamp(28px, 5vw, 40px);
+  --fs-h2:        clamp(22px, 3.5vw, 32px);
+  --fs-h3:        17px;
+  --fs-lead:      17px;
+  --fs-body:      15px;
+  --fs-small:     13.5px;
+  --fs-caption:   12px;
+  --fs-eyebrow:   11.5px;   /* mono, all-caps, 0.18em tracking */
+  --fs-code:      13.5px;
+
+  --lh-tight:     1.05;
+  --lh-snug:      1.15;
+  --lh-base:      1.65;
+  --lh-mono:      1.7;
+
+  --tracking-tight:   -0.025em;
+  --tracking-tight-2: -0.02em;
+  --tracking-eyebrow: 0.18em;
+  --tracking-section: 0.12em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SEMANTIC TYPE — apply these classes anywhere in the system.
+   ────────────────────────────────────────────────────────────────────────── */
+.t-display {
+  font-family: var(--font-body);
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h1 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h2 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h2);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h3 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h3);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.t-lead {
+  font-family: var(--font-body);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-base);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+.t-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-base);
+  color: var(--text);
+}
+.t-small {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  line-height: var(--lh-mono);
+  color: #a5b4fc;
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* The signature gradient text — used on hero phrase + price values. */
+.t-grad {
+  background: var(--grad-hero);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FONTS — Meridian uses the system Inter + JetBrains Mono stacks. Both are
+   loaded from Google Fonts because the codebase only declares them by name
+   in `font-family` (no /fonts/*.ttf shipped). If you need offline fidelity,
+   self-host these two families and they'll drop straight in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+
+
+/* Shared chrome for all preview/ cards. Each card is ~700px wide. */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background:
+    radial-gradient(800px 400px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(500px 300px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  padding: 22px;
+  min-height: 100vh;
+}
+
+/* Card-internal layout helpers */
+.row { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.token {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+/* Reusable swatch chip */
+.swatch {
+  position: relative;
+  border-radius: 10px;
+  height: 70px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.swatch-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  gap: 8px;
+}
+.swatch-meta .name { color: var(--text); font-family: var(--font-body); font-size: 11.5px; font-weight: 600; }
+.swatch-meta .hex { color: var(--text-faint); font-family: var(--font-mono); font-size: 10.5px; }
+
+/* Class pill (used in multiple cards) */
+.class-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.class-pill[data-class="planet"]    { background: rgba(56, 189, 248, 0.16);  color: var(--class-planet);    border: 1px solid rgba(56, 189, 248, 0.35); }
+.class-pill[data-class="moon"]      { background: rgba(148, 163, 184, 0.16); color: var(--class-moon);      border: 1px solid rgba(148, 163, 184, 0.35); }
+.class-pill[data-class="trojan"]    { background: rgba(167, 139, 250, 0.16); color: var(--class-trojan);    border: 1px solid rgba(167, 139, 250, 0.35); }
+.class-pill[data-class="asteroid"]  { background: rgba(251, 191, 36, 0.14);  color: var(--class-asteroid);  border: 1px solid rgba(251, 191, 36, 0.30); }
+.class-pill[data-class="comet"]     { background: rgba(244, 114, 182, 0.14); color: var(--class-comet);     border: 1px solid rgba(244, 114, 182, 0.30); }
+.class-pill[data-class="irregular"] { background: rgba(192, 132, 252, 0.16); color: var(--class-irregular); border: 1px solid rgba(192, 132, 252, 0.35); }
+
+/* Generic card shape */
+.dscard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: 18px;
+  backdrop-filter: blur(8px);
+}
+
+/* Eyebrow */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 5px 14px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+}
+
+@property --neon-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes neonRotate { to { --neon-angle: 360deg; } }
+
+</style>
+<style>
+body { padding: 0; }
+.frame {
+  width: 100%; height: 320px;
+  background: #06080f;
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  box-shadow: 0 0 22px rgba(167, 139, 250, 0.12), inset 0 0 28px rgba(56, 189, 248, 0.05);
+  border-radius: 14px;
+  overflow: hidden; position: relative;
+}
+canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+canvas:active { cursor: grabbing; }
+.ctrl {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px;
+  background: rgba(10, 13, 20, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+.ctrl .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.2em; }
+.toggle { display: inline-flex; background: rgba(15,18,32,0.85); border-radius: 999px; padding: 2px; }
+.tb { background: transparent; border: none; font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-muted); padding: 4px 10px; border-radius: 999px; cursor: pointer; }
+.tb.active { background: linear-gradient(180deg, rgba(167,139,250,0.85), rgba(139,92,246,0.95)); color: #0a0d14; box-shadow: 0 0 0 1px rgba(167,139,250,0.6), 0 0 12px rgba(167,139,250,0.45); }
+.hint {
+  position: absolute; bottom: 12px; left: 12px;
+  font-family: var(--font-mono); font-size: 10.5px;
+  padding: 5px 10px; background: rgba(10,13,20,0.6);
+  border: 1px solid rgba(167,139,250,0.35);
+  border-radius: 999px; color: rgba(167,139,250,0.9);
+  transition: opacity 0.5s;
+}
+.hint.hidden { opacity: 0; pointer-events: none; }
+</style></head>
+<body>
+<div class="frame">
+  <canvas id="c"></canvas>
+  <div class="ctrl">
+    <span class="lbl">view</span>
+    <div class="toggle">
+      <button class="tb" id="m2d">2D</button>
+      <button class="tb active" id="m3d">3D</button>
+    </div>
+  </div>
+  <div class="hint" id="hint">✶ drag to rotate · scroll to zoom</div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+const m2d = document.getElementById('m2d');
+const m3d = document.getElementById('m3d');
+
+// Visual constants — match production mini-galaxy.js
+const RING = [
+  { ring: 'rgba(167,139,250,0.55)', planet: '#c4b5fd', glow: 'rgba(167,139,250,0.45)' },
+  { ring: 'rgba(56,189,248,0.55)',  planet: '#7dd3fc', glow: 'rgba(56,189,248,0.45)' },
+  { ring: 'rgba(16,185,129,0.55)',  planet: '#6ee7b7', glow: 'rgba(16,185,129,0.45)' },
+  { ring: 'rgba(244,114,182,0.55)', planet: '#f9a8d4', glow: 'rgba(244,114,182,0.45)' },
+  { ring: 'rgba(251,191,36,0.55)',  planet: '#fcd34d', glow: 'rgba(251,191,36,0.45)' },
+];
+
+// Sample 5 candidates — one comet to demonstrate the tail
+const CANDIDATES = [
+  { slug: 'stripe-webhook-tests',         class: 'planet',   orbit: 1.0, speed: 0.18, inc: 0,        size: 6,   ring: RING[0] },
+  { slug: 'jest-supertest-integration',   class: 'trojan',   orbit: 1.55, speed: 0.162, inc: -0.18, size: 5,   ring: RING[1] },
+  { slug: 'webhook-signature-spec',       class: 'moon',     orbit: 2.10, speed: 0.144, inc: 0.22,  size: 4.3, ring: RING[2] },
+  { slug: 'load-testing-with-k6',         class: 'comet',    orbit: 2.65, speed: 0.126, inc: -0.30, size: 3.8, ring: RING[3], eccentric: true },
+  { slug: 'observability-tap-pattern',    class: 'asteroid', orbit: 3.20, speed: 0.108, inc: 0.14,  size: 3.4, ring: RING[4] },
+];
+
+let mode = '3d';
+let cam = { tilt: 1.05, rot: 0, zoom: 1 };
+let touched = false;
+let stars = Array.from({length: 220}, () => ({
+  x: Math.random(), y: Math.random(),
+  r: 0.4 + Math.random() * 1.4,
+  tw: Math.random() * Math.PI * 2,
+  hue: Math.random() < 0.18 ? 'cyan' : (Math.random() < 0.4 ? 'violet' : 'white'),
+}));
+let t = 0, lastT = 0;
+let hover = null;
+let dragging = false, lastX = 0, lastY = 0, dragMoved = 0;
+
+function resize() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const r = canvas.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  canvas.width = r.width * dpr; canvas.height = r.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas._w = r.width; canvas._h = r.height;
+}
+new ResizeObserver(resize).observe(canvas);
+resize();
+
+function project(x, y, z) {
+  const z0 = cam.zoom;
+  if (mode === '2d') return { x: x * z0, y: y * z0, scale: z0, z: 0 };
+  const cosR = Math.cos(cam.rot), sinR = Math.sin(cam.rot);
+  const xr = x * cosR + z * sinR;
+  const zr = -x * sinR + z * cosR;
+  const cosT = Math.cos(cam.tilt), sinT = Math.sin(cam.tilt);
+  const yp = y * cosT - zr * sinT;
+  const zp = y * sinT + zr * cosT;
+  const persp = 1 / (1 + zp / 380);
+  return { x: xr * persp * z0, y: yp * persp * z0, z: zp, scale: persp * z0 };
+}
+
+function eccentricPosition(angle, a, e) {
+  // Simple elliptical: a = semi-major, e = eccentricity. Sun at one focus.
+  const r = a * (1 - e * e) / (1 + e * Math.cos(angle));
+  return { x: r * Math.cos(angle), y: r * Math.sin(angle) };
+}
+
+function positions() {
+  const ru = Math.min(canvas._w, canvas._h * 2.4) * 0.12;
+  return CANDIDATES.map((c, i) => {
+    const angle = t * c.speed + i * 0.7;
+    let lx, ly;
+    if (c.eccentric) {
+      const e = 0.6; const a = c.orbit;
+      const p = eccentricPosition(angle, a, e);
+      lx = p.x * ru; ly = p.y * ru;
+    } else {
+      lx = Math.cos(angle) * c.orbit * ru;
+      ly = Math.sin(angle) * c.orbit * ru;
+    }
+    let y = ly, z = 0;
+    if (mode === '3d') {
+      y = ly * Math.cos(c.inc);
+      z = ly * Math.sin(c.inc);
+    }
+    // Velocity vector (for tail direction): tangent to orbit
+    const dangle = c.speed;
+    let vlx, vly;
+    if (c.eccentric) {
+      const p1 = eccentricPosition(angle + dangle * 0.01, c.orbit, 0.6);
+      const p0 = eccentricPosition(angle, c.orbit, 0.6);
+      vlx = (p1.x - p0.x) * ru; vly = (p1.y - p0.y) * ru;
+    } else {
+      vlx = -Math.sin(angle) * c.orbit * ru * dangle * 0.01;
+      vly = Math.cos(angle) * c.orbit * ru * dangle * 0.01;
+    }
+    let vy = vly, vz = 0;
+    if (mode === '3d') { vy = vly * Math.cos(c.inc); vz = vly * Math.sin(c.inc); }
+    return { c, x: lx, y, z, vx: vlx, vy, vz, angle, ru };
+  });
+}
+
+function hit(mx, my) {
+  const cx = canvas._w / 2, cy = canvas._h / 2;
+  const ps = positions();
+  let best = null, bestD = Infinity;
+  for (const p of ps) {
+    const pj = project(p.x, p.y, p.z);
+    const sx = cx + pj.x, sy = cy + pj.y;
+    const size = p.c.size * pj.scale + 4;
+    const d = Math.hypot(mx - sx, my - sy);
+    if (d <= size + 6 && d < bestD) { best = p.c; bestD = d; }
+  }
+  return best;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  if (dragging) {
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    dragMoved += Math.abs(dx) + Math.abs(dy);
+    if (mode === '3d') {
+      cam.rot += dx * 0.008;
+      cam.tilt = Math.max(0.05, Math.min(1.45, cam.tilt + dy * 0.008));
+    }
+  } else {
+    const h = hit(e.clientX - r.left, e.clientY - r.top);
+    hover = h ? h.slug : null;
+    canvas.style.cursor = h ? 'pointer' : (mode === '3d' ? 'grab' : 'default');
+  }
+});
+canvas.addEventListener('mousedown', e => {
+  dragging = true; dragMoved = 0; lastX = e.clientX; lastY = e.clientY;
+  touched = true;
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  touched = true;
+  const f = e.deltaY < 0 ? 1.12 : 1/1.12;
+  cam.zoom = Math.max(0.4, Math.min(3.5, cam.zoom * f));
+}, { passive: false });
+
+m2d.addEventListener('click', () => {
+  mode = '2d'; cam = { tilt: 0, rot: 0, zoom: cam.zoom };
+  m2d.classList.add('active'); m3d.classList.remove('active');
+});
+m3d.addEventListener('click', () => {
+  mode = '3d'; cam = { tilt: 1.05, rot: 0, zoom: cam.zoom };
+  touched = false;
+  m3d.classList.add('active'); m2d.classList.remove('active');
+});
+
+function draw() {
+  const w = canvas._w, h = canvas._h;
+  if (!w || !h) return;
+  // Background
+  const g = ctx.createRadialGradient(w*0.5, h*0.4, 0, w*0.5, h*0.5, Math.max(w,h)*0.85);
+  g.addColorStop(0, 'rgba(28,22,50,1)'); g.addColorStop(0.5, 'rgba(12,13,30,1)'); g.addColorStop(1, 'rgba(6,8,15,1)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  const n = ctx.createRadialGradient(w*0.7, h*0.3, 0, w*0.7, h*0.3, Math.max(w,h)*0.5);
+  n.addColorStop(0, 'rgba(167,139,250,0.18)'); n.addColorStop(1, 'rgba(167,139,250,0)');
+  ctx.fillStyle = n; ctx.fillRect(0, 0, w, h);
+  const n2 = ctx.createRadialGradient(w*0.2, h*0.75, 0, w*0.2, h*0.75, Math.max(w,h)*0.45);
+  n2.addColorStop(0, 'rgba(56,189,248,0.12)'); n2.addColorStop(1, 'rgba(56,189,248,0)');
+  ctx.fillStyle = n2; ctx.fillRect(0, 0, w, h);
+  // Stars
+  for (const s of stars) {
+    const tw = (Math.sin(t * 1.4 + s.tw) + 1) * 0.5;
+    const a = 0.35 + tw * 0.6;
+    const px = ((s.x + t * 0.004) % 1) * w;
+    const py = s.y * h;
+    const tone = s.hue === 'violet' ? '167,139,250' : s.hue === 'cyan' ? '56,189,248' : '255,255,255';
+    ctx.fillStyle = `rgba(${tone},${a})`;
+    ctx.beginPath(); ctx.arc(px, py, s.r, 0, Math.PI*2); ctx.fill();
+  }
+  const cx = w/2, cy = h/2;
+  // Sun
+  const sg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22 * cam.zoom);
+  sg.addColorStop(0, 'rgba(255,224,156,1)'); sg.addColorStop(0.4, 'rgba(252,211,77,0.55)'); sg.addColorStop(1, 'rgba(252,211,77,0)');
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx, cy, 22 * cam.zoom, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(cx, cy, 3.2 * cam.zoom, 0, Math.PI*2); ctx.fill();
+
+  const ru = Math.min(w, h*2.4) * 0.12;
+  // Orbits
+  for (const c of CANDIDATES) {
+    ctx.strokeStyle = c.ring.ring; ctx.lineWidth = 0.8; ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    const STEPS = mode === '3d' ? 96 : 64;
+    for (let i = 0; i <= STEPS; i++) {
+      const a = (i / STEPS) * Math.PI * 2;
+      let lx, ly;
+      if (c.eccentric) { const p = eccentricPosition(a, c.orbit, 0.6); lx = p.x * ru; ly = p.y * ru; }
+      else { lx = Math.cos(a) * c.orbit * ru; ly = Math.sin(a) * c.orbit * ru; }
+      let y = ly, z = 0;
+      if (mode === '3d') { y = ly * Math.cos(c.inc); z = ly * Math.sin(c.inc); }
+      const pj = project(lx, y, z);
+      if (i === 0) ctx.moveTo(cx + pj.x, cy + pj.y);
+      else ctx.lineTo(cx + pj.x, cy + pj.y);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  // Planets — depth-sorted in 3D
+  const draws = positions().map(p => ({ p, proj: project(p.x, p.y, p.z) }));
+  draws.sort((a, b) => a.proj.z - b.proj.z);
+  for (const { p, proj } of draws) {
+    const sx = cx + proj.x, sy = cy + proj.y;
+    const size = p.c.size * proj.scale;
+    if (size < 0.5) continue;
+    const isHover = hover === p.c.slug;
+
+    // COMET TAIL: real implementation — tangent particle stream
+    if (p.c.class === 'comet') {
+      // Direction from sun (away from origin in screen space)
+      const dx = sx - cx, dy = sy - cy;
+      const dist = Math.hypot(dx, dy) || 1;
+      const tx = dx / dist, ty = dy / dist;
+      const tailLen = size * 14 + (1 - p.proj.scale / cam.zoom) * 10;
+      const tg = ctx.createLinearGradient(sx, sy, sx + tx * tailLen, sy + ty * tailLen);
+      tg.addColorStop(0, 'rgba(249,168,212,0.7)');
+      tg.addColorStop(0.5, 'rgba(244,114,182,0.25)');
+      tg.addColorStop(1, 'rgba(244,114,182,0)');
+      ctx.fillStyle = tg;
+      ctx.beginPath();
+      const perp = { x: -ty, y: tx };
+      const halfW = size * 1.6;
+      ctx.moveTo(sx + perp.x * halfW, sy + perp.y * halfW);
+      ctx.lineTo(sx - perp.x * halfW, sy - perp.y * halfW);
+      ctx.lineTo(sx + tx * tailLen, sy + ty * tailLen);
+      ctx.closePath();
+      ctx.fill();
+      // Particle dots along the tail
+      ctx.fillStyle = 'rgba(249,168,212,0.8)';
+      for (let i = 1; i < 6; i++) {
+        const f = i / 6;
+        const px = sx + tx * tailLen * f + (Math.sin(t * 4 + i) * 1.5);
+        const py = sy + ty * tailLen * f + (Math.cos(t * 4 + i) * 1.5);
+        ctx.beginPath(); ctx.arc(px, py, (1 - f) * 1.2 + 0.4, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    // Glow
+    const gl = ctx.createRadialGradient(sx, sy, 0, sx, sy, size * (isHover ? 4.5 : 3));
+    gl.addColorStop(0, p.c.ring.glow); gl.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(sx, sy, size * (isHover ? 4.5 : 3), 0, Math.PI*2); ctx.fill();
+    // Body
+    ctx.fillStyle = p.c.ring.planet;
+    ctx.beginPath(); ctx.arc(sx, sy, size, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 0.6; ctx.stroke();
+    if (isHover) {
+      ctx.font = '11px ui-monospace, monospace'; ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(230,236,245,0.98)';
+      ctx.fillText(p.c.slug, sx, sy - size - 8);
+    }
+  }
+}
+
+function loop(now) {
+  const dt = Math.min(0.06, (now - lastT) / 1000); lastT = now;
+  t += dt;
+  if (mode === '3d' && !touched) {
+    cam.rot += dt * 0.06;   // slow auto-orbit when untouched
+  }
+  draw();
+  hint.classList.toggle('hidden', mode === '2d' || touched);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body></html>
