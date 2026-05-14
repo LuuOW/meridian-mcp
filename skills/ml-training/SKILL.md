@@ -214,3 +214,7 @@ Every training run should persist: seed, git SHA, dataset hash, hyperparameters,
 - [ ] Model artifact + preprocessor saved together (Pipeline, not two files)
 - [ ] Inference latency benchmarked on CPU and target hardware
 - [ ] Drift monitoring plan in production (input distribution, output distribution, performance)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #64._
