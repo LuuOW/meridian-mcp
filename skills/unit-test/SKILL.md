@@ -385,3 +385,7 @@ npx playwright test --headed    # visible browser
 - [ ] `pytest.ini` markers documented — use them to split fast vs slow suites in CI
 - [ ] Frontend tests co-located with components in `__tests__/` subdirs
 - [ ] No `console.log` assertions — use `screen.getByText`, `toBeInTheDocument`, `toHaveBeenCalledWith`
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #99._
