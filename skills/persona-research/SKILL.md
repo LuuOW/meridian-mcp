@@ -77,3 +77,7 @@ Produce a source set with:
 - Treat biography and identity claims as highest-risk; prefer official site or direct profile sources
 - Treat testimonials as evidence of offer reception, not identity or worldview
 - Treat social/channel pages as discovery aids unless they contain direct authored text or transcripts
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #75._
