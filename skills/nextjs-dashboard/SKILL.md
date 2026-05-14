@@ -278,3 +278,7 @@ Inject a blocking script before React hydrates to set the theme class:
 - [ ] `min-h-svh` not `min-h-screen` on main content
 - [ ] Theme toggle works without flash on reload
 - [ ] All interactive controls have `focus-visible` ring
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #70._
