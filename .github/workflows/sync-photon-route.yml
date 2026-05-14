@@ -18,6 +18,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0          # subtree split needs full history
+          persist-credentials: false   # don't let the default extraheader
+                                       # override our x-access-token URL
 
       - name: Split photon-route subtree and push to standalone
         env:
