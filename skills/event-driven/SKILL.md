@@ -219,3 +219,7 @@ async def publish_article(slug: str):
 - [ ] Pattern subscriptions (`psubscribe`) used for wildcard channel listening
 - [ ] Event bus handlers are independently testable (pass mock payloads)
 - [ ] Background listener started in FastAPI lifespan context (not on startup hook)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #50._
