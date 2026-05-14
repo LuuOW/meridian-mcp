@@ -210,3 +210,7 @@ Breaking native changes (new dependency with native code, Expo SDK upgrade) stil
 - [ ] Hermes engine enabled (default in new Expo SDKs)
 - [ ] Sentry or Bugsnag for crash reporting — install before first TestFlight build
 - [ ] `react-native-performance` measures TTI; keep cold start < 2s
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #81._
