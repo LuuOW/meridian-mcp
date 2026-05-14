@@ -97,11 +97,20 @@ export function physicsOf(candidate, sibTokens) {
   // moves from kws/14 → kws/12 to widen the usable band.
   const scope = clamp(Math.min(0.7, kws.length / 12) + cross_domain * 0.3)
 
+  // Jaccard similarity in the sibling loop used to be O(|tokens|·|sib.toks|)
+  // per pair because `tokens.includes(t)` is linear and a fresh
+  // `new Set([...tokens, ...sib.toks])` was allocated each iteration. With
+  // 5–10 candidates per route call and ~50 tokens each, this is on the hot
+  // path. Lift the lookup into a Set (O(1) membership) and compute the union
+  // from |A| + |B| − |A∩B| since `tokens` and `sib.toks` are already
+  // de-duplicated by `uniq()` upstream.
+  const tokenSet = new Set(tokens)
   let bestTokSim = 0, bestKwSim = 0
   for (const sib of sibTokens) {
     if (sib.candidate === candidate) continue
-    const inter = sib.toks.reduce((n, t) => n + (tokens.includes(t) ? 1 : 0), 0)
-    const union = new Set([...tokens, ...sib.toks]).size
+    let inter = 0
+    for (const t of sib.toks) if (tokenSet.has(t)) inter++
+    const union = tokenSet.size + sib.toks.length - inter
     const j = union ? inter / union : 0
     if (j > bestTokSim) bestTokSim = j
 
@@ -109,7 +118,7 @@ export function physicsOf(candidate, sibTokens) {
     if (sibKws.size && kwSet.size) {
       let ki = 0
       for (const k of kwSet) if (sibKws.has(k)) ki++
-      const ku = new Set([...kwSet, ...sibKws]).size
+      const ku = kwSet.size + sibKws.size - ki
       const kj = ku ? ki / ku : 0
       if (kj > bestKwSim) bestKwSim = kj
     }
@@ -229,13 +238,18 @@ export function orbitalClassify(candidates, task) {
 
   const physics = enriched.map(({ candidate }) => physicsOf(candidate, enriched))
 
+  // Same Set-based Jaccard as physicsOf: precompute the candidate's tokens
+  // as a Set so the inner sibling loop is O(|sib.toks|) instead of
+  // O(|sib.toks|·|toks|).
   const parents = enriched.map(({ toks }, i) => {
+    const tokSet = new Set(toks)
     let best = null, bestSim = 0
     for (let j = 0; j < enriched.length; j++) {
       if (j === i) continue
       const sib  = enriched[j]
-      const inter = sib.toks.reduce((n, t) => n + (toks.includes(t) ? 1 : 0), 0)
-      const union = new Set([...toks, ...sib.toks]).size
+      let inter = 0
+      for (const t of sib.toks) if (tokSet.has(t)) inter++
+      const union = tokSet.size + sib.toks.length - inter
       const j2 = union ? inter / union : 0
       if (j2 > bestSim) { bestSim = j2; best = sib.candidate.slug }
     }

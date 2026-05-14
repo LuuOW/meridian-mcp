@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased — 2026-05-14
+
+**Hot-path tightening on the orbital classifier and photon-route retrieval.**
+
+- `mcp/_lib/orbital.mjs`: the sibling Jaccard loop in `physicsOf()` and the
+  parent-link loop in `orbitalClassify()` used `Array.includes()` for token
+  membership (O(M) per token) and a fresh `new Set([...A, ...B])` per
+  iteration for the union size. With ~50 tokens × 5–10 candidates this was a
+  noticeable fraction of every `route_task` call. Replaced with a Set
+  precomputed once per candidate plus the closed-form
+  |A ∪ B| = |A| + |B| − |A ∩ B|. Same numerical output, ~75% fewer array
+  scans on the hot path. All 34 orbital tests still pass.
+- `photon-route/src/photon_route/retrieve.py`: `rank_against` used a full
+  `sort()` then `[:top_k]` slice. Swapped to `heapq.nlargest(k, …)` when
+  `top_k < len(corpus)` — O(N log K) instead of O(N log N). Day-1 corpus
+  (~88 docs) doesn't notice; this keeps the cost proportional to K rather
+  than N as the corpus grows.
+
+No public API changes. Both changes are pure refactors that preserve
+ordering and scores. The CV photonic state space ranking is unchanged.
+
 ## [3.1.0] — 2026-05-09
 
 **B1 — added `coherence_time` (g^(1)-style autocorrelation) to the physics signature.**
