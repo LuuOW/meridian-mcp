@@ -204,3 +204,7 @@ async def find_stale_agents(max_age_s: int = 300) -> list[str]:
 - [ ] Handoff note written before any session ends
 - [ ] Inter-agent communication uses explicit contracts (not assumptions)
 - [ ] Results stored with TTL — no stale data accumulates indefinitely
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #72._
