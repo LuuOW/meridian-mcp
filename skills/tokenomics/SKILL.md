@@ -180,3 +180,7 @@ Governance attack threshold: an attacker needs >50% of voting power for a simple
 - [ ] Sink mechanisms are modeled at 1x, 5x, and 10x protocol growth — do they scale?
 - [ ] Top-10 holder concentration < 40%
 - [ ] No single entity controls > 15% of governance votes at launch
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #96._
