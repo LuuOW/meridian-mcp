@@ -114,3 +114,7 @@ r = requests.get("https://api.1inch.dev/swap/v6.0/8453/quote",
 - [ ] Private RPC or Flashbots bundle submission — never mempool for profitable arbs
 - [ ] Profit in USD cleared on-chain net of gas, flashloan fee, swap fees
 - [ ] Circuit breaker: halt bot if 3 consecutive reverts (quote source is stale)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #39._
