@@ -921,7 +921,15 @@
   }
 
   function schedule(){ clearTimeout(debounceT); debounceT=setTimeout(run,280); }
-  function vizSchedule(){ updateViz(q.value.trim()); }
+  // Tiny debounce on the Wigner encode — encodeState is async and a fast
+  // typist would otherwise queue a dozen in-flight encodes, each racing
+  // to update v0/v1. 60 ms is short enough to feel live but coalesces
+  // the typical 4-5 keystrokes-per-word into one encode.
+  var vizT = null
+  function vizSchedule(){
+    clearTimeout(vizT)
+    vizT = setTimeout(function(){ updateViz(q.value.trim()) }, 60)
+  }
   q.addEventListener('input',schedule);
   q.addEventListener('input',vizSchedule);
   k.addEventListener('input',schedule);
