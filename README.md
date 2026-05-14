@@ -2,7 +2,7 @@
 
 **Dynamic task routing via orbital mechanics. Domain-agnostic — candidates can be tools, prompts, documents, products, or any routable entity.**
 
-Per request, an LLM (Llama-3.3-70B via [GitHub Models](https://github.com/marketplace/models)' free tier) emits *N* candidate routing entries. A deterministic classifier extracts an 11-dimensional physics signature from each candidate's content alone — no curated lookup: `mass` (log-scaled body length × keyword count), `scope`, `independence`, `cross_domain` affinity (token-domain entropy across three star systems), `fragmentation`, `drag`, `dep_ratio` (max sibling Jaccard), `lagrange_potential`, plus orbital parameters. Six per-class scoring rules assign a celestial body class by argmax: `planet`, `moon`, `trojan`, `asteroid`, `comet`, or `irregular`.
+Per request, an LLM (Llama-3.3-70B via [GitHub Models](https://github.com/marketplace/models)' free tier) emits *N* candidate routing entries. A deterministic classifier extracts a 9-scalar physics signature from each candidate's content alone — no curated lookup: `mass` (log-scaled body length × keyword count), `scope`, `independence`, `cross_domain` affinity (token-domain entropy across three star systems), `fragmentation`, `drag`, `dep_ratio` (max sibling Jaccard), `lagrange_potential`, `coherence_time` (g⁽¹⁾-style autocorrelation over the candidate's token stream — added in 3.1.0), plus orbital and optical parameters (semi-major axis, eccentricity, inclination, period, perihelion, aphelion, mean anomaly; wavelength, polarization, amplitude, phase). Six per-class scoring rules assign a celestial body class by argmax: `planet`, `moon`, `trojan`, `asteroid`, `comet`, or `irregular`.
 
 The class-scoring rules:
 
@@ -67,7 +67,7 @@ If you'd rather operate your own remote MCP, the package ships a Node binary:
 
 ```bash
 npx -y meridian-orbital meridian-mcp-http
-# → listening on http://0.0.0.0:3333/mcp · auth=pass-through · v2.1.0
+# → listening on http://0.0.0.0:3333/mcp · auth=pass-through · v3.1.0
 ```
 
 Or via Docker (`MCP_MODE=http` flips the entrypoint):
@@ -136,7 +136,7 @@ To keep using the closed-domain Python scorer + curated 88-entry corpus that shi
 Same orbital classifier powers two front-ends served from `mcp.ask-meridian.uk`:
 
 - **[ask-meridian.uk/miniapp](https://ask-meridian.uk/miniapp)** — type a task, see the candidates orbit. Calls the live MCP at `mcp.ask-meridian.uk/v1/route`, same Llama-3.3-70B + classifier path the connector uses.
-- **[lens.ask-meridian.uk](https://lens.ask-meridian.uk)** — WebXR Vision Lab, on-device SmolVLM, in-headset orbits. Same backend.
+- **[meridian.ask-meridian.uk/lens/](https://meridian.ask-meridian.uk/lens/)** — WebXR Vision Lab. Captured headset frames POST to `mcp.ask-meridian.uk/v1/vision` (GPT-4o-mini, operator-paid), candidates orbit anchored star systems in-view. Same backend as miniapp.
 
 Both call the **first-party browser endpoint** `/v1/route` — Origin-allowlisted, operator-paid, no PAT pasting. The OAuth-gated `/mcp` endpoint (this section's "Use as a Grok connector" path) is unchanged.
 
@@ -149,7 +149,7 @@ user click → /v1/feedback → KV → SGD step → updated weights → next /v1
 ```
 
 - `final_score = heuristic_route_score × (1 + tanh(K · w·x))` — bounded to [0, 2], so no individual candidate can be silently boosted beyond 2× heuristic.
-- 24-feature vector per candidate: 8 physics scalars + 6 class one-hot + 3 star-system one-hot + 3 token-hit features + 4 ranking features.
+- 25-feature vector per candidate: 9 physics scalars (the 8 originals plus `coherence_time` added in 3.1.0) + 6 class one-hot + 3 star-system one-hot + 3 token-hit features + 4 ranking features. Stored under `FEATURE_VERSION=v2` in KV; bumping the version re-inits weights cleanly.
 - Cold start: `w = 0`, multiplier = 1, pure heuristic. Day 1 deployments don't need any training data.
 - The OAuth-gated `/mcp` path (Grok / ChatGPT / Claude.ai connectors) keeps deterministic heuristic ranking for reproducibility.
 - Two GitHub Actions cron jobs close the loop without organic traffic: `classifier-bootstrap.yml` (every 3 days, feeds labelled examples from a public HF benchmark into `/v1/feedback`) and `classifier-health.yml` (Mondays, posts recall@1 / @5 + model state to `landing/healthz.json`).
