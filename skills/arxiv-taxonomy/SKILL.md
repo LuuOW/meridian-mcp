@@ -136,3 +136,7 @@ When user says "dark matter", union:
 - `astro-ph.CO`
 - `astro-ph.HE` (indirect detection)
 - sometimes `physics.ins-det` (direct detection experiments)
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #23._
