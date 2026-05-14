@@ -174,3 +174,7 @@ async def should_refresh(slug: str) -> bool:
 - [ ] Images have descriptive alt text
 - [ ] Canonical tag set correctly
 - [ ] Submitted to sitemap / GSC after publish
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #87._
