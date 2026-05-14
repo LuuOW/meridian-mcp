@@ -122,3 +122,7 @@ Host internal-db
 - [ ] Authorized keys audited — no unrecognized entries
 - [ ] Restricted `authorized_keys` options on service/CI keys (command=, no-pty, etc.)
 - [ ] `sshd -t` passes after every config change before reload
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #90._
