@@ -85,3 +85,7 @@ Mark transcript ingestion quality clearly:
 - `page_transcript`
 - `show_notes_fallback`
 - `no_transcript`
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #97._
