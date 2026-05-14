@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased — 2026-05-14
+## [3.2.0] — 2026-05-14
+
+Bundles three independent improvements landed across 2026-05-14 — the
+classifier calibration plus the two hot-path tightenings. No API changes,
+no migration required; semantics preserved, classification numerics
+slightly improved.
 
 **Orbital classifier calibration: lift moon / comet / irregular out of dead zones, reduce length-bias.**
 
