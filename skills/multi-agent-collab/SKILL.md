@@ -356,3 +356,7 @@ agent-coordinator:
 - [ ] `/opt/shared-context/` for task queue + results (bind-mounted into all agents)
 - [ ] `host.docker.internal` + `host-gateway` for container → host SSH
 - [ ] No `git clone` in any `command:` or `entrypoint:` — detect and remove if found
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #66._
