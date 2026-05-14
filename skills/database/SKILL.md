@@ -171,3 +171,7 @@ async with session.begin_nested():
 - [ ] No `SELECT *` in production — select only needed columns
 - [ ] Bulk operations use `execute(insert(...).values(list))` not a loop
 - [ ] Service key never exposed client-side (Supabase)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #38._
