@@ -174,3 +174,7 @@ dig TXT s1._domainkey.example.com +short
 - [ ] Cloudflare API token scoped to DNS:Edit only (not global API key)
 - [ ] Wildcard cert uses DNS-01 challenge, not HTTP-01
 - [ ] `dig +trace` baseline captured for new domains
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #41._
