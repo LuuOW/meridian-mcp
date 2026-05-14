@@ -363,3 +363,7 @@ def get_db():
 - [ ] Slack endpoints verify HMAC before processing
 - [ ] Frontend axios instance has 401 interceptor → logout + redirect
 - [ ] `response_model=` set on all FastAPI routes for auto-serialization
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #22._
