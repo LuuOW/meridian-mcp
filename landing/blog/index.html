@@ -296,7 +296,19 @@
 
   <section style="padding: 0 0 72px;">
     <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-14 · 8 min read · new</div>
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-14 · 9 min read · new</div>
+      <h2 style="margin: 8px 0 12px; font-size: 22px;">
+        <a href="/blog/apple-neural-engine-eligibility-vs-placement/" style="color: var(--text); text-decoration: none;">
+          100% on the Apple Neural Engine — eligibility is not placement
+        </a>
+      </h2>
+      <p style="margin: 0; color: var(--text-muted);">
+        We followed Apple's four-constraint recipe to the letter, converted a transformer to MLPackage, and got <strong>100% static residency</strong> on the first pass. Then we asked the CoreML runtime where it actually ran the ops. <strong>0% on the ANE.</strong> Same recipe, scaled to ESM2-class size, scheduler flipped to 100% ANE placement. The post explains why eligibility and placement are different problems, and ships the Swift <code>MLComputePlan</code> tool that distinguishes them without opening Xcode.
+      </p>
+    </article>
+
+    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-14 · 8 min read</div>
       <h2 style="margin: 8px 0 12px; font-size: 22px;">
         <a href="/blog/webgpu-vlm-molstar-ram-pivot/" style="color: var(--text); text-decoration: none;">
           Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server
