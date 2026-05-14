@@ -205,3 +205,7 @@ ALERTS = {
 - [ ] Published with correct schema markup
 - [ ] Added to editorial calendar with publish date
 - [ ] SERP tracking enabled post-publish
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #34._
