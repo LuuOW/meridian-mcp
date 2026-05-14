@@ -126,3 +126,7 @@ Before publishing any claim:
 - The question depends on a future event whose base rate is unknown.
 
 Better to say "I don't know — here's what would change my mind" than to emit a confident guess.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #98._
