@@ -95,3 +95,7 @@ Alternatively, linear combination: `score = alpha * dense_score + (1 - alpha) * 
 - **Contextual compression**: after retrieval, use an LLM to extract only the relevant sentences from each chunk before packing context. Reduces noise in long chunks.
 
 **Evaluation**: use RAGAS framework — metrics: `context_precision`, `context_recall`, `faithfulness`, `answer_relevancy`. Run evals on a golden Q&A dataset (50-200 questions with reference answers and relevant chunk IDs).
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #101._
