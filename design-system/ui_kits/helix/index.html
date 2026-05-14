@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>helix — Meridian</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* ──────────────────────────────────────────────────────────────────────────
+   MERIDIAN — Colors & Type tokens
+   Lifted directly from landing/style.css + miniapp/miniapp.css in the
+   LuuOW/meridian-mcp monorepo. Dark-mode first; no light variant.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── BACKGROUNDS ───────────────────────────────────────────────── */
+  --bg:               #0a0d14;   /* deep space — the canonical page bg */
+  --bg-deep:          #06080f;   /* darker for inset surfaces */
+  --bg-card:          rgba(18, 23, 36, 0.7);   /* translucent card on the radial-gradient body */
+  --bg-code:          #0f1220;   /* code blocks + textareas */
+
+  /* The page wash itself — three stacked radial-gradients over a flat
+     vertical fade. Use as `background: var(--bg-page);` on body. */
+  --bg-page:
+    radial-gradient(1400px 700px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(900px 500px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+
+  /* ── TEXT ──────────────────────────────────────────────────────── */
+  --text:             #e6ecf5;   /* primary */
+  --text-muted:       #8a94a6;   /* secondary body, lead, captions */
+  --text-faint:       #5d6778;   /* tertiary — eyebrow labels, footnote */
+
+  /* ── BORDERS ───────────────────────────────────────────────────── */
+  --border:           rgba(148, 163, 184, 0.14);
+  --border-2:         rgba(148, 163, 184, 0.22);
+  --border-violet:    rgba(167, 139, 250, 0.35);
+
+  /* ── BRAND ACCENTS ─────────────────────────────────────────────── */
+  --accent:           #a78bfa;   /* neon-violet — the brand primary */
+  --accent-d:         #8b5cf6;   /* violet-deep — gradient endpoint */
+  --accent-2:         #10b981;   /* mint — "live" status, success */
+  --astro:            #38bdf8;   /* sky — secondary accent, links */
+  --pink:             #f472b6;   /* hot-pink — comet class, decorative */
+
+  /* ── NEON PALETTE (the four anchors of every glow + gradient) ─── */
+  --neon-violet:      #a78bfa;
+  --neon-cyan:        #38bdf8;
+  --neon-mint:        #10b981;
+  --neon-pink:        #f472b6;
+  --glow-violet:      rgba(167, 139, 250, 0.55);
+  --glow-cyan:        rgba(56, 189, 248, 0.45);
+
+  /* ── CELESTIAL CLASS COLORS ────────────────────────────────────── */
+  --class-planet:     #7dd3fc;   /* sky-300  — stable, glowing core */
+  --class-moon:       #cbd5e1;   /* slate-300 — quiet satellite */
+  --class-trojan:     #c4b5fd;   /* violet-300 — companions */
+  --class-asteroid:   #fcd34d;   /* amber-300 — small + bright */
+  --class-comet:      #f9a8d4;   /* pink-300 — dynamic, tail */
+  --class-irregular:  #d8b4fe;   /* purple-300 — oddball */
+
+  /* ── STAR-SYSTEM TINTS ─────────────────────────────────────────── */
+  --system-forge:     #f97316;   /* orange — execution / build */
+  --system-signal:    #38bdf8;   /* cyan — telemetry / observe */
+  --system-mind:      #a78bfa;   /* violet — reason / model */
+
+  /* ── GRADIENTS ─────────────────────────────────────────────────── */
+  --grad-hero:        linear-gradient(90deg, #a78bfa, #38bdf8 60%, #10b981);
+  --grad-btn:         linear-gradient(180deg, #a78bfa, #8b5cf6);
+  --grad-price:       linear-gradient(180deg, #ddd6fe, #a78bfa 70%, #8b5cf6);
+
+  /* ── SPACING (4 px base) ──────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+  --section-y: clamp(48px, 8vw, 96px);
+
+  /* ── RADII ─────────────────────────────────────────────────────── */
+  --r-1:    6px;
+  --r-2:   10px;
+  --r-3:   14px;
+  --r-pill: 999px;
+
+  /* ── ELEVATION / GLOWS ─────────────────────────────────────────── */
+  --shadow-card:      0 0 18px rgba(167, 139, 250, 0.06);
+  --shadow-card-hover: 0 0 0 1px rgba(167, 139, 250, 0.35),
+                       0 0 28px rgba(167, 139, 250, 0.20);
+  --shadow-btn:       0 0 0 1px rgba(167, 139, 250, 0.45),
+                      0 0 14px 2px rgba(167, 139, 250, 0.35),
+                      0 0 28px 6px rgba(167, 139, 250, 0.18);
+  --shadow-panel:     -8px 0 40px rgba(0, 0, 0, 0.5),
+                      -1px 0 24px rgba(167, 139, 250, 0.18);
+
+  /* ── MOTION ────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    0.15s;
+  --dur-base:    0.25s;
+  --dur-slow:    0.5s;
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────────────── */
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — display down to caption. Headings are tight-tracked
+     and balanced; body is slack at 1.65 line-height. */
+  --fs-display:   clamp(36px, 6vw, 60px);
+  --fs-h1:        clamp(28px, 5vw, 40px);
+  --fs-h2:        clamp(22px, 3.5vw, 32px);
+  --fs-h3:        17px;
+  --fs-lead:      17px;
+  --fs-body:      15px;
+  --fs-small:     13.5px;
+  --fs-caption:   12px;
+  --fs-eyebrow:   11.5px;   /* mono, all-caps, 0.18em tracking */
+  --fs-code:      13.5px;
+
+  --lh-tight:     1.05;
+  --lh-snug:      1.15;
+  --lh-base:      1.65;
+  --lh-mono:      1.7;
+
+  --tracking-tight:   -0.025em;
+  --tracking-tight-2: -0.02em;
+  --tracking-eyebrow: 0.18em;
+  --tracking-section: 0.12em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SEMANTIC TYPE — apply these classes anywhere in the system.
+   ────────────────────────────────────────────────────────────────────────── */
+.t-display {
+  font-family: var(--font-body);
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h1 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h2 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h2);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h3 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h3);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.t-lead {
+  font-family: var(--font-body);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-base);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+.t-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-base);
+  color: var(--text);
+}
+.t-small {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  line-height: var(--lh-mono);
+  color: #a5b4fc;
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* The signature gradient text — used on hero phrase + price values. */
+.t-grad {
+  background: var(--grad-hero);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FONTS — Meridian uses the system Inter + JetBrains Mono stacks. Both are
+   loaded from Google Fonts because the codebase only declares them by name
+   in `font-family` (no /fonts/*.ttf shipped). If you need offline fidelity,
+   self-host these two families and they'll drop straight in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg-page); min-height: 100vh; color: var(--text); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* SHARED NAV */
+.nav { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 14px 28px; border-bottom: 1px solid var(--border); position: sticky; top: 0; backdrop-filter: blur(12px); background: rgba(10,13,20,0.85); z-index: 10; }
+.brand { font-weight: 700; font-size: 17px; color: var(--accent); text-decoration: none; }
+.nav-inline { list-style: none; padding: 0; margin: 0; display: flex; gap: 8px; }
+.nav-inline-link { background: transparent; border: none; color: var(--text-muted); font-family: inherit; font-size: 14px; padding: 6px 10px; cursor: pointer; border-radius: 8px; text-decoration: none; }
+.nav-inline-link:hover { color: var(--text); background: rgba(167,139,250,0.06); }
+.nav-inline-link .caret { font-size: 10px; margin-left: 4px; color: var(--text-faint); }
+.cmdk-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px 6px 12px; border-radius: 8px; border: 1px solid var(--border-2); background: rgba(15,18,32,0.6); color: var(--text-muted); font-family: inherit; font-size: 13px; cursor: pointer; }
+.cmdk-kbd { font-family: var(--font-mono); font-size: 11px; background: rgba(148,163,184,0.12); padding: 1px 6px; border-radius: 4px; color: var(--text-muted); }
+.nav-gh-link { color: var(--text-muted); display: inline-flex; }
+.nav-gh-link:hover { color: var(--text); }
+@media (max-width: 900px) { .nav-inline, .cmdk-trigger { display: none; } .nav { padding: 12px 16px; } }
+
+
+.stage { position: relative; padding: 36px 24px 240px; }
+.universe { display: flex; flex-direction: column; gap: 28px; align-items: center; max-width: 760px; margin: 0 auto; }
+.universe-empty { color: var(--text-faint); font-size: 14px; line-height: 1.6; text-align: center; padding: 40px 20px; max-width: 520px; }
+
+/* Star-system card per protein */
+.system {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(124,58,237,0.18), rgba(6,8,15,0.92) 70%),
+    rgba(16,19,28,0.5);
+  border: 1px solid rgba(167,139,250,0.30);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 240ms, border-color 240ms, box-shadow 240ms;
+  isolation: isolate;
+}
+.system:hover {
+  transform: translateY(-4px);
+  border-color: rgba(56,189,248,0.45);
+  box-shadow: 0 18px 60px rgba(0,0,0,0.5), 0 0 30px rgba(56,189,248,0.18);
+}
+.system-header {
+  position: absolute; top: 14px; left: 18px; right: 18px;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; z-index: 4;
+}
+.system-rank {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(56,189,248,0.14); border: 1px solid rgba(56,189,248,0.40);
+  font-family: var(--font-mono); font-size: 12px; color: var(--astro); font-weight: 700;
+  margin-right: 10px;
+}
+.system-title { flex: 1; min-width: 0; }
+.system-name { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.system-uniprot { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.system-classify {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px;
+  white-space: nowrap;
+}
+.system-classify[data-class="Planet"]    { background: rgba(56,189,248,0.16);  color: #7dd3fc; border: 1px solid rgba(56,189,248,0.35); }
+.system-classify[data-class="Moon"]      { background: rgba(148,163,184,0.16); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.35); }
+.system-classify[data-class="Trojan"]    { background: rgba(167,139,250,0.16); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.35); }
+.system-classify[data-class="Asteroid"]  { background: rgba(251,191,36,0.14);  color: #fcd34d; border: 1px solid rgba(251,191,36,0.30); }
+.system-classify[data-class="Comet"]     { background: rgba(244,114,182,0.14); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.30); }
+.system-classify[data-class="Irregular"] { background: rgba(192,132,252,0.16); color: #d8b4fe; border: 1px solid rgba(192,132,252,0.35); }
+
+/* Center protein "star" with orbiting compounds */
+.system-center {
+  position: absolute; top: 60px; bottom: 110px; left: 7%; right: 7%;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(124,58,237,0.30), rgba(34,211,238,0.05) 55%, rgba(6,8,15,0) 80%);
+  box-shadow:
+    0 0 40px rgba(124,58,237,0.20),
+    inset 0 0 0 1px rgba(167,139,250,0.16);
+  overflow: hidden;
+}
+.system-center svg { width: 100%; height: 100%; }
+.viewer-tool {
+  position: absolute; top: 14px; right: 14px;
+  width: 30px; height: 30px;
+  background: rgba(10,13,20,0.82);
+  border: 1px solid rgba(167,139,250,0.45);
+  border-radius: 8px;
+  color: var(--text); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 5;
+}
+.viewer-tool svg { width: 14px; height: 14px; }
+
+.system-footer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 14px 22px 16px;
+  background: linear-gradient(to top, rgba(6,8,15,0.95), transparent);
+  z-index: 4;
+}
+.system-scores { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.score-pill {
+  background: rgba(56,189,248,0.12);
+  border: 1px solid rgba(56,189,248,0.32);
+  border-radius: 999px;
+  padding: 3px 10px; font-size: 10.5px;
+  color: var(--astro);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.score-pill.warm { background: rgba(255,162,118,0.10); border-color: rgba(255,162,118,0.35); color: #fdba74; }
+.score-pill.dim { background: rgba(148,163,184,0.08); border-color: rgba(148,163,184,0.2); color: var(--text-muted); }
+.system-rationale {
+  font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Input card pinned at bottom */
+.input-card {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: 24px;
+  width: min(680px, calc(100vw - 32px));
+  padding: 14px;
+  background: rgba(16, 19, 28, 0.85);
+  border: 1px solid rgba(167,139,250,0.35);
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+  z-index: 30;
+}
+.input-card textarea {
+  width: 100%; min-height: 64px; max-height: 140px; resize: vertical;
+  background: rgba(12, 15, 23, 0.7); color: var(--text);
+  border: 1px solid var(--border-2); border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit; font-size: 14px; line-height: 1.5;
+}
+.input-card textarea:focus { outline: none; border-color: rgba(56,189,248,0.55); }
+.input-row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.btn { border: 0; border-radius: 10px; padding: 9px 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: transform 0.12s; }
+.btn:hover { transform: translateY(-1px); }
+.btn.primary { background: var(--accent); color: #0a0d14; box-shadow: 0 4px 18px rgba(167,139,250,0.35); }
+.btn.ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-2); }
+.btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+.status { font-size: 12px; color: var(--text-faint); flex: 1; text-align: right; min-width: 100px; font-family: var(--font-mono); }
+.status.busy { color: var(--accent); }
+
+/* Compound orbits inside .system-center */
+.compound-label {
+  font-family: var(--font-mono); font-size: 10px;
+  fill: var(--text-muted);
+}
+.compound-orbit { stroke: rgba(155,182,234,0.12); fill: none; stroke-dasharray: 1 4; stroke-width: 0.5; }
+.protein-core {
+  fill: url(#protGlow);
+}
+
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="#" class="brand">◎ Meridian</a>
+  <ul class="nav-inline">
+    <li><button class="nav-inline-link">Apps <span class="caret">▾</span></button></li>
+    <li><a href="#" class="nav-inline-link">Docs</a></li>
+    <li><a href="#" class="nav-inline-link">Blog</a></li>
+  </ul>
+  <button class="cmdk-trigger" type="button">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span>Search</span><kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+  <a href="#" class="nav-gh-link" aria-label="GitHub">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+</nav>
+
+<main class="stage">
+  <div class="universe" id="universe">
+    <div class="universe-empty">
+      Describe an injury below. Each recommended protein renders as its own star system —
+      the protein at center, its real chemical compounds in orbit.
+    </div>
+  </div>
+
+  <section class="input-card">
+    <textarea id="desc" placeholder="Describe the injury — e.g. corneal abrasion, sharp pain on blink, photophobia. Cmd/Ctrl+Enter to send.">corneal abrasion · right eye · sharp pain on blink · photophobia</textarea>
+    <div class="input-row">
+      <button class="btn ghost">📷 photo</button>
+      <span class="status" id="status">idle · llama-3.3-70b ready</span>
+      <button class="btn primary" id="run">recommend ↵</button>
+    </div>
+  </section>
+</main>
+
+
+<script>
+const PROTEINS = [
+  {
+    rank: 1, name: 'NGF (Nerve Growth Factor)', uniprot: 'P01138',
+    classify: 'Planet',
+    rationale: 'Topical recombinant NGF (cenegermin) is licensed for neurotrophic keratitis — directly stimulates corneal epithelial regeneration via TrkA signaling.',
+    scores: [{ k: 'binding', v: '0.91' }, { k: 'safety', v: '0.84' }, { k: 'evidence', v: '4 RCTs', warm: true }],
+    compounds: [
+      { name: 'TrkA', orbit: 0.55, color: '#7dd3fc' },
+      { name: 'p75', orbit: 0.78, color: '#c4b5fd' },
+      { name: 'NGF-β', orbit: 1.0, color: '#6ee7b7' },
+    ]
+  },
+  {
+    rank: 2, name: 'EGF (Epidermal Growth Factor)', uniprot: 'P01133',
+    classify: 'Planet',
+    rationale: 'Recombinant EGF eye drops accelerate epithelial closure in corneal abrasions. EGFR-mediated mitogenesis on the basal epithelium.',
+    scores: [{ k: 'binding', v: '0.87' }, { k: 'safety', v: '0.79' }, { k: 'evidence', v: '2 RCTs', warm: true }],
+    compounds: [
+      { name: 'EGFR', orbit: 0.55, color: '#7dd3fc' },
+      { name: 'TGF-α', orbit: 0.85, color: '#fcd34d' },
+    ]
+  },
+  {
+    rank: 3, name: 'IGF-1', uniprot: 'P05019',
+    classify: 'Trojan',
+    rationale: 'Synergistic with substance P in promoting corneal nerve regeneration. Adjunct, not standalone — pairs with NGF.',
+    scores: [{ k: 'binding', v: '0.72' }, { k: 'safety', v: '0.81' }, { k: 'pairs with NGF', dim: true }],
+    compounds: [
+      { name: 'IGF-1R', orbit: 0.55, color: '#7dd3fc' },
+      { name: 'sub-P', orbit: 0.80, color: '#f9a8d4' },
+    ]
+  },
+];
+
+const universe = document.getElementById('universe');
+const runBtn = document.getElementById('run');
+const status = document.getElementById('status');
+
+function makeSystemCard(p) {
+  const compounds = p.compounds.map((c, i) => {
+    const radius = 60 + i * 50;
+    const angle = i * 2.1;
+    const x = 200 + Math.cos(angle) * radius;
+    const y = 130 + Math.sin(angle) * radius;
+    return `
+      <circle class="compound-orbit" cx="200" cy="130" r="${radius}"/>
+      <g><circle cx="${x}" cy="${y}" r="8" fill="${c.color}" filter="url(#g)"/>
+        <circle cx="${x}" cy="${y}" r="3" fill="${c.color}"/>
+        <text class="compound-label" x="${x}" y="${y + 22}" text-anchor="middle">${c.name}</text>
+        <animateTransform attributeName="transform" type="rotate"
+          from="0 200 130" to="360 200 130" dur="${15 + i * 8}s"
+          repeatCount="indefinite"/>
+      </g>
+    `;
+  }).join('');
+
+  const scores = p.scores.map(s => `<span class="score-pill${s.warm ? ' warm' : s.dim ? ' dim' : ''}">${s.k}${s.v ? ' ' + s.v : ''}</span>`).join('');
+
+  return `
+    <article class="system" data-rank="${p.rank}">
+      <header class="system-header">
+        <div style="display: flex; align-items: center;">
+          <span class="system-rank">${p.rank}</span>
+          <div class="system-title">
+            <div class="system-name">${p.name}</div>
+            <div class="system-uniprot">UniProt · ${p.uniprot}</div>
+          </div>
+        </div>
+        <span class="system-classify" data-class="${p.classify}">${p.classify}</span>
+      </header>
+      <div class="system-center">
+        <button class="viewer-tool" title="Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5"/></svg>
+        </button>
+        <svg viewBox="0 0 400 280">
+          <defs>
+            <radialGradient id="protGlow">
+              <stop offset="0%" stop-color="#ddd6fe" stop-opacity="0.95"/>
+              <stop offset="35%" stop-color="#a78bfa" stop-opacity="0.65"/>
+              <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="g">
+              <feGaussianBlur stdDeviation="4" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- background nebula -->
+          <ellipse cx="200" cy="130" rx="180" ry="100" fill="url(#protGlow)" opacity="0.4"/>
+          <!-- protein core -->
+          <circle cx="200" cy="130" r="32" class="protein-core"/>
+          <circle cx="200" cy="130" r="10" fill="#fef3c7"/>
+          <!-- mini polypeptide squiggle to suggest structure -->
+          <path d="M 175 125 Q 185 115 195 125 Q 205 135 215 125 Q 225 115 220 130 Q 215 145 200 140 Q 185 135 180 135"
+                fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round"/>
+          ${compounds}
+        </svg>
+      </div>
+      <div class="system-footer">
+        <div class="system-scores">${scores}</div>
+        <p class="system-rationale">${p.rationale}</p>
+      </div>
+    </article>
+  `;
+}
+
+runBtn.addEventListener('click', () => {
+  universe.innerHTML = '';
+  status.textContent = 'routing · authoring candidates…'; status.classList.add('busy');
+  setTimeout(() => {
+    status.textContent = 'rendering structures…';
+  }, 800);
+  setTimeout(() => {
+    universe.innerHTML = PROTEINS.map(makeSystemCard).join('');
+    status.textContent = 'done · 3 candidates · 4.2s'; status.classList.remove('busy');
+  }, 1600);
+});
+</script>
+
+</body></html>
