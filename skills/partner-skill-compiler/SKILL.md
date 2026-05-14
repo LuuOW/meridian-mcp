@@ -92,3 +92,7 @@ The final skill should frame the result as:
 - Are the best first-person lines self-authored rather than testimonial?
 - Do worldview and operating-style sections reflect repeated evidence?
 - Would a user get practical strategy from the skill, not just biography?
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #74._
