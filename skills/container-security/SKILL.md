@@ -266,3 +266,7 @@ services:
 - [ ] `docker history` audit passes — no credential strings in layer commands
 - [ ] Named networks with least-privilege topology (DB not reachable from frontend)
 - [ ] No ports exposed directly to `0.0.0.0` in production
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #33._
