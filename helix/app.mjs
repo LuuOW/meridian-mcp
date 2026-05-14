@@ -692,8 +692,15 @@ function renderSelection(sel, pdbId) {
     const pdbText = pdbTextCache.get(pdbId)
     if (pdbText) {
       const model = parseResidueAtoms(pdbText, sel)
-      drawMolecule(canvas, model)
+      // The detail panel slides in via a CSS transform transition. The
+      // first time the panel opens, calling drawMolecule synchronously
+      // reads canvas.clientWidth/Height before layout has settled and
+      // the backing-buffer becomes 0×0 — the user then sees the text
+      // block but a blank canvas slot. Defer one rAF so layout is
+      // complete; subsequent selections also benefit (no harm done).
+      // Show the canvas first so its layout pass happens this tick.
       canvas.style.display = model ? '' : 'none'
+      if (model) requestAnimationFrame(() => drawMolecule(canvas, model))
     }
   }
 }
@@ -742,6 +749,23 @@ detail.querySelector('.detail-close').addEventListener('click', () => {
   detail.hidden = true
   renderSelection(null)
 })
+
+// Test hook for the UI suite (tests/ui/helix.spec.mjs). Driving Mol*'s
+// pointer-click headlessly is flaky — atom positions depend on camera
+// state and PDB geometry. This exposes the selection-rendering surface
+// so Playwright can verify the slider's canvas actually paints after
+// a synthetic click, without needing to land on a real atom by chance.
+//
+// Production cost: ~70 bytes, no behavior change, no PII. Intentional.
+if (typeof window !== 'undefined') {
+  window.__helix_internal__ = {
+    pdbTextCache,
+    renderSelection,
+    parseResidueAtoms,
+    drawMolecule,
+    showDetail,
+  }
+}
 
 // ── Helpers
 function pill(text, cls = '') {
