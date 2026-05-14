@@ -211,3 +211,7 @@ async def map_reduce_summarise(chunks: list[str], question: str) -> str:
 - [ ] Strongest model (Opus) used as judge, not as primary worker
 - [ ] Chain-of-thought used for multi-step reasoning tasks
 - [ ] Self-consistency (N≥5) used for high-stakes single answers
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #82._
