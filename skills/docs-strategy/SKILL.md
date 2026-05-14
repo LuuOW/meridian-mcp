@@ -206,3 +206,7 @@ def pages_without_headings():
 - Duplicating content instead of linking — duplication drifts, links don't lie
 - No `noindex` on staging doc sites — search engines index drafts and rank them above production
 - Merging docs PRs without running linkcheck — dead links accumulate silently
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #46._
