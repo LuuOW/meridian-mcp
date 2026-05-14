@@ -69,3 +69,7 @@ async def firecrawl_scrape(url: str) -> dict:
 - Accept URLs from `exa-search`.
 - Escalate failed dynamic pages to `brightdata-collection`.
 - Return normalized content objects suitable for RAG, summarization, or citation analysis.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #54._
