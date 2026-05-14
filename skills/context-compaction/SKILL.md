@@ -86,3 +86,7 @@ Do not carry research noise into implementation unless it is still causally rele
 - [ ] Kept exact errors and commands still needed for verification
 - [ ] Dropped duplicate summaries and obsolete alternatives
 - [ ] Reduced token load without reducing decision quality
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #35._
