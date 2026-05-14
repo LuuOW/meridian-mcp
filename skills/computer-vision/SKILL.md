@@ -68,3 +68,7 @@ Gotcha: operations like `torch.nn.functional.grid_sample` (used in deformable co
 **Albumentations** is faster than torchvision transforms for augmentation-heavy pipelines (SIMD-optimized). `A.Compose([A.HorizontalFlip(), A.RandomBrightnessContrast(), A.Normalize(...), ToTensorV2()])` with `bbox_params=A.BboxParams(format='yolo')` for detection. Use `A.OneOf` for randomly selected augmentation branches.
 
 **Roboflow** / **FiftyOne** for dataset curation — FiftyOne's brain module (`fo.brain.compute_uniqueness`, `compute_similarity`) identifies near-duplicates and hard negatives without manual review. Label quality check with `fo.utils.quality` catches annotation errors before training.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #32._
