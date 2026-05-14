@@ -186,3 +186,7 @@ This costs ~30 extra tokens to write but saves the next session from re-deriving
 - [ ] Not reading files that aren't directly on the change path
 - [ ] If the full implementation is > 500 tokens: added it to `PENDING.md` with scope notes
 - [ ] Workaround has a comment if the "right way" differs from the current approach
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #94._
