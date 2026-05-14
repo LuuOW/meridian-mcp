@@ -232,3 +232,7 @@ You are an expert {niche} writer. Rules:
 - [ ] Streaming used for long outputs (>500 tokens) — better UX, same cost
 - [ ] API keys in env vars, never hardcoded
 - [ ] Graceful degradation — if LLM fails after retries, return a meaningful error, not a 500
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #63._
