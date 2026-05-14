@@ -39,6 +39,79 @@ test.describe('helix gate page', () => {
     await page.goto(HELIX_URL, { waitUntil: 'load' })
     await expect(page.locator('#detailPanel')).toBeHidden()
   })
+
+  test('slider detail panel: selection renders the small-molecule canvas', async ({ page }) => {
+    // Bug repro target: clicking a residue in the side detail panel (slider
+    // mode, outside fullscreen) used to leave canvas.sel-molecule blank
+    // because drawMolecule read clientWidth before the detail panel had
+    // finished laying out — backing-buffer became 0×0 and the draw was
+    // invisible. The fix defers drawMolecule by one rAF so layout settles
+    // first. This test invokes the rendering surface via the
+    // window.__helix_internal__ test hook so we don't have to land a
+    // pointer click on a real atom (positionally flaky headlessly).
+    await page.goto(HELIX_URL, { waitUntil: 'load' })
+
+    // Wait for app.mjs to mount + expose the test hook.
+    await page.waitForFunction(() => Boolean(window.__helix_internal__), { timeout: 8_000 })
+
+    // Real PDB fetch: 1JL9 = EGF, the first SEED_PROTEINS entry. Smaller
+    // structure → faster fetch. Inject into pdbTextCache so renderSelection
+    // can resolve the model without requiring a full /v1/helix flow.
+    await page.evaluate(async () => {
+      const txt = await fetch('https://files.rcsb.org/download/1JL9.pdb').then(r => r.text())
+      window.__helix_internal__.pdbTextCache.set('1JL9', txt)
+      // Open the slider with a known protein, then drive the selection
+      // rendering directly.
+      window.__helix_internal__.showDetail(
+        { uniprot: 'P01133', pdb: '1JL9', name: 'EGF', aa_len: 53,
+          description: 'test', rationale: 'test', notes: '' },
+        null,
+      )
+      // First-ever selection: CYS residue 6 of chain A. 1JL9's chain A
+      // starts at seqId 6 with CYS (verified against the live RCSB file)
+      // — any seqId that *exists* in the structure works for the test;
+      // we picked the very first atom so future PDB revisions can't
+      // shift our target into nowhere.
+      window.__helix_internal__.renderSelection(
+        { compId: 'CYS', seqId: 6, asymId: 'A', kind: 'residue', atomName: 'CA', element: 'C' },
+        '1JL9',
+      )
+    })
+
+    // Slider should now be visible
+    await expect(page.locator('#detailPanel')).toBeVisible()
+    await expect(page.locator('#detailSelection')).toBeVisible()
+
+    // Canvas must be sized + drawn. The fix is the rAF defer — give it
+    // a frame to fire before we inspect.
+    await page.waitForTimeout(100)
+
+    const canvasState = await page.evaluate(() => {
+      const c = document.querySelector('#detailSelection canvas.sel-molecule')
+      if (!c) return { exists: false }
+      const ctx = c.getContext('2d')
+      const w = c.width, h = c.height
+      if (w === 0 || h === 0) return { exists: true, w, h, painted: false, reason: 'zero-size' }
+      // Scan the FULL canvas — picking a tiny dead-center window misses
+      // the atom render when it lands off-axis (chain A's first CYS rends
+      // off-center). If ANY pixel has non-zero alpha, the canvas was
+      // painted to. Pure transparent (alpha=0 everywhere) = blank.
+      const data = ctx.getImageData(0, 0, w, h).data
+      let nonZero = 0
+      for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) nonZero++
+      return {
+        exists: true, w, h,
+        painted: nonZero > 0,
+        nonZeroPixels: nonZero,
+        clientW: c.clientWidth, clientH: c.clientHeight,
+      }
+    })
+
+    expect(canvasState.exists, 'canvas.sel-molecule should exist in #detailSelection').toBe(true)
+    expect(canvasState.w, `canvas backing-buffer width should be >0; got ${JSON.stringify(canvasState)}`).toBeGreaterThan(0)
+    expect(canvasState.h, `canvas backing-buffer height should be >0; got ${JSON.stringify(canvasState)}`).toBeGreaterThan(0)
+    expect(canvasState.painted, `canvas should have been painted (non-zero pixel); got ${JSON.stringify(canvasState)}`).toBe(true)
+  })
 })
 
 test.describe('helix /v1/helix response shape', () => {
