@@ -142,6 +142,7 @@ test.describe('helix /v1/helix response shape', () => {
   })
 
   test('/v1/helix accepts the canonical SEED_PROTEINS without rejection', async ({ request }) => {
+    test.skip(process.env.LIVE_LLM !== '1', 'live LLM call — set LIVE_LLM=1 to run (CI: scheduled/dispatch only)')
     // 10 canonical entries lifted from helix/app.mjs's SEED_PROTEINS. If
     // any of these stop matching the regex (or vanish from the seed list),
     // the test fails — catches both client + worker drift in one place.

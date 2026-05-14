@@ -140,6 +140,7 @@ test.describe('vision-lab — ask-meridian.uk/miniapp/vision-lab/', () => {
 
 test.describe('helix — meridian.ask-meridian.uk/helix/', () => {
   test('input + recommend fires /v1/helix and shows loading state', async ({ page }) => {
+    test.skip(process.env.LIVE_LLM !== '1', 'live LLM call — set LIVE_LLM=1 to run (CI: scheduled/dispatch only)')
     await page.goto('https://meridian.ask-meridian.uk/helix/', { waitUntil: 'load' })
 
     // Catch the outbound POST regardless of upstream response code.
