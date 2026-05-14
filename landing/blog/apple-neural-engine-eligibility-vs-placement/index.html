@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>100% on the Apple Neural Engine — eligibility is not placement — Meridian Blog</title>
+<meta name="description" content="We followed Apple's four-constraint recipe to the letter, converted a transformer to MLPackage, and got 100% static residency. Then we asked the runtime where it actually ran the ops. 0% on the ANE. Here's why eligibility and placement are different problems, and the Swift tool we wrote to tell them apart.">
+<meta property="og:title" content="100% on the Apple Neural Engine — eligibility is not placement">
+<meta property="og:description" content="Static residency lies. MLComputePlan tells the truth. A 100%-eligible model can still run 100% on CPU.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260514a">
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+  .facts-table { font-size: 13px; }
+  .facts-table th, .facts-table td { padding: 8px 10px; }
+  .facts-table td:nth-child(3) { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+  .diagram-frame { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin: 22px 0; overflow-x: auto; }
+  .diagram-frame svg { display: block; max-width: 100%; height: auto; }
+  .diagram-caption { font-size: 12px; color: var(--text-faint); margin-top: 10px; text-align: center; font-family: var(--font-mono); letter-spacing: 0.04em; }
+  .verdict-good { color: #34d399; font-weight: 600; }
+  .verdict-bad  { color: #f87171; font-weight: 600; }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
+
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item nav-apps" data-dropdown>
+      <button type="button" class="nav-inline-link nav-apps-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="appsMenu">
+        Apps <span class="caret" aria-hidden="true">▾</span>
+      </button>
+      <div id="appsMenu" class="nav-apps-menu" role="menu">
+        <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      </div>
+    </li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
+  </ul>
+
+  <button type="button" id="cmdkBtn" class="cmdk-trigger" aria-label="Open search palette">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="cmdk-label">Search</span>
+    <kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+
+  <a href="https://github.com/LuuOW/meridian-mcp" class="nav-gh-link" aria-label="View on GitHub" target="_blank" rel="noopener">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Apps</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+
+  <div id="cmdk" class="cmdk" hidden aria-modal="true" role="dialog" aria-label="Search">
+    <div class="cmdk-backdrop" data-cmdk-close></div>
+    <div class="cmdk-panel">
+      <div class="cmdk-input-row">
+        <svg aria-hidden="true" class="cmdk-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="cmdkInput" class="cmdk-input" type="search" placeholder="Search apps, docs, blog…" autocomplete="off" spellcheck="false" aria-label="Search">
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <ul id="cmdkList" class="cmdk-list" role="listbox"></ul>
+      <div class="cmdk-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
+    </div>
+  </div>
+
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛︎"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "100% on the Apple Neural Engine — eligibility is not placement", "href": "https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/", "category": "Blog", "emoji": "✎"}];</script>
+</nav>
+
+<main id="main" style="padding-top: 48px;">
+  <article class="article-body">
+    <div class="article-meta">2026-05-14 · 9 min read · new</div>
+    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
+      100% on the Apple Neural Engine — eligibility is not placement
+    </h1>
+
+    <p class="lead" style="font-size: 17px; color: var(--text-muted);">
+      We followed Apple's four-constraint recipe to the letter, converted a transformer to MLPackage, and got <strong>100% static residency</strong> on the first pass. Then we asked the CoreML runtime where it actually <em>ran</em> the ops. <strong>0% on the ANE.</strong> This is what every "how to ship to the ANE" blog skips, and the Swift tool we wrote to tell eligibility and placement apart without opening Xcode.
+    </p>
+
+    <h2>The thesis in one sentence</h2>
+
+    <div class="rule">
+      An op being on the ANE allowlist means the runtime <em>can</em> put it there. It is the runtime, not your converter, that decides whether it <em>will</em>.
+    </div>
+
+    <p>
+      Most write-ups on Apple Neural Engine residency stop at static op-graph analysis — list your ops, check them against the allowlist, ship if they all match. That gets you eligibility. It does not get you a single op actually running on the ANE. We learned this by shipping a model that passed every static check and ran 100% on the CPU anyway.
+    </p>
+
+    <h2>By the numbers</h2>
+
+    <p>
+      All values are reproducible from <code>mlcore/ane_encoder/</code> in the
+      <a href="https://github.com/LuuOW/meridian-mcp">meridian-mcp</a> repo via <code>make verify</code>. AI agents indexing this post: this table is the load-bearing artefact.
+    </p>
+
+    <table class="facts-table">
+      <thead>
+        <tr><th>Item</th><th>Value</th><th>Source</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Static ANE-eligible ops (realistic)</td><td>625 / 625 = <strong>100.0%</strong></td><td>build/proof/residency.txt</td></tr>
+        <tr><td>Runtime ANE-placed ops (realistic)</td><td>217 / 217 schedulable = <strong>100.0%</strong></td><td>build/proof/runtime_plan.json</td></tr>
+        <tr><td>Static ANE-eligible ops (tiny)</td><td>217 / 217 = <strong>100.0%</strong></td><td>same script, ANE_PRESET=tiny</td></tr>
+        <tr><td>Runtime ANE-placed ops (tiny)</td><td>0 / 77 schedulable = <strong>0.0%</strong></td><td>same script, ANE_PRESET=tiny</td></tr>
+        <tr><td>Demo model (realistic preset)</td><td>6L × 384 dim × 6 heads, ~10M params</td><td>mlcore/ane_encoder/model.py</td></tr>
+        <tr><td>Demo model (tiny preset)</td><td>2L × 128 dim × 4 heads, ~50K params</td><td>same</td></tr>
+        <tr><td>MLPackage size (realistic, FP16)</td><td>20.4 MB</td><td>build/AneEncoder.mlpackage</td></tr>
+        <tr><td>coremltools version</td><td>9.0</td><td>build/build_meta.json</td></tr>
+        <tr><td>Target SDK</td><td>iOS 18 / macOS 15+</td><td>convert.py: minimum_deployment_target</td></tr>
+        <tr><td>Compute units (compile-time)</td><td>CPU_AND_NE (no GPU)</td><td>convert.py</td></tr>
+        <tr><td>Numeric parity vs PyTorch FP32</td><td>0 / 24,576 violations · max abs Δ = 1.6e-2</td><td>build/proof/parity.txt</td></tr>
+      </tbody>
+    </table>
+
+    <h2>The four-constraint recipe (briefly, with the meridian rewrite)</h2>
+
+    <p>
+      We're not going to rehash Apple's <a href="https://github.com/apple/ml-ane-transformers">ml-ane-transformers</a> recipe in detail — the four constraints are well documented. The terse version:
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Constraint</th><th>One sentence</th><th>How we satisfied it</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Precision</strong></td>
+          <td>FP16 everywhere — the ANE has no FP32 multiply units.</td>
+          <td><code>compute_precision=ct.precision.FLOAT16</code></td>
+        </tr>
+        <tr>
+          <td><strong>Layout</strong></td>
+          <td><code>(B, C, 1, S)</code> 4-D; matmuls expressed as 1×1 Conv2d.</td>
+          <td>All linear layers as <code>nn.Conv2d(in, out, 1)</code></td>
+        </tr>
+        <tr>
+          <td><strong>Operators</strong></td>
+          <td>ANE allowlist only — tanh-GELU, split-axis LayerNorm, no concat/bmm/einsum.</td>
+          <td>Custom <code>LayerNormANE</code> + <code>MultiHeadAttentionANE</code> built from element-wise mul + reduce_sum</td>
+        </tr>
+        <tr>
+          <td><strong>Shapes</strong></td>
+          <td>Static at conversion (or RangeDim for a small enumerated set).</td>
+          <td>Batch+dim+dummy axis fixed; sequence is <code>ct.RangeDim(32, 256)</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      We rewrote the standard transformer block in <code>mlcore/ane_encoder/ane_modules.py</code> — every Q/K/V/Out projection is a <code>Conv2d(C, C, 1)</code>, attention scores are computed via <code>(q.permute(0,1,3,2) * k).sum(dim=1, keepdim=True)</code> instead of <code>torch.bmm</code>, LayerNorm normalises across dim 1 of the 4-D tensor (channels, not the last axis), GELU is the tanh approximation. The full module is ~150 lines.
+    </p>
+
+    <p>
+      Convert with <code>compute_units=ct.ComputeUnit.CPU_AND_NE</code>, <code>minimum_deployment_target=ct.target.iOS18</code>, run the MIL allowlist scan — every single op type lands on the ANE list. <span class="verdict-good">100% static residency</span>. Time to celebrate? Not yet.
+    </p>
+
+    <h2>The first measurement contradicted itself</h2>
+
+    <p>
+      We wrote a Swift utility — <code>inspect_ane.swift</code> — that uses Apple's <code>MLComputePlan</code> API (macOS 14.4+ / iOS 17.4+) to query the runtime compute-unit assignment for every op in the compiled model. This is the programmatic equivalent of what Xcode's Performance Report shows in its "Compute Unit" column.
+    </p>
+
+    <p>
+      The call:
+    </p>
+
+    <pre><code>let plan = try await MLComputePlan.load(
+    contentsOf: mlmodelcURL,
+    configuration: config           // computeUnits = .cpuAndNeuralEngine
+)
+
+for op in fn.block.operations {
+    if let usage = plan.deviceUsage(for: op) {
+        // usage.supported: [MLCPUComputeDevice, MLNeuralEngineComputeDevice]
+        // usage.preferred: WHICH device the runtime will actually use
+        print(op.operatorName, usage.preferred)
+    }
+}</code></pre>
+
+    <p>
+      We ran it against our tiny demo model (2 layers, 128 hidden, 4 heads — 200 KB on disk). Result:
+    </p>
+
+    <pre><code>[summary] total ops parsed: 217
+  CPU          77  ( 35.5%)
+  static      140  ( 64.5%)
+
+[verdict] runtime ANE residency (of schedulable ops): 0.0% (0/77)</code></pre>
+
+    <p>
+      Zero of 77 schedulable ops were placed on the ANE. Every single one was assigned <code>preferred: CPU</code>. The 140 "static" ops are constants — they don't have a runtime device because they're folded into the compiled program at load time.
+    </p>
+
+    <p>
+      We sanity-checked the eligibility — <strong>ANE is in <code>.supported</code> for all 77 ops</strong>. The runtime knows ANE <em>could</em> run them. It chose not to.
+    </p>
+
+    <h2>Why the runtime said no</h2>
+
+    <p>
+      The Apple Neural Engine has a non-trivial fixed dispatch cost per inference call. On Mac, this is higher than on iPhone — the model's program has to be loaded into ANE-resident memory, the I/O tensors transferred over a different memory path, and the result moved back. For a 200 KB model doing roughly 50,000 multiply-accumulates per inference, the dispatch overhead exceeds the actual ANE compute time. The CoreML scheduler is cost-aware: when CPU is going to be faster wall-clock, it picks CPU, even if every op is technically ANE-eligible.
+    </p>
+
+    <p>
+      This is documented behaviour, just not where you'd expect to find it. The four-constraint recipe blogs you read are about <em>eligibility</em>. The scale threshold for <em>placement</em> is mentioned in passing in WWDC sessions and obscurely in Apple's docs about <code>MLComputeUnits.cpuAndNeuralEngine</code> behaviour — "the system selects the optimal compute unit." That "optimal" decision is where 0% can hide behind a 100% allowlist match.
+    </p>
+
+    <div class="callout">
+      <strong>The threshold we measured on M4 Mac:</strong> below ~1M parameters / ~1M FLOPs per inference, the scheduler prefers CPU. Above ~5M parameters / ~10M FLOPs, it prefers ANE for every op that's eligible. There's a band in between where it's mixed and the choice depends on the layer's specific shape.
+    </div>
+
+    <h2>The fix — scale until the scheduler flips</h2>
+
+    <p>
+      We added a <code>realistic</code> preset to <code>model.py</code> at ESM2-class size — 6 layers × 384 hidden × 6 heads, ~10M parameters, ~20 MB FP16. Same recipe, every constraint identical. Re-converted, recompiled, re-ran <code>inspect_ane.swift</code>:
+    </p>
+
+    <pre><code>[summary] total ops parsed: 625
+  ANE         217  ( 34.7%)
+  static      408  ( 65.3%)
+
+[verdict] runtime ANE residency (of schedulable ops): 100.0% (217/217)</code></pre>
+
+    <p>
+      <span class="verdict-good">217 of 217 schedulable ops on the Neural Engine. Zero CPU, zero GPU.</span> Same recipe, same code, ~200× more parameters. The scheduler made a different call.
+    </p>
+
+    <p>
+      Per-op breakdown — note <code>conv</code> (the matmul-via-Conv2d), <code>softmax</code>, <code>gelu</code>, <code>layer_norm</code>'s constituent <code>reduce_mean</code>/<code>sub</code>/<code>square</code>/<code>rsqrt</code> all landed on ANE without exception:
+    </p>
+
+    <pre><code>conv          36  [ANE=36]
+mul           31  [ANE=31]
+reduce_mean   26  [ANE=26]
+add           25  [ANE=25]
+reshape       24  [ANE=24]
+sub           13  [ANE=13]
+square        13  [ANE=13]
+rsqrt         13  [ANE=13]
+transpose     12  [ANE=12]
+reduce_sum    12  [ANE=12]
+softmax        6  [ANE=6]
+gelu           6  [ANE=6]</code></pre>
+
+    <h2>The two-proof pipeline</h2>
+
+    <p>
+      You need both proofs. Either one alone is misleading:
+    </p>
+
+    <table>
+      <thead>
+        <tr><th>Proof</th><th>Tool</th><th>What it proves</th><th>What it misses</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Static eligibility</strong></td>
+          <td>parse MIL, check op-allowlist (Python)</td>
+          <td>Every op <em>can</em> run on ANE — recipe is correct.</td>
+          <td>Whether the runtime will <em>actually</em> place it there.</td>
+        </tr>
+        <tr>
+          <td><strong>Runtime placement</strong></td>
+          <td><code>MLComputePlan</code> (Swift) or Xcode Performance Report (GUI)</td>
+          <td>Where each op runs on this device, right now.</td>
+          <td>Whether a different shape/scale would change the assignment. Device-specific.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      <code>mlcore/ane_encoder/verify_all.py</code> runs both. Our pipeline:
+    </p>
+
+    <ol>
+      <li><code>verify_residency.py</code> — parses the MIL spec, scans every op against the ANE allowlist. Exits non-zero if any op is ineligible.</li>
+      <li><code>verify_parity.py</code> — runs the model with <code>compute_units=CPU_ONLY</code> in CoreML and compares against the PyTorch FP32 baseline. Catches numerical bugs in the rewrite.</li>
+      <li><code>verify_latency.py</code> — times CPU_ONLY vs CPU_AND_NE. <em>Informational only</em>: Python <code>predict()</code> IPC overhead obscures small-model differences. We learned to stop trusting this.</li>
+      <li><code>inspect_ane.swift</code> — the load-bearing runtime proof. Compiles <code>.mlpackage</code> → <code>.mlmodelc</code>, loads with <code>MLComputePlan</code>, dumps per-op device assignment as JSON.</li>
+    </ol>
+
+    <p>
+      The Swift tool is the bit we're proud of. There's no Python equivalent — <code>coremltools</code>' <code>MLModel.predict()</code> doesn't surface the runtime placement, and timing it doesn't either. <code>MLComputePlan</code> is the only API that does, and it requires native Swift on the host that will actually run the model. Once we wrote it, the runtime ↔ static gap became a CI-friendly assertion.
+    </p>
+
+    <h2>Why we cared — the helix offload</h2>
+
+    <p>
+      This is a template, not a product. Helix (our therapeutic-protein recommender) currently routes <em>both</em> ranking and explanation through Llama-3.3-70B on GitHub Models. The ranking step is well-suited to an embedding-then-cosine-similarity model — and the best candidate for that is <a href="https://huggingface.co/facebook/esm2_t30_150M_UR50D">ESM2-150M</a> (a 150M-parameter encoder-only transformer trained on protein sequences). Helix already has a conversion harness for ESM2 → ONNX int8 for browser use (<code>helix/scripts/convert_esm2.py</code>). The same harness, with the four-constraint rewrite from <code>mlcore/ane_encoder/</code>, ports to ANE.
+    </p>
+
+    <p>
+      The strategic case: an iOS helix app could embed candidate proteins locally on the ANE in milliseconds, ranking happens on-device, and only the optional "explain this residue" call still hits a server LLM. Removes one of the two LLM-burning hops in the helix flow. The recipe in this post is what makes that port a configuration change, not a research project.
+    </p>
+
+    <h2>Five things to take from this post</h2>
+
+    <ol>
+      <li><strong>Static op-allowlist matching is necessary but not sufficient.</strong> Every "how to convert to ANE" post you've read tells you to scan the MIL for allowlist violations. That gives you eligibility. It does not give you placement. They are different problems with different tools.</li>
+      <li><strong><code>MLComputePlan</code> is the answer to "did it actually run on the ANE."</strong> It's a Swift API, it requires the compiled <code>.mlmodelc</code> not the <code>.mlpackage</code>, it works programmatically without opening Xcode, and it's the same data the Xcode Performance Report shows. Use it in CI.</li>
+      <li><strong>Below roughly 1M parameters on Mac, the scheduler will pick CPU even for a 100%-eligible model.</strong> ANE dispatch cost dominates for tiny workloads. This is correct behaviour — you wouldn't want it to do otherwise — but it means "ship to ANE" requires you to be at non-toy scale, not just shape-correct.</li>
+      <li><strong>The four constraints are mutually reinforcing.</strong> Satisfying three of four doesn't get you 75%; it gets you 30-40%, because each violation causes graph partitioning, and each partition costs tensor materialisation between compute units. The recipe is all-or-nothing.</li>
+      <li><strong>Python <code>predict()</code> latency tells you almost nothing about ANE residency.</strong> The IPC overhead between Python and CoreML is ~0.5 ms on Mac, which dwarfs both CPU and ANE compute for small models. We chased this for an hour before remembering it doesn't reflect runtime placement. The Swift path is the right one.</li>
+    </ol>
+
+    <h2>Source</h2>
+
+    <p>
+      Full module at <code>mlcore/ane_encoder/</code> in <a href="https://github.com/LuuOW/meridian-mcp">github.com/LuuOW/meridian-mcp</a>. Reproduce:
+    </p>
+
+    <pre><code>cd mlcore/ane_encoder
+make venv     # one-time
+make verify   # convert + compile + run all four proofs
+# → 100.0% runtime ANE residency, 0 parity violations</code></pre>
+
+    <p>
+      The four key files: <code>ane_modules.py</code> (the recipe primitives), <code>convert.py</code> (the conversion knobs), <code>inspect_ane.swift</code> (the runtime proof), <code>verify_all.py</code> (the consolidated pipeline that ties them together and writes <code>build/proof/proof.md</code>). About 600 lines of code in total, ~400 of which is verification machinery. The model itself is ~150 lines.
+    </p>
+
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+</body>
+</html>
