@@ -181,3 +181,7 @@ Federated learning is vulnerable to Byzantine clients submitting malicious updat
 - **Anomaly detection**: flag updates with abnormally large L2 norms (norm clipping + rejection) or that diverge significantly from the historical mean direction.
 
 Backdoor defense: **DeepSight** clusters client updates and identifies outlier clusters; **FLAME** uses HDBSCAN clustering on flattened update vectors to identify poisoned clients before aggregation.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #52._
