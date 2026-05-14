@@ -182,3 +182,7 @@ function AnimatedCard({ children }: { children: React.ReactNode }) {
 - Profile with browser DevTools when animating large collections.
 - Ensure focus order and keyboard interaction remain unchanged by animated wrappers.
 - Avoid motion patterns that obscure important content or introduce latency to actions.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #56._
