@@ -255,3 +255,7 @@ The `-i eth0` scope is critical — without it the rule also drops Docker-intern
 - [ ] fail2ban enabled with sshd jail and tested
 - [ ] Firewall audit run after every rule change (`nmap` from external host)
 - [ ] Log prefix set for dropped packets — anomaly detection via journald
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #55._
