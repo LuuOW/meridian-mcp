@@ -1,5 +1,5 @@
 {
-  "_comment": "Single source of truth for nav items. Edit here, then run python3 scripts/sync-nav.py. The script renders into landing/_nav.html and landing/_m-nav.html placeholders, then propagates to every page.",
+  "_comment": "Single source of truth for nav items. Edit here, then run python3 scripts/sync-nav.py. The script renders landing/_nav.html and propagates to every page.",
 
   "showcase": [
     {
@@ -27,7 +27,7 @@
       "tag":   "CV photonic retrieval · trained on HF Space"
     },
     {
-      "href":  "https://lens.ask-meridian.uk",
+      "href":  "https://meridian.ask-meridian.uk/lens/",
       "emoji": "◎",
       "name":  "Lens · WebXR",
       "tag":   "Vision Lab in VR · controllers, raycaster, orbit"

@@ -58,37 +58,11 @@ const desc = $('desc'), runBtn = $('run')
 const statusEl = $('status'), debugEl = $('debug')
 const imgInput = $('img-input'), imgPreview = $('img-preview')
 const universe = $('universe'), detail = $('detailPanel')
-const burgerBtn = $('burgerBtn'), navMenu = $('navMenu')
 
 let lastResult = null
 let lastCandidates = []
 const systemViewers = new Map()   // pdb → Mol* Viewer
 const pdbTextCache  = new Map()   // pdb → raw PDB text (for residue lookups)
-
-// ── Burger menu (mirrors landing/nav.js initBurgerNav)
-function initBurger() {
-  if (!burgerBtn || !navMenu) return
-  const toggle = (open) => {
-    const isOpen = open !== undefined ? open : !navMenu.classList.contains('open')
-    navMenu.classList.toggle('open', isOpen)
-    burgerBtn.classList.toggle('open', isOpen)
-    burgerBtn.setAttribute('aria-expanded', String(isOpen))
-    if (isOpen) {
-      const first = navMenu.querySelector('a')
-      if (first) setTimeout(() => first.focus(), 50)
-    } else {
-      burgerBtn.focus()
-    }
-  }
-  burgerBtn.addEventListener('click', e => { e.stopPropagation(); toggle() })
-  navMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => toggle(false)))
-  document.addEventListener('click', e => {
-    if (!navMenu.classList.contains('open')) return
-    if (!navMenu.contains(e.target) && !burgerBtn.contains(e.target)) toggle(false)
-  })
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') toggle(false) })
-}
-initBurger()
 
 // Wait for window.molstar to land — the UMD bundle attaches on
 // DOMContentLoaded. Promise resolves the moment it's available.
