@@ -1,37 +1,35 @@
 #!/usr/bin/env python3
-"""Sync nav blocks across every browser-facing HTML in the monorepo,
-from two templates kept under landing/:
+"""Sync nav blocks across every browser-facing HTML in the monorepo.
 
-  landing/_nav.html    — canonical .nav  variant (landing + helix + miniapp)
-  landing/_m-nav.html  — canonical .m-nav variant (lens + photon-route)
+Source of truth (edit these to change the nav):
 
-A single source of truth per namespace. Run before any deploy that
-touches a page with a nav:
-
-    python3 scripts/sync-nav.py
+  landing/_nav-data.json   — showcase / resources / source items (CONTENT)
+  landing/_nav.html        — .nav  template w/ {{SHOWCASE}} {{RESOURCES}} {{SOURCE}}
+  landing/_m-nav.html      — .m-nav template w/ the same placeholders
 
 Surfaces walked:
   - landing/                       → GH Pages on ask-meridian.uk
   - helix/, miniapp/               → CF Pages on meridian.ask-meridian.uk/*
   - lens/                          → CF Pages on meridian.ask-meridian.uk/lens
   - photon-route/pages/            → HF Space on photon.ask-meridian.uk
-                                     (also lives in the standalone repo
-                                      — push there too after running)
+                                     (also push to standalone repo after)
 
-Each file is detected by which nav class it contains and patched with
-the matching template. Files are touched once with a non-greedy regex,
-DOTALL, so we don't accidentally chew through later <nav> elements
-in the body.
+Usage:
+    python3 scripts/sync-nav.py
+
+The script renders each template with the JSON data, then file-walks
+every surface and patches the appropriate <nav>…</nav> block.
 """
 from __future__ import annotations
+import json
 import re
 import sys
 from pathlib import Path
 
 ROOT      = Path(__file__).resolve().parent.parent
 LANDING   = ROOT / 'landing'
+DATA_PATH = LANDING / '_nav-data.json'
 
-# Search roots (every directory whose HTML may carry a synced nav).
 SURFACES  = [
     ROOT / 'landing',
     ROOT / 'helix',
@@ -50,32 +48,89 @@ NAV_PATTERNS = {
 }
 
 
-def load_template(p: Path) -> str:
-    if not p.exists():
-        print(f'missing template: {p.relative_to(ROOT)}', file=sys.stderr)
-        sys.exit(1)
-    body = p.read_text().strip()
-    if not body.startswith('<nav') or not body.endswith('</nav>'):
-        print(f'template {p.relative_to(ROOT)} must be a single <nav>…</nav> block',
-              file=sys.stderr)
-        sys.exit(1)
-    return body
+# ── Per-namespace HTML emitters ───────────────────────────────────────
+# The .nav and .m-nav surfaces use different class names + structures
+# for each item type — keep one renderer per (namespace, item-type).
+
+def render_nav_showcase(items):
+    out = []
+    for it in items:
+        out.append(
+            f'      <a href="{it["href"]}" class="nav-app" data-status="live">\n'
+            f'        <span class="nav-app-name"><span class="nav-app-emoji">{it["emoji"]}</span>{it["name"]}</span>\n'
+            f'        <span class="nav-app-tag">{it["tag"]}</span>\n'
+            f'      </a>'
+        )
+    return '\n'.join(out).lstrip()
+
+
+def render_nav_links(items):
+    out = [f'      <a href="{it["href"]}">{it["label"]}</a>' for it in items]
+    return '\n'.join(out).lstrip()
+
+
+def render_m_showcase(items):
+    out = []
+    for it in items:
+        out.append(
+            f'      <a href="{it["href"]}" class="m-nav-app">\n'
+            f'        <span class="m-name"><span class="m-emoji">{it["emoji"]}</span>{it["name"]}</span>\n'
+            f'        <span class="m-tag">{it["tag"]}</span>\n'
+            f'      </a>'
+        )
+    return '\n'.join(out).lstrip()
+
+
+def render_m_links(items):
+    out = [f'      <a href="{it["href"]}">{it["label"]}</a>' for it in items]
+    return '\n'.join(out).lstrip()
+
+
+RENDERERS = {
+    'nav': {
+        '{{SHOWCASE}}':  render_nav_showcase,
+        '{{RESOURCES}}': render_nav_links,
+        '{{SOURCE}}':    render_nav_links,
+    },
+    'm-nav': {
+        '{{SHOWCASE}}':  render_m_showcase,
+        '{{RESOURCES}}': render_m_links,
+        '{{SOURCE}}':    render_m_links,
+    },
+}
+
+
+def render_template(ns: str, data: dict) -> str:
+    raw = NAV_TEMPLATE_PATHS[ns].read_text()
+    raw = raw.replace('{{SHOWCASE}}',  RENDERERS[ns]['{{SHOWCASE}}'](data['showcase']))
+    raw = raw.replace('{{RESOURCES}}', RENDERERS[ns]['{{RESOURCES}}'](data['resources']))
+    raw = raw.replace('{{SOURCE}}',    RENDERERS[ns]['{{SOURCE}}'](data['source']))
+    return raw.strip()
 
 
 def main() -> int:
-    templates = {k: load_template(v) for k, v in NAV_TEMPLATE_PATHS.items()}
+    if not DATA_PATH.exists():
+        print(f'missing {DATA_PATH.relative_to(ROOT)}', file=sys.stderr)
+        return 1
+    data = json.loads(DATA_PATH.read_text())
+    for k in ('showcase', 'resources', 'source'):
+        if k not in data:
+            print(f'_nav-data.json missing key: {k}', file=sys.stderr)
+            return 1
+
+    templates = {ns: render_template(ns, data) for ns in NAV_TEMPLATE_PATHS}
 
     updated = scanned = 0
-    seen_files: set[Path] = set()
+    seen: set[Path] = set()
     for surface in SURFACES:
         if not surface.exists():
             continue
         for path in sorted(surface.rglob('*.html')):
-            if path.name.startswith('_'):                # skip templates
+            if path.name.startswith('_'):
                 continue
-            if path in seen_files:
+            if path in seen:
                 continue
-            seen_files.add(path)
+            seen.add(path)
             scanned += 1
             text = path.read_text()
             new_text = text
@@ -87,7 +142,7 @@ def main() -> int:
                 updated += 1
                 print(f'  updated {path.relative_to(ROOT)}')
 
-    print(f'[sync-nav] {updated} of {scanned} files updated')
+    print(f'[sync-nav] {updated} of {scanned} files updated from _nav-data.json')
     return 0
 
 
