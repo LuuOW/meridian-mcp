@@ -136,3 +136,7 @@ Use this skill with:
 - [ ] Source edited instead of brittle UI scraping
 - [ ] Exact target verified after change
 - [ ] Final answer distinguishes observed / inferred / verified
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #58._
