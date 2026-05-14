@@ -199,3 +199,7 @@ Traffic to `45.9.190.170` now flows through the tunnel, arrives at the server so
 - Same `Address` on two peers — causes routing conflicts; each peer must have a unique `/32` within the VPN subnet
 - Running `wg-quick up` and then editing the config without `wg-quick down` + `up` — runtime state and config drift
 - Using the server's public IP in the browser without adding it to `AllowedIPs` — traffic bypasses the tunnel, UFW blocks the port
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #106._
