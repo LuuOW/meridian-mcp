@@ -4,7 +4,7 @@
   "description": "Self-contained MCP — orbital task router with online-learning classifier (stdio + HTTP/Streamable transports — Grok / ChatGPT / Claude compatible). Generates candidates with Llama-3.3-70B (via GitHub Models) and ranks them via a local orbital classifier (planet/moon/trojan/asteroid/comet/irregular). Domain-agnostic — candidates can be tools, prompts, documents, products. No backend required.",
   "type": "module",
   "bin": {
-    "meridian-mcp":      "./mcp/index.mjs",
+    "meridian-mcp": "./mcp/index.mjs",
     "meridian-mcp-http": "./mcp/http.mjs"
   },
   "main": "./mcp/index.mjs",
@@ -15,8 +15,9 @@
   ],
   "scripts": {
     "stdio": "node mcp/index.mjs",
-    "http":  "node mcp/http.mjs",
-    "test":  "node --test tests/*.test.mjs"
+    "http": "node mcp/http.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:ui": "playwright test --config=tests/ui/playwright.config.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -51,5 +52,8 @@
   "bugs": {
     "url": "https://github.com/LuuOW/meridian-mcp/issues"
   },
-  "mcpName": "io.github.LuuOW/meridian-mcp"
+  "mcpName": "io.github.LuuOW/meridian-mcp",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
+  }
 }
