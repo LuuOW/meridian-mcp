@@ -296,7 +296,19 @@
 
   <section style="padding: 0 0 72px;">
     <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-11 · 8 min read · new</div>
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-14 · 8 min read · new</div>
+      <h2 style="margin: 8px 0 12px; font-size: 22px;">
+        <a href="/blog/webgpu-vlm-molstar-ram-pivot/" style="color: var(--text); text-decoration: none;">
+          Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server
+        </a>
+      </h2>
+      <p style="margin: 0; color: var(--text-muted);">
+        We tried to run a 1.1&nbsp;GB vision model in the user's browser. Most users have 16&nbsp;GB of RAM and four other tabs. This is what worked (Mol* protein rendering, SmolVLM in VR), what broke (Moondream2 as the default, the Cache API on Safari), and the rule we use now: <strong>render on the client, infer on the server, in-browser inference only when latency is the constraint and the model fits in ~500&nbsp;MB</strong>. With the OPFS shim and the commit that ripped the WebGPU inference stack.
+      </p>
+    </article>
+
+    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-11 · 8 min read</div>
       <h2 style="margin: 8px 0 12px; font-size: 22px;">
         <a href="/blog/helio-mirror/" style="color: var(--text); text-decoration: none;">
           HelioCast — predicting how much sunlight a planet will receive in the next 24 h
