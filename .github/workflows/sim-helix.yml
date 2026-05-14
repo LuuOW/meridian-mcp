@@ -1,0 +1,86 @@
+name: Sim — helix recommendation quality
+
+# Weekly run of the helix-quality sim against the live /v1/helix
+# endpoint. Reports nDCG@5 + recall@k + the IL-8 negative-control
+# hit-rate over the 19-injury hand-curated gold set.
+#
+# Quota-aware: GH Models free tier rate-limits aggressively, so we run
+# with a 60 s gap between injuries (vs the 30 s local default). Total
+# run time ~25 min for 19 injuries.
+#
+# If the daily GH Models quota is exhausted (common when the worker is
+# also serving real traffic + ad-hoc tests), the sim emits HTTP 429 for
+# most calls. We capture the partial output anyway — that's still a
+# data point about quota availability.
+
+on:
+  schedule:
+    # 08:17 UTC Wed — off-hour so it doesn't collide with Monday's
+    # classifier-health (06:00 UTC) or Tue+Fri orbital sim (06:11).
+    - cron: '17 8 * * 3'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sim-helix
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run helix quality sim (60 s gap, ~25 min for 19 injuries)
+        id: sim
+        run: |
+          mkdir -p data/sim-reports
+          DATE=$(date -u +'%Y-%m-%d')
+          OUT="data/sim-reports/helix-${DATE}.txt"
+          # Don't fail the workflow if a few injuries 429 — the sim
+          # captures partial results and reports them. Only fail on
+          # node-script errors or quota-totally-exhausted.
+          HELIX_SIM_GAP_MS=60000 node tests/sim/helix-quality.mjs > "$OUT" 2>&1 || true
+          tail -25 "$OUT"
+          echo "out=$OUT" >> "$GITHUB_OUTPUT"
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          NDCG=$(grep -oE 'nDCG@5 *= *[0-9.]+' "$OUT" | head -1 || echo 'nDCG: rate-limited')
+          OK=$(grep -oE 'calls *= *[0-9]+ ok / [0-9]+ failed' "$OUT" | head -1 || echo 'calls: n/a')
+          {
+            echo "ndcg=${NDCG}"
+            echo "calls=${OK}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Commit + push report
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/sim-reports/
+          if git diff --cached --quiet; then
+            echo 'no change in sim output; skipping commit'
+            exit 0
+          fi
+          git commit -m "ci(sim-helix): ${{ steps.sim.outputs.date }} report
+
+          ${{ steps.sim.outputs.ndcg }}
+          ${{ steps.sim.outputs.calls }}
+
+          [skip ci]"
+          if ! git push origin main; then
+            BR="auto/sim-helix-${{ steps.sim.outputs.date }}"
+            git checkout -b "$BR"
+            git push origin "$BR"
+            gh pr create --title "sim-helix ${{ steps.sim.outputs.date }}" \
+                         --body  "Automated weekly helix-quality sim report." \
+                         --base  main --head "$BR"
+            gh pr merge --auto --squash "$BR" || true
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

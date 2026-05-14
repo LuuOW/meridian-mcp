@@ -1,0 +1,88 @@
+name: Sim — orbital classifier calibration
+
+# Re-runs the offline orbital-calibration simulation twice a week and
+# commits the report to data/sim-reports/. Catches drift in recall@1,
+# length-bias correlation, and stability under sibling perturbation
+# whenever someone edits classOf or the physics signature.
+#
+# Fully offline — no network, no LLM, no rate limits. Adds two visible
+# commits per week to the repo's audit trail.
+
+on:
+  schedule:
+    # 06:11 UTC Tue + Fri — off-hour so it doesn't collide with the
+    # Monday classifier-health cron at 06:00 or the daily UI-tests
+    # cron at 07:13.
+    - cron: '11 6 * * 2,5'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'mcp/_lib/orbital.mjs'
+      - 'tests/sim/orbital-calibration.mjs'
+      - 'tests/sim/orbital-variant.mjs'
+      - '.github/workflows/sim-orbital.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sim-orbital
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run orbital calibration sim
+        id: sim
+        run: |
+          mkdir -p data/sim-reports
+          DATE=$(date -u +'%Y-%m-%d')
+          OUT="data/sim-reports/orbital-${DATE}.txt"
+          node tests/sim/orbital-calibration.mjs > "$OUT" 2>&1
+          echo "out=$OUT" >> "$GITHUB_OUTPUT"
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          # Extract headline metrics for the commit message
+          RECALL=$(grep -oE 'baseline recall@1: [0-9]+/[0-9]+' "$OUT" | head -1 || echo 'recall: n/a')
+          PLANET=$(grep -oE 'pearson\(length, planet-flag\)[^→]*→[^ ]+ [0-9.]+' "$OUT" | head -1 || echo 'planet-corr: n/a')
+          {
+            echo "recall=${RECALL}"
+            echo "planet=${PLANET}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Commit + push report
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/sim-reports/
+          if git diff --cached --quiet; then
+            echo 'no change in sim output; skipping commit'
+            exit 0
+          fi
+          git commit -m "ci(sim-orbital): ${{ steps.sim.outputs.date }} report
+
+          ${{ steps.sim.outputs.recall }}
+          ${{ steps.sim.outputs.planet }}
+
+          [skip ci]"
+          # Bot bypasses branch protection (configured at repo level).
+          # Falls back to creating a PR if push is rejected.
+          if ! git push origin main; then
+            BR="auto/sim-orbital-${{ steps.sim.outputs.date }}"
+            git checkout -b "$BR"
+            git push origin "$BR"
+            gh pr create --title "sim-orbital ${{ steps.sim.outputs.date }}" \
+                         --body  "Automated weekly sim report." \
+                         --base  main --head "$BR"
+            gh pr merge --auto --squash "$BR" || true
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
