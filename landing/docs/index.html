@@ -69,7 +69,7 @@
         <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
         <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
       </a>
-      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
         <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
         <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
       </a>
@@ -435,7 +435,7 @@ claude mcp add meridian meridian-mcp \
   <p>
     First-party Meridian front-ends (the
     <a href="/miniapp/">browser miniapp</a>,
-    <a href="https://lens.ask-meridian.uk">Lens</a>,
+    <a href="https://meridian.ask-meridian.uk/lens/">Lens</a>,
     <a href="https://photon.ask-meridian.uk">Photon</a>)
     skip the OAuth dance and POST
     <code>mcp.ask-meridian.uk/v1/route</code> directly. The endpoint is
@@ -457,7 +457,7 @@ claude mcp add meridian meridian-mcp \
   <p><strong>Allowlisted origins</strong></p>
   <ul>
     <li><code>https://ask-meridian.uk</code></li>
-    <li><code>https://lens.ask-meridian.uk</code></li>
+    <li><code>https://meridian.ask-meridian.uk</code> (shared origin: lens, helix, miniapp, vision-lab)</li>
     <li><code>https://photon.ask-meridian.uk</code></li>
   </ul>
   <p>
@@ -503,7 +503,7 @@ claude mcp add meridian meridian-mcp \
     The browser endpoint <code>/v1/route</code> applies a fitted-correction layer on top of
     the heuristic ranking. The correction is trained by a separate POST endpoint that
     front-ends fire whenever a user engages a candidate (clicks a planet in
-    <a href="https://lens.ask-meridian.uk">Lens</a>, opens a detail panel in the
+    <a href="https://meridian.ask-meridian.uk/lens/">Lens</a>, opens a detail panel in the
     <a href="/miniapp/">miniapp</a>, etc.). Constant per-request cost (~1 ms), no batch
     training, no GPU, no local execution.
   </p>
