@@ -247,3 +247,7 @@ Common operators: cert-manager (TLS), external-dns (Route53 sync), prometheus-op
 - [ ] RBAC scoped to least privilege per ServiceAccount
 - [ ] Cluster autoscaler + HPA on every autoscaling-capable workload
 - [ ] Regular `kubectl get pods --all-namespaces | grep -v Running` to spot drift
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #61._
