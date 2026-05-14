@@ -138,3 +138,7 @@ We present...
 - [ ] `\text{}` for words inside equations: `$x \text{ if } x > 0$`
 - [ ] Never use `$$...$$` in LaTeX documents — use `\[...\]` or `equation` env
 - [ ] KaTeX supports `\ce{}` for chemistry via mhchem extension
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #62._
