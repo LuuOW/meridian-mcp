@@ -230,3 +230,7 @@ const SIDEBAR_BG = 'linear-gradient(180deg, #0c1a2e 0%, #0d2240 50%, #081628 100
 - Dark mode: all CSS vars overridden, no hardcoded colour values.
 - Arbitrary `w-[317px]` values only if tied to a documented design constraint.
 - Repeated utility patterns extracted into reusable components before merge.
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #93._
