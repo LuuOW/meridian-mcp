@@ -241,3 +241,7 @@ These are **IP-level signals**, not cookie or fingerprint signals. No amount of 
 - [ ] Page is on target domain before using `credentials: 'include'` in evaluate fetch
 - [ ] Session injection endpoint verifies via API call (no page navigation) — not `page.goto()`
 - [ ] 403 + `Clear-Site-Data` header recognized as IP-level block — proxy swap, not code fix
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #28._
