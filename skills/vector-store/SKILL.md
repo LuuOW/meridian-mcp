@@ -237,3 +237,7 @@ def check_index_health(collection: str) -> dict:
 - [ ] Snapshot scheduled after large ingestion runs
 - [ ] `optimize_collection()` called after bulk loads (forces HNSW indexing)
 - [ ] Index coverage > 95% before going live (check `indexed_vectors_count`)
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #102._
