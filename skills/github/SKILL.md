@@ -229,3 +229,7 @@ gh release create v1.2.0 \
 - [ ] `--squash` merge keeps main history clean
 - [ ] `--delete-branch` on merge keeps remote branches tidy
 - [ ] Tags created for every production release (`v1.x.x`)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #57._
