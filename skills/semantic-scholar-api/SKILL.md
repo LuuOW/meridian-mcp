@@ -179,3 +179,7 @@ Always retry with exponential backoff on 429/500; cache results locally; persist
 3. **`tldr` is not always populated.** About 60% of papers have it. Use it when available; fall back to your own summarizer.
 4. **CorpusId vs. DOI inconsistency.** Prefer DOI when both exist; corpus IDs are stable but not shared with other services.
 5. **Citation count inflation from self-cites.** S2 separates `selfCitationCount` (via `contexts.isSelfCited`).
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #86._
