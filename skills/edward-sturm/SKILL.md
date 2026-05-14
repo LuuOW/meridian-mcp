@@ -255,3 +255,7 @@ Your job is to make the seo-geo-aeo-engine pipeline produce content and strategy
 ---
 
 *Compiled from verified source corpus. Last updated: 2026-04-08. Maintained by partner-skill-compiler.*
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #48._
