@@ -174,3 +174,7 @@ redis-cli -n 1 lpush jobs:scrape ...   # DB 1 = queues, DB 0 = cache
 - [ ] `maxmemory` + `allkeys-lru` set for pure-cache Redis instances
 - [ ] Job queue Redis instance has `noeviction` policy (never lose a job)
 - [ ] In-process cache for single-process Node servers (avoids Redis round-trip for hot data)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #29._
