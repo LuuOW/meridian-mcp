@@ -185,3 +185,7 @@ contract VaultV1 is Initializable, UUPSUpgradeable, AccessControlUpgradeable {
 - [ ] Oracle price sanity checks (reject if >N% deviation from TWAP)
 - [ ] Pausable with separate EMERGENCY role
 - [ ] Verified on block explorer with source match
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #89._
