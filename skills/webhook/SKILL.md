@@ -192,3 +192,7 @@ cloudflared tunnel --url http://localhost:8000
 - [ ] Outbound webhooks use exponential backoff (3 retries max)
 - [ ] Webhook secret rotated on any personnel change
 - [ ] ngrok / smee used in development — never expose local port directly
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #105._
