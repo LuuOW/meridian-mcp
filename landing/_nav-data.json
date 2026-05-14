@@ -1,0 +1,47 @@
+{
+  "_comment": "Single source of truth for nav items. Edit here, then run python3 scripts/sync-nav.py. The script renders into landing/_nav.html and landing/_m-nav.html placeholders, then propagates to every page.",
+
+  "showcase": [
+    {
+      "href":  "https://meridian.ask-meridian.uk/helix/",
+      "emoji": "🧬",
+      "name":  "helix · proteins",
+      "tag":   "Injury → top therapeutic protein candidates, each rendered as its own star system"
+    },
+    {
+      "href":  "https://ask-meridian.uk/miniapp/",
+      "emoji": "🛰️",
+      "name":  "Try it · Task orbit",
+      "tag":   "Browser miniapp · routes any task to candidates"
+    },
+    {
+      "href":  "https://ask-meridian.uk/miniapp/vision-lab/",
+      "emoji": "🔭",
+      "name":  "Vision Lab",
+      "tag":   "SmolVLM / Moondream in browser via WebGPU"
+    },
+    {
+      "href":  "https://photon.ask-meridian.uk",
+      "emoji": "⚛︎",
+      "name":  "Photon Router",
+      "tag":   "CV photonic retrieval · trained on HF Space"
+    },
+    {
+      "href":  "https://lens.ask-meridian.uk",
+      "emoji": "◎",
+      "name":  "Lens · WebXR",
+      "tag":   "Vision Lab in VR · controllers, raycaster, orbit"
+    }
+  ],
+
+  "resources": [
+    { "href": "https://ask-meridian.uk/blog/",     "label": "Blog" },
+    { "href": "https://ask-meridian.uk/docs/",     "label": "Docs" },
+    { "href": "https://ask-meridian.uk/#pricing",  "label": "Pricing" }
+  ],
+
+  "source": [
+    { "href": "https://github.com/LuuOW/meridian-mcp",  "label": "GitHub · meridian-mcp" },
+    { "href": "https://github.com/LuuOW/photon-route",  "label": "GitHub · photon-route" }
+  ]
+}

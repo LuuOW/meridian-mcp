@@ -56,11 +56,11 @@
         <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
         <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
       </a>
-      <a href="/miniapp/" class="nav-app" data-status="live">
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
         <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
         <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
       </a>
-      <a href="/miniapp/vision-lab/" class="nav-app" data-status="live">
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
         <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
         <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
       </a>
@@ -76,15 +76,14 @@
 
     <details class="nav-group">
       <summary class="nav-section">Resources</summary>
-      <a href="/blog/">Blog</a>
-      <a href="/docs/">Docs</a>
-      <a href="/#pricing">Pricing</a>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
     </details>
 
     <details class="nav-group">
       <summary class="nav-section">Source</summary>
       <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
-      <a href="https://github.com/LuuOW/lens">GitHub · lens</a>
       <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
     </details>
   </div>
@@ -109,10 +108,6 @@
         btn.classList.toggle('open', isOpen)
         btn.setAttribute('aria-expanded', String(isOpen))
       }
-      // Click handler; do NOT stopPropagation — the document-level
-      // close-on-outside listener below already checks btn.contains, so
-      // clicking the button itself never triggers a close. Keeping the
-      // event propagating lets us hear it in the console.
       btn.addEventListener('click', function () { toggle() })
       menu.querySelectorAll('a').forEach(function (a) {
         a.addEventListener('click', function () { toggle(false) })
@@ -125,7 +120,6 @@
         if (e.key === 'Escape') toggle(false)
       })
 
-      // Mark the current page so the nav highlight follows location.
       var here = location.pathname.replace(/\/index\.html$/, '/') || '/'
       menu.querySelectorAll('a').forEach(function (a) {
         var href = a.getAttribute('href')
