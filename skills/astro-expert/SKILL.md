@@ -133,3 +133,7 @@ export function useEventStream(projectId: string) {
 | Icons | lucide-react |
 | Type safety | TypeScript strict mode |
 | Real-time | EventSource (SSE) via `useEventStream` hook |
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #24._
