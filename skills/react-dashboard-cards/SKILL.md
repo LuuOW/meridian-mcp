@@ -672,3 +672,7 @@ function NotSet() {
     : <NotSet />}
 </FieldRow>
 ```
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #80._
