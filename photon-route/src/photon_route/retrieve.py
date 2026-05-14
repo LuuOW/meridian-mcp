@@ -17,6 +17,7 @@ difference matters.
 
 from __future__ import annotations
 
+import heapq
 from dataclasses import dataclass
 
 from photon_route.encode import EncodedDoc, encode_one
@@ -52,7 +53,13 @@ def rank_against(
     query: str,
     top_k: int | None = None,
 ) -> list[ScoredDoc]:
-    """Encode query, score every document, return them sorted descending."""
+    """Encode query, score every document, return the top-K (or all) sorted descending.
+
+    When the caller wants only the top-K, we use a heap-based partial sort
+    (`heapq.nlargest`) which is O(N log K) instead of the full O(N log N)
+    sort. For N=88 day-1 docs and K=5 this is academic, but it keeps the
+    cost proportional to K rather than N as the corpus grows.
+    """
     q_state = encode_one(query)
     scored: list[ScoredDoc] = []
     for d in corpus:
@@ -61,7 +68,7 @@ def rank_against(
         except (ValueError, RuntimeError):
             s = 0.0
         scored.append(ScoredDoc(doc=d, score=s))
+    if top_k is not None and top_k < len(scored):
+        return heapq.nlargest(top_k, scored, key=lambda x: x.score)
     scored.sort(key=lambda x: x.score, reverse=True)
-    if top_k is not None:
-        scored = scored[:top_k]
     return scored
