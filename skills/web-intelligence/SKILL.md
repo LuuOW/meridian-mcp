@@ -80,3 +80,7 @@ Return provider results in this shape whenever practical:
 - "Extract the content of these five URLs" -> `firecrawl-extract`
 - "Capture UK mobile SERP for this keyword" -> `brightdata-collection`
 - "Research competitor claims and quote evidence" -> `exa-search`, then `firecrawl-extract`
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #104._
