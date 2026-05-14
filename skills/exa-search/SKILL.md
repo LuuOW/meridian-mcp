@@ -78,3 +78,7 @@ Prefer sources that are:
 
 - Pass chosen URLs to `firecrawl-extract` for content capture.
 - Escalate to `brightdata-collection` only if discovery must happen on a blocked or geo-specific surface.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #51._
