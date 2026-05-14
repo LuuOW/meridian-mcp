@@ -359,6 +359,58 @@ before the splitter existed. Always read the test-only number.
 
 ---
 
+## Working flow — branches, PRs, and the recurring sims
+
+Main is now branch-protected: direct pushes blocked, PR + passing CI
+required. Solo workflow:
+
+```bash
+git checkout -b <topic-branch>           # e.g. feat/lens-non-xr
+# ... edit + commit ...
+git push -u origin <topic-branch>
+
+# Open the PR (one of these works depending on what's installed):
+gh pr create --fill                                 # if gh CLI is installed
+# OR via the GitHub API:
+PAT=$(security find-generic-password -s "github-pat" -w)
+curl -fsS -X POST \
+  -H "Authorization: Bearer $PAT" \
+  -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/LuuOW/meridian-mcp/pulls" \
+  -d '{"title":"...","body":"...","head":"<topic-branch>","base":"main"}'
+```
+
+Wait for the `CI / test (20)` and `CI / test (22)` checks (~30 s).
+Once green, squash-merge through the UI or:
+
+```bash
+gh pr merge --squash --auto
+```
+
+**Escape hatch:** branch protection has `enforce_admins: false`, so you
+can disable protection from the dashboard for hotfixes. Re-enable
+after pushing.
+
+**Bots** (the `sim-orbital` / `sim-helix` / `classifier-health`
+workflows) push direct to main; the workflows' fallback branch creates
+a PR + auto-merges if a direct push is ever rejected.
+
+### Recurring sim artifacts
+
+| Workflow | Schedule | Output |
+|---|---|---|
+| `.github/workflows/sim-orbital.yml` | Tue + Fri 06:11 UTC | `data/sim-reports/orbital-YYYY-MM-DD.txt` |
+| `.github/workflows/sim-helix.yml`   | Wed 08:17 UTC       | `data/sim-reports/helix-YYYY-MM-DD.txt` |
+| `.github/workflows/sim-photon.yml`  | manual (`workflow_dispatch`) | `data/sim-reports/photon-YYYY-MM-DD-{v1,v2}.json` |
+| `.github/workflows/ui-tests.yml`    | after every Pages deploy + daily 07:13 UTC | failure → `playwright-report` artifact (14d retention) |
+| `.github/workflows/classifier-health.yml` | Mon 06:00 UTC | `landing/healthz.json` |
+
+Each automated run = one contribution on the graph + one comparable
+data point in `data/sim-reports/`. Open the latest two for any
+classifier metric and spot drift in seconds.
+
+---
+
 ## Backlog (not scoped to this session)
 
 - **Lens non-XR fallback.** Pointer-lock + mouse-look controller that
