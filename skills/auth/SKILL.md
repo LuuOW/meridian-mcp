@@ -201,3 +201,7 @@ API_KEYS=old_key,new_key   →   API_KEYS=new_key
 - [ ] RBAC checked at the route layer, not scattered through business logic
 - [ ] Tokens invalidated on logout (Redis blocklist or Supabase `signOut`)
 - [ ] `Authorization: Bearer` header — not query param (logs expose query params)
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #25._
