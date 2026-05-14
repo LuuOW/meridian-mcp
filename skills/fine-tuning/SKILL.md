@@ -232,3 +232,7 @@ Domain evals matter more than benchmarks. Always build a held-out task-specific 
 - **Chat template mismatch**: training with wrong delimiters causes the model to generate stop tokens randomly in production. Always call `apply_chat_template`.
 - **Learning rate too high for DPO**: DPO at SFT learning rates collapses the policy. Use 5e-7 to 1e-6.
 - **Packing with unmasked padding**: when using sequence packing, ensure cross-document attention is masked (set `dataset_text_field` with SFTTrainer's built-in masking, or use `DataCollatorForCompletionOnlyLM`).
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #53._
