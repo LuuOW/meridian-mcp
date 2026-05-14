@@ -77,3 +77,7 @@ See `browser-stealth` skill for full patterns: webdriver masking, patchright, cs
 
 - Feed collected URLs or rendered page outputs back into the normal evidence contract.
 - If Bright Data becomes the routine answer for a target class, document that class in the calling skill rather than improvising it each time.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #27._
