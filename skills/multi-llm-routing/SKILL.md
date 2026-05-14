@@ -246,3 +246,7 @@ async def stream_call(prompt: str, model_key: str = "sonnet"):
 - [ ] Streaming implemented for generation tasks > 500 tokens
 - [ ] Temperature 0 for extraction/classification, 0.3-0.7 for generation
 - [ ] Unhealthy providers auto-recover after 60s (not permanently blacklisted)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #67._
