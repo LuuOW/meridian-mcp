@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<style>/* === TOKENS (inlined from colors_and_type.css) === */
+/* ──────────────────────────────────────────────────────────────────────────
+   MERIDIAN — Colors & Type tokens
+   Lifted directly from landing/style.css + miniapp/miniapp.css in the
+   LuuOW/meridian-mcp monorepo. Dark-mode first; no light variant.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── BACKGROUNDS ───────────────────────────────────────────────── */
+  --bg:               #0a0d14;   /* deep space — the canonical page bg */
+  --bg-deep:          #06080f;   /* darker for inset surfaces */
+  --bg-card:          rgba(18, 23, 36, 0.7);   /* translucent card on the radial-gradient body */
+  --bg-code:          #0f1220;   /* code blocks + textareas */
+
+  /* The page wash itself — three stacked radial-gradients over a flat
+     vertical fade. Use as `background: var(--bg-page);` on body. */
+  --bg-page:
+    radial-gradient(1400px 700px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(900px 500px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+
+  /* ── TEXT ──────────────────────────────────────────────────────── */
+  --text:             #e6ecf5;   /* primary */
+  --text-muted:       #8a94a6;   /* secondary body, lead, captions */
+  --text-faint:       #5d6778;   /* tertiary — eyebrow labels, footnote */
+
+  /* ── BORDERS ───────────────────────────────────────────────────── */
+  --border:           rgba(148, 163, 184, 0.14);
+  --border-2:         rgba(148, 163, 184, 0.22);
+  --border-violet:    rgba(167, 139, 250, 0.35);
+
+  /* ── BRAND ACCENTS ─────────────────────────────────────────────── */
+  --accent:           #a78bfa;   /* neon-violet — the brand primary */
+  --accent-d:         #8b5cf6;   /* violet-deep — gradient endpoint */
+  --accent-2:         #10b981;   /* mint — "live" status, success */
+  --astro:            #38bdf8;   /* sky — secondary accent, links */
+  --pink:             #f472b6;   /* hot-pink — comet class, decorative */
+
+  /* ── NEON PALETTE (the four anchors of every glow + gradient) ─── */
+  --neon-violet:      #a78bfa;
+  --neon-cyan:        #38bdf8;
+  --neon-mint:        #10b981;
+  --neon-pink:        #f472b6;
+  --glow-violet:      rgba(167, 139, 250, 0.55);
+  --glow-cyan:        rgba(56, 189, 248, 0.45);
+
+  /* ── CELESTIAL CLASS COLORS ────────────────────────────────────── */
+  --class-planet:     #7dd3fc;   /* sky-300  — stable, glowing core */
+  --class-moon:       #cbd5e1;   /* slate-300 — quiet satellite */
+  --class-trojan:     #c4b5fd;   /* violet-300 — companions */
+  --class-asteroid:   #fcd34d;   /* amber-300 — small + bright */
+  --class-comet:      #f9a8d4;   /* pink-300 — dynamic, tail */
+  --class-irregular:  #d8b4fe;   /* purple-300 — oddball */
+
+  /* ── STAR-SYSTEM TINTS ─────────────────────────────────────────── */
+  --system-forge:     #f97316;   /* orange — execution / build */
+  --system-signal:    #38bdf8;   /* cyan — telemetry / observe */
+  --system-mind:      #a78bfa;   /* violet — reason / model */
+
+  /* ── GRADIENTS ─────────────────────────────────────────────────── */
+  --grad-hero:        linear-gradient(90deg, #a78bfa, #38bdf8 60%, #10b981);
+  --grad-btn:         linear-gradient(180deg, #a78bfa, #8b5cf6);
+  --grad-price:       linear-gradient(180deg, #ddd6fe, #a78bfa 70%, #8b5cf6);
+
+  /* ── SPACING (4 px base) ──────────────────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+  --section-y: clamp(48px, 8vw, 96px);
+
+  /* ── RADII ─────────────────────────────────────────────────────── */
+  --r-1:    6px;
+  --r-2:   10px;
+  --r-3:   14px;
+  --r-pill: 999px;
+
+  /* ── ELEVATION / GLOWS ─────────────────────────────────────────── */
+  --shadow-card:      0 0 18px rgba(167, 139, 250, 0.06);
+  --shadow-card-hover: 0 0 0 1px rgba(167, 139, 250, 0.35),
+                       0 0 28px rgba(167, 139, 250, 0.20);
+  --shadow-btn:       0 0 0 1px rgba(167, 139, 250, 0.45),
+                      0 0 14px 2px rgba(167, 139, 250, 0.35),
+                      0 0 28px 6px rgba(167, 139, 250, 0.18);
+  --shadow-panel:     -8px 0 40px rgba(0, 0, 0, 0.5),
+                      -1px 0 24px rgba(167, 139, 250, 0.18);
+
+  /* ── MOTION ────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    0.15s;
+  --dur-base:    0.25s;
+  --dur-slow:    0.5s;
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────────────── */
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — display down to caption. Headings are tight-tracked
+     and balanced; body is slack at 1.65 line-height. */
+  --fs-display:   clamp(36px, 6vw, 60px);
+  --fs-h1:        clamp(28px, 5vw, 40px);
+  --fs-h2:        clamp(22px, 3.5vw, 32px);
+  --fs-h3:        17px;
+  --fs-lead:      17px;
+  --fs-body:      15px;
+  --fs-small:     13.5px;
+  --fs-caption:   12px;
+  --fs-eyebrow:   11.5px;   /* mono, all-caps, 0.18em tracking */
+  --fs-code:      13.5px;
+
+  --lh-tight:     1.05;
+  --lh-snug:      1.15;
+  --lh-base:      1.65;
+  --lh-mono:      1.7;
+
+  --tracking-tight:   -0.025em;
+  --tracking-tight-2: -0.02em;
+  --tracking-eyebrow: 0.18em;
+  --tracking-section: 0.12em;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   SEMANTIC TYPE — apply these classes anywhere in the system.
+   ────────────────────────────────────────────────────────────────────────── */
+.t-display {
+  font-family: var(--font-body);
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h1 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h2 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h2);
+  line-height: 1.2;
+  letter-spacing: var(--tracking-tight-2);
+  font-weight: 700;
+  text-wrap: balance;
+}
+.t-h3 {
+  font-family: var(--font-body);
+  font-size: var(--fs-h3);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.t-lead {
+  font-family: var(--font-body);
+  font-size: var(--fs-lead);
+  line-height: var(--lh-base);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+.t-body {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-base);
+  color: var(--text);
+}
+.t-small {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code);
+  line-height: var(--lh-mono);
+  color: #a5b4fc;
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* The signature gradient text — used on hero phrase + price values. */
+.t-grad {
+  background: var(--grad-hero);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FONTS — Meridian uses the system Inter + JetBrains Mono stacks. Both are
+   loaded from Google Fonts because the codebase only declares them by name
+   in `font-family` (no /fonts/*.ttf shipped). If you need offline fidelity,
+   self-host these two families and they'll drop straight in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+
+
+/* Shared chrome for all preview/ cards. Each card is ~700px wide. */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background:
+    radial-gradient(800px 400px at 80% -10%, #1c1845 0%, transparent 60%),
+    radial-gradient(500px 300px at 10% 30%, #0e2233 0%, transparent 60%),
+    linear-gradient(180deg, #0a0d14, #06080f);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  padding: 22px;
+  min-height: 100vh;
+}
+
+/* Card-internal layout helpers */
+.row { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.token {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+/* Reusable swatch chip */
+.swatch {
+  position: relative;
+  border-radius: 10px;
+  height: 70px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.swatch-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  gap: 8px;
+}
+.swatch-meta .name { color: var(--text); font-family: var(--font-body); font-size: 11.5px; font-weight: 600; }
+.swatch-meta .hex { color: var(--text-faint); font-family: var(--font-mono); font-size: 10.5px; }
+
+/* Class pill (used in multiple cards) */
+.class-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.class-pill[data-class="planet"]    { background: rgba(56, 189, 248, 0.16);  color: var(--class-planet);    border: 1px solid rgba(56, 189, 248, 0.35); }
+.class-pill[data-class="moon"]      { background: rgba(148, 163, 184, 0.16); color: var(--class-moon);      border: 1px solid rgba(148, 163, 184, 0.35); }
+.class-pill[data-class="trojan"]    { background: rgba(167, 139, 250, 0.16); color: var(--class-trojan);    border: 1px solid rgba(167, 139, 250, 0.35); }
+.class-pill[data-class="asteroid"]  { background: rgba(251, 191, 36, 0.14);  color: var(--class-asteroid);  border: 1px solid rgba(251, 191, 36, 0.30); }
+.class-pill[data-class="comet"]     { background: rgba(244, 114, 182, 0.14); color: var(--class-comet);     border: 1px solid rgba(244, 114, 182, 0.30); }
+.class-pill[data-class="irregular"] { background: rgba(192, 132, 252, 0.16); color: var(--class-irregular); border: 1px solid rgba(192, 132, 252, 0.35); }
+
+/* Generic card shape */
+.dscard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-3);
+  padding: 18px;
+  backdrop-filter: blur(8px);
+}
+
+/* Eyebrow */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 5px 14px;
+  border: 1px solid var(--border-2);
+  border-radius: 999px;
+}
+
+@property --neon-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes neonRotate { to { --neon-angle: 360deg; } }
+
+
+body { padding: 0; display: flex; min-height: 280px; }
+.frame { width: 100%; padding: 14px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
+svg.radar { width: 100%; max-width: 260px; height: 260px; }
+.spider .grid { stroke: rgba(148,163,184,0.18); stroke-width: 0.5; fill: none; }
+.spider .axis { stroke: rgba(148,163,184,0.12); stroke-width: 0.5; }
+.spider .label { fill: var(--text-muted); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: 0.04em; }
+.spider .shape { fill: rgba(56,189,248,0.25); stroke: var(--neon-cyan); stroke-width: 1.5; filter: drop-shadow(0 0 8px rgba(56,189,248,0.5)); }
+.spider .dot { fill: var(--neon-violet); }
+.meta h4 { margin: 0 0 8px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-faint); font-weight: 700; }
+.meta-line { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); margin: 6px 0; }
+.meta-line .v { color: var(--text); }
+.meta-line .acc { color: var(--neon-cyan); }
+.pill-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+
+</style></head>
+<body><div class="frame">
+<svg class="radar spider" viewBox="0 0 260 260" aria-hidden="true">
+  <polygon class="grid" points="130,107.5 144.46272121794715,112.764000029823 152.15817444277468,126.09291600249406 149.48557158514987,141.25 137.69545322482756,151.14308396768294 122.30454677517245,151.14308396768294 110.51442841485013,141.25 107.84182555722532,126.09291600249408 115.53727878205287,112.764000029823"/><polygon class="grid" points="130,85 158.92544243589427,95.52800005964599 174.31634888554936,122.18583200498813 168.97114317029974,152.5 145.3909064496551,172.28616793536588 114.60909355034491,172.28616793536588 91.02885682970026,152.5 85.68365111445064,122.18583200498814 101.07455756410573,95.52800005964599"/><polygon class="grid" points="130,62.5 173.38816365384142,78.29200008946898 196.47452332832404,118.27874800748219 188.4567147554496,163.75 153.08635967448265,193.4292519030488 106.91364032551736,193.42925190304882 71.5432852445504,163.75000000000003 63.525476671675946,118.27874800748222 86.61183634615858,78.292000089469"/><polygon class="grid" points="130,40 187.85088487178854,61.05600011929198 218.63269777109872,114.37166400997627 207.94228634059948,175 160.78181289931018,214.57233587073176 99.21818710068982,214.57233587073176 52.057713659400534,175.00000000000003 41.367302228901266,114.3716640099763 72.14911512821145,61.056000119291994"/><line class="axis" x1="130" y1="130" x2="130" y2="40"/><line class="axis" x1="130" y1="130" x2="187.85088487178854" y2="61.05600011929198"/><line class="axis" x1="130" y1="130" x2="218.63269777109872" y2="114.37166400997627"/><line class="axis" x1="130" y1="130" x2="207.94228634059948" y2="175"/><line class="axis" x1="130" y1="130" x2="160.78181289931018" y2="214.57233587073176"/><line class="axis" x1="130" y1="130" x2="99.21818710068982" y2="214.57233587073176"/><line class="axis" x1="130" y1="130" x2="52.057713659400534" y2="175.00000000000003"/><line class="axis" x1="130" y1="130" x2="41.367302228901266" y2="114.3716640099763"/><line class="axis" x1="130" y1="130" x2="72.14911512821145" y2="61.056000119291994"/><text class="label" x="130" y="27" text-anchor="middle">mass</text><text class="label" x="198.13548662677317" y="51.79928902938833" text-anchor="middle">scope</text><text class="label" x="234.38962181929406" y="114.59329316730538" text-anchor="middle">indep</text><text class="label" x="221.7986928011505" y="186" text-anchor="middle">cross</text><text class="label" x="166.2541351925209" y="232.60741780330628" text-anchor="middle">frag</text><text class="label" x="93.74586480747911" y="232.6074178033063" text-anchor="middle">drag</text><text class="label" x="38.20130719884952" y="186.00000000000003" text-anchor="middle">dep</text><text class="label" x="25.610378180705936" y="114.59329316730542" text-anchor="middle">lagr</text><text class="label" x="61.86451337322681" y="51.79928902938835" text-anchor="middle">coh</text><polygon class="shape" points="130,59.8 182.64430523332757,67.26096010855571 204.45146612772294,116.87219776838006 147.1473029949319,139.9 133.69381754791723,140.1486803044878 127.53745496805519,136.76578686965854 115.9703884586921,138.1 72.38874644878582,119.8415816064846 91.23990713590166,83.80752007992564"/><circle class="dot" cx="130" cy="59.8" r="2.5"/><circle class="dot" cx="182.64430523332757" cy="67.26096010855571" r="2.5"/><circle class="dot" cx="204.45146612772294" cy="116.87219776838006" r="2.5"/><circle class="dot" cx="147.1473029949319" cy="139.9" r="2.5"/><circle class="dot" cx="133.69381754791723" cy="140.1486803044878" r="2.5"/><circle class="dot" cx="127.53745496805519" cy="136.76578686965854" r="2.5"/><circle class="dot" cx="115.9703884586921" cy="138.1" r="2.5"/><circle class="dot" cx="72.38874644878582" cy="119.8415816064846" r="2.5"/><circle class="dot" cx="91.23990713590166" cy="83.80752007992564" r="2.5"/>
+</svg>
+<div class="meta">
+  <h4>Physics signature</h4>
+  <div class="meta-line">candidate <span class="v">stripe-webhook-tests</span></div>
+  <div class="meta-line">argmax <span class="acc">planet</span> · score <span class="v">0.847</span></div>
+  <div class="meta-line">dominant axis <span class="acc">scope · 0.91</span></div>
+  <div class="pill-row"><span class="class-pill" data-class="planet">Planet</span></div>
+</div>
+</div></body></html>
