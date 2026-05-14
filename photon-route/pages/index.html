@@ -237,7 +237,7 @@
         <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
         <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
       </a>
-      <a href="https://lens.ask-meridian.uk" class="nav-app" data-status="live">
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
         <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
         <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
       </a>
@@ -312,25 +312,6 @@
   </script>
 </nav>
 
-<script>
-  (function () {
-    const btn  = document.querySelector('.burger');
-    const menu = document.getElementById('navMenu');
-    if (!btn || !menu) return;
-    const set = (open) => {
-      menu.classList.toggle('open', open);
-      btn.classList.toggle('open', open);
-      btn.setAttribute('aria-expanded', String(open));
-    };
-    btn.addEventListener('click', e => { e.stopPropagation(); set(!menu.classList.contains('open')); });
-    document.addEventListener('click', e => {
-      if (!menu.classList.contains('open')) return;
-      if (!menu.contains(e.target) && !btn.contains(e.target)) set(false);
-    });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
-    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => set(false)));
-  })();
-</script>
 <main>
 <header>
   <div>
