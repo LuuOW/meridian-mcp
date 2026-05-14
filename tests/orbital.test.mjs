@@ -291,11 +291,16 @@ test('docker-only query routes docker as #1', () => {
 // ── 10. Snapshot: classification of fixture corpus ──────────────────────────
 // Pins the current behavior so future formula tweaks show up as a diff.
 
-test('moon hinge: planet wins over moon when independence > 0.5', () => {
-  const p = { mass: 0.45, scope: 0.55, independence: 0.6, cross_domain: 0.1,
+test('moon hinge: planet wins over moon when independence > 0.85', () => {
+  // 2026-05-14 retune lifted the moon trigger from independence<0.5 to
+  // independence<0.85, with a dep_ratio-graded parent_pull instead of
+  // a binary parent gate. The hinge moved with it — above 0.85
+  // independence the moon factor zeros out regardless of dep_ratio,
+  // so a clear "independent candidate" never gets misfiled as a moon.
+  const p = { mass: 0.45, scope: 0.55, independence: 0.9, cross_domain: 0.1,
               fragmentation: 0.1, drag: 0.1, dep_ratio: 0.4 }
   const { cls } = classOf(p, true)
-  // moon_score = max(0, 0.5-0.6)*2*1*0.775 = 0; planet wins
+  // moon_score = max(0, 0.85-0.9)*... = 0; planet wins.
   assert.notEqual(cls, 'moon')
 })
 

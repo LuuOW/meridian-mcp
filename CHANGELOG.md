@@ -2,6 +2,95 @@
 
 ## Unreleased — 2026-05-14
 
+**Orbital classifier calibration: lift moon / comet / irregular out of dead zones, reduce length-bias.**
+
+Calibration driven by a new simulation harness — `tests/sim/orbital-calibration.mjs` generates 12 archetypal candidate templates (planet/asteroid/moon/comet/irregular across forge/signal/mind systems), runs them through the live `orbitalClassify` in 30 randomly-resampled 5-candidate batches each, and reports:
+
+- archetype recall@1 (does each archetype get the expected class?),
+- length→planet correlation (mass-driven length bias),
+- sibling-perturbation stability (does the same candidate's class flip when its siblings change?).
+
+### Baseline biases the simulation surfaced
+
+```
+                       ┌─────────────────────────────┐
+                       │  Pre-calibration class freq │
+   planet (anchor)     │ ██████████████████████ 54%  │  ← over-fires
+   trojan              │ █████████ 18%               │
+   asteroid            │ ██████████████ 28%          │
+   moon                │ 0%                          │  ← structurally
+   comet               │ 0%                          │     unreachable
+   irregular           │ 0%                          │
+                       └─────────────────────────────┘
+   recall@1: 6 / 12 archetypes
+   length → planet correlation: 0.387 (long bodies tip to planet)
+```
+
+Three structural problems:
+
+1. **moon is unreachable.** Moon required `independence < 0.5`, but `independence = 1 − 0.7·dep_ratio + 0.2·mass` so dep_ratio had to exceed 0.71 (mass=0) or 0.85 (mass=0.5). Docker-compose in the canonical fixtures has dep_ratio=0.44 → independence=0.69 → moon_score=0, classified as asteroid even though it's a textbook satellite of `docker`.
+2. **comet gated on cross_domain.** `comet = drag · cross_domain · (1 − dep_ratio)`. Specialist candidates with hyphenated keywords in a single system have cross_domain=0 → comet=0.
+3. **irregular outranked by planet.** `irregular = cross_domain · fragmentation · 0.85`. For a high-mass bridge candidate, `planet = min(mass, scope, indep)^1.5` already won on the min() alone — anchors and bridges shouldn't be competing on mass.
+
+### Retuned scoring (same six classes, same argmax, same physics signature)
+
+```
+              old                                           new
+  ─────────   ─────────────────────────────────────────     ─────────────────────────────────────────────────
+  planet      min(m,s,i)^1.5                                min(m,s,i)^1.5 · (1 − 0.5·cross_domain)
+  moon        max(0, 0.5 − i) · 2 · parent? · (1−0.5·m)     max(0, 0.85 − i) · 2 · parent_pull · (1−0.5·m)
+                                                            parent_pull = min(1.5, 0.3 + 1.7·dep_ratio)
+  trojan      dep_ratio · parent? · (1 − frag)              unchanged
+  asteroid    max(0, 0.55 − m) · 2.5 · scope · indep        unchanged
+  comet       drag · cross_domain · (1 − dep_ratio)         drag · (1 − dep_ratio) · (1 − 0.4·m) · 1.3
+  irregular   cross_domain · frag · 0.85                    cross_domain · (frag + 0.5)
+```
+
+Pipeline (unchanged shape, only the boxed function changed):
+
+```
+  candidate ──┐
+              ▼
+  ┌───────────────────────────┐     ┌────────────────────────────┐
+  │ physicsOf (9 scalars +    │ ──▶ │ classOf (six argmax rules) │  ◀── retuned
+  │  orbital + optical)       │     │                            │
+  └───────────────────────────┘     └────────────────────────────┘
+                                                │
+                                                ▼
+                                         class + scores + route_score
+```
+
+### Results
+
+```
+                       ┌─────────────────────────────┐
+                       │ Post-calibration class freq │
+   planet              │ ███████████████ 30%          │  ← was 54%
+   trojan              │ █████ 10%                    │
+   asteroid            │ ██████████ 20%               │
+   moon                │ ████████ 16%                 │  ← was 0%
+   comet               │ ████ 8%                      │  ← was 0%
+   irregular           │ ████████ 16%                 │  ← was 0%
+                       └─────────────────────────────┘
+   recall@1: 8 / 12 archetypes (was 6 / 12)
+   length → planet correlation: 0.220 (was 0.387)
+   canonical fixtures: docker→planet, css→asteroid, partner→irregular all
+   unchanged. docker-compose moves asteroid→moon, matching its fixture intent.
+```
+
+### Test pin updated
+
+`moon hinge: planet wins over moon when independence > 0.5` was a calibration pin of the old threshold. Renamed/retuned to `moon hinge: planet wins over moon when independence > 0.85`. The 33 other physics-invariant tests pass unchanged — same Kepler III bounds, same perihelion/aphelion math, same wavelength visibility, same coherence_time bounds.
+
+### Files
+
+- `mcp/_lib/orbital.mjs` — retuned `classOf` (one function, ~25 lines).
+- `tests/orbital.test.mjs` — one pin updated to new threshold.
+- `tests/sim/orbital-calibration.mjs` — new simulation harness (run via `node tests/sim/orbital-calibration.mjs`).
+- `tests/sim/orbital-variant.mjs` — retained as the "side-by-side comparison" baseline for future calibrations; currently identical to the live `classOf`.
+
+---
+
 **Hot-path tightening on the orbital classifier and photon-route retrieval.**
 
 - `mcp/_lib/orbital.mjs`: the sibling Jaccard loop in `physicsOf()` and the

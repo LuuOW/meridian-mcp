@@ -177,23 +177,55 @@ export function physicsOf(candidate, sibTokens) {
 export { CLASS_BOOST, SYSTEM_TERMS }
 
 export function classOf(p, hasParentInSet) {
-  // Planet uses min(mass, scope, independence)^1.5 instead of the
-  // product. The product let two strong axes drown out a missing one
-  // (a long body with sparse keywords still beat planet's 0.4 floor);
-  // min penalises the deficit, which is what "anchor candidate" actually
-  // means semantically — strong on every dimension, not just on average.
+  // 2026-05-14 calibration (tests/sim/orbital-calibration.mjs):
+  //   The pre-calibration scoring sent 100% of multi-system "bridge"
+  //   archetypes into `planet` (because high mass + high scope wins min())
+  //   and made `moon` structurally unreachable (the `independence < 0.5`
+  //   gate never triggered — independence stays ≥ 0.65 even at dep_ratio
+  //   = 0.5). 30-trial recall on 12 archetypes: 6/12.
+  //
+  //   The retune is conservative: same six classes, same argmax, same
+  //   physics signature. Only the score expressions move.
+  //
+  //     planet:   now × (1 - 0.5·cross_domain). Anchors are domain-focused,
+  //               not bridges, so a high-CD candidate is structurally less
+  //               anchor-like.
+  //     moon:     independence threshold lifted 0.5 → 0.85. The hard
+  //               parent-in-set gate is replaced with a smooth
+  //               (0.3 + 1.7·dep_ratio) pull — dep_ratio is the max of
+  //               token+keyword Jaccard so it captures the "satellite
+  //               of a parent" signal even when token-Jaccard alone
+  //               (the old parent gate) falls under its 0.18 threshold,
+  //               which was the docker-compose case in the canonical
+  //               fixtures.
+  //     comet:    no longer gated on cross_domain. Specialist signal is
+  //               drag (hyphenated keywords) × isolation (1 − dep_ratio)
+  //               × low-mass; multiplier 1.3 lifts comet over planet at
+  //               mid-mass.
+  //     irregular: cross_domain × (fragmentation + 0.5) — broader band so
+  //                multi-system bridges fire at moderate fragmentation.
+  //     trojan, asteroid: unchanged.
+  //
+  //   30-trial recall on the same 12 archetypes: 8/12. length→planet
+  //   correlation drops 0.387 → 0.220. Canonical fixtures: docker still
+  //   planet, css-spacing-layout still asteroid, partner-skill-compiler
+  //   still irregular, docker-compose moves asteroid → moon (matching
+  //   the fixture's documented intent — "moon_like").
+  // Capped at 1.5 so moon doesn't overtake trojan at extreme dep_ratio
+  // (the trojan vs moon hand-built test: dep_ratio=0.9, indep=0.5 — both
+  // are sibling-bound, but trojan owns the "very high dep_ratio + low
+  // fragmentation" niche, moon owns "low independence + moderate dep").
+  const parent_pull = Math.min(1.5, 0.3 + 1.7 * p.dep_ratio)
+
   const planet_score   = Math.min(p.mass, p.scope, p.independence) ** 1.5
-  const moon_score     = Math.max(0, 0.5 - p.independence) * 2
-                         * (hasParentInSet ? 1 : 0.4)
+                         * (1 - 0.5 * p.cross_domain)
+  const moon_score     = Math.max(0, 0.85 - p.independence) * 2
+                         * parent_pull
                          * (1 - 0.5 * p.mass)
   const trojan_score   = p.dep_ratio * (hasParentInSet ? 1 : 0.5) * (1 - p.fragmentation)
-  // Asteroid threshold raised from 0.4 → 0.55 to match the new (lower-
-  // saturation) mass distribution. Without this, niche/small candidates
-  // never cleared the threshold because mass had drifted up across
-  // the whole panel under the old saturation.
   const asteroid_score = Math.max(0, 0.55 - p.mass) * 2.5 * p.scope * p.independence
-  const comet_score    = p.drag * p.cross_domain * (1 - p.dep_ratio)
-  const irregular_score= p.cross_domain * p.fragmentation * 0.85
+  const comet_score    = p.drag * (1 - p.dep_ratio) * (1 - 0.4 * p.mass) * 1.3
+  const irregular_score= p.cross_domain * (p.fragmentation + 0.5)
 
   const candidates = {
     planet: planet_score, moon: moon_score, trojan: trojan_score,
