@@ -236,3 +236,7 @@ docker compose logs --since 30m api       # last 30 minutes
 - Exposing database ports in production (`5432:5432`) — only expose in dev override file
 - Using `restart: always` on one-shot migration containers — use `restart: "no"` for jobs that should run once
 - Forgetting `--no-deps` when rebuilding one service — without it, compose also recreates dependencies
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #43._
