@@ -154,7 +154,11 @@
         a.addEventListener('click', function () { toggleMobile(false) })
       })
 
-      /* ───── desktop Apps dropdown ───── */
+      /* ───── desktop Apps dropdown ─────
+         Click toggles. Hover-to-open is CSS-only (`.nav-apps:hover .nav-apps-menu`)
+         so a mouse-enter doesn't fight a same-tick click — we hit that
+         race when Playwright's click runs hover-then-click and the
+         mouseenter handler flipped state before the click did. */
       var appsTrigger = document.querySelector('.nav-apps-trigger')
       var appsMenu    = document.getElementById('appsMenu')
       var appsItem    = document.querySelector('.nav-apps')
@@ -162,12 +166,10 @@
         if (!appsItem) return
         var isOpen = open === undefined ? !appsItem.classList.contains('open') : open
         appsItem.classList.toggle('open', isOpen)
-        appsTrigger.setAttribute('aria-expanded', String(isOpen))
+        if (appsTrigger) appsTrigger.setAttribute('aria-expanded', String(isOpen))
       }
       if (appsTrigger) {
         appsTrigger.addEventListener('click', function (e) { e.stopPropagation(); toggleApps() })
-        appsItem.addEventListener('mouseenter', function () { toggleApps(true) })
-        appsItem.addEventListener('mouseleave', function () { toggleApps(false) })
       }
 
       /* ───── close menus on outside click / Escape ───── */

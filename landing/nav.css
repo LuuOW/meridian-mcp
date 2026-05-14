@@ -67,7 +67,9 @@
   transition: opacity 0.18s, transform 0.18s;
   z-index: 60;
 }
-.nav-apps.open .nav-apps-menu { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.nav-apps.open .nav-apps-menu,
+.nav-apps:hover .nav-apps-menu,
+.nav-apps:focus-within .nav-apps-menu { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .nav-apps-menu a.nav-app {
   display: block; padding: 10px 12px;
   background: rgba(167,139,250,0.04); border: 1px solid rgba(167,139,250,0.10);
