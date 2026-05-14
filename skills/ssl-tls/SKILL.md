@@ -193,3 +193,7 @@ Before submitting to hstspreload.org:
 - [ ] Wildcard certs use DNS-01, not HTTP-01
 - [ ] Internal services use mTLS where no user-facing auth exists
 - [ ] `ssl_trusted_certificate` points to chain for OCSP verification
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #91._
