@@ -115,3 +115,7 @@ nmap --script ssh-auth-methods -p 22 target-ip
 - [ ] Only 22, 80, 443 show `open` from outside
 - [ ] SSL cert confirmed with `nmap --script ssl-cert`
 - [ ] Save baseline scan to compare after infra changes: `nmap -oN baseline.txt`
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #77._
