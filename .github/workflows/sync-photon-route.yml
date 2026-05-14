@@ -1,9 +1,8 @@
-name: Sync photon-route subdir → standalone repo
+name: Sync photon-route → HF Space
 
-# When the monorepo's photon-route/ changes, force-push that subtree
-# as the main branch of LuuOW/photon-route. The standalone repo is
-# the source HF Space pulls from; it's now a derived artifact of
-# this monorepo. Edit photon-route/ here only.
+# Pushes meridian-mcp/photon-route/ directly into the HF Space's own
+# git repo at huggingface.co/spaces/luuow/photon-route. HF rebuilds
+# the Space on push. Bypasses the standalone GitHub repo entirely.
 
 on:
   push:
@@ -12,32 +11,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  sync:
+  push-to-hf:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0          # subtree split needs full history
-          persist-credentials: false   # don't let the default extraheader
-                                       # override our x-access-token URL
+          persist-credentials: false
 
-      - name: Split photon-route subtree and push to standalone
+      - name: Push photon-route/ to HF Space git
         env:
-          PAT: ${{ secrets.PHOTON_SYNC_PAT }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          if [ -z "$PAT" ]; then
-            echo "::error::PHOTON_SYNC_PAT secret missing"
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::HF_TOKEN secret missing"
             exit 1
           fi
-          git config user.email "monorepo-sync@meridian-mcp"
-          git config user.name  "meridian-mcp monorepo sync"
+          git config --global user.email "monorepo-sync@meridian-mcp"
+          git config --global user.name  "meridian-mcp monorepo sync"
 
-          # Create a synthetic branch containing only photon-route/ history
-          git subtree split --prefix=photon-route -b photon-deploy
+          # Clone the Space's HF-side git (separate from any GitHub repo)
+          git clone "https://luuow:${HF_TOKEN}@huggingface.co/spaces/luuow/photon-route" /tmp/hf-space
 
-          # Force-push as the standalone repo's main. The standalone is
-          # rewritten on every sync; its history mirrors monorepo's
-          # subtree split, not the original.
-          git push --force \
-            "https://x-access-token:${PAT}@github.com/LuuOW/photon-route.git" \
-            photon-deploy:main
+          # Replace tracked files with the monorepo subdir contents. Leave
+          # the .git directory and anything HF added itself alone.
+          rsync -a --exclude='.git' --delete-after \
+            --exclude='README.md.bak' \
+            ./photon-route/ /tmp/hf-space/
+
+          cd /tmp/hf-space
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to sync."
+            exit 0
+          fi
+          git commit -m "Sync from meridian-mcp@${{ github.sha }}"
+          git push
