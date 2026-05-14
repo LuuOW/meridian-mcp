@@ -773,12 +773,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
     radial-gradient(ellipse at 50% 100%, rgba(56,189,248,0.10) 0%, transparent 50%);
 }
 
-/* BURGER button — pulse a subtle violet glow when closed (drawing attention) */
-.burger {
-  box-shadow: 0 0 0 0 rgba(167, 139, 250, 0);
-  animation: navPulse 4s ease-in-out infinite;
-}
-.burger.open { animation: none; }
+/* BURGER button: the navPulse keyframes used here also include
+   `transform: scale(0.7)` at 50%, which made the burger physically
+   shrink every 4s. UI tests caught the button as "not stable" so
+   clicks never fired. Drop the animation; the hover state alone is
+   enough visual affordance. */
 
 /* GHOST button — keep the existing hover halo but also resting hint */
 .btn-ghost {
