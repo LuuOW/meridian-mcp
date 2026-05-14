@@ -185,3 +185,7 @@ if cpu_pct > 90:
 - [ ] `pool_pre_ping=True` on DB engine (silent connection errors hidden without it)
 - [ ] Alert on restart loops (> 3 restarts in 10 min)
 - [ ] `docker stats --no-stream` in cron for daily snapshots
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #71._
