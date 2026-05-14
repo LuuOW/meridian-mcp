@@ -200,3 +200,7 @@ utm_term     = paid keyword (keto diet, low carb)
 - [ ] LTV:CAC ratio tracked monthly (alert if < 2:1)
 - [ ] Revenue dashboard (MRR, ARR, churn) refreshing daily
 - [ ] Attribution model documented and consistent across reports
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #20._
