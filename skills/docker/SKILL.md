@@ -427,3 +427,7 @@ docker compose up -d --no-build
 - [ ] CVE scan in CI (`trivy image --exit-code 1 --severity CRITICAL`)
 - [ ] Isolated named networks — no cross-contamination between service groups
 - [ ] Container-to-host SSH uses restricted `authorized_keys` with command allowlist
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #45._
