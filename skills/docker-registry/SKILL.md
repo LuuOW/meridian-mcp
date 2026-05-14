@@ -238,3 +238,7 @@ docker compose up -d --no-deps --no-build api
 - Forgetting `permissions: packages: write` in the GitHub Actions job — the default `GITHUB_TOKEN` has no package write access without this
 - Running `docker system prune -a` in production — it removes all images not currently used by a running container, including the rollback image
 - Not pinning the registry image (`registry:2`) — use a specific version tag for self-hosted registries to prevent unexpected upgrades
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #44._
