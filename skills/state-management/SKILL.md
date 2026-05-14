@@ -326,3 +326,7 @@ const { register, handleSubmit } = useForm<ArticleCreate>();
 - [ ] Only non-server, non-URL state is in Zustand (UI toggles, drafts, selections)
 - [ ] Derived values are computed at render time, not stored
 - [ ] No duplicate field definitions between Zustand store and TanStack Query cache
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #92._
