@@ -1,0 +1,16 @@
+# Top-level .gitignore excludes build/ globally; un-ignore the proof
+# artefacts so the residency/parity/runtime-plan results ship in git.
+!build/
+!build/build_meta.json
+!build/proof/
+!build/proof/**
+
+# But keep the large binary outputs (regenerable via `make convert`).
+build/AneEncoder.mlpackage
+build/AneEncoder.mlmodelc
+
+.venv/
+__pycache__/
+*.pyc
+*.mlpackage.zip
+.DS_Store
