@@ -151,3 +151,7 @@ useEffect(() => {
 - Ship only when: responsive, accessible, all async states handled
 - Every list/table: defined empty state
 - Every async section: loading skeleton + error path
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #100._
