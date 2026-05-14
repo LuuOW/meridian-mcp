@@ -167,3 +167,7 @@ x_learner.fit(X, treatment, y, p=propensity_scores)
 **R-Learner** (Robinson decomposition) is the gold standard for CATE with observational data — orthogonalizes both outcome and treatment residuals before fitting the CATE model, achieving Neyman-orthogonality (robust to nuisance model misspecification). Implemented in `econml.metalearners.RLearner` and EconML's `CausalForestDML`.
 
 Evaluation of CATE models: Qini coefficient (uplift equivalent of AUC), AUUC (Area Under Uplift Curve), and RATE (Rank-Weighted Average Treatment Effect, introduced by Athey & Wager). Never evaluate CATE on held-out data using ATE — you need a proper ranking-based metric.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #30._
