@@ -276,3 +276,98 @@ The `mcpName` and binary names in `package.json` are stable across versions — 
 - **Worker is 5xx-ing**: `cd cf-worker && npx wrangler tail` (or whichever worker dir). Streams live logs.
 - **A photon route or HF Space is stale**: check `LuuOW/photon-route` HEAD vs the monorepo's `photon-route/` subtree SHA (`git subtree split --prefix=photon-route -q HEAD`). If they differ, run the subtree push.
 - **Orbital classifier is misclassifying**: run `node tests/sim/orbital-calibration.mjs`, compare to the calibration report in `CHANGELOG.md` (look for the 2026-05-14 entry's "Results" panel).
+
+---
+
+## Simulations — measuring app quality
+
+Each app has a sim under `tests/sim/` that talks to the live deployed surface
+and reports a quality metric. Re-runnable. Outputs no artifacts (logs to
+stdout only) so they can be piped to a file or compared between runs.
+
+### Orbital classifier — `tests/sim/orbital-calibration.mjs`
+
+```bash
+node tests/sim/orbital-calibration.mjs
+```
+
+Generates 12 archetypal candidate templates × 30 sibling-resampled batches
+each. Reports archetype recall@1, length→class correlation, and stability.
+**No network**; runs fully offline against the local `orbitalClassify`.
+
+To prototype a new `classOf` retune: edit `tests/sim/orbital-variant.mjs`
+and the harness prints baseline-vs-variant side-by-side. See the
+2026-05-14 CHANGELOG entry for the last calibration.
+
+### Helix recommendation quality — `tests/sim/helix-quality.mjs`
+
+```bash
+node tests/sim/helix-quality.mjs                      # default 30s gap, 1 trial per injury
+HELIX_SIM_TRIALS=3   node tests/sim/helix-quality.mjs # 3 trials per injury (variance)
+HELIX_SIM_GAP_MS=60000 node tests/sim/helix-quality.mjs # paid-token mode: 60s gap
+```
+
+Calls live `mcp.ask-meridian.uk/v1/helix` with a 19-injury hand-curated gold
+set (each injury → ordered list of expected UniProt IDs from the
+SEED_PROTEINS table). Reports nDCG@5, recall@{1,3,5}, precision@1, and a
+negative-control hit rate (how often IL-8 wrongly surfaces in top-3 —
+should be 0%).
+
+**Quota awareness:** GH Models free tier rate-limits aggressively
+(~10 req/min, with longer-window daily caps). The default 30 s gap stays
+under the per-minute bucket, but a full 19-injury run can still hit a
+daily cap if you've burned the budget earlier. If the script reports
+`HTTP 429` repeatedly, wait an hour and rerun — or set
+`MERIDIAN_GITHUB_TOKEN` on the Worker to a paid token.
+
+### Photon-route held-out evaluation
+
+The trained encoder has historically overfit because train and test were
+the same 6-query set. The fix is a chronological split:
+
+```bash
+cd photon-route
+
+# 1. Expand the relevance set (one-shot, needs network — scrapes arXiv titles)
+python -m eval.expand_titles --out eval/relevance_expanded.json
+
+# 2. Split chronologically by the youngest relevant doc per query
+python -m eval.split_holdout \
+    --in eval/relevance_expanded.json \
+    --train-cutoff 2018 --val-cutoff 2020
+
+# 3. Retrain on train + early-stop on val (runs on the HF Space's 16 GB CPU,
+#    NOT on the meridian-vm)
+python -m space.train \
+    --relevance eval/relevance_train.json \
+    --val-relevance eval/relevance_val.json \
+    --out weights_holdout.npz
+
+# 4. Report TEST-only metrics. This is the number to publish.
+python -m eval.run \
+    --weights weights_holdout.npz \
+    --relevance eval/relevance_test.json
+```
+
+The split script writes `relevance_{train,val,test}.json` next to the source
+file. The eval script `eval/run.py` already accepts `--relevance` so the
+test-only run is a drop-in.
+
+**Don't trust train==test metrics.** The user-memory note on this is
+specific: `nDCG 0.747` on train==test collapsed to `0.071` on holdout
+before the splitter existed. Always read the test-only number.
+
+---
+
+## Backlog (not scoped to this session)
+
+- **Lens non-XR fallback.** Pointer-lock + mouse-look controller that
+  drives the same `vlm.mjs` / `meridian-route.mjs` flow without a
+  headset. Multi-day rewrite (new controller, viewport capture, UI
+  affordance). Today's gate page is sane for headset users but is a
+  dead end for everyone else.
+- **Cleanup of dead nav CSS** in `landing/style.css:76-446`,
+  `helix/helix.css:33-138`, `miniapp/miniapp.css:.nav-links` rules.
+  All overridden by the newer cross-origin `nav.css` but still loaded.
+- **More SEED_PROTEINS in helix.** Currently 10 hand-curated entries,
+  expansion needs domain expertise + UniProt accession verification.
