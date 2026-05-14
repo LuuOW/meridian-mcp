@@ -1,0 +1,17 @@
+{
+  "package_path": "build/AneEncoder.mlpackage",
+  "convert_seconds": 6.56,
+  "coremltools": "9.0",
+  "torch": "2.8.0",
+  "compute_units": "CPU_AND_NE",
+  "compute_precision": "FLOAT16",
+  "min_target": "iOS18",
+  "input_shape": [
+    1,
+    384,
+    1,
+    "RangeDim(32..256, default=64)"
+  ],
+  "model_dim": 384,
+  "model_seq_default": 64
+}

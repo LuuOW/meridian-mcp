@@ -1,0 +1,9 @@
+# Parity (PyTorch FP32 vs CoreML FP16, CPU_ONLY)
+
+shape:         pytorch=(1, 384, 1, 64), coreml=(1, 384, 1, 64)
+max |dy|:      1.5659e-02
+mean |dy|:     2.5379e-03
+tolerance:     atol=0.05, rtol=0.05 (combined)
+violations:    0 / 24576
+worst ratio:   0.228 (1.0 = at threshold)
+verdict:       PASS

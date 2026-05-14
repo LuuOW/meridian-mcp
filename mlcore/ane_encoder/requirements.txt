@@ -1,0 +1,4 @@
+coremltools>=8.0
+torch>=2.4
+numpy>=1.26
+protobuf>=4.25

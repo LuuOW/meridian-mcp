@@ -1,0 +1,23 @@
+# Static ANE residency report — AneEncoder.mlpackage
+
+Total ops: 625
+ANE-eligible: 625
+Flagged: 0
+Static residency: 100.0%
+
+Per-op breakdown:
+  const                          408  ANE-eligible
+  conv                            36  ANE-eligible
+  mul                             31  ANE-eligible
+  reduce_mean                     26  ANE-eligible
+  add                             25  ANE-eligible
+  reshape                         24  ANE-eligible
+  sub                             13  ANE-eligible
+  square                          13  ANE-eligible
+  rsqrt                           13  ANE-eligible
+  transpose                       12  ANE-eligible
+  reduce_sum                      12  ANE-eligible
+  softmax                          6  ANE-eligible
+  gelu                             6  ANE-eligible
+
+Flagged ops (first 20):

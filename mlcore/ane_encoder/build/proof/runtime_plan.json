@@ -1,0 +1,54 @@
+{
+  "ane_ops" : 217,
+  "ane_residency_pct" : 100,
+  "cpu_ops" : 0,
+  "device_counts" : {
+    "ANE" : 217,
+    "static" : 408
+  },
+  "gpu_ops" : 0,
+  "package" : "AneEncoder.mlmodelc",
+  "per_op_type" : {
+    "add" : {
+      "ANE" : 25
+    },
+    "const" : {
+      "static" : 408
+    },
+    "conv" : {
+      "ANE" : 36
+    },
+    "gelu" : {
+      "ANE" : 6
+    },
+    "mul" : {
+      "ANE" : 31
+    },
+    "reduce_mean" : {
+      "ANE" : 26
+    },
+    "reduce_sum" : {
+      "ANE" : 12
+    },
+    "reshape" : {
+      "ANE" : 24
+    },
+    "rsqrt" : {
+      "ANE" : 13
+    },
+    "softmax" : {
+      "ANE" : 6
+    },
+    "square" : {
+      "ANE" : 13
+    },
+    "sub" : {
+      "ANE" : 13
+    },
+    "transpose" : {
+      "ANE" : 12
+    }
+  },
+  "schedulable_ops" : 217,
+  "total_ops" : 625
+}
