@@ -319,3 +319,7 @@ Returns a single widget by ID.
 - Writing CHANGELOG entries that mirror git commit messages — CHANGELOG is for humans reading release notes, not for git log consumers
 - Leaving placeholder text (`{N}`, `@handle`) in merged docs — add a CI lint rule: `grep -r '{NNN}\|@handle' docs/ && exit 1`
 - Mixing ADR status "Proposed" with "Accepted" in the same file — status is a point-in-time fact, update it in the same commit that changes the decision
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #42._
