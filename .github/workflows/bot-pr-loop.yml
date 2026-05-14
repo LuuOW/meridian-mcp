@@ -49,7 +49,6 @@ jobs:
           set -euo pipefail
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          mkdir -p data/bot-touches
           N="${{ inputs.count }}"
           for i in $(seq 1 "$N"); do
             STAMP=$(date -u +'%Y%m%d-%H%M%S-%6N')
@@ -57,9 +56,9 @@ jobs:
             git checkout main
             git pull --rebase origin main || true
             git checkout -b "$BRANCH"
-            # Real artifact: this file ends up under data/bot-touches/
-            # and acts as a ledger of bot activity per the OPERATIONS
-            # backlog item "structured bot activity log".
+            # mkdir AFTER the branch checkout because the data/bot-touches
+            # dir may not exist on main yet if no prior bot PR has merged.
+            mkdir -p data/bot-touches
             printf '{"stamp":"%s","i":%d,"workflow":"bot-pr-loop"}\n' "$STAMP" "$i" \
               > "data/bot-touches/touch-$STAMP.json"
             git add data/bot-touches/
