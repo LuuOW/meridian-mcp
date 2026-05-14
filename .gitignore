@@ -10,3 +10,5 @@ coverage/
 dist/
 build/
 site/dist/
+test-results/
+playwright-report/
