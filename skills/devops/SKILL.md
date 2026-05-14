@@ -290,3 +290,7 @@ echo "Backup complete: myapp_${DATE}.sql.gz"
 - [ ] Health check cron running every 5 minutes
 - [ ] `certbot renew` auto-timer verified (`systemctl status certbot.timer`)
 - [ ] `.env.production` readable only by deploy user (`chmod 600`)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #40._
