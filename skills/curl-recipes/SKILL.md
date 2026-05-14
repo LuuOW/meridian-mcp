@@ -140,3 +140,7 @@ curl --cacert /etc/ssl/my-ca.crt https://internal.service/
 | `--retry 3` | Retry up to 3 times |
 | `--compressed` | Request + decompress gzip |
 | `-x http://proxy:8080` | Use HTTP proxy |
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #37._
