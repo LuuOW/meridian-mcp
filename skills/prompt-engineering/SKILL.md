@@ -181,3 +181,7 @@ Output only the system prompt, no commentary.
 ```
 
 Iterate: generate → test on 20 diverse inputs → identify failure modes → feed failures back as examples or constraints. This loop converges faster than manual iteration.
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #78._
