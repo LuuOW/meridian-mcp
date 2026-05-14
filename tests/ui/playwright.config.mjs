@@ -10,7 +10,13 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 2 : 4,
-  reporter: process.env.CI ? [['list'], ['github']] : 'list',
+  reporter: process.env.CI
+    // On CI: line output for the live log, GitHub annotations for inline
+    // PR/check annotations, plus an HTML report that the workflow uploads
+    // as an artifact on failure so failures are debuggable without a
+    // re-run.
+    ? [['list'], ['github'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
+    : 'list',
   use: {
     actionTimeout: 8_000,
     navigationTimeout: 20_000,
