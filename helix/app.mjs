@@ -66,16 +66,47 @@ const pdbTextCache  = new Map()   // pdb → raw PDB text (for residue lookups)
 
 // Wait for window.molstar to land — the UMD bundle attaches on
 // DOMContentLoaded. Promise resolves the moment it's available.
+// Lazy-load the 5 MB Mol* UMD bundle on first use instead of blocking
+// initial paint with a synchronous <script> in <head>. We still expose
+// the same `molstarReady()` Promise API so callers don't change.
+//
+// Lazy load avoids the bundle entirely when the user just lands on the
+// gate page and never submits an injury. First-call awaits the inject;
+// subsequent calls resolve immediately against `window.molstar`.
+let _molstarLoadPromise = null
 function molstarReady() {
-  return new Promise((resolve, reject) => {
-    if (window.molstar?.Viewer) return resolve(window.molstar)
-    let tries = 0
-    const t = setInterval(() => {
-      tries++
-      if (window.molstar?.Viewer) { clearInterval(t); resolve(window.molstar) }
-      else if (tries > 80) { clearInterval(t); reject(new Error('molstar bundle did not load')) }
-    }, 50)
-  })
+  if (window.molstar?.Viewer) return Promise.resolve(window.molstar)
+  if (!_molstarLoadPromise) {
+    _molstarLoadPromise = new Promise((resolve, reject) => {
+      // Pull the CSS in the same shot so the first viewer mount doesn't
+      // FOUC while we wait for molstar.css.
+      if (!document.querySelector('link[data-molstar-css]')) {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = 'https://cdn.jsdelivr.net/npm/molstar@4.7.0/build/viewer/molstar.css'
+        link.dataset.molstarCss = '1'
+        document.head.appendChild(link)
+      }
+      const s = document.createElement('script')
+      s.src = 'https://cdn.jsdelivr.net/npm/molstar@4.7.0/build/viewer/molstar.js'
+      s.async = true
+      s.onload = () => {
+        if (window.molstar?.Viewer) return resolve(window.molstar)
+        // Mol* exposes itself synchronously on script execution, but
+        // give it a tick in case the UMD wrapper is split across
+        // microtasks. 80 × 50 ms = 4 s upper bound, same as before.
+        let tries = 0
+        const t = setInterval(() => {
+          tries++
+          if (window.molstar?.Viewer) { clearInterval(t); resolve(window.molstar) }
+          else if (tries > 80) { clearInterval(t); reject(new Error('molstar bundle did not initialise')) }
+        }, 50)
+      }
+      s.onerror = () => reject(new Error('molstar bundle failed to load (CDN unreachable?)'))
+      document.head.appendChild(s)
+    })
+  }
+  return _molstarLoadPromise
 }
 
 // Mount a Mol* viewer in `host` and load the PDB by id. The viewer
@@ -593,7 +624,30 @@ function showDetail(c, sel = null) {
   detail.hidden = false
 
   $('detailTitle').textContent = `${c.name} · ${c.uniprot || c.slug}`
-  $('detailMeta').textContent  = `${c.aa_len ?? '?'} aa · PDB ${c.pdb || '—'}`
+  // Citation links — UniProt and (when known) RCSB PDB. Turns the detail
+  // panel from a pure visualisation into something you'd cite.
+  const meta = $('detailMeta')
+  meta.innerHTML = ''
+  const sizeBit = document.createElement('span')
+  sizeBit.textContent = `${c.aa_len ?? '?'} aa · `
+  meta.appendChild(sizeBit)
+  if (c.uniprot) {
+    const u = document.createElement('a')
+    u.href = `https://www.uniprot.org/uniprotkb/${encodeURIComponent(c.uniprot)}/entry`
+    u.target = '_blank'; u.rel = 'noopener'
+    u.textContent = `UniProt ${c.uniprot}`
+    meta.appendChild(u)
+  }
+  if (c.pdb) {
+    meta.appendChild(document.createTextNode(' · '))
+    const p = document.createElement('a')
+    p.href = `https://www.rcsb.org/structure/${encodeURIComponent(c.pdb)}`
+    p.target = '_blank'; p.rel = 'noopener'
+    p.textContent = `PDB ${c.pdb}`
+    meta.appendChild(p)
+  } else {
+    meta.appendChild(document.createTextNode(' · PDB —'))
+  }
   $('detailRationale').textContent = c.rationale || c.description || ''
 
   const scores = $('detailScores'); scores.innerHTML = ''

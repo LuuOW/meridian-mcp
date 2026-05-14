@@ -580,10 +580,34 @@ async function handleHelix(request, env) {
   catch { return jsonResponse({ error: 'expected JSON body' }, { status: 400 }) }
 
   const desc       = String(body.injury_description || '').slice(0, 4000).trim()
-  const candidates = Array.isArray(body.candidates) ? body.candidates.slice(0, 200) : []
+  const rawCands   = Array.isArray(body.candidates) ? body.candidates.slice(0, 200) : []
   const limit      = Math.max(1, Math.min(10, parseInt(body.limit, 10) || 5))
   if (!desc)               return jsonResponse({ error: 'injury_description required' }, { status: 400 })
-  if (!candidates.length)  return jsonResponse({ error: 'candidates table required' }, { status: 400 })
+  if (!rawCands.length)    return jsonResponse({ error: 'candidates table required' }, { status: 400 })
+
+  // Defensive UniProt accession validation. Today the client (helix/app.mjs)
+  // ships a curated SEED_PROTEINS list so every accession is real, but the
+  // surface accepts up to 200 candidates from any allowlisted origin —
+  // any future client that builds the list dynamically (or an LLM that
+  // hallucinates IDs upstream) could send malformed accessions through.
+  // Filter to the canonical UniProt format here so downstream consumers
+  // (orbitalClassify, the UI's citation links) never see garbage.
+  //
+  // Pattern from https://www.uniprot.org/help/accession_numbers — two
+  // branches: short-form (e.g. P12345) and long-form (e.g. A0A123BC456).
+  const UNIPROT_RE = /^([OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9](?:[A-Z][A-Z0-9]{2}[0-9]){1,2})$/
+  const rejected   = []
+  const candidates = rawCands.filter(c => {
+    const ok = typeof c?.uniprot === 'string' && UNIPROT_RE.test(c.uniprot.trim())
+    if (!ok) rejected.push(c?.uniprot ?? '<missing>')
+    return ok
+  })
+  if (!candidates.length) {
+    return jsonResponse({
+      error: 'no candidates with valid UniProt accessions',
+      rejected,
+    }, { status: 400 })
+  }
 
   const table = candidates.map(p =>
     `- ${p.name} (${p.uniprot}, ${p.aa_len ?? '?'} aa) — use: ${p.use}; notes: ${p.notes || ''}`
