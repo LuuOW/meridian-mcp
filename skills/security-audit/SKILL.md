@@ -227,3 +227,7 @@ Severity tiers:
 - **Informational**: gas optimizations, code clarity, NatSpec gaps.
 
 Always provide a diff showing the fix, not just prose. Always re-test the fix — "acknowledged" findings with an inadequate fix are a common source of second-audit exploits.
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #85._
