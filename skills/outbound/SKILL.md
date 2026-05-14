@@ -233,3 +233,7 @@ OUTBOUND_METRICS = {
 - [ ] Reply routing configured (auto-classify → CRM update)
 - [ ] Daily send limits set (stay within warmup schedule)
 - [ ] A/B test on subject line (2 variants, min 100 sends each before deciding)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #73._
