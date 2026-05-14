@@ -149,3 +149,7 @@ async def add_rate_limit_headers(request: Request, call_next):
 - [ ] `Retry-After` header returned on 429 responses
 - [ ] fail2ban `nginx-req-limit` jail enabled to escalate persistent violators to IP ban
 - [ ] Rate limit zones sized correctly for expected unique-IP volume (10m ≈ 160k IPs)
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #79._
