@@ -188,3 +188,7 @@ This sequence costs ~5 minutes and gives a complete picture without reading any 
 - [ ] `CHANGELOG.md` updated for every feature-complete or breaking change
 - [ ] Docs cross-checked against code every 20+ commits (grep for missing files)
 - [ ] New team members (or new AI sessions) can orient using only `.md` files
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #47._
