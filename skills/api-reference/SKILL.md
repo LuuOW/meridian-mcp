@@ -395,3 +395,7 @@ rules:
 - Not versioning the spec file itself in git — `openapi.yaml` should be committed alongside application code, not generated at runtime
 - Writing `description: string` with no actual description — remove the field rather than leaving a type annotation
 - Forgetting `operationId` — without it, generated SDKs use unpredictable method names like `getWidgetsWidgetIdTagsTagId`
+
+---
+
+_Last reviewed: 2026-05-14 — polish per #21._
