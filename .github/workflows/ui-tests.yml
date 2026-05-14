@@ -1,0 +1,79 @@
+name: UI tests (Playwright)
+
+# Runs the Playwright suite at tests/ui/ against the live deployed URLs.
+# Triggered AFTER "Deploy to GitHub Pages" succeeds (so we test what's
+# actually live, not what's about to be live), plus a daily schedule to
+# catch drift on the non-pages surfaces (CF Pages, photon-route, HF Space),
+# plus workflow_dispatch for ad-hoc reruns.
+
+on:
+  workflow_run:
+    workflows: ['Deploy to GitHub Pages']
+    types: [completed]
+    branches: [main]
+  schedule:
+    # 07:13 UTC daily — off-the-hour to avoid colliding with platform busy
+    # windows. Catches CF Pages / HF Space drift that doesn't go through
+    # this repo's GitHub Pages workflow.
+    - cron: '13 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  playwright:
+    # Skip when the upstream pages workflow failed — no point testing a
+    # known-broken deploy.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      # Playwright's browser binaries are cached separately from node_modules
+      # so a clean npm install doesn't trigger a 90 MB re-download.
+      - name: Get Playwright version
+        id: pw-version
+        run: |
+          v=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw-version.outputs.version }}
+
+      - name: Install browsers (only on cache miss)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install OS deps (cache-hit path skips browser install + its --with-deps)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright suite
+        run: npm run test:ui
+        env:
+          CI: 'true'
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
