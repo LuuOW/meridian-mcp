@@ -297,3 +297,7 @@ Rule: Only 80/443 open to world.
 - [ ] `mtr` baseline captured after provisioning new servers
 - [ ] WireGuard peer `AllowedIPs` scoped to minimum required subnets
 - [ ] Martian packet logging enabled for anomaly detection
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #68._
