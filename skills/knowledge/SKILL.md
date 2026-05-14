@@ -236,3 +236,7 @@ async def find_uncited_claims(slug: str, body: str) -> list[str]:
 - [ ] Citations included in payloads for GEO-aware workflows
 - [ ] Index refreshed after content updates (not just on new content)
 - [ ] Qdrant collection has `on_disk_payload: true` for large corpora
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #60._
