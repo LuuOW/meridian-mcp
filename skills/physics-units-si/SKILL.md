@@ -138,3 +138,7 @@ Before computing a quantity, check that units multiply/divide to the expected re
 - Cross-section × flux = rate → cm² × /cm²/s = /s ✓
 
 If dimensions don't match, the computation is wrong regardless of numeric value.
+
+---
+
+_Last reviewed: 2026-05-14 — automated polish pass per issue #76._
