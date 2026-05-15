@@ -158,8 +158,51 @@ pre code { background: none; padding: 0; color: inherit; }
 
 /* HERO */
 .hero {
+  position: relative;
+  overflow: hidden;
   padding: 96px 0 72px;
   text-align: center;
+}
+
+/* Background video */
+.hero-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-bg-video .hero-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: 120%;
+  min-width: 100%;
+  min-height: 100%;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  filter: saturate(0.9) contrast(0.9) brightness(0.6);
+}
+
+/* Ensure hero content sits above the video */
+.hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Respect reduced motion and save bandwidth: hide video entirely */
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg-video { display: none; }
+  .hero { background-image: none; }
+}
+
+/* Hide background video on small viewports to save data */
+@media (max-width: 720px) {
+  .hero-bg-video { display: none; }
 }
 .eyebrow {
   display: inline-block;
