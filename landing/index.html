@@ -309,6 +309,13 @@
 
 <main id="main" class="hero-wrap">
   <section class="hero">
+    <!-- Background video (auto, muted, loop). Hidden if prefers-reduced-motion. -->
+    <div class="hero-bg-video" aria-hidden="true">
+      <video class="hero-video" autoplay muted loop playsinline poster="/img/fleet/meridian-cover.jpg">
+        <source src="/landing/media/hero.webm" type="video/webm">
+        <source src="/landing/media/hero.mp4" type="video/mp4">
+      </video>
+    </div>
     <!-- Decorative orbital mechanics diagram, positioned behind the hero text.
          SMIL animation works in every modern browser without requiring JS or
          an SVG-aware CSS engine. Hidden from assistive tech. -->
