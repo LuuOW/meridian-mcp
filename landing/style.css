@@ -158,6 +158,8 @@ pre code { background: none; padding: 0; color: inherit; }
 
 /* HERO */
 .hero {
+  position: relative;
+  isolation: isolate;
   padding: 96px 0 72px;
   text-align: center;
 }
