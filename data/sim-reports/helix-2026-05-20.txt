@@ -1,0 +1,30 @@
+
+=========================================================
+ Helix recommendation-quality simulation
+ endpoint: https://mcp.ask-meridian.uk/v1/helix
+ trials per injury: 1
+ gold-set size: 19 injuries
+=========================================================
+
+  ✗ Deep corneal abrasion with photophobia after a foreign body … — HTTP 403: 
+  ✗ Second-degree skin burn on the forearm, partial thickness… — HTTP 403: 
+  ✗ Chronic dry eye disease with stinging and inflammation… — HTTP 403: 
+  ✗ Oral mucositis after chemotherapy… — HTTP 403: 
+  ✗ Diabetic foot ulcer with slow granulation… — HTTP 403: 
+  ✗ Corneal endothelial cell loss after intraocular surgery… — HTTP 403: 
+  ✗ Corneal nerve density reduction after LASIK… — HTTP 403: 
+  ✗ Surface skin abrasion needing rapid re-epithelialization… — HTTP 403: 
+  ✗ Bacterial conjunctivitis with mucopurulent discharge… — HTTP 403: 
+  ✗ Protease over-activity blocking healing in a chronic wound b… — HTTP 403: 
+  ✗ Sjögren's-related ocular surface dryness with goblet-cell lo… — HTTP 403: 
+  ✗ Peripheral nerve transection — promote axonal regeneration… — HTTP 403: 
+  ✗ Severe ocular surface chemical trauma… — HTTP 403: 
+  ✗ Burn-induced dermal fibrosis prevention… — HTTP 403: 
+  ✗ Wound bed angiogenesis stimulation in a thick laceration… — HTTP 403: 
+  ✗ Lacrimal gland dysfunction with persistent ocular dryness… — HTTP 403: 
+  ✗ Recurrent corneal erosion syndrome… — HTTP 403: 
+  ✗ Neutrophil-driven chronic inflammation needing protease cont… — HTTP 403: 
+  ✗ Mild dry eye complaints in a contact-lens wearer… — HTTP 403: 
+
+  no successful calls — check endpoint availability or auth.
+
