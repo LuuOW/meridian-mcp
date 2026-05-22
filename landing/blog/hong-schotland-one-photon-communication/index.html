@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>One-photon communication in atomic media: Yale's first-principles fidelity bounds — Meridian Blog</title>
+<meta name="description" content="A briefing of Hong & Schotland's (arXiv:2605.22797) first-principles QFT framework for single-photon propagation. They establish a universal fidelity formula across erasure and dephasing channels, and discover a fundamental 'fidelity floor' of 1/2 in the strong coupling limit.">
+<meta property="og:title" content="One-photon communication in atomic media: Yale's first-principles fidelity bounds">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260514a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .key-figure { font-size: 56px; line-height: 1; font-weight: 700; color: var(--accent, #a78bfa); font-family: var(--font-mono); margin: 8px 0; }
+  .key-label  { font-size: 12px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin: 24px 0; }
+  .stat-card  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    opacity: 0.85;
+  }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand">◎ Meridian</a>
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
+  </ul>
+</nav>
+
+<article class="article-body">
+  <header style="margin-top: 64px;">
+    <p class="article-meta">2026-05-22 · 6 min read · briefing</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">One-photon communication in atomic media: Yale's first-principles fidelity bounds</h1>
+    <p class="lead">
+      A briefing on <strong>Zixiang Hong</strong> and <strong>John C. Schotland</strong>'s latest work, 
+      <em>"One-photon communication in atomic media"</em> (arXiv:2605.22797), published yesterday. 
+      They establish a first-principles quantum field theory framework for single-photon propagation 
+      that reveals a universal fidelity floor critical for future quantum routing architectures.
+    </p>
+  </header>
+
+  <section>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="key-label">fidelity floor</div>
+        <div class="key-figure">1/2</div>
+        <div style="font-size: 12px; color: var(--text-muted);">strong coupling limit</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">channels</div>
+        <div class="key-figure">Universal</div>
+        <div style="font-size: 12px; color: var(--text-muted);">erasure & dephasing</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">media types</div>
+        <div class="key-figure">Disorder</div>
+        <div style="font-size: 12px; color: var(--text-muted);">uniform & random</div>
+      </div>
+    </div>
+  </section>
+
+  <h2>The Core Problem: Decoherence in Propagation</h2>
+  <p>
+    How does a single photon survive its journey through an atomic medium? While previous models 
+    often relied on phenomenological master equations, Hong and Schotland (Yale) have derived a 
+    rigorous scalar QFT model under the rotating wave approximation. Their goal: quantify exactly 
+    how atom-field interactions degrade quantum information.
+  </p>
+
+  <div class="math-block" data-label="The Total Hamiltonian">
+    $$H = \hbar c \int d^3x (-\Delta)^{1/2} \phi^\dagger(x)\phi(x) + \hbar \Omega \int d^3x n(x) \sigma^\dagger(x)\sigma(x) + \hbar g \int d^3x n(x) (\phi^\dagger(x)\sigma(x) + \phi(x)\sigma^\dagger(x))$$
+  </div>
+
+  <h2>The Discovery: A Universal Fidelity Formula</h2>
+  <p>
+    The most striking contribution is the discovery of a "universal" normalized fidelity formula. 
+    Remarkably, this result remains identical whether the interaction is modeled as an 
+    <strong>Erasure Channel</strong> or a <strong>Completely Dephasing Channel</strong>, and 
+    holds for both uniform and disordered media.
+  </p>
+
+  <div class="math-block" data-label="Normalized Fidelity">
+    $$\frac{F_N(g)}{F_N(0)} = \frac{|\omega(k_0, g) - \Omega|^2}{|\omega(k_0, g) - \Omega|^2 + g^2 n_0}$$
+  </div>
+
+  <p>
+    Where the dispersion relation $\omega(k, g)$ is defined by the system's eigenvalues:
+  </p>
+
+  <div class="math-block" data-label="Dispersion Relation">
+    $$\omega(k, g) = \frac{\Omega + c|k| - \sqrt{(\Omega - c|k|)^2 + 4g^2 n_0}}{2}$$
+  </div>
+
+  <h2>The "Fidelity Floor" at 1/2</h2>
+  <p>
+    For projects like <strong>photon-route</strong> and <strong>meridian</strong>, the paper's 
+    most actionable finding is the strong-coupling limit. As the coupling strength $g$ 
+    approaches infinity, the normalized fidelity doesn't vanish—it hits a fundamental floor.
+  </p>
+
+  <div class="math-block" data-label="Strong Coupling Limit">
+    $$\lim_{g \to \infty} \frac{F_N(g)}{F_N(0)} = \frac{1}{2}$$
+  </div>
+
+  <p>
+    This asymptote provides a critical lower bound for designing robust quantum repeaters and 
+    routers. It suggests that even in extremely noisy or highly interactive environments, a 
+    measurable fraction of the single-photon signal remains preserved, provided the coupling 
+    primarily affects the amplitude rather than the phase.
+  </p>
+
+  <h2>Takeaways for Photon Routing</h2>
+  <ul>
+    <li><strong>Physical Layer Security:</strong> The mapping to erasure/dephasing channels allows for precise capacity calculations ($C_{Holevo}$) for long-distance quantum links.</li>
+    <li><strong>Media Robustness:</strong> The invariance across disordered media suggests that the "physics signature" of a photon route might be more robust to environmental noise than previously estimated.</li>
+    <li><strong>First-Principles Foundation:</strong> Replacing SHA-256 hashes or heuristics with these QFT-grounded formulas could move quantum-inspired retrieval toward a genuinely physical substrate.</li>
+  </ul>
+
+  <p style="margin-top: 48px;">
+    <strong>Full Paper:</strong> <a href="https://arxiv.org/abs/2605.22797" target="_blank">Hong & Schotland, "One-photon communication in atomic media," arXiv:2605.22797 (2026).</a>
+  </p>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — Notes on quantum-inspired retrieval and agent infra. <a href="/blog/">More posts</a></p>
+</footer>
+
+</body>
+</html>
