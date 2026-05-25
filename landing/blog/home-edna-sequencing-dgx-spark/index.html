@@ -3,18 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Blog — Meridian</title>
-<meta name="description" content="Notes on building production MCP servers, AI agent infrastructure, and quantum-inspired retrieval — by the author of ask-meridian.uk.">
-<meta property="og:title" content="Meridian Blog — production AI agent infra notes">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://ask-meridian.uk/blog/">
+<title>Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark — Meridian Blog</title>
+<meta name="description" content="An exploration of deploying a high-fidelity metagenomic pipeline in a home environment using Oxford Nanopore sequencing and GPU-accelerated bioinformatics on the NVIDIA DGX Spark.">
+<meta property="og:title" content="Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css?v=20260514a">
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .article-disclaimer { 
+    background: rgba(245, 158, 11, 0.05); 
+    border: 1px solid rgba(245, 158, 11, 0.2); 
+    border-radius: 10px; 
+    padding: 16px; 
+    font-size: 13px; 
+    color: #fcd34d; 
+    margin-top: 48px;
+    font-style: italic;
+  }
+</style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
 <body>
-
-<a href="#main" class="skip-link">Skip to main content</a>
 
 <nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
@@ -283,203 +302,71 @@
   </script>
 </nav>
 
-<main id="main" class="hero-wrap">
-  <section class="hero" style="padding-top: 64px;">
-    <span class="eyebrow">Notes</span>
-    <h1>Building production AI agent infrastructure</h1>
+<article class="article-body">
+  <header style="margin-top: 64px;">
+    <p class="article-meta">2026-05-24 · 5 min read · biology</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark</h1>
     <p class="lead">
-      What we've learned shipping Meridian — an MCP server with real auth, Stripe billing,
-      RAG via Vectorize, and SSE streaming on Cloudflare's free tier. Plus side notes
-      on photonic / quantum retrieval research.
+      Environmental DNA (eDNA) sequencing has traditionally been the domain of university core facilities. 
+      The convergence of portable long-read sequencing and edge GPU hardware—specifically the 
+      <strong>NVIDIA DGX Spark</strong>—has made it possible to deploy a high-fidelity metagenomic 
+      pipeline in a home environment.
     </p>
-  </section>
+  </header>
 
-  <section style="padding: 0 0 72px;">
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-24 · 5 min read · biology</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/home-edna-sequencing-dgx-spark/" style="color: var(--text); text-decoration: none;">
-          Metagenomics at Home — orchestrating an eDNA pipeline with Oxford Nanopore and NVIDIA DGX Spark
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        An exploration of deploying a high-fidelity metagenomic pipeline in a home environment using Oxford Nanopore sequencing and GPU-accelerated bioinformatics on the NVIDIA DGX Spark.
-      </p>
-    </article>
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-22 · 6 min read · briefing</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/hong-schotland-one-photon-communication/" style="color: var(--text); text-decoration: none;">
-          One-photon communication in atomic media — Yale's first-principles fidelity bounds
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        A briefing of Hong & Schotland's (arXiv:2605.22797) first-principles QFT framework for single-photon propagation. They establish a universal fidelity formula across erasure and dephasing channels, and discover a fundamental <strong>fidelity floor of 1/2</strong> in the strong coupling limit—critical bounds for the next generation of quantum routers.
-      </p>
-    </article>
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-14 · 9 min read · new</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/apple-neural-engine-eligibility-vs-placement/" style="color: var(--text); text-decoration: none;">
-          100% on the Apple Neural Engine — eligibility is not placement
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        We followed Apple's four-constraint recipe to the letter, converted a transformer to MLPackage, and got <strong>100% static residency</strong> on the first pass. Then we asked the CoreML runtime where it actually ran the ops. <strong>0% on the ANE.</strong> Same recipe, scaled to ESM2-class size, scheduler flipped to 100% ANE placement. The post explains why eligibility and placement are different problems, and ships the Swift <code>MLComputePlan</code> tool that distinguishes them without opening Xcode.
-      </p>
-    </article>
+  <section>
+    <h2>1. Nanopore Sequencing: The Fundamentals</h2>
+    <p>
+      Oxford Nanopore Technologies (ONT) utilizes a fundamentally different approach than traditional "sequencing-by-synthesis" (Illumina). A nanopore sequencer passes a single strand of DNA through a biological pore embedded in an electrically resistant membrane.
+    </p>
+    <p>
+      As the DNA molecule transits the pore, it creates characteristic disruptions in the ionic current. These current fluctuations (the "squiggles") are captured as raw signal data. Because the technology measures the physical molecule in real-time, it allows for <strong>long-read sequencing</strong>, enabling the assembly of complex microbial genomes that short-read technologies often miss.
+    </p>
 
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-14 · 8 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/webgpu-vlm-molstar-ram-pivot/" style="color: var(--text); text-decoration: none;">
-          Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        We tried to run a 1.1&nbsp;GB vision model in the user's browser. Most users have 16&nbsp;GB of RAM and four other tabs. This is what worked (Mol* protein rendering, SmolVLM in VR), what broke (Moondream2 as the default, the Cache API on Safari), and the rule we use now: <strong>render on the client, infer on the server, in-browser inference only when latency is the constraint and the model fits in ~500&nbsp;MB</strong>. With the OPFS shim and the commit that ripped the WebGPU inference stack.
-      </p>
-    </article>
+    <h2>2. System Architecture: The Hardware Stack</h2>
+    <p>
+      A production-grade home eDNA lab requires three distinct hardware layers to handle the massive data throughput generated by metagenomic sampling:
+    </p>
+    <ul>
+      <li><strong>The Sequencer (ONT MinION):</strong> A USB-powered device that houses the flow cell. It acts as the primary sensor, translating biological molecules into raw electrical signals.</li>
+      <li><strong>The Controller (PC/Workstation):</strong> A standard personal computer acts as the orchestrator, running the sequencing software (MinKNOW) and managing the data handoff.</li>
+      <li><strong>The Compute Engine (NVIDIA DGX Spark):</strong> Modern basecalling relies on deep neural networks. The DGX Spark, equipped with enterprise-grade GPUs, provides the TFLOPS necessary for <strong>High-Accuracy Basecalling (HAC)</strong> in real-time.</li>
+    </ul>
 
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-11 · 8 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/helio-mirror/" style="color: var(--text); text-decoration: none;">
-          HelioCast — predicting how much sunlight a planet will receive in the next 24 h
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        PSP measures the Sun directly; JWST observes other bodies that reflect the Sun. Cross-correlate the two and you can measure — and forecast — the irradiance delivered to specific bodies. First end-to-end pipeline live: 6 cloud workflows, public HF dataset, dashboard at <a href="/helio/" style="color: #7aa3ff;">ask-meridian.uk/helio</a>. Honest about the v0.1 data-scale gap.
-      </p>
-    </article>
+    <h2>3. The Data Pipeline: From Swab to Species</h2>
+    <p>The workflow transitions through four critical phases:</p>
+    <ol>
+      <li><strong>Sample Collection:</strong> eDNA is harvested via water filtration (cisterns/tanks) or surface swabbing (bathroom/laundry).</li>
+      <li><strong>Sequencing & Signal Capture:</strong> The MinION generates raw POD5 or FAST5 files representing the raw ionic current.</li>
+      <li><strong>GPU-Accelerated Basecalling:</strong> Using tools like <strong>Dorado</strong>, the raw signal is pushed to the DGX Spark. The GPUs run transformer-based models to decode the signal into ATGC sequences.</li>
+      <li><strong>Taxonomic Identification:</strong> Sequences are compared against reference databases using tools like <strong>Kraken2</strong>. This assigns each read to a specific species, providing a "snapshot" of the home's microbial diversity.</li>
+    </ol>
 
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-09 · 12 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/loudon-photon-route-coherence-time/" style="color: var(--text); text-decoration: none;">
-          Reading Loudon to improve a router — nine experiments, one ship
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        Read Rodney Loudon's <em>Quantum Theory of Light</em> end-to-end to mine ideas for photon-route + meridian. Ten experiments grounded in chapters 3, 5, 6, and 9. Eight came back negative or decorative — squeezing was decorative, photon-number metric strictly weaker than Gaussian fidelity, non-Gaussian heralded states didn't survive the eval scale. One — a g<sup>(1)</sup> coherence-time feature — shipped to <code>meridian-orbital@3.1.0</code> with <strong>+108%</strong> discrimination over what it replaced. Honest accounting with every number.
-      </p>
-    </article>
+    <h2>4. Example Home Use Cases</h2>
+    <ul>
+      <li><strong>Cistern & Water Tank Ecology:</strong> Monitoring the shift in microbial populations across seasons or after heavy rainfall.</li>
+      <li><strong>Laundry & Appliance Biofilms:</strong> Analyzing the metabolic signatures of bacteria that colonize high-moisture environments.</li>
+      <li><strong>Urban eDNA Benchmarking:</strong> Tracking "biological dust"—the mixture of fungal spores, pollen, and bacteria migrating through ventilation.</li>
+    </ul>
 
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-09 · 11 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/pharmacy-mcp-recaptcha-origin-pivot/" style="color: var(--text); text-decoration: none;">
-          AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        I tried to make Grok run my pharmacy errands end-to-end. The plan: search → cart → automated checkout, all chat-driven. The wall: VTEX's reCAPTCHA Enterprise enforces hostname binding server-side — your worker forwards a real captcha token, Google reports the origin doesn't match the site key, VTEX silently drops the email and returns <code>200 &#123;&#125;</code>. The pivot: anonymous cart in-worker + a <code>/checkout/cart/add</code> URL hand-off to the user's browser. Ships ~95% of the value without a Browserbase-class headless browser.
-      </p>
-    </article>
+    <h2>5. Limitations and Risks</h2>
+    <ul>
+      <li><strong>Signal vs. Noise:</strong> eDNA is often fragmented. Distinguishing between "live" organisms and residual DNA is a persistent challenge.</li>
+      <li><strong>Compute Overload:</strong> Without GPU acceleration, basecalling a single flow cell could take days on a standard CPU.</li>
+      <li><strong>Bioinformatics Complexity:</strong> Most microbial life remains "dark matter"—unclassified and poorly understood.</li>
+      <li><strong>Security & Privacy:</strong> Managing the "biological footprint" of a household requires encryption and local-first storage.</li>
+    </ul>
 
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-09 · 10 min read · new</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/finance-mcp-binance-fly-bright-data/" style="color: var(--text); text-decoration: none;">
-          AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        A single-tenant finance MCP that lets Grok read my Binance balance from a country Binance geo-blocks. Three layers, each solving exactly one problem: WebAuthn at the door (passkey-bootstrapped OAuth, single-user), Cloudflare Workers in the middle (auth + tools + KV), a tiny Fly proxy through Bright Data's static-residential AR IP at the edge so Binance's whitelist hears from one fixed IP forever. ~$16/month all in.
-      </p>
-    </article>
-
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-07 · 10 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/orbital-classifier-online-learning/" style="color: var(--text); text-decoration: none;">
-          From 17% to 81% — calibrating an orbital skill classifier with simulations and online SGD
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        A skill-routing classifier had a planet bias — 17 of 18 panel skills got classified as <code>planet</code>. We tried two textbook physics frameworks (Vallado's CRTBP, Sears &amp; Zemansky's spectral classification), neither beat heuristics. Retuned heuristics hit 50% on the panel, then 81% [95% Wilson CI 60%, 92%] on real labelled data. Then we wired an online-SGD loop on top so the classifier improves from every user click — with constant per-request cost and zero local training.
-      </p>
-    </article>
-
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-07 · 5 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/grok-meridian-orbital-connector/" style="color: var(--text); text-decoration: none;">
-          Meridian as a Grok connector — orbital skill routing inside Grok
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        Grok's custom MCP connectors take a server URL + an OAuth dance. We just wired Meridian's orbital skill router into it. The architecture, the OAuth values to paste, and the design choice that lets Grok users authorize with one click — no GitHub PAT, no jargon, no setup wizard.
-      </p>
-    </article>
-
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-06 · 7 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/github-packages-vs-npm/" style="color: var(--text); text-decoration: none;">
-          GitHub Packages vs npm — should you publish to both?
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        We just shipped <code>meridian-mcp</code> 2.0.0 to both registries from a single tag push. The honest tradeoff: anonymous install still requires npm, but for everything else GitHub Packages has earned its slot — auth shared with your code, automatic provenance, free private packages, same registry as your Docker images. The full release workflow + the <code>npm pkg set name</code> rename trick that lets one tarball ship under two names.
-      </p>
-    </article>
-
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-04 · 8 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/production-mcp-server-cloudflare-workers/" style="color: var(--text); text-decoration: none;">
-          Building a production MCP server on Cloudflare Workers (with auth + Stripe)
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        Most MCP tutorials show <code>npx create-mcp</code> and a Hello-world tool. Real servers in production need auth, per-key quotas, billing, and an upgrade path. Here's the architecture we use for ask-meridian.uk — entirely on Cloudflare's free tier — and the specific gotchas you'll hit.
-      </p>
-    </article>
-
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-04 · 6 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/llm-skill-routing-orbital-classifier/" style="color: var(--text); text-decoration: none;">
-          LLM-authored skills + a classical orbital classifier — why we route this way
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        Most RAG systems either retrieve from a static corpus or end-to-end LLM-rank. Meridian does neither. Llama-3.3-70B authors fresh candidates per task; a deterministic JS classifier assigns each a celestial body class (planet/moon/trojan/asteroid/comet/irregular) based on physics-style features. Why the metaphor, why the deterministic step, and where it goes next.
-      </p>
-    </article>
-
-    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
-      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">2026-05-04 · 5 min read</div>
-      <h2 style="margin: 8px 0 12px; font-size: 22px;">
-        <a href="/blog/cloudflare-ai-gateway-vectorize-rag/" style="color: var(--text); text-decoration: none;">
-          Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines
-        </a>
-      </h2>
-      <p style="margin: 0; color: var(--text-muted);">
-        Workers AI for embeddings (free tier), Vectorize for semantic search (free tier), AI Gateway for caching + observability (free). The whole stack costs $0 until you cross 100k requests/month. Here's the wiring we use for meridian's RAG layer.
-      </p>
-    </article>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">◎ Meridian</div>
-    <div class="footer-links">
-      <a href="/blog/">Blog</a>
-      <a href="/docs/">Documentation</a>
-      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
-      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
-      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    <div class="article-disclaimer">
+      Disclaimer: This overview is intended for conceptual system design and educational purposes only. Environmental sequencing in a home context is a tool for ecological curiosity and should not be used for medical diagnostics or assessing the safety of drinking water.
     </div>
-    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
-  </div>
+  </section>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — Notes on biology, physics, and agent infra. <a href="/blog/">More posts</a></p>
 </footer>
 
-<script type="module">
-  import { initBurgerNav } from '/nav.js'
-  initBurgerNav()
-</script>
 </body>
 </html>
