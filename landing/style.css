@@ -143,17 +143,6 @@ pre {
 p code, li code { background: rgba(148,163,184,0.12); padding: 2px 6px; border-radius: 4px; font-size: 0.92em; color: #ddd6fe; }
 pre code { background: none; padding: 0; color: inherit; }
 
-.nav {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 18px 32px; border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; backdrop-filter: blur(12px);
-  background: rgba(10,13,20,0.85); z-index: 10;
-}
-.brand { font-weight: 700; font-size: 17px; color: var(--accent); }
-.nav-links { display: flex; gap: 28px; font-size: 14px; }
-.nav-links a { color: var(--text-muted); }
-.nav-links a:hover, .nav-links .current { color: var(--text); text-decoration: none; }
-
 .hero-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
 /* HERO */
@@ -339,116 +328,9 @@ pre code { background: none; padding: 0; color: inherit; }
 @media (max-width: 820px) {
   .features, .how-grid, .plans { grid-template-columns: 1fr; }
   .hero { padding: 56px 0 48px; }
-  .nav { padding: 16px 20px; }
-  .nav-links { gap: 18px; font-size: 13px; }
   .footer-inner { flex-direction: column; text-align: center; }
 }
 
-/* ── BURGER MENU (universal — works the same on every screen size) ─────── */
-.burger {
-  position: relative;
-  display: inline-flex;
-  width: 40px; height: 40px;
-  background: rgba(167,139,250,0.06);
-  border: 1px solid rgba(167,139,250,0.3);
-  border-radius: 10px;
-  cursor: pointer;
-  padding: 0;
-  margin-left: auto;
-  isolation: isolate;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-.burger:hover { background: rgba(167,139,250,0.12); border-color: var(--accent); box-shadow: 0 0 14px rgba(167,139,250,0.25); }
-.burger span {
-  position: absolute;
-  left: 10px; right: 10px; height: 2px;
-  background: var(--text);
-  border-radius: 1px;
-  transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease;
-}
-.burger span:nth-child(1) { top: 13px; }
-.burger span:nth-child(2) { top: 19px; }
-.burger span:nth-child(3) { top: 25px; }
-.burger.open { background: rgba(167,139,250,0.18); border-color: var(--accent); }
-.burger.open span:nth-child(1) { top: 19px; transform: rotate(45deg);  }
-.burger.open span:nth-child(2) { opacity: 0; }
-.burger.open span:nth-child(3) { top: 19px; transform: rotate(-45deg); }
-
-.nav-version {
-  display: inline-flex; align-items: center;
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  padding: 5px 12px;
-  border: 1px solid rgba(167,139,250,0.35);
-  border-radius: 999px;
-  color: var(--accent);
-  background: rgba(167,139,250,0.06);
-  white-space: nowrap;
-}
-.nav-version[data-loading]::before {
-  content: ''; display: inline-block;
-  width: 6px; height: 6px;
-  background: var(--accent); border-radius: 50%;
-  margin-right: 6px;
-  animation: navPulse 1.4s ease-in-out infinite;
-}
-@keyframes navPulse { 50% { opacity: 0.3; transform: scale(0.7); } }
-
-/* Drop-down panel — always overlay, never inline. Anchors to the right
-   under the nav and slides in from the top on every viewport. */
-.nav-menu {
-  position: fixed;
-  top: 64px;
-  right: clamp(12px, 3vw, 24px);
-  width: min(320px, calc(100vw - 24px));
-  display: flex; flex-direction: column;
-  gap: 2px;
-  padding: 14px;
-  background: rgba(10, 13, 20, 0.96);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(167, 139, 250, 0.3);
-  border-radius: 14px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(167,139,250,0.1);
-  transform-origin: top right;
-  transform: translateY(-12px) scale(0.97);
-  opacity: 0;
-  pointer-events: none;
-  transition: transform 0.22s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease;
-  z-index: 11;
-}
-.nav-menu.open {
-  transform: translateY(0) scale(1);
-  opacity: 1;
-  pointer-events: auto;
-}
-.nav-menu a {
-  display: block;
-  padding: 11px 14px;
-  border-radius: 8px;
-  font-size: 14.5px;
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: background 0.15s, color 0.15s;
-}
-.nav-menu a:hover, .nav-menu .current {
-  background: rgba(167,139,250,0.08);
-  color: var(--text);
-}
-.nav-menu .nav-version {
-  margin-top: 10px;
-  align-self: flex-start;
-  margin-left: 6px;
-}
-
-/* Collapsible sections inside the burger panel. Each <details class="nav-group">
-   wraps a <summary class="nav-section"> header + the items beneath it; the
-   user clicks the header to expand/collapse. Showcase opens by default;
-   Resources expands automatically when the active page is in that group. */
-.nav-menu .nav-group {
-  border-top: 1px solid rgba(167, 139, 250, 0.10);
-  margin-top: 6px;
-  padding-top: 4px;
-}
 .nav-menu .nav-group:first-of-type { border-top: 0; margin-top: 4px; padding-top: 0; }
 .nav-menu .nav-group > summary {
   cursor: pointer;
