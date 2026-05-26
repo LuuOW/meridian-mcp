@@ -22,7 +22,7 @@ Output: a deterministically ranked list with `route_score`, full classification,
 [![npm](https://img.shields.io/npm/v/meridian-orbital.svg)](https://www.npmjs.com/package/meridian-orbital)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **3.0 — renamed from `meridian-skills-mcp`.** The classifier was always domain-agnostic; the "skills" framing biased the LLM prompt toward AI-agent capabilities. v3 drops that framing across the prompt, code, branding, and npm name. Migration: `npm i -g meridian-orbital` (the old package is deprecated; both binaries are still named `meridian-mcp` / `meridian-mcp-http` so client configs keep working). The hosted HTTP MCP at `mcp.ask-meridian.uk/mcp` continues to work — URL unchanged.
+> **3.2 — current production release.** The classifier is domain-agnostic; the "skills" framing was dropped in v3. Migration: `npm i -g meridian-orbital` (the old `meridian-skills-mcp` package is deprecated; binaries remain named `meridian-mcp` / `meridian-mcp-http` for config compatibility). The hosted HTTP MCP at `mcp.ask-meridian.uk/mcp` continues to work — URL unchanged.
 
 ## Install (stdio — Claude Code / Cursor / Windsurf)
 
