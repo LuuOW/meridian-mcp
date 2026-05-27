@@ -1582,6 +1582,80 @@ section.how, section.pricing, section.cta-final {
   }
 }
 
+/* Blog article audio controls */
+.listen-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 28px;
+  padding: 14px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(6, 10, 18, 0.68));
+}
+.listen-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+.listen-status {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.listen-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.listen-btn,
+.listen-rate select {
+  min-height: 36px;
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  background: rgba(8, 13, 21, 0.84);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.listen-btn {
+  padding: 0 13px;
+  cursor: pointer;
+}
+.listen-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.listen-play {
+  border-color: rgba(125, 211, 252, 0.38);
+  color: #dff7ff;
+}
+.listen-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.listen-rate select {
+  padding: 0 8px;
+}
+
+@media (max-width: 640px) {
+  .listen-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .listen-controls {
+    justify-content: flex-start;
+  }
+}
+
 /* ── Print: strip animation, neon, shadows ──────────────────────────── */
 @media print {
   .hero-orbits, .burger, .nav-version, .snippet-copy, .calendly-badge-widget { display: none !important; }

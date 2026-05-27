@@ -11,7 +11,7 @@
 <meta property="og:url" content="https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/">
 <link rel="canonical" href="https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260514a">
+<link rel="stylesheet" href="/style.css?v=20260527a">
 <style>
   .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
   .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -528,5 +528,6 @@ await env.MCP_KV.put(dkey, String(used + 1), { expirationTtl: 90000 })</code></p
   import { initBurgerNav } from '/nav.js'
   initBurgerNav()
 </script>
+<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
