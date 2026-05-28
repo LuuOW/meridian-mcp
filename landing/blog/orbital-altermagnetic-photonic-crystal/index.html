@@ -3,42 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Meridian — Operational sovereignty for AI abundance</title>
-<meta name="description" content="Meridian is a cognitive infrastructure layer for operational sovereignty: local-first orchestration, deterministic routing, infrastructure stewardship, and execution autonomy in the age of AI abundance.">
-
-<meta property="og:type" content="website">
-<meta property="og:title" content="Meridian — Operational sovereignty for AI abundance">
-<meta property="og:description" content="A local-first orchestration substrate for cognitive routing, resilient execution, and infrastructure stewardship.">
-<meta property="og:url" content="https://ask-meridian.uk">
-
+<title>Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting — Meridian Blog</title>
+<meta name="description" content="A briefing on the experimental realization of an orbital altermagnetic photonic crystal (arXiv:2605.28656) by enforcing antiunitary C4zT symmetry on a local p-orbital sigma/pi doublet, and what it teaches us about routing.">
+<meta property="og:title" content="Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260526-sovereign">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
 
-<!-- Speculation Rules: prerender same-origin destinations on a 200ms hover.
-     Cheap perceived-latency win — clicking "Try it live" or "Vision Lab" lands
-     on a fully-rendered page. Browsers without support ignore the rule. -->
-<script type="speculationrules">
-{
-  "prerender": [{
-    "where": { "and": [
-      { "href_matches": "/miniapp/*" },
-      { "not": { "selector_matches": ".no-prerender" } }
-    ]},
-    "eagerness": "moderate"
-  }],
-  "prefetch": [{
-    "where": { "href_matches": "/*" },
-    "eagerness": "conservative"
-  }]
-}
-</script>
+  .key-figure { font-size: 56px; line-height: 1; font-weight: 700; color: var(--accent, #a78bfa); font-family: var(--font-mono); margin: 8px 0; }
+  .key-label  { font-size: 12px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin: 24px 0; }
+  .stat-card  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    opacity: 0.85;
+  }
+</style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
 <body>
-
-
-<a href="#main" class="skip-link">Skip to main content</a>
-
 
 <nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
@@ -307,264 +324,98 @@
   </script>
 </nav>
 
-<main id="main" class="sovereign-page">
-  <section class="sovereign-hero" aria-labelledby="heroTitle">
-    <div class="hero-copy">
-      <span id="heroVersion" class="eyebrow eyebrow-live" data-loading>Operational layer · live MCP</span>
-      <p class="doctrine-kicker">Doctrine for AI abundance</p>
-      <h1 id="heroTitle">Control the execution surface closest to physical reality.</h1>
-      <p class="sovereign-lead">
-        Software creation is becoming abundant. Models can write, refactor, summarize, route, and orchestrate faster than institutions can absorb. The scarce layer is no longer pure digital cognition. It is operational sovereignty: durable systems, local execution, trusted interfaces, and the ability to keep work moving when centralized workflows become fragile.
-      </p>
-      <div class="cta-row hero-cta">
-        <a href="/docs/" class="btn btn-primary" style="view-transition-name: cta-primary">Read the doctrine</a>
-        <a href="/miniapp/" class="btn btn-ghost">Open the router</a>
-        <a href="https://github.com/LuuOW/meridian-mcp" class="btn btn-ghost">Source</a>
+<article class="article-body">
+  <header style="margin-top: 64px;">
+    <p class="article-meta">2026-05-28 · 7 min read · briefing</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting</h1>
+    <p class="lead">
+      A briefing on a landmark experimental realization, 
+      <em>"Orbital Altermagnetic Photonic Crystal"</em> (arXiv:2605.28656), published recently. 
+      We explore how antiunitary $C_{4z}\mathcal{T}$ symmetry is leveraged to map fermionic altermagnetism onto bosonic photonic crystals—unlocking momentum-dependent pseudospin splitting and a $d_{xy}$-wave form factor for future spinphotonic routing substrates.
+    </p>
+  </header>
+
+  <section>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="key-label">Symmetry Gate</div>
+        <div class="key-figure" style="font-size: 32px;">\(C_{4z}\mathcal{T}\)</div>
+        <div style="font-size: 12px; color: var(--text-muted);">antiunitary mapping</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">Form Factor</div>
+        <div class="key-figure" style="font-size: 32px;">\(d_{xy}\)-wave</div>
+        <div style="font-size: 12px; color: var(--text-muted);">alternating pseudospin</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">Routing Class</div>
+        <div class="key-figure" style="font-size: 32px;">Passive</div>
+        <div style="font-size: 12px; color: var(--text-muted);">pseudospin filtering</div>
       </div>
     </div>
-
-    <div class="ops-map" aria-hidden="true">
-      <svg viewBox="0 0 620 480" focusable="false">
-        <defs>
-          <linearGradient id="signalLine" x1="0" x2="1">
-            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.05"/>
-            <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.65"/>
-            <stop offset="100%" stop-color="#10b981" stop-opacity="0.2"/>
-          </linearGradient>
-        </defs>
-        <rect x="38" y="38" width="544" height="404" rx="18" fill="rgba(5,10,18,0.72)" stroke="rgba(148,163,184,0.16)"/>
-        <path d="M70 124H550M70 230H550M70 336H550M154 70V410M310 70V410M466 70V410" stroke="rgba(148,163,184,0.09)"/>
-        <path d="M112 302C176 168 250 154 310 240S432 338 508 166" fill="none" stroke="url(#signalLine)" stroke-width="2"/>
-        <path d="M112 178C184 238 220 342 310 292S438 166 508 286" fill="none" stroke="rgba(167,139,250,0.35)" stroke-width="1.5" stroke-dasharray="5 8"/>
-        <g fill="#0b1220" stroke="#38bdf8">
-          <circle cx="112" cy="302" r="8"/>
-          <circle cx="310" cy="240" r="11"/>
-          <circle cx="508" cy="166" r="8"/>
-        </g>
-        <g fill="#0b1220" stroke="#a78bfa">
-          <circle cx="112" cy="178" r="6"/>
-          <circle cx="310" cy="292" r="9"/>
-          <circle cx="508" cy="286" r="6"/>
-        </g>
-        <g class="map-labels">
-          <text x="76" y="92">LOCAL EXECUTION</text>
-          <text x="238" y="92">COGNITIVE ROUTING</text>
-          <text x="406" y="92">OPERATIONAL CONTROL</text>
-          <text x="84" y="384">models</text>
-          <text x="280" y="384">tools</text>
-          <text x="470" y="384">operators</text>
-        </g>
-      </svg>
-    </div>
   </section>
 
-  <section class="tagline-bank" aria-labelledby="taglinesTitle">
-    <div class="section-head">
-      <p class="section-kicker">Tagline variations</p>
-      <h2 id="taglinesTitle">Meridian is not another productivity surface.</h2>
-    </div>
-    <div class="tagline-grid">
-      <p>Operational sovereignty for the age of AI abundance.</p>
-      <p>A cognitive routing layer for local-first execution.</p>
-      <p>Infrastructure stewardship when software becomes infinite.</p>
-      <p>Do not compete against infinite intelligence. Control the execution surface.</p>
-    </div>
-  </section>
+  <h2>Altermagnetism: The Third Magnetic Paradigm</h2>
+  <p>
+    Modern spintronics has historically operated within a binary classification: ferromagnetism, which exhibits macroscopic magnetization and spin-degenerate bands, and antiferromagnetism, which has zero net magnetization but lacks momentum-dependent spin splitting. The discovery of <strong>altermagnetism</strong> has shattered this dichotomy. It represents a third magnetic state combining the advantages of both: momentum-dependent spin splitting with alternating spin polarization in the Brillouin zone, yet maintaining a net-zero magnetization.
+  </p>
+  <p>
+    While altermagnetism has rapidly advanced in fermionic systems (electronic crystals), translating it to bosonic photons has remained a formidable challenge. Photons are bosons; they do not natively possess the spin-1/2 characteristics of electrons, nor do they interact through standard electronic exchange coupling.
+  </p>
 
-  <section class="doctrine-section split-section" aria-labelledby="philosophyTitle">
-    <div>
-      <p class="section-kicker">Core philosophy</p>
-      <h2 id="philosophyTitle">Cognition is compressing. Operations are not.</h2>
-    </div>
-    <div class="section-copy">
-      <p>Meridian starts from a structural observation: the marginal cost of digital cognition is falling toward zero. Code, analysis, orchestration plans, documents, interface drafts, and procedural reasoning are increasingly reproducible by machine systems.</p>
-      <p>That does not eliminate the value of judgment. It moves value downstream. The durable advantage shifts toward operators who can bind cognition to owned infrastructure, local context, verifiable workflows, and accountable execution.</p>
-    </div>
-  </section>
+  <h2>The Breakthrough: Antiunitary \(C_{4z}\mathcal{T}\) Symmetry</h2>
+  <p>
+    The authors of arXiv:2605.28656 circumvent this fundamental limitation by utilizing an orbital mapping. They construct a 2D photonic crystal and enforce an antiunitary $C_{4z}\mathcal{T}$ symmetry (combining a four-fold spatial rotation $C_{4z}$ with time-reversal symmetry $\mathcal{T}$). 
+  </p>
+  <p>
+    By doing so, they build a strict correspondence between a local $p$-orbital $\sigma/\pi$ doublet (acting as a pseudospin degree of freedom) and crystal momentum. Under this symmetry, the Hamiltonian of the photonic crystal naturally generates momentum-dependent splitting:
+  </p>
 
-  <section class="problem-grid" aria-labelledby="pressureTitle">
-    <div class="section-head section-head-left">
-      <p class="section-kicker">Problem framing</p>
-      <h2 id="pressureTitle">The pressure is not intelligence. The pressure is dependency.</h2>
-      <p class="lead">AI abundance introduces economic asymmetries and operational concentration risks. Meridian treats those as engineering constraints, not ideology.</p>
-    </div>
-    <div class="matrix-grid">
-      <article>
-        <span>01</span>
-        <h3>Software abundance</h3>
-        <p>Implementation becomes cheap, fast, and replicable. Advantage moves from writing software to governing where and how it executes.</p>
-      </article>
-      <article>
-        <span>02</span>
-        <h3>Labor compression</h3>
-        <p>Cognitive tasks collapse into model-mediated workflows, reducing the scarcity premium of routine digital production.</p>
-      </article>
-      <article>
-        <span>03</span>
-        <h3>Centralized control planes</h3>
-        <p>Hosted tools accelerate adoption but concentrate identity, data flow, orchestration, and failure modes outside the operator's boundary.</p>
-      </article>
-      <article>
-        <span>04</span>
-        <h3>Fragmented execution</h3>
-        <p>Teams accumulate models, agents, APIs, dashboards, notebooks, devices, and human approvals without a stable routing substrate.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="failure-section" aria-labelledby="failureTitle">
-    <div class="section-head">
-      <p class="section-kicker">Why traditional AI tooling fails</p>
-      <h2 id="failureTitle">Most AI systems optimize the conversation, not the operation.</h2>
-    </div>
-    <div class="failure-list">
-      <div><strong>They centralize the interface.</strong><span>The operator becomes dependent on a remote workflow that may not match local constraints, latency, authorization, or continuity requirements.</span></div>
-      <div><strong>They blur execution boundaries.</strong><span>Prompt output, tool calls, system state, and human approval often share one soft surface instead of a deterministic operational layer.</span></div>
-      <div><strong>They reduce work without stewarding infrastructure.</strong><span>Workflow compression is useful only when the resulting system can be audited, rerouted, and sustained.</span></div>
-      <div><strong>They treat models as the platform.</strong><span>In an abundant model economy, the platform is the routing fabric, the trust boundary, and the last-mile execution control.</span></div>
-    </div>
-  </section>
-
-  <section class="architecture-section" aria-labelledby="architectureTitle">
-    <div class="architecture-copy">
-      <p class="section-kicker">Meridian MCP architecture</p>
-      <h2 id="architectureTitle">An orchestration substrate for models, tools, systems, and operators.</h2>
-      <p>Meridian MCP is a cognitive routing layer. It accepts intent, generates or receives candidate execution paths, classifies them with deterministic operational features, and returns a ranked plan surface that can be connected to local tools, remote APIs, browser apps, dashboards, and human review.</p>
-      <p>The point is not to worship autonomy. The point is to create a stable abstraction layer between abundant cognition and constrained execution.</p>
-    </div>
-    <div class="architecture-panel">
-      <div class="arch-row"><span>Intent</span><strong>task, signal, image, event, query</strong></div>
-      <div class="arch-row"><span>Cognition</span><strong>models, generated candidates, retrieval, classifiers</strong></div>
-      <div class="arch-row"><span>Routing</span><strong>deterministic scoring, orbital class, policy, context</strong></div>
-      <div class="arch-row"><span>Execution</span><strong>MCP tools, workers, local devices, browser apps</strong></div>
-      <div class="arch-row"><span>Stewardship</span><strong>logs, source, docs, human-in-the-loop control</strong></div>
-    </div>
-  </section>
-
-  <section class="framework-section" aria-labelledby="frameworkTitle">
-    <div class="section-head">
-      <p class="section-kicker">Sovereign operations framework</p>
-      <h2 id="frameworkTitle">Five layers for resilient execution.</h2>
-    </div>
-    <div class="framework-grid">
-      <article><h3>1. Insulate</h3><p>Reduce dependency on brittle centralized workflows by keeping critical routing logic and source-visible interfaces close to the operator.</p></article>
-      <article><h3>2. Route</h3><p>Coordinate fragmented models, tools, APIs, and human operators through a common cognitive routing layer.</p></article>
-      <article><h3>3. Verify</h3><p>Keep deterministic operational layers where confidence, scoring, provenance, and approval matter.</p></article>
-      <article><h3>4. Localize</h3><p>Move suitable workloads toward local compute, browser execution, edge workers, and owned infrastructure boundaries.</p></article>
-      <article><h3>5. Steward</h3><p>Treat systems as maintained assets: documented, observable, versioned, recoverable, and replaceable.</p></article>
-    </div>
-  </section>
-
-  <section class="resilience-section split-section" aria-labelledby="resilienceTitle">
-    <div>
-      <p class="section-kicker">Local compute resilience</p>
-      <h2 id="resilienceTitle">The resilient system can degrade without stopping.</h2>
-    </div>
-    <div class="section-copy">
-      <p>Meridian favors distributed execution over single-surface dependency: browser-side WebGPU where it fits, Cloudflare Workers where edge coordination is enough, local MCP clients where user context should remain near the machine, and source-visible adapters where the boundary must be inspected.</p>
-      <p>This is not anti-cloud. It is cloud-aware. Central infrastructure remains useful, but the operator should retain paths for continuity, substitution, and last-mile control.</p>
-    </div>
-  </section>
-
-  <section class="stewardship-section" aria-labelledby="stewardshipTitle">
-    <div class="section-head section-head-left">
-      <p class="section-kicker">Infrastructure stewardship</p>
-      <h2 id="stewardshipTitle">Meridian is a maintained operational map, not a black-box assistant.</h2>
-    </div>
-    <div class="stewardship-grid">
-      <a href="/docs/" class="stewardship-card">
-        <span>Docs</span>
-        <strong>Connector setup, MCP behavior, and operating notes.</strong>
-      </a>
-      <a href="https://github.com/LuuOW/meridian-mcp" class="stewardship-card">
-        <span>GitHub</span>
-        <strong>Source-visible routing core, workers, apps, and deployment surfaces.</strong>
-      </a>
-      <a href="/blog/" class="stewardship-card">
-        <span>Blog</span>
-        <strong>Technical postmortems across Cloudflare, WebGPU, finance, pharmacy, classifiers, and local compute.</strong>
-      </a>
-      <a href="/miniapp/" class="stewardship-card">
-        <span>Apps</span>
-        <strong>Live routing surfaces, browser labs, protein systems, and operational demos.</strong>
-      </a>
-    </div>
-  </section>
-
-  <section class="ecosystem-section products products-fleet" aria-label="Live Meridian ecosystem">
-    <div class="fleet-heading">
-      <p class="section-kicker">Live properties</p>
-      <h2>One doctrine, multiple execution surfaces.</h2>
-      <p class="lead">MCPs, dashboards, browser labs, and research systems. Different constraints, same sovereignty pattern: explicit boundaries, source-visible adapters, OAuth + PKCE where needed, and execution close to context.</p>
-    </div>
-    <div class="fleet-grid">
-      <article class="product-card" style="--card-bg-image: radial-gradient(ellipse at 28% 22%, rgba(56,189,248,0.26), transparent 44%), linear-gradient(135deg, rgba(5,10,18,0.98), rgba(15,23,42,0.94));">
-        <div class="product-emoji" aria-hidden="true">◎</div>
-        <h3>mcp.ask-meridian.uk</h3>
-        <p class="product-tagline"><strong>Meridian MCP</strong> — cognitive routing substrate for task candidates, deterministic classification, and connector-host orchestration.</p>
-        <p class="product-tagline" style="margin-top: 12px;"><a href="/docs/" style="color: #7aa3ff;">Docs</a> · <a href="https://github.com/LuuOW/meridian-mcp" style="color: #7aa3ff;">Source</a></p>
-      </article>
-      <article class="product-card" style="--card-bg-image: url('/img/fleet/finance-cover.svg');">
-        <div class="product-emoji" aria-hidden="true">◇</div>
-        <h3>money.ask-meridian.uk</h3>
-        <p class="product-tagline"><strong>Finance MCP</strong> — single-tenant operational boundary for account visibility, passkey access, and brokered infrastructure access.</p>
-        <p class="product-tagline" style="margin-top: 12px;"><a href="/blog/finance-mcp-binance-fly-bright-data/" style="color: #7aa3ff;">Blog</a> · <a href="https://github.com/LuuOW/finance-mcp" style="color: #7aa3ff;">Source</a></p>
-      </article>
-      <article class="product-card" style="--card-bg-image: url('/img/fleet/pharmacy-cover.svg');">
-        <div class="product-emoji" aria-hidden="true">+</div>
-        <h3>botica.ask-meridian.uk</h3>
-        <p class="product-tagline"><strong>Pharmacy MCP</strong> — cart automation across a real retail workflow, designed around browser handoff, origin limits, and practical execution constraints.</p>
-        <p class="product-tagline" style="margin-top: 12px;"><a href="/blog/pharmacy-mcp-recaptcha-origin-pivot/" style="color: #7aa3ff;">Blog</a> · <a href="https://github.com/LuuOW/pharmacy-mcp" style="color: #7aa3ff;">Source</a></p>
-      </article>
-      <article class="product-card" style="--card-bg-image: url('/img/fleet/helio-cover.svg');">
-        <div class="product-emoji" aria-hidden="true">☀</div>
-        <h3>ask-meridian.uk/helio</h3>
-        <p class="product-tagline"><strong>HelioCast</strong> — infrastructure stewardship applied to solar irradiance forecasting and public research mirrors.</p>
-        <p class="product-tagline" style="margin-top: 12px;"><a href="/helio/" style="color: #7aa3ff;">Dashboard</a> · <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helio-mirror" style="color: #7aa3ff;">Source</a></p>
-      </article>
-      <article class="product-card" style="--card-bg-image: radial-gradient(ellipse at 30% 30%, rgba(34,211,238,0.24), rgba(13,20,33,0.96) 70%);">
-        <div class="product-emoji" aria-hidden="true">⌬</div>
-        <h3>meridian.ask-meridian.uk/helix</h3>
-        <p class="product-tagline"><strong>helix</strong> — vision/text to therapeutic protein candidates with human-readable model output and structural context.</p>
-        <p class="product-tagline" style="margin-top: 12px;"><a href="https://meridian.ask-meridian.uk/helix/" style="color: #7aa3ff;">Open</a> · <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helix" style="color: #7aa3ff;">Source</a></p>
-      </article>
-    </div>
-  </section>
-
-  <section class="cta-final sovereign-cta">
-    <p class="section-kicker">Final operating principle</p>
-    <h2>Do not compete against infinite intelligence.</h2>
-    <p class="lead">Control the routing layer, the trust boundary, and the execution surface. Meridian is an operational sovereignty layer for teams and individuals navigating AI abundance without surrendering infrastructure autonomy.</p>
-    <div class="cta-row">
-      <a href="/docs/" class="btn btn-primary">Read the docs</a>
-      <a href="/blog/" class="btn btn-ghost">Read the field notes</a>
-      <a href="https://github.com/LuuOW/meridian-mcp" class="btn btn-ghost">Inspect the source</a>
-    </div>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">◎ Meridian</div>
-    <div class="footer-links">
-      <a href="/docs/">Documentation</a>
-      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
-      <a href="https://www.npmjs.com/package/meridian-orbital">npm</a>
-      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
-    </div>
-    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  <div class="math-block" data-label="Altermagnetic Photonic Hamiltonian">
+    $$H(\mathbf{k}) = \begin{pmatrix} E_0 + \Delta(\mathbf{k}) & i\gamma(\mathbf{k}) \\ -i\gamma(\mathbf{k}) & E_0 - \Delta(\mathbf{k}) \end{pmatrix}$$
   </div>
+
+  <p>
+    Where the splitting parameter $\Delta(\mathbf{k})$ exhibits a characteristic $d_{xy}$-wave form factor across the Brillouin zone, alternating sign in adjacent quadrants:
+  </p>
+
+  <div class="math-block" data-label="d_{xy}-wave Form Factor">
+    $$\Delta(\mathbf{k}) \propto k_x k_y$$
+  </div>
+
+  <h2>Experimental Demonstration and Photonic Routing</h2>
+  <p>
+    The researchers fabricated this orbital altermagnetic photonic crystal in the microwave regime, measuring the band structure and iso-frequency contours to verify the splitting directly.
+  </p>
+  <p>
+    Most excitingly for routing architectures, they demonstrated **pseudospin-selective transport**. When an electromagnetic wave is launched into the photonic crystal:
+  </p>
+  <ul>
+    <li><strong>Photonic Pseudospin Splitting:</strong> The crystal divides incoming waves along momentum-dependent directions based strictly on their orbital pseudospin.</li>
+    <li><strong>Pseudospin Filtering:</strong> Specific quadrants of the Brillouin zone act as perfect filters, allowing only one circular polarization or orbital doublet component to propagate while reflecting the other.</li>
+  </ul>
+
+  <h2>Lessons for Sovereign Task Routing</h2>
+  <p>
+    For projects like <strong>Meridian</strong>, this altermagnetic breakthrough serves as a first-principles proof of concept for **passive, zero-cost, structural routing**.
+  </p>
+  <p>
+    Most modern AI orchestration layers route tasks using high-latency, centralized LLM routers—which require massive computational energy and represent significant runtime costs. Meridian’s orbital classifier, by contrast, maps domain-agnostic task characteristics (entropy, length, fragmentation) onto deterministic orbital classes (planets, moons, trojans) in-memory.
+  </p>
+  <p>
+    The orbital altermagnetic photonic crystal shows us the physical limit of this design: a routing substrate where the "intent signal" is directed along specific execution paths *purely* by its intrinsic orbital momentum, traveling along a $d_{xy}$-wave valley of the lattice with zero active power. By embedding task semantics into structured vector spaces and routing them through deterministic physics frameworks, we can achieve massive routing abundance without sacrificing local execution sovereignty.
+  </p>
+
+  <p style="margin-top: 48px;">
+    <strong>Full Paper:</strong> <a href="https://arxiv.org/abs/2605.28656" target="_blank">"Orbital Altermagnetic Photonic Crystal," arXiv:2605.28656 (2026).</a>
+  </p>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — Notes on quantum-inspired retrieval and agent infra. <a href="/blog/">More posts</a></p>
 </footer>
 
-<script type="module">
-import { initBurgerNav, loadVersionBadge } from '/nav.js'
-import { initCopySnippet, initHeroCursor, initViewTransitions } from '/landing.js'
-initBurgerNav()
-loadVersionBadge('heroVersion', 'versionBadge')
-initCopySnippet()
-initHeroCursor()
-initViewTransitions()
-</script>
-
+<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
