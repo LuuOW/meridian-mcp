@@ -31,6 +31,12 @@
       "emoji": "◎",
       "name":  "Lens · WebXR",
       "tag":   "Vision Lab in VR · controllers, raycaster, orbit"
+    },
+    {
+      "href":  "https://ask-meridian.uk/helio/",
+      "emoji": "☀",
+      "name":  "HelioCast",
+      "tag":   "Solar irradiance forecasting dashboard & per-body triangulator"
     }
   ],
 
