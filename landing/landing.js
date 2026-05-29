@@ -78,10 +78,9 @@ export function initViewTransitions() {
   // to wire here. Function exists so callers can opt in explicitly later.
 }
 
-// ── Scroll-triggered Metric Counters ────────────────────────────────────────
+// ── Scroll-triggered Metric Counters & Rings ───────────────────────────────
 export function initMetricCounters() {
   if (reduceMotion) {
-    // If user prefers reduced motion, skip animation and set values instantly.
     document.querySelectorAll('[data-animate-number]').forEach(el => {
       el.textContent = el.dataset.animateNumber
     })
@@ -91,15 +90,30 @@ export function initMetricCounters() {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        const el = entry.target
-        const target = parseInt(el.dataset.animateNumber || '0', 10)
-        animateCount(el, target)
-        observer.unobserve(el)
+        const card = entry.target
+        const numEl = card.querySelector('[data-animate-number]')
+        if (numEl) {
+          const target = parseInt(numEl.dataset.animateNumber || '0', 10)
+          animateCount(numEl, target)
+        }
+        card.classList.add('is-animated') // Triggers the progress-ring fill
+        observer.unobserve(card)
       }
     })
-  }, { threshold: 0.5 })
+  }, { threshold: 0.3 })
 
-  document.querySelectorAll('[data-animate-number]').forEach(el => observer.observe(el))
+  document.querySelectorAll('.glass-metric-card').forEach(card => {
+    observer.observe(card)
+    
+    // Add Mouse-Tracking Glow Logic
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect()
+      const x = ((e.clientX - rect.left) / rect.width) * 100
+      const y = ((e.clientY - rect.top) / rect.height) * 100
+      card.style.setProperty('--mouse-x', `${x.toFixed(2)}%`)
+      card.style.setProperty('--mouse-y', `${y.toFixed(2)}%`)
+    })
+  })
 }
 
 function animateCount(el, target) {
