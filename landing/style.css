@@ -1674,6 +1674,11 @@ section.how, section.pricing, section.cta-final {
 
 /* ── 300% VISUAL COMPLEXITY SUITE ─────────────────────────────────────── */
 
+/* Anchor sections for metadata labels */
+.sovereign-hero, .problem-grid, .framework-section, .stewardship-section, .cta-final {
+  position: relative;
+}
+
 /* Global Engineering Grid */
 .sovereign-page::after {
   content: '';
@@ -1737,15 +1742,21 @@ section.how, section.pricing, section.cta-final {
 /* Section Metadata Labels */
 .section-meta {
   position: absolute;
-  top: 0; left: 0;
+  top: 100px; left: -40px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-faint);
-  transform: rotate(-90deg) translateX(-100%);
-  transform-origin: top left;
+  font-size: 9px;
+  color: var(--accent);
+  transform: rotate(-90deg);
+  transform-origin: center;
   white-space: nowrap;
-  opacity: 0.3;
+  opacity: 0.4;
+  letter-spacing: 0.2em;
   pointer-events: none;
+  border-left: 1px solid var(--accent);
+  padding-left: 10px;
+}
+@media (max-width: 1200px) {
+  .section-meta { display: none; } /* Hide on small screens to avoid overflow */
 }
 
 /* Scanline/Noise Overlay */
