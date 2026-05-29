@@ -39,6 +39,7 @@
 
 <a href="#main" class="skip-link">Skip to main content</a>
 
+
 <nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
 
@@ -315,104 +316,219 @@
 </nav>
 
 <main id="main" class="sovereign-page">
-  <div class="alignment-track" style="top: var(--s-lg);"></div>
-  
-  <section class="sovereign-hero">
-    <div class="telemetry-sidebar">
-      <div class="telemetry-row"><span>PROD_NODES</span><span class="telemetry-val">28</span></div>
-      <div class="telemetry-row"><span>UPTIME_SLO</span><span class="telemetry-val">99.99%</span></div>
-      <div class="telemetry-row"><span>SIGNAL_LOAD</span><span class="telemetry-val">14%</span></div>
-      <div class="telemetry-row"><span>LAST_AUDIT</span><span class="telemetry-val">05.29.26</span></div>
+  <section class="sovereign-hero" aria-labelledby="heroTitle">
+    <div class="alignment-plus ap-tl">+</div>
+    <div class="alignment-plus ap-tr">+</div>
+    <div class="alignment-plus ap-bl">+</div>
+    <div class="alignment-plus ap-br">+</div>
+    <div class="coord-label" style="top: 10px; left: 10px;">X:000 // Y:72</div>
+    <div class="coord-label" style="bottom: 10px; right: 10px;">LAT: 34.05 / LON: -118.24</div>
+    
+    <div class="section-meta">SEC_01 // CORE_INFRA</div>
+    
+    <div class="telemetry-log">
+      <div class="telemetry-item"><span style="padding-right: 8px;">PROD_NODES</span><span class="telemetry-val">28</span></div>
+      <div class="telemetry-item"><span style="padding-right: 8px;">UPTIME_SLO</span><span class="telemetry-val">99.99%</span></div>
+      <div class="telemetry-item"><span style="padding-right: 8px;">MCP_TRAFFIC</span><span class="telemetry-val">HIGH</span></div>
+      <div class="telemetry-item"><span style="padding-right: 8px;">LAST_AUDIT</span><span class="telemetry-val">05.29.26</span></div>
+      <div class="telemetry-item"><span style="padding-right: 8px;">SIGNAL_LOAD</span><span class="telemetry-val">14%</span></div>
     </div>
 
     <div class="hero-copy tech-frame">
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-        <span id="heroVersion" class="eyebrow eyebrow-live" data-loading>v3.2.0 production active</span>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span id="heroVersion" class="eyebrow eyebrow-live" data-loading>Infrastructure audit · v3.2.0 active</span>
+        <span class="status-tag">SYSTEM: NOMINAL</span>
+        <span class="status-tag">LATENCY: 14MS</span>
       </div>
-      <p class="doctrine-kicker" style="color: var(--accent); font-weight: 600; letter-spacing: 0.1em;">AUTONOMOUS INFRASTRUCTURE STUDIO</p>
-      <h1 class="glitch-title" data-text="Code is Abundant. Operational Stability is Scarce.">Code is Abundant.<br>Operational Stability is Scarce.</h1>
+      <p class="doctrine-kicker">Autonomous AI Infrastructure & Optimization Studio</p>
+      <h1 id="heroTitle" class="glitch-title" data-text="Code is Abundant. Operational Stability is Scarce.">Code is Abundant. Operational Stability is Scarce.</h1>
       <p class="sovereign-lead">
-        We engineer the resilient, high-throughput backend infrastructure, latency reduction layers, and anti-bot insulation that allow enterprise AI to scale in the wild.
+        Your AI can generate code. We make it run at scale. Meridian engineers the resilient, low-latency infrastructure required to transition fragile autonomous prototypes into hardened enterprise assets. We replace thin-wrapper agents with sovereign runtimes, stealth execution pipelines, and deterministic MCP vaults.
       </p>
-      <div class="cta-row hero-cta" style="justify-content: flex-start;">
-        <a href="#intake" class="btn btn-primary">Request Infrastructure Audit</a>
-        <a href="/miniapp/" class="btn btn-ghost">Open Systems</a>
+      <div class="cta-row hero-cta">
+        <a href="#intake" class="btn btn-primary" style="view-transition-name: cta-primary">Request Infrastructure Audit</a>
+        <a href="/miniapp/" class="btn btn-ghost">Open the router</a>
       </div>
+    </div>
+
+    <div class="ops-map" aria-hidden="true">
+      <svg viewBox="0 0 620 480" focusable="false">
+        <defs>
+          <linearGradient id="signalLine" x1="0" x2="1">
+            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.05"/>
+            <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.65"/>
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0.2"/>
+          </linearGradient>
+          <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(148,163,184,0.05)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#gridPattern)" />
+        <rect x="38" y="38" width="544" height="404" rx="18" fill="none" stroke="rgba(148,163,184,0.16)"/>
+        
+        <!-- Complex Connection Matrix -->
+        <path d="M100 100 L520 380 M100 380 L520 100 M310 50 V430 M50 240 H570" stroke="rgba(148,163,184,0.05)" stroke-width="1" />
+        
+        <path d="M112 302C176 168 250 154 310 240S432 338 508 166" fill="none" stroke="url(#signalLine)" stroke-width="3"/>
+        <path d="M112 178C184 238 220 342 310 292S438 166 508 286" fill="none" stroke="rgba(167,139,250,0.45)" stroke-width="2" stroke-dasharray="3 6"/>
+        
+        <!-- Node Clutter -->
+        <g fill="#0b1220" stroke="#38bdf8" stroke-width="2">
+          <circle cx="112" cy="302" r="10"/> <circle cx="310" cy="240" r="14"/> <circle cx="508" cy="166" r="10"/>
+          <circle cx="150" cy="120" r="4" stroke="rgba(56,189,248,0.3)"/>
+          <circle cx="450" cy="350" r="4" stroke="rgba(56,189,248,0.3)"/>
+        </g>
+        <g fill="#0b1220" stroke="#a78bfa" stroke-width="1.5">
+          <circle cx="112" cy="178" r="8"/> <circle cx="310" cy="292" r="11"/> <circle cx="508" cy="286" r="8"/>
+        </g>
+
+        <g class="map-labels" style="font-size: 8px; opacity: 0.8;">
+          <text x="120" y="315">NODE_ALPHA_01</text>
+          <text x="320" y="255">HUB_CORE_PRIME</text>
+          <text x="515" y="175">NODE_OMEGA_99</text>
+          <text x="45" y="45">TX_READY</text>
+          <text x="530" y="435">INFRA_STABLE</text>
+        </g>
+        
+        <g class="map-labels" style="font-weight: bold; fill: #7dd3fc;">
+          <text x="76" y="82">LOCAL_EXECUTION_LAYER</text>
+          <text x="238" y="82">COGNITIVE_ROUTING_SUBSTRATE</text>
+          <text x="406" y="82">OPERATIONAL_CONTROL_PLANE</text>
+        </g>
+      </svg>
     </div>
   </section>
 
-  <section class="problem-grid">
+  <section class="problem-grid" aria-labelledby="bottleneckTitle">
+    <div class="alignment-plus ap-tl">+</div>
+    <div class="alignment-plus ap-tr">+</div>
+    <div class="section-meta">SEC_02 // SYSTEM_FRICTION</div>
     <div class="section-head section-head-left">
-      <h2 id="bottleneckTitle">Production Bottlenecks</h2>
-      <p class="lead">Most autonomous AI systems collapse under physical reality. We solve the three primary friction points.</p>
+      <p class="section-kicker">The Bottleneck</p>
+      <h2 id="bottleneckTitle">Why Autonomous Systems Fail in Production</h2>
+      <p class="lead">The "Agent" hype cycle has ignored the physical reality of production environments. Most autonomous implementations collapse under three primary pressures.</p>
     </div>
     <div class="matrix-grid">
-      <article class="tech-card">
-        <div class="status-tag">LATENCY</div>
-        <h3>Efficiency & Cost</h3>
-        <p>Naive LLM chaining incinerates budgets. We deploy smart proxy routing across frontier and local models to optimize for both speed and cost.</p>
+      <article class="tech-card" data-id="LTNCY_01">
+        <div class="status-tag" style="margin-bottom: 12px;">CRITICAL</div>
+        <span>01</span>
+        <h3>Latency & Token Burn</h3>
+        <p>Naive multi-agent architectures and unoptimized LLM chaining incinerate API budgets while choking user experience. Reasoning is cheap; millisecond-critical execution is expensive.</p>
       </article>
-      <article class="tech-card">
-        <div class="status-tag">EXECUTION</div>
-        <h3>The Physical Web</h3>
-        <p>High-value execution points are guarded by anti-bot walls. We build stealth runtimes that bypass origin-enforcement and reCAPTCHA Enterprise.</p>
+      <article class="tech-card" data-id="WALL_02">
+        <div class="status-tag" style="margin-bottom: 12px;">ADVERSARIAL</div>
+        <span>02</span>
+        <h3>The Physical Firewall</h3>
+        <p>High-value data and last-mile execution points are guarded by Cloudflare, reCAPTCHA Enterprise, and origin-binding. Thin-wrapper agents freeze the moment they hit the physical firewall of the modern web.</p>
       </article>
-      <article class="tech-card">
-        <div class="status-tag">RESILIENCE</div>
-        <h3>System Drift</h3>
-        <p>Thin wrappers lack state-persistence. We build asynchronous, event-driven backends with deterministic circuit breakers for zero-loss operations.</p>
+      <article class="tech-card" data-id="DRIFT_03">
+        <div class="status-tag" style="margin-bottom: 12px;">FRAGILE</div>
+        <span>03</span>
+        <h3>System Drift & Fragility</h3>
+        <p>Without deterministic circuit breakers and cryptographic state-persistence, autonomous pipelines lack the "memory" to survive mid-operation crashes, leading to silent failures and infinite loops.</p>
       </article>
     </div>
   </section>
 
-  <section class="framework-section">
-    <div class="section-head section-head-left">
-      <h2>Infrastructure Core</h2>
+  <section class="framework-section" aria-labelledby="coreTitle">
+    <div class="spacing-track-v"></div>
+    <div class="alignment-plus ap-tl">+</div>
+    <div class="alignment-plus ap-tr">+</div>
+    <div class="section-meta">SEC_03 // PROD_CORE</div>
+    <div class="section-head">
+      <p class="section-kicker">Meridian's Production Core</p>
+      <h2 id="coreTitle">Infrastructure for the next generation of autonomous operations.</h2>
     </div>
     <div class="framework-grid">
-      <article class="tech-card">
-        <h3>Routing Engines</h3>
-        <p>Rust-based proxies for multi-model load balancing and millisecond-critical optimization.</p>
+      <article class="tech-card" data-id="ROUT_01">
+        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-cyan);">ACTIVE</div>
+        <h3>I. Multi-Model Routing</h3>
+        <p>Deterministic proxy engines that optimize for both cost and speed. We shave milliseconds off high-frequency frameworks by dynamically routing tasks between Claude 3.5, DeepSeek, and local edge models.</p>
+        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">RUST PROXIES · SEMANTIC CLASSIFIERS</div>
       </article>
-      <article class="tech-card">
-        <h3>Stealth Browsing</h3>
-        <p>Patchright-hardened runtimes for last-mile execution where official APIs do not exist.</p>
+      <article class="tech-card" data-id="EXEC_02">
+        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-pink);">STEALTH</div>
+        <h3>II. Stealth Runtimes</h3>
+        <p>Unbannable, last-mile execution pipelines for environments where official APIs do not exist. Custom browser patches and residential proxy rotation to bypass origin-enforcement.</p>
+        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">PATCHRIGHT · IP ROTATION · SESSION HYDRATION</div>
       </article>
-      <article class="tech-card">
-        <h3>Distributed Runtimes</h3>
-        <p>Redis-backed, state-persistent agent backends designed for high-concurrency workflows.</p>
+      <article class="tech-card" data-id="BACK_03">
+        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-mint);">PERSISTENT</div>
+        <h3>III. Distributed Backends</h3>
+        <p>Event-driven runtimes designed for zero-loss operations. State-persistent backends using Redis pub/sub and cryptographic checkpoints so complex workflows resume instantly after failure.</p>
+        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">PM2 CLUSTERS · CRYPTOGRAPHIC CHECKPOINTS</div>
       </article>
-      <article class="tech-card">
-        <h3>Secure MCP Vaults</h3>
-        <p>Private data bridges allowing LLMs to query internal databases without external exposure.</p>
+      <article class="tech-card" data-id="MCP_04">
+        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-violet);">SECURE</div>
+        <h3>IV. Enterprise Vaults</h3>
+        <p>Secure, self-hosted data bridges (MCP) that allow frontier models to query sensitive internal databases without data-leakage risks or exposing raw data to the public internet.</p>
+        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">MCP SDK · ISOLATED WORKERS · ZERO-TRUST</div>
       </article>
     </div>
   </section>
 
-  <section id="intake" class="intake-container">
-    <div class="intake-header t-mono" style="font-size: 0.8rem; opacity: 0.8;">
-      <span>INTAKE_PROTOCOL_V3.2</span>
-      <span>READY_FOR_HANDSHAKE</span>
+  <section class="stewardship-section" aria-labelledby="metricsTitle">
+    <div class="alignment-plus ap-tl">+</div>
+    <div class="alignment-plus ap-tr">+</div>
+    <div class="section-meta">SEC_04 // PERFORMANCE_LOG</div>
+    <div class="section-head section-head-left">
+      <p class="section-kicker">Production Footprint</p>
+      <h2 id="metricsTitle">Proven Metrics. Scalable Infrastructure.</h2>
     </div>
-    <form class="intake-form">
-      <div>
-        <label class="t-eyebrow" style="font-size: 0.7rem; margin-bottom: 8px; display: block;">INFRASTRUCTURE_SCALE</label>
-        <input type="text" placeholder="Current Token Volume / Agent Count">
+    <div class="stewardship-grid">
+      <div class="stewardship-card tech-card" data-id="METRIC_01">
+        <div class="status-tag" style="margin-bottom: 12px;">ACTIVE_NODES</div>
+        <span>Active</span>
+        <strong>25+ MCP Servers running concurrently in production environments.</strong>
       </div>
-      <div>
-        <label class="t-eyebrow" style="font-size: 0.7rem; margin-bottom: 8px; display: block;">PRIMARY_BOTTLENECK</label>
-        <select>
-          <option>Latency / Token Cost</option>
-          <option>Anti-Bot / CAPTCHA</option>
-          <option>State Drift / Reliability</option>
-        </select>
+      <div class="stewardship-card tech-card" data-id="METRIC_02">
+        <div class="status-tag" style="margin-bottom: 12px;">HOSTED_SERVICES</div>
+        <span>Sovereign</span>
+        <strong>15+ Self-Hosted PM2 automated services managing 24/7 loops.</strong>
       </div>
-      <div>
-        <label class="t-eyebrow" style="font-size: 0.7rem; margin-bottom: 8px; display: block;">PROJECT_SCOPE</label>
-        <textarea rows="4" placeholder="Describe your architectural constraints..."></textarea>
+      <div class="stewardship-card tech-card" data-id="METRIC_03">
+        <div class="status-tag" style="margin-bottom: 12px;">ENGINE_SKILLS</div>
+        <span>Proven</span>
+        <strong>19-Skill Stateless Engine actively executing real-world workflows.</strong>
       </div>
-      <button type="submit" class="btn btn-primary">INITIATE_TECHNICAL_INTAKE</button>
-    </form>
+    </div>
+  </section>
+
+  <section id="intake" class="cta-final sovereign-cta">
+    <div class="alignment-plus ap-tl">+</div>
+    <div class="alignment-plus ap-tr">+</div>
+    <div class="section-meta">SEC_05 // INTAKE_GATE</div>
+    <p class="section-kicker">The Gatekeeper</p>
+    <h2>Intake Terminal</h2>
+    <p class="lead">Meridian accepts a limited number of high-stakes infrastructure mandates and architectural consulting roles. We filter for scale and technical complexity.</p>
+    
+    <div style="max-width: 600px; margin: 40px auto 0; position: relative; padding: 2px; background: linear-gradient(from var(--neon-angle), var(--border-tech), var(--border-active)); border-radius: 12px; animation: neonRotate 10s linear infinite;">
+      <form style="background: var(--bg-deep); padding: 32px; border-radius: 10px; text-align: left; display: grid; gap: 20px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: #f87171;"></div>
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: #fbbf24;"></div>
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: #4ad62f;"></div>
+          <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-left: auto;">MERIDIAN_CONSOLE_V3.2</span>
+        </div>
+        <div>
+          <label style="display: block; font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px; color: var(--text-faint);">[01] CURRENT INFRASTRUCTURE SCALE</label>
+          <input type="text" placeholder="e.g., Monthly Token Volume / Agent Count" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px; border-radius: 6px; color: var(--text); font-family: var(--font-mono); font-size: 13px;">
+        </div>
+        <div>
+          <label style="display: block; font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px; color: var(--text-faint);">[02] PRIMARY SYSTEM BOTTLENECK</label>
+          <select style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px; border-radius: 6px; color: var(--text); font-family: var(--font-mono); font-size: 13px;">
+            <option>Latency / Token Cost</option>
+            <option>Anti-Bot / CAPTCHA</option>
+            <option>State Drift / Reliability</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px; color: var(--text-faint);">[03] PROJECT_SCOPE (STRICTLY_TECHNICAL)</label>
+          <textarea rows="4" placeholder="Describe your architectural constraints..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px; border-radius: 6px; color: var(--text); font-family: var(--font-mono); font-size: 13px;"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">EXECUTE_INTAKE_PROTOCOL</button>
+      </form>
+    </div>
   </section>
 </main>
 
