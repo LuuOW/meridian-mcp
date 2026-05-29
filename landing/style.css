@@ -87,6 +87,14 @@
   --shadow-btn:        0 0 0 1px rgba(167, 139, 250, 0.45), 0 0 14px 2px rgba(167, 139, 250, 0.35), 0 0 28px 6px rgba(167, 139, 250, 0.18);
   --shadow-panel:     -8px 0 40px rgba(0, 0, 0, 0.5), -1px 0 24px rgba(167, 139, 250, 0.18);
 
+  /* ── 300% COMPLEXITY TOKENS ── */
+  --detail-line:  rgba(56, 189, 248, 0.15);
+  --detail-dot:   rgba(56, 189, 248, 0.25);
+  --detail-bg:    rgba(10, 13, 20, 0.95);
+  --detail-glow:  rgba(167, 139, 250, 0.12);
+  --border-tech:  rgba(148,163,184,0.18);
+  --border-active: rgba(56,189,248,0.4);
+
   --fs-display: clamp(36px, 6vw, 60px);
   --fs-h1:      clamp(28px, 5vw, 40px);
   --fs-h2:      clamp(22px, 3.5vw, 32px);
@@ -1662,4 +1670,109 @@ section.how, section.pricing, section.cta-final {
   *, *::before, *::after { animation: none !important; transition: none !important; box-shadow: none !important; }
   body { background: #fff !important; color: #000 !important; }
   .grad, .plan-price { -webkit-text-fill-color: #000 !important; background: none !important; }
+}
+
+/* ── 300% VISUAL COMPLEXITY SUITE ─────────────────────────────────────── */
+
+/* Global Engineering Grid */
+.sovereign-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(var(--detail-dot) 1px, transparent 1px);
+  background-size: 26px 26px;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Technical Bracket Decorators */
+.tech-card {
+  position: relative;
+  isolation: isolate;
+}
+.tech-card::after {
+  content: '';
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 32px; height: 12px;
+  border-top: 1px solid var(--detail-line);
+  border-right: 1px solid var(--detail-line);
+  opacity: 0.6;
+}
+.tech-card::before {
+  content: 'LOG_ID: ' attr(data-id);
+  position: absolute;
+  bottom: 8px; left: 16px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  opacity: 0.4;
+}
+
+/* Status Badges */
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-tech);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+.status-tag::before {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 6px var(--accent-2);
+}
+
+/* Section Metadata Labels */
+.section-meta {
+  position: absolute;
+  top: 0; left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  transform: rotate(-90deg) translateX(-100%);
+  transform-origin: top left;
+  white-space: nowrap;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Scanline/Noise Overlay */
+.scanline-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.02) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* Glitch Heading Effect */
+.glitch-title {
+  position: relative;
+  text-shadow: 0.05em 0 0 rgba(255,0,0,0.75),
+              -0.025em -0.05em 0 rgba(0,255,0,0.75),
+              0.025em 0.05em 0 rgba(0,0,255,0.75);
+  animation: glitch 500ms infinite;
+}
+@keyframes glitch {
+  0% { text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.05em -0.025em 0 rgba(0,255,0,0.75), -0.025em 0.05em 0 rgba(0,0,255,0.75); }
+  14% { text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.05em -0.025em 0 rgba(0,255,0,0.75), -0.025em 0.05em 0 rgba(0,0,255,0.75); }
+  15% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,0.75), 0.025em 0.025em 0 rgba(0,255,0,0.75), -0.05em -0.05em 0 rgba(0,0,255,0.75); }
+  49% { text-shadow: -0.05em -0.025em 0 rgba(255,0,0,0.75), 0.025em 0.025em 0 rgba(0,255,0,0.75), -0.05em -0.05em 0 rgba(0,0,255,0.75); }
+  50% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,0.75), 0.05em 0 0 rgba(0,255,0,0.75), 0 -0.05em 0 rgba(0,0,255,0.75); }
+  99% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,0.75), 0.05em 0 0 rgba(0,255,0,0.75), 0 -0.05em 0 rgba(0,0,255,0.75); }
+  100% { text-shadow: -0.025em 0 0 rgba(255,0,0,0.75), -0.025em -0.025em 0 rgba(0,255,0,0.75), -0.025em -0.05em 0 rgba(0,0,255,0.75); }
 }
