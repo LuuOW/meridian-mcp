@@ -1645,106 +1645,90 @@ section.how, section.pricing, section.cta-final {
   .grad, .plan-price { -webkit-text-fill-color: #000 !important; background: none !important; }
 }
 
-/* ── STUNNING METRIC DISPLAYS (2026 Polish) ── */
+/* ── HYPER-INTERACTIVE METRICS (v2026) ── */
 
 .glass-metric-card {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
   position: relative;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 32px;
-  box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.4),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  transition: transform 0.4s var(--ease-out), border-color 0.4s ease, box-shadow 0.4s ease;
-  overflow: hidden;
+  transition: all 0.5s var(--ease);
+  cursor: crosshair;
 }
 
-.glass-metric-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  border-color: rgba(88, 166, 255, 0.3);
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.5),
-    0 0 30px rgba(88, 166, 255, 0.15);
-}
-
+/* Mouse-Tracking Spotlight Glow */
 .glass-metric-card::before {
   content: '';
   position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: radial-gradient(circle at center, rgba(88, 166, 255, 0.05), transparent 70%);
+  inset: 0;
+  background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(88, 166, 255, 0.12), transparent 40%);
   opacity: 0;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.4s ease;
   pointer-events: none;
 }
 .glass-metric-card:hover::before { opacity: 1; }
 
-.metric-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.metric-label {
+/* Interactive Hover Dialog (Tooltip) */
+.metric-dialog {
+  position: absolute;
+  top: -20px; left: 50%;
+  transform: translate(-50%, -20px);
+  width: 220px;
+  background: #0d1117;
+  border: 1px solid var(--accent);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s var(--ease);
+  z-index: 50;
   font-family: var(--font-mono);
+  font-size: 10px;
+}
+.glass-metric-card:hover .metric-dialog {
+  opacity: 1;
+  transform: translate(-50%, -40px);
+}
+.dialog-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
+
+/* Predictive Forecasting */
+.metric-forecast {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.05);
   font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.metric-value-wrap {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.metric-value {
-  font-size: 52px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  background: linear-gradient(180deg, #fff, #aab4cc);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.metric-trend {
+  color: var(--text-faint);
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
+  gap: 8px;
 }
-.trend-up { color: #10b981; }
-.trend-stable { color: #38bdf8; }
-
-.mini-chart-placeholder {
-  width: 48px;
-  height: 48px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.forecast-tag {
+  background: rgba(167, 139, 250, 0.1);
+  color: #c4b5fd;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
-.progress-ring {
-  transform: rotate(-90deg);
-}
+/* Auto-Filling Progress Ring */
 .progress-ring-circle {
-  transition: stroke-dashoffset 2s var(--ease-out);
-  stroke-dasharray: 100 100;
-  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 2.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  stroke-dasharray: 125.6; /* 2 * PI * R (20) */
+  stroke-dashoffset: 125.6;
 }
-.glass-metric-card:hover .progress-ring-circle {
-  stroke-dashoffset: var(--target-offset, 30);
+.is-animated .progress-ring-circle {
+  stroke-dashoffset: var(--target-offset);
+}
+
+.glass-metric-card:hover {
+  transform: translateY(-12px);
+  border-color: rgba(88, 166, 255, 0.4);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
 }
 
 @media (max-width: 760px) {
