@@ -1689,20 +1689,23 @@ section.how, section.pricing, section.cta-final {
   z-index: 2;
 }
 
-/* Alignment Crosshairs for sections */
+/* Alignment Crosshairs — Center-Point Intersection */
 .alignment-plus {
   position: absolute;
+  width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   color: var(--accent);
-  opacity: 0.4;
-  font-weight: bold;
+  opacity: 0.5;
+  font-weight: 300;
   pointer-events: none;
+  z-index: 20;
 }
-.ap-tl { top: 0; left: 0; transform: translate(-50%, -50%); }
-.ap-tr { top: 0; right: 0; transform: translate(50%, -50%); }
-.ap-bl { bottom: 0; left: 0; transform: translate(-50%, 50%); }
-.ap-br { bottom: 0; right: 0; transform: translate(50%, 50%); }
+.ap-tl { top: -8px; left: -8px; }
+.ap-tr { top: -8px; right: -8px; }
+.ap-bl { bottom: -8px; left: -8px; }
+.ap-br { bottom: -8px; right: -8px; }
 
 /* Coordinate Labels */
 .coord-label {
@@ -1749,24 +1752,23 @@ section.how, section.pricing, section.cta-final {
   box-shadow: 0 0 6px var(--accent-2);
 }
 
-/* Section Metadata Labels */
+/* Section Metadata Labels — Precision Baseline Alignment */
 .section-meta {
   position: absolute;
-  top: 100px; left: -40px;
+  top: 112px; left: -44px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 8px;
   color: var(--accent);
   transform: rotate(-90deg);
   transform-origin: center;
   white-space: nowrap;
   opacity: 0.4;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.25em;
   pointer-events: none;
   border-left: 1px solid var(--accent);
-  padding-left: 10px;
-}
-@media (max-width: 1200px) {
-  .section-meta { display: none; } /* Hide on small screens to avoid overflow */
+  padding-left: 12px;
+  line-height: 1;
+  z-index: 10;
 }
 
 /* Scanline/Noise Overlay */
