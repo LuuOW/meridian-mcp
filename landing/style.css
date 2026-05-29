@@ -1647,45 +1647,75 @@ section.how, section.pricing, section.cta-final {
 
 /* ── HYPER-INTERACTIVE METRICS (v2026) ── */
 
+/* ── HYPER-INTERACTIVE METRICS (v2026 REFACTORED) ── */
+
 .glass-metric-card {
   --mouse-x: 50%;
   --mouse-y: 50%;
   position: relative;
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(13, 17, 23, 0.65);
+  backdrop-filter: blur(18px) saturate(200%);
+  -webkit-backdrop-filter: blur(18px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 20px;
   padding: 32px;
   transition: all 0.5s var(--ease);
   cursor: crosshair;
+  isolation: isolate;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Neon Ring System (Rotating Conic Border) */
+.glass-metric-card::before {
+  content: '';
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--neon-angle), 
+    rgba(88, 166, 255, 0.2), rgba(16, 185, 129, 0.05), 
+    rgba(244, 114, 182, 0.05), rgba(88, 166, 255, 0.2));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: neonRotate 10s linear infinite;
+  opacity: 0.5;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+
+.glass-metric-card:hover::before {
+  opacity: 1;
+  animation-duration: 4s;
+  background: conic-gradient(from var(--neon-angle), 
+    var(--accent), var(--accent-2), var(--accent-pink), var(--accent));
 }
 
 /* Mouse-Tracking Spotlight Glow */
-.glass-metric-card::before {
+.glass-metric-card::after {
   content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(88, 166, 255, 0.12), transparent 40%);
+  position: absolute; inset: 0;
+  background: radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(88, 166, 255, 0.1), transparent 40%);
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
+  z-index: -2;
 }
-.glass-metric-card:hover::before { opacity: 1; }
+.glass-metric-card:hover::after { opacity: 1; }
 
-/* Interactive Hover Dialog (Tooltip) */
+/* Interactive Hover Dialog */
 .metric-dialog {
   position: absolute;
-  top: -20px; left: 50%;
-  transform: translate(-50%, -20px);
-  width: 220px;
+  top: -10px; left: 50%;
+  transform: translate(-50%, -10px);
+  width: 230px;
   background: #0d1117;
   border: 1px solid var(--accent);
-  padding: 12px;
+  padding: 14px;
   border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.7);
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s var(--ease);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 50;
   font-family: var(--font-mono);
   font-size: 10px;
@@ -1694,31 +1724,57 @@ section.how, section.pricing, section.cta-final {
   opacity: 1;
   transform: translate(-50%, -40px);
 }
-.dialog-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 4px 0; }
+.dialog-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 5px 0; }
 
 /* Predictive Forecasting */
 .metric-forecast {
-  margin-top: 16px;
+  margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-faint);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .forecast-tag {
-  background: rgba(167, 139, 250, 0.1);
+  background: rgba(167, 139, 250, 0.15);
   color: #c4b5fd;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
   font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+/* Enhanced Typography */
+.metric-value {
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.85;
+  background: linear-gradient(180deg, #fff 40%, rgba(255,255,255,0.3) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 15px rgba(88, 166, 255, 0.25));
+}
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
 }
 
 /* Auto-Filling Progress Ring */
 .progress-ring-circle {
-  transition: stroke-dashoffset 2.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  stroke-dasharray: 125.6; /* 2 * PI * R (20) */
+  transition: stroke-dashoffset 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+  stroke-dasharray: 125.6;
   stroke-dashoffset: 125.6;
 }
 .is-animated .progress-ring-circle {
@@ -1726,9 +1782,9 @@ section.how, section.pricing, section.cta-final {
 }
 
 .glass-metric-card:hover {
-  transform: translateY(-12px);
-  border-color: rgba(88, 166, 255, 0.4);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  transform: translateY(-15px);
+  border-color: rgba(88, 166, 255, 0.5);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.7);
 }
 
 @media (max-width: 760px) {
