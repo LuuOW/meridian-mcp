@@ -479,7 +479,13 @@
 
     <div class="stewardship-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
       <!-- Card 1: MCP Servers -->
-      <div class="glass-metric-card">
+      <div class="glass-metric-card" data-metric-id="01">
+        <div class="metric-dialog">
+          <div class="dialog-row"><span>STATUS</span><span class="trend-up">OPERATIONAL</span></div>
+          <div class="dialog-row"><span>PEAK_LOAD</span><span>42.4 req/s</span></div>
+          <div class="dialog-row"><span>LOCATION</span><span>US-EAST / EU-CENTRAL</span></div>
+          <div class="dialog-row"><span>TRUST_LEVEL</span><span>L5_SOVEREIGN</span></div>
+        </div>
         <div class="metric-header">
           <div>
             <p class="metric-label">Active Deployments</p>
@@ -491,18 +497,24 @@
           <div class="mini-chart-placeholder">
             <svg class="progress-ring" width="48" height="48">
               <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
-              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" style="--target-offset: 15;"/>
+              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" style="--target-offset: 20;"/>
             </svg>
           </div>
         </div>
         <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">MCP Servers running concurrently in production environments.</p>
-        <div class="metric-trend trend-up">
-          <span style="font-size: 18px;">↑</span> 100% Reliability
+        <div class="metric-forecast">
+          <span class="forecast-tag">PROJECTED</span> +12% scaling next quarter
         </div>
       </div>
 
       <!-- Card 2: PM2 Services -->
-      <div class="glass-metric-card">
+      <div class="glass-metric-card" data-metric-id="02">
+        <div class="metric-dialog">
+          <div class="dialog-row"><span>RUNTIME</span><span>NODE_20_LTS</span></div>
+          <div class="dialog-row"><span>CLUSTERING</span><span>PM2_ACTIVE</span></div>
+          <div class="dialog-row"><span>AUTO_RESTART</span><span>ENABLED</span></div>
+          <div class="dialog-row"><span>LOG_SIZE</span><span>1.2 GB / day</span></div>
+        </div>
         <div class="metric-header">
           <div>
             <p class="metric-label">Automated Loops</p>
@@ -514,18 +526,24 @@
           <div class="mini-chart-placeholder">
             <svg class="progress-ring" width="48" height="48">
               <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
-              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-2)" stroke-width="4" stroke-linecap="round" style="--target-offset: 40;"/>
+              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-2)" stroke-width="4" stroke-linecap="round" style="--target-offset: 60;"/>
             </svg>
           </div>
         </div>
         <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">Self-Hosted PM2 automated services managing 24/7 sovereign logic.</p>
-        <div class="metric-trend trend-stable">
-          <span style="font-size: 18px;">⌁</span> Stateless Persistence
+        <div class="metric-forecast">
+          <span class="forecast-tag">RECOVERY</span> 0ms data loss on last fault
         </div>
       </div>
 
       <!-- Card 3: Engine Skills -->
-      <div class="glass-metric-card">
+      <div class="glass-metric-card" data-metric-id="03">
+        <div class="metric-dialog">
+          <div class="dialog-row"><span>ENGINE_VER</span><span>V1.4_STABLE</span></div>
+          <div class="dialog-row"><span>VECTORS</span><span>2,048_DIM</span></div>
+          <div class="dialog-row"><span>LATENCY</span><span>14ms / route</span></div>
+          <div class="dialog-row"><span>AUTH</span><span>ED25519_SIG</span></div>
+        </div>
         <div class="metric-header">
           <div>
             <p class="metric-label">Autonomous Capability</p>
@@ -537,13 +555,13 @@
           <div class="mini-chart-placeholder">
             <svg class="progress-ring" width="48" height="48">
               <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
-              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-pink)" stroke-width="4" stroke-linecap="round" style="--target-offset: 25;"/>
+              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-pink)" stroke-width="4" stroke-linecap="round" style="--target-offset: 35;"/>
             </svg>
           </div>
         </div>
         <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">B2B Engine actively executing real-world outbound workflows.</p>
-        <div class="metric-trend trend-up">
-          <span style="font-size: 18px;">★</span> Proven in Wild
+        <div class="metric-forecast">
+          <span class="forecast-tag">AI_INSIGHT</span> Optimizing for DeepSeek V3
         </div>
       </div>
     </div>
