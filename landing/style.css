@@ -1,37 +1,125 @@
 :root {
-  /* ── HIGH-FIDELITY DESIGN SYSTEM ─────────────────────────────────────────── */
+  /* ── CONSOLIDATED HARDENED DESIGN SYSTEM ────────────────────────────────── */
 
-  /* Color Palette (Deep Industrial) */
+  /* Color Palette */
   --bg:         #05070a;
   --bg-deep:    #020305;
-  --bg-surface: rgba(13, 17, 23, 0.8);
   --bg-card:    rgba(22, 27, 34, 0.4);
   --border:     rgba(48, 54, 61, 0.6);
-  --border-mute: rgba(48, 54, 61, 0.3);
-  --text:       #f0f6fc;
-  --text-muted: #8b949e;
-  --text-faint: #484f58;
-  --accent:     #58a6ff; /* Clean Infrastructure Blue */
-  --accent-glow: rgba(88, 166, 255, 0.15);
+  --accent:     #58a6ff;
+  --accent-2:   #10b981;
+  --accent-pink: #f472b6;
 
-  /* Fluid Spacing (Modern 8px Grid) */
-  --space-unit: 8px;
-  --s-xs:  calc(var(--space-unit) * 1); /* 8px */
-  --s-sm:  calc(var(--space-unit) * 2); /* 16px */
-  --s-md:  calc(var(--space-unit) * 4); /* 32px */
-  --s-lg:  calc(var(--space-unit) * 6); /* 48px */
-  --s-xl:  calc(var(--space-unit) * 10); /* 80px */
+  /* Fluid Spacing (Rigid 8px Grid) */
+  --s-unit: 8px;
+  --s-xs: 8px;
+  --s-sm: 16px;
+  --s-md: 32px;
+  --s-lg: 48px;
+  --s-xl: 80px;
 
   /* Fluid Typography */
-  --fs-h1: clamp(2.5rem, 8vw, 4.5rem);
-  --fs-h2: clamp(1.75rem, 5vw, 2.5rem);
-  --fs-body: 1rem;
-  --fs-lead: 1.25rem;
+  --fs-h1: clamp(2.5rem, 8vw, 4.8rem);
+  --fs-h2: clamp(1.8rem, 5vw, 2.6rem);
+  --fs-body: 0.95rem;
+  --fs-mono: 0.8rem;
 
-  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+/* ── INFRASTRUCTURE DECORATORS ── */
+
+.scanline-layer {
+  position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: 0.4;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.02) 50%);
+  background-size: 100% 4px;
+}
+
+.glitch-title {
+  position: relative;
+  text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.025em -0.05em 0 rgba(0,255,0,0.75), 0.025em 0.05em 0 rgba(0,0,255,0.75);
+  animation: glitch 500ms infinite;
+}
+.glitch-title::before, .glitch-title::after {
+  content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.8;
+}
+.glitch-title::before {
+  animation: glitch-anim-1 2s infinite linear alternate-reverse;
+  color: #0ff; z-index: -1; clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+}
+.glitch-title::after {
+  animation: glitch-anim-2 3s infinite linear alternate-reverse;
+  color: #f0f; z-index: -2; clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+}
+
+@keyframes glitch {
+  0% { text-shadow: 0.05em 0 0 rgba(255,0,0,0.75), -0.05em -0.025em 0 rgba(0,255,0,0.75), -0.025em 0.05em 0 rgba(0,0,255,0.75); }
+  50% { text-shadow: 0.025em 0.05em 0 rgba(255,0,0,0.75), 0.05em 0 0 rgba(0,255,0,0.75), 0 -0.05em 0 rgba(0,0,255,0.75); }
+}
+@keyframes glitch-anim-1 { 0% { transform: translate(2px, -2px); } 100% { transform: translate(0, 0); } }
+@keyframes glitch-anim-2 { 0% { transform: translate(-2px, 2px); } 100% { transform: translate(0, 0); } }
+
+/* Technical Precision Layout */
+.tech-card {
+  position: relative; padding: var(--s-md); border: 1px solid var(--border);
+  background: var(--bg-card); transition: all 0.3s var(--ease);
+}
+.tech-card::before, .tech-card::after {
+  content: ''; position: absolute; width: 8px; height: 8px; border-color: var(--accent); border-style: solid;
+}
+.tech-card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.tech-card::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+.tech-frame {
+  position: relative; padding: var(--s-lg); border: 1px solid rgba(88, 166, 255, 0.2);
+  background: rgba(13, 17, 23, 0.4); backdrop-filter: blur(8px);
+}
+
+/* ── SPACING & ALIGNMENT OVERHAUL ── */
+
+.sovereign-page {
+  max-width: 1300px; margin: 0 auto; padding: 0 var(--s-md);
+  background-image: radial-gradient(rgba(88, 166, 255, 0.15) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+section { 
+  position: relative; padding: var(--s-xl) 0;
+  border-top: 1px solid var(--border-mute);
+}
+
+/* Measurement tracks */
+.alignment-track {
+  position: absolute; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+  opacity: 0.1; pointer-events: none;
+}
+
+.matrix-grid, .framework-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--s-sm); margin-top: var(--s-lg);
+}
+
+/* ── TELEMETRY REFACTOR ── */
+.telemetry-sidebar {
+  position: absolute; top: var(--s-lg); right: var(--s-md);
+  width: 240px; display: flex; flex-direction: column; gap: 8px;
+}
+.telemetry-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: baseline;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-faint);
+}
+.telemetry-row::after {
+  content: '............................................';
+  overflow: hidden; opacity: 0.15; padding: 0 8px;
+}
+.telemetry-val { color: var(--accent-2); font-weight: 700; }
+
+@media (max-width: 1024px) {
+  .telemetry-sidebar { display: none; }
+  .sovereign-hero { padding: var(--s-lg) 0; }
 }
 
 * { box-sizing: border-box; }
