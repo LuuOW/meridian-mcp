@@ -1645,7 +1645,111 @@ section.how, section.pricing, section.cta-final {
   .grad, .plan-price { -webkit-text-fill-color: #000 !important; background: none !important; }
 }
 
-/* ── 300% VISUAL COMPLEXITY SUITE ─────────────────────────────────────── */
+/* ── STUNNING METRIC DISPLAYS (2026 Polish) ── */
+
+.glass-metric-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: transform 0.4s var(--ease-out), border-color 0.4s ease, box-shadow 0.4s ease;
+  overflow: hidden;
+}
+
+.glass-metric-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(88, 166, 255, 0.3);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(88, 166, 255, 0.15);
+}
+
+.glass-metric-card::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at center, rgba(88, 166, 255, 0.05), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.glass-metric-card:hover::before { opacity: 1; }
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.metric-value-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.metric-value {
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(180deg, #fff, #aab4cc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.metric-trend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.trend-up { color: #10b981; }
+.trend-stable { color: #38bdf8; }
+
+.mini-chart-placeholder {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+}
+.progress-ring-circle {
+  transition: stroke-dashoffset 2s var(--ease-out);
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+}
+.glass-metric-card:hover .progress-ring-circle {
+  stroke-dashoffset: var(--target-offset, 30);
+}
+
+@media (max-width: 760px) {
+  .metric-value { font-size: 42px; }
+}
 
 /* Anchor sections for metadata labels */
 .sovereign-hero, .problem-grid, .framework-section, .stewardship-section, .cta-final {

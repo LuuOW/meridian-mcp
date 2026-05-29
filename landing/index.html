@@ -474,22 +474,77 @@
     <div class="section-head section-head-left">
       <p class="section-kicker">Production Footprint</p>
       <h2 id="metricsTitle">Proven Metrics. Scalable Infrastructure.</h2>
+      <p class="lead">Deterministic performance across high-frequency autonomous environments.</p>
     </div>
-    <div class="stewardship-grid">
-      <div class="stewardship-card tech-card" data-id="METRIC_01">
-        <div class="status-tag" style="margin-bottom: 12px;">ACTIVE_NODES</div>
-        <span>Active</span>
-        <strong>25+ MCP Servers running concurrently in production environments.</strong>
+
+    <div class="stewardship-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+      <!-- Card 1: MCP Servers -->
+      <div class="glass-metric-card">
+        <div class="metric-header">
+          <div>
+            <p class="metric-label">Active Deployments</p>
+            <div class="metric-value-wrap">
+              <span class="metric-value" data-animate-number="25">0</span>
+              <span class="metric-value" style="font-size: 24px; margin-left: -4px;">+</span>
+            </div>
+          </div>
+          <div class="mini-chart-placeholder">
+            <svg class="progress-ring" width="48" height="48">
+              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
+              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" style="--target-offset: 15;"/>
+            </svg>
+          </div>
+        </div>
+        <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">MCP Servers running concurrently in production environments.</p>
+        <div class="metric-trend trend-up">
+          <span style="font-size: 18px;">↑</span> 100% Reliability
+        </div>
       </div>
-      <div class="stewardship-card tech-card" data-id="METRIC_02">
-        <div class="status-tag" style="margin-bottom: 12px;">HOSTED_SERVICES</div>
-        <span>Sovereign</span>
-        <strong>15+ Self-Hosted PM2 automated services managing 24/7 loops.</strong>
+
+      <!-- Card 2: PM2 Services -->
+      <div class="glass-metric-card">
+        <div class="metric-header">
+          <div>
+            <p class="metric-label">Automated Loops</p>
+            <div class="metric-value-wrap">
+              <span class="metric-value" data-animate-number="15">0</span>
+              <span class="metric-value" style="font-size: 24px; margin-left: -4px;">+</span>
+            </div>
+          </div>
+          <div class="mini-chart-placeholder">
+            <svg class="progress-ring" width="48" height="48">
+              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
+              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-2)" stroke-width="4" stroke-linecap="round" style="--target-offset: 40;"/>
+            </svg>
+          </div>
+        </div>
+        <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">Self-Hosted PM2 automated services managing 24/7 sovereign logic.</p>
+        <div class="metric-trend trend-stable">
+          <span style="font-size: 18px;">⌁</span> Stateless Persistence
+        </div>
       </div>
-      <div class="stewardship-card tech-card" data-id="METRIC_03">
-        <div class="status-tag" style="margin-bottom: 12px;">ENGINE_SKILLS</div>
-        <span>Proven</span>
-        <strong>19-Skill Stateless Engine actively executing real-world workflows.</strong>
+
+      <!-- Card 3: Engine Skills -->
+      <div class="glass-metric-card">
+        <div class="metric-header">
+          <div>
+            <p class="metric-label">Autonomous Capability</p>
+            <div class="metric-value-wrap">
+              <span class="metric-value" data-animate-number="19">0</span>
+              <span class="metric-value" style="font-size: 24px; margin-left: -4px;">-SKILL</span>
+            </div>
+          </div>
+          <div class="mini-chart-placeholder">
+            <svg class="progress-ring" width="48" height="48">
+              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
+              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-pink)" stroke-width="4" stroke-linecap="round" style="--target-offset: 25;"/>
+            </svg>
+          </div>
+        </div>
+        <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">B2B Engine actively executing real-world outbound workflows.</p>
+        <div class="metric-trend trend-up">
+          <span style="font-size: 18px;">★</span> Proven in Wild
+        </div>
       </div>
     </div>
   </section>
@@ -547,12 +602,13 @@
 
 <script type="module">
 import { initBurgerNav, loadVersionBadge } from '/nav.js'
-import { initCopySnippet, initHeroCursor, initViewTransitions } from '/landing.js'
+import { initCopySnippet, initHeroCursor, initViewTransitions, initMetricCounters } from '/landing.js'
 initBurgerNav()
 loadVersionBadge('heroVersion', 'versionBadge')
 initCopySnippet()
 initHeroCursor()
 initViewTransitions()
+initMetricCounters()
 </script>
 
 </body>

@@ -77,3 +77,52 @@ export function initViewTransitions() {
   // Same-origin clicks already pick up @view-transition rules; nothing else
   // to wire here. Function exists so callers can opt in explicitly later.
 }
+
+// ── Scroll-triggered Metric Counters ────────────────────────────────────────
+export function initMetricCounters() {
+  if (reduceMotion) {
+    // If user prefers reduced motion, skip animation and set values instantly.
+    document.querySelectorAll('[data-animate-number]').forEach(el => {
+      el.textContent = el.dataset.animateNumber
+    })
+    return
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target
+        const target = parseInt(el.dataset.animateNumber || '0', 10)
+        animateCount(el, target)
+        observer.unobserve(el)
+      }
+    })
+  }, { threshold: 0.5 })
+
+  document.querySelectorAll('[data-animate-number]').forEach(el => observer.observe(el))
+}
+
+function animateCount(el, target) {
+  let current = 0
+  const duration = 2000 // 2 seconds
+  const startTime = performance.now()
+
+  function update(now) {
+    const elapsed = now - startTime
+    const progress = Math.min(elapsed / duration, 1)
+    
+    // EaseOutQuad function for smoother deceleration
+    const ease = 1 - (1 - progress) * (1 - progress)
+    
+    current = Math.floor(ease * target)
+    el.textContent = current
+
+    if (progress < 1) {
+      requestAnimationFrame(update)
+    } else {
+      el.textContent = target
+    }
+  }
+
+  requestAnimationFrame(update)
+}
