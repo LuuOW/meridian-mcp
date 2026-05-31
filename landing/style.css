@@ -2184,3 +2184,142 @@ section::before {
 @media (max-width: 1100px) {
   .telemetry-log { display: none; }
 }
+
+/* ── TACTICAL INTAKE CONSOLE (Total Aggression) ── */
+
+.intake-terminal {
+  max-width: 720px;
+  margin: 80px auto 0;
+  position: relative;
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  border-radius: 4px; /* Industrial sharp corners */
+  padding: 1px;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+/* Active Scanning Sweep */
+.intake-terminal::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 100px;
+  background: linear-gradient(to bottom, transparent, rgba(88, 166, 255, 0.05), transparent);
+  animation: scanSweep 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+@keyframes scanSweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(500%); }
+}
+
+.terminal-inner {
+  background: #020408;
+  padding: 48px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Phosphor Glow on Terminal Text */
+.terminal-inner label, .terminal-inner span, .terminal-inner h2 {
+  text-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
+}
+
+.terminal-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Port Decorators for Inputs */
+.input-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 20px;
+  border-left: 2px solid rgba(88, 166, 255, 0.1);
+  transition: border-color 0.3s ease;
+}
+.input-frame:focus-within {
+  border-left-color: var(--accent);
+}
+
+.input-frame label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.port-led {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+.input-frame:focus-within .port-led {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.input-field {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-radius: 2px !important;
+  padding: 16px !important;
+  color: #7dd3fc !important;
+  font-family: var(--font-mono) !important;
+  font-size: 14px !important;
+  width: 100% !important;
+}
+
+/* Armored Execute Button */
+.btn-execute {
+  background: #0f172a;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 20px;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.btn-execute:hover {
+  background: var(--accent);
+  color: #020408;
+  box-shadow: 0 0 40px rgba(88, 166, 255, 0.4);
+}
+
+/* Status Bar Footer */
+.terminal-footer {
+  padding-top: 24px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.15em;
+}
+
+.signal-meter {
+  display: flex; gap: 2px; align-items: flex-end; height: 10px;
+}
+.signal-bar { width: 3px; background: var(--text-faint); }
+.signal-bar:nth-child(1) { height: 4px; }
+.signal-bar:nth-child(2) { height: 6px; }
+.signal-bar:nth-child(3) { height: 8px; }
+.signal-bar:nth-child(4) { height: 10px; background: var(--accent-2); }
