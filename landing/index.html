@@ -578,20 +578,22 @@
     <div class="intake-terminal">
       <div class="terminal-inner">
         <div class="terminal-header">
-          <div style="width: 8px; height: 8px; border-radius: 50%; background: #f87171;"></div>
-          <div style="width: 8px; height: 8px; border-radius: 50%; background: #fbbf24;"></div>
-          <div style="width: 8px; height: 8px; border-radius: 50%; background: #4ad62f;"></div>
-          <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-left: auto; letter-spacing: 0.1em;">MERIDIAN_CONSOLE_V3.2</span>
+          <div style="display: flex; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #f87171; box-shadow: 0 0 8px #f87171;"></div>
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #fbbf24;"></div>
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #4ad62f;"></div>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.2em; font-weight: 800;">MERIDIAN_CONSOLE_V3.2</span>
         </div>
 
-        <form class="intake-form" style="display: grid; gap: 24px;">
-          <div class="input-frame" data-hex="2A4">
-            <label>[01] CURRENT INFRASTRUCTURE SCALE</label>
+        <form class="intake-form">
+          <div class="input-frame">
+            <label><div class="port-led"></div> [01] CURRENT INFRASTRUCTURE SCALE</label>
             <input type="text" class="input-field" placeholder="e.g., Monthly Token Volume / Agent Count">
           </div>
 
-          <div class="input-frame" data-hex="8F1">
-            <label>[02] PRIMARY SYSTEM BOTTLENECK</label>
+          <div class="input-frame">
+            <label><div class="port-led"></div> [02] PRIMARY SYSTEM BOTTLENECK</label>
             <select class="input-field" style="appearance: none; cursor: pointer;">
               <option>Latency / Token Cost</option>
               <option>Anti-Bot / CAPTCHA</option>
@@ -599,19 +601,24 @@
             </select>
           </div>
 
-          <div class="input-frame" data-hex="C09">
-            <label>[03] PROJECT_SCOPE (STRICTLY_TECHNICAL)</label>
+          <div class="input-frame">
+            <label><div class="port-led"></div> [03] PROJECT_SCOPE (STRICTLY_TECHNICAL)</label>
             <textarea rows="4" class="input-field" placeholder="Describe your architectural constraints..."></textarea>
           </div>
 
           <button type="submit" class="btn-execute">
-            <div class="handshake-status"></div>
             EXECUTE_INTAKE_PROTOCOL
           </button>
         </form>
 
-        <div style="margin-top: 16px; font-family: var(--font-mono); font-size: 8px; color: var(--text-faint); text-align: center; letter-spacing: 0.2em; opacity: 0.5;">
-          ENCRYPTION: AES_256_GCM // HANDSHAKE_READY
+        <div class="terminal-footer">
+          <div>ENCRYPTION: AES_256_GCM // HANDSHAKE_READY</div>
+          <div class="signal-meter">
+            <div class="signal-bar"></div>
+            <div class="signal-bar"></div>
+            <div class="signal-bar"></div>
+            <div class="signal-bar"></div>
+          </div>
         </div>
       </div>
     </div>
