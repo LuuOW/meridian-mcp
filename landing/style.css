@@ -1651,140 +1651,143 @@ section::before {
 
 /* ── HYPER-INTERACTIVE METRICS (v2026) ── */
 
-/* ── SOVEREIGN INTAKE CONSOLE (Hyper-Complexity) ── */
+/* ── TACTICAL INTAKE CONSOLE (Total Aggression) ── */
 
 .intake-terminal {
-  max-width: 680px;
-  margin: 64px auto 0;
+  max-width: 720px;
+  margin: 80px auto 0;
   position: relative;
-  isolation: isolate;
-  background: rgba(13, 17, 23, 0.7);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
-  padding: 1px; /* For neon border alignment */
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  border-radius: 4px; /* Industrial sharp corners */
+  padding: 1px;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
 }
 
-/* Neon Frame Layer */
-.intake-terminal::before {
+/* Active Scanning Sweep */
+.intake-terminal::after {
   content: '';
-  position: absolute; inset: -1px;
-  border-radius: inherit;
-  background: conic-gradient(from var(--neon-angle), 
-    transparent 0%, var(--accent) 15%, transparent 30%, 
-    var(--accent-2) 50%, transparent 65%, var(--accent-pink) 85%, transparent 100%);
-  animation: neonRotate 8s linear infinite;
-  z-index: -1;
-  opacity: 0.6;
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 100px;
+  background: linear-gradient(to bottom, transparent, rgba(88, 166, 255, 0.05), transparent);
+  animation: scanSweep 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+@keyframes scanSweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(500%); }
 }
 
 .terminal-inner {
-  background: #05070a;
-  border-radius: 15px;
-  padding: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  background: #020408;
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Phosphor Glow on Terminal Text */
+.terminal-inner *, .terminal-inner input, .terminal-inner textarea {
+  text-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
 }
 
 .terminal-header {
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 24px;
+  margin-bottom: 32px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-  margin-bottom: 8px;
+  justify-content: space-between;
 }
 
-/* Technical Input Field Wrapper */
+/* Port Decorators for Inputs */
 .input-frame {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 32px;
+  padding-left: 20px;
+  border-left: 2px solid rgba(88, 166, 255, 0.1);
+  transition: border-color 0.3s ease;
+}
+.input-frame:focus-within {
+  border-left-color: var(--accent);
 }
 
 .input-frame label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
   color: var(--accent);
-  font-weight: 700;
+  letter-spacing: 0.2em;
+  margin-bottom: 12px;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
-.input-frame label::after {
-  content: '0x' attr(data-hex);
-  opacity: 0.3;
-  font-weight: 400;
+.port-led {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+.input-frame:focus-within .port-led {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
 }
 
 .input-field {
-  width: 100%;
-  background: rgba(148, 163, 184, 0.04);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 6px;
-  padding: 14px 16px;
-  color: #fff;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  transition: all 0.3s var(--ease);
-  outline: none;
-}
-
-.input-field:focus {
-  background: rgba(88, 166, 255, 0.06);
-  border-color: var(--accent);
-  box-shadow: 0 0 20px rgba(88, 166, 255, 0.15);
-}
-
-/* Tactical Brackets for Inputs */
-.input-frame::before {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0;
-  width: 10px; height: 10px;
-  border-left: 2px solid var(--accent);
-  border-bottom: 2px solid var(--accent);
-  opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  transform: translate(-4px, 4px);
-  pointer-events: none;
-}
-.input-frame:focus-within::before {
-  opacity: 1; transform: translate(-2px, 2px);
-}
-
-/* Execute Button — High Status */
-.btn-execute {
-  background: var(--accent);
-  color: #05070a;
-  border: none;
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 2px;
   padding: 16px;
+  color: #7dd3fc;
   font-family: var(--font-mono);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+  font-size: 14px;
+  width: 100%;
+}
+
+/* Armored Execute Button */
+.btn-execute {
+  background: #0f172a;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 20px;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
   transition: all 0.3s var(--ease);
-  margin-top: 12px;
 }
 .btn-execute:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 30px rgba(88, 166, 255, 0.4);
-  transform: translateY(-2px);
+  background: var(--accent);
+  color: #020408;
+  box-shadow: 0 0 40px rgba(88, 166, 255, 0.4);
 }
-.handshake-status {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 10px #fff;
-  animation: neonPulse 1.5s infinite;
+
+/* Status Bar Footer */
+.terminal-footer {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.15em;
 }
+
+.signal-meter {
+  display: flex; gap: 2px; align-items: flex-end; height: 10px;
+}
+.signal-bar { width: 3px; background: var(--text-faint); }
+.signal-bar:nth-child(1) { height: 4px; }
+.signal-bar:nth-child(2) { height: 6px; }
+.signal-bar:nth-child(3) { height: 8px; }
+.signal-bar:nth-child(4) { height: 10px; background: var(--accent-2); }
 
 /* ── HYPER-INTERACTIVE METRICS (v2026 REFACTORED) ── */
 
