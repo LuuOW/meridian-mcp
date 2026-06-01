@@ -1,225 +1,62 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Lens — Meridian</title>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#0a0d14" />
-    <meta
-      name="description"
-      content="Vision Lab in VR — point, snap, and let an in-headset VLM answer."
-    />
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Quantum optics of chiral and antichiral waveguide arrays — Meridian Blog</title>
+<meta name="description" content="A briefing on Wang, Hiltunen, and Schotland's arXiv:2605.29536 paper: single-photon scattering in chiral and antichiral arrays of one-way waveguides.">
+<meta property="og:title" content="Quantum optics of chiral and antichiral waveguide arrays">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/chiral-antichiral-waveguide-arrays-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260530-terminal-v3">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
 
-    <!--
-      No bundler. The VM that hosts this site is a 1 GB notepad — bundling
-      Three.js with webpack here would (and did) thrash swap. Quest's browser
-      and any modern desktop browser speak ES modules natively, so we just
-      ship import maps and let the browser fetch from esm.sh on demand.
-    -->
-    <!--
-      Why two CDNs:
-       * esm.sh — wraps non-trivially-CommonJS packages (iwer, gsap,
-         transformers) into clean ESM. But it inlines `import 'three'`
-         inside any sub-module by default, which would give us TWO copies
-         of three (one for our scripts, one re-bundled into each addon)
-         and break instanceof checks.
-       * jsdelivr — serves the raw npm files. three's examples/jsm/*.js
-         do a bare `import * as THREE from 'three';` which the browser
-         then resolves through THIS import map, deduping cleanly to the
-         esm.sh-served three above.
-       * external=… — tells esm.sh "don't bundle this dep, let the import
-         map handle it" so troika and devui share our three / iwer.
-    -->
-    <script type="importmap">
-      {
-        "imports": {
-          "three":                          "https://esm.sh/three@0.165.0",
-          "three/addons/":                  "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/",
-          "troika-three-text":              "https://esm.sh/troika-three-text@0.49.1?external=three",
-          "gsap":                           "https://esm.sh/gsap@3.12.5",
-          "gamepad-wrapper":                "https://esm.sh/gamepad-wrapper@1.3.4",
-          "iwer":                           "https://esm.sh/iwer@1.0.4",
-          "react":                          "https://esm.sh/react@18.3.1",
-          "react/jsx-runtime":              "https://esm.sh/react@18.3.1/jsx-runtime",
-          "react-dom":                      "https://esm.sh/react-dom@18.3.1?external=react",
-          "react-dom/client":               "https://esm.sh/react-dom@18.3.1/client?external=react",
-          "@iwer/devui":                    "https://esm.sh/@iwer/devui@0.1.1?external=iwer,react,react-dom",
-          "@huggingface/transformers":      "https://esm.sh/@huggingface/transformers@3.7.5"
-        }
-      }
-    </script>
+  .key-figure { font-size: 56px; line-height: 1; font-weight: 700; color: var(--accent, #a78bfa); font-family: var(--font-mono); margin: 8px 0; }
+  .key-label  { font-size: 12px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin: 24px 0; }
+  .stat-card  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 
-    <style>
-      :root {
-        --bg: #0a0d14;
-        --panel: #12182a;
-        --panel-2: #1f2740;
-        --text: #e9eef7;
-        --muted: #9bb6ea;
-        --dim: #6e87b8;
-        --accent: #a78bfa;      /* Meridian violet — was #ffa276 */
-        --good: #69e2c4;
-        --bad: #f57b8a;
-
-        /* ── DESIGN SYSTEM tokens — see /design-system ───────────── */
-        --bg-deep: #06080f;
-        --bg-card: rgba(18, 23, 36, 0.7);
-        --bg-code: #0f1220;
-        --border: rgba(148, 163, 184, 0.14);
-        --border-2: rgba(148, 163, 184, 0.22);
-        --border-violet: rgba(167, 139, 250, 0.35);
-        --text-muted: #8a94a6;
-        --text-faint: #5d6778;
-        --accent-violet: #a78bfa;
-        --accent-d: #8b5cf6;
-        --accent-2: #10b981;
-        --astro: #38bdf8;
-        --pink: #f472b6;
-        --neon-violet: #a78bfa;
-        --neon-cyan: #38bdf8;
-        --neon-mint: #10b981;
-        --neon-pink: #f472b6;
-        --glow-violet: rgba(167, 139, 250, 0.55);
-        --glow-cyan: rgba(56, 189, 248, 0.45);
-        --class-planet: #7dd3fc; --class-moon: #cbd5e1; --class-trojan: #c4b5fd;
-        --class-asteroid: #fcd34d; --class-comet: #f9a8d4; --class-irregular: #d8b4fe;
-        --system-forge: #f97316; --system-signal: #38bdf8; --system-mind: #a78bfa;
-        --grad-hero: linear-gradient(90deg, #a78bfa, #38bdf8 60%, #10b981);
-        --grad-btn: linear-gradient(180deg, #a78bfa, #8b5cf6);
-        --shadow-card: 0 0 18px rgba(167, 139, 250, 0.06);
-        --shadow-card-hover: 0 0 0 1px rgba(167, 139, 250, 0.35), 0 0 28px rgba(167, 139, 250, 0.20);
-        --shadow-btn: 0 0 0 1px rgba(167, 139, 250, 0.45), 0 0 14px 2px rgba(167, 139, 250, 0.35), 0 0 28px 6px rgba(167, 139, 250, 0.18);
-        --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px;
-        --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px; --s-10: 128px;
-        --r-1: 6px; --r-2: 10px; --r-3: 14px; --r-pill: 999px;
-        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-        --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-        --dur-fast: 0.15s; --dur-base: 0.25s; --dur-slow: 0.5s;
-        --font-body: 'Inter', -apple-system, system-ui, sans-serif;
-        --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-        --fs-display: clamp(36px, 6vw, 60px);
-        --fs-h1: clamp(28px, 5vw, 40px);
-        --fs-h2: clamp(22px, 3.5vw, 32px);
-        --fs-h3: 17px; --fs-body: 15px; --fs-small: 13.5px;
-        --fs-eyebrow: 11.5px; --fs-code: 13.5px;
-        --lh-tight: 1.05; --lh-snug: 1.15; --lh-base: 1.65; --lh-mono: 1.7;
-        --tracking-tight: -0.025em; --tracking-tight-2: -0.02em;
-        --tracking-eyebrow: 0.18em;
-      }
-      @property --neon-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
-      @keyframes neonRotate { to { --neon-angle: 360deg; } }
-      @keyframes liveDotPing {
-        0%   { box-shadow: 0 0 0 0  rgba(16,185,129,0.65); transform: scale(0.92); }
-        60%  { box-shadow: 0 0 0 10px rgba(16,185,129,0); transform: scale(1.05); }
-        100% { box-shadow: 0 0 0 0  rgba(16,185,129,0); transform: scale(0.92); }
-      }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-        -webkit-font-smoothing: antialiased; }
-      a { color: var(--muted); text-decoration: none; }
-      a:hover { color: #ffffff; }
-
-      .topbar {
-        position: fixed; inset: 0 0 auto 0;
-        padding: 14px 20px;
-        display: flex; gap: 18px; align-items: center; justify-content: space-between;
-        z-index: 10;
-      }
-      .brand { font-weight: 600; letter-spacing: 0.04em; }
-      .brand-glyph { color: var(--accent); margin-right: 6px; }
-
-      #gate {
-        max-width: 540px; margin: 80px auto 40px; padding: 28px 26px 32px;
-        background: var(--panel);
-        border: 1px solid rgba(155, 182, 234, 0.18);
-        border-radius: 18px;
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-      }
-      #gate h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: 0.01em; }
-      #gate .lead { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.55; }
-      #gate .lead strong { color: var(--text); }
-
-      .cap-list { list-style: none; padding: 0; margin: 0 0 16px; }
-      .cap-list li {
-        padding: 8px 12px; margin: 6px 0;
-        background: rgba(155, 182, 234, 0.06);
-        border-left: 3px solid var(--dim);
-        border-radius: 6px;
-        font-size: 13px;
-        display: flex; align-items: center; gap: 10px;
-      }
-      .cap-list li.ok  { border-left-color: var(--good); color: var(--text); }
-      .cap-list li.bad { border-left-color: var(--bad);  color: var(--bad); }
-      .cap-list li .icon { width: 16px; text-align: center; }
-
-      .model-line {
-        display: flex; align-items: center; gap: 10px;
-        font-size: 13px; color: var(--muted); margin-top: 14px;
-      }
-      .model-line .badge {
-        padding: 2px 8px; border-radius: 999px;
-        background: rgba(255, 162, 118, 0.14); color: var(--accent);
-        font-weight: 600; font-size: 11px;
-      }
-
-      progress {
-        width: 100%; height: 8px; appearance: none;
-        margin: 10px 0 4px;
-      }
-      progress::-webkit-progress-bar    { background: rgba(155, 182, 234, 0.10); border-radius: 4px; }
-      progress::-webkit-progress-value  { background: var(--accent); border-radius: 4px; }
-      progress::-moz-progress-bar       { background: var(--accent); border-radius: 4px; }
-      #dl-status { color: var(--dim); font-size: 12px; min-height: 18px; }
-
-      .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px; }
-
-      button {
-        appearance: none; border: 0; cursor: pointer;
-        font-family: inherit; font-size: 14px; font-weight: 600;
-        padding: 11px 18px; border-radius: 999px;
-        background: var(--accent); color: #1a0e07;
-        transition: filter 0.15s ease, opacity 0.15s ease;
-      }
-      button:hover:not([disabled])  { filter: brightness(1.1); }
-      button[disabled] { opacity: 0.45; cursor: not-allowed; }
-      .ghost {
-        background: transparent; color: var(--muted);
-        border: 1px solid rgba(155, 182, 234, 0.30);
-      }
-
-      #vrButtonHost { margin-top: 8px; min-height: 1px; }
-      #vrButtonHost > button {
-        position: static !important;
-        bottom: auto !important; left: auto !important; right: auto !important;
-        margin: 0 !important;
-        background: var(--accent) !important; color: #1a0e07 !important;
-        border: 0 !important;
-      }
-
-      .footnote {
-        margin-top: 20px; padding-top: 14px;
-        border-top: 1px solid rgba(155, 182, 234, 0.12);
-        color: var(--dim); font-size: 12px; line-height: 1.5;
-      }
-      .footnote code { background: rgba(155, 182, 234, 0.08); padding: 1px 6px; border-radius: 4px; color: var(--muted); }
-
-      body.in-xr #gate, body.in-xr .topbar, body.in-xr .nav, body.in-xr .nav-menu { display: none; }
-    </style>
-  <link rel="stylesheet" href="https://ask-meridian.uk/nav.css?v=2026-05-14" data-nav-css>
+  .math-block {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.07));
+    border: 1px solid rgba(56,189,248,0.32);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    opacity: 0.85;
+  }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
-  <body>
-    <!-- ============================================================
-         Shared meridian nav · self-contained (CSS + HTML + JS)
-         Drop into any page; set data-active on .nav to highlight.
-         Values: home | miniapp | vlab | photon | lens | docs | blog
-    ============================================================ -->
-    
+<body>
 
-    <nav class="nav" aria-label="Primary">
+<nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
 
   <ul class="nav-inline" role="menubar">
@@ -494,75 +331,132 @@
   </script>
 </nav>
 
-    <main id="gate">
-      <h1>Vision Lab — VR</h1>
-      <p class="lead">
-        Point at a glyph in your headset, pull the trigger, and a
-        <strong>vision-language model</strong> describes what's in front of
-        you. Compatible candidates orbit an anchored star in your view,
-        sized and tilted by their real classifier-supplied orbital
-        parameters. Inference runs on the Meridian MCP — captured frames
-        are POSTed to <code>mcp.ask-meridian.uk/v1/vision</code> and the
-        operator pays for the GitHub Models call.
-      </p>
+<article class="article-body">
+  <img src="/img/blog/chiral-antichiral-waveguide-arrays-banner.svg" alt="Technical schematic of chiral and antichiral one-way waveguide arrays with light-cone and interference scattering patterns" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
-      <ul id="capList" class="cap-list">
-        <li id="cap-webxr"  class="pending"><span class="icon">…</span><span>WebXR (immersive-vr)</span></li>
-      </ul>
+  <header style="margin-top: 64px;">
+    <p class="article-meta">2026-06-01 · 8 min read · briefing</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">Quantum optics of chiral and antichiral waveguide arrays</h1>
+    <p class="lead">
+      A briefing on <strong>Peng Wang</strong>, <strong>Erik Orvehed Hiltunen</strong>, and
+      <strong>John C. Schotland</strong>'s arXiv:2605.29536 paper. The work studies single-photon
+      scattering by atoms embedded in arrays of one-way waveguides, and shows why simply changing
+      the alignment of those waveguides changes the mathematics of transport.
+    </p>
+  </header>
 
-      <div class="model-line">
-        <span class="badge">GPT-4o-mini</span>
-        <span>Server-side · operator-paid · no client-side model download</span>
+  <section>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="key-label">chiral array</div>
+        <div class="key-figure" style="font-size: 32px;">1+1</div>
+        <div style="font-size: 12px; color: var(--text-muted);">hyperbolic Dirac dynamics</div>
       </div>
-      <p id="dl-status">Press <strong>Begin</strong> to verify XR support and enter the gate.</p>
-
-      <div class="row">
-        <button id="beginBtn" disabled>Begin →</button>
-        <div id="vrButtonHost"></div>
-        <button id="skipBtn" class="ghost" hidden>Skip model · enter VR with mock answers</button>
+      <div class="stat-card">
+        <div class="key-label">antichiral array</div>
+        <div class="key-figure" style="font-size: 32px;">2+0</div>
+        <div style="font-size: 12px; color: var(--text-muted);">elliptic spatial scattering</div>
       </div>
+      <div class="stat-card">
+        <div class="key-label">regimes</div>
+        <div class="key-figure" style="font-size: 32px;">3</div>
+        <div style="font-size: 12px; color: var(--text-muted);">rays, diffraction, scattering</div>
+      </div>
+    </div>
+  </section>
 
-      <p class="footnote" style="margin-top: 18px;">
-        <strong>Find candidates</strong> routes via the
-        <a href="https://mcp.ask-meridian.uk" target="_blank" rel="noopener">Meridian MCP</a>
-        — no PAT, no setup. Llama-3.3-70B authors candidates and the
-        orbital classifier ranks them server-side.
-      </p>
+  <h2>The Core Problem: Directionality Changes the Physics</h2>
+  <p>
+    The paper starts from a deceptively small architectural choice. Build an array of one-way
+    waveguides and load the guides with two-level atoms. If every guide points the same way, the
+    authors call the geometry <strong>chiral</strong>. If neighboring guides point in opposite directions,
+    the geometry is <strong>antichiral</strong>. The atoms are not decoration; their density becomes an
+    effective potential for the single-photon amplitude.
+  </p>
+  <p>
+    That alignment choice decides whether the continuum model behaves like a space-time propagation
+    problem or an ordinary spatial scattering problem. In other words, the same physical ingredients
+    produce two different optical calculi.
+  </p>
 
-      <p class="footnote">
-        No bundler — modules load from <code>esm.sh</code> on first hit and
-        are then cached by the browser. Open in the Quest browser and press
-        the VR button to enter the scene.
-      </p>
-    </main>
+  <h2>Chiral Arrays: A Time-Like Coordinate</h2>
+  <p>
+    In the chiral array, the coordinate along the waveguide becomes time-like in the effective
+    Dirac equation. The transverse coordinate remains space-like, and the frequency offset between
+    alternating subarrays behaves like a mass term. The result is a hyperbolic transport problem:
+    signals have domains of influence, singularities propagate, and scattering creates light-cone
+    structures rather than smooth all-direction interference.
+  </p>
 
-    <!--
-      Surface module-load + runtime errors directly into the gate. Before
-      this, a failure deep in the import graph (esm.sh 4xx, peer-dep clash,
-      ReferenceError in iwer) just left the Begin button disabled with no
-      indication why. Now the user sees the actual error string.
-    -->
-    <script>
-      (function () {
-        const out = function (msg) {
-          var el = document.getElementById('dl-status');
-          if (el) { el.textContent = msg; el.style.color = '#f57b8a'; }
-          var btn = document.getElementById('beginBtn');
-          if (btn) btn.disabled = true;
-          console.error('[lens]', msg);
-        };
-        window.addEventListener('error', function (e) {
-          out('Module error: ' + (e.error?.message || e.message || 'unknown') +
-              (e.filename ? ' @ ' + e.filename.split('/').pop() : ''));
-        });
-        window.addEventListener('unhandledrejection', function (e) {
-          out('Unhandled rejection: ' + (e.reason?.message || e.reason || 'unknown'));
-        });
-      })();
-    </script>
-    <!-- Cache-bust query is rewritten to the short commit SHA at deploy
-         time by .github/workflows/pages.yml (sed). Local dev keeps
-         "dev" so unbumped reloads hit the same URL. -->
-    <script type="module" src="./index.js?v=__BUILD_SHA__"></script>
-  </body>
+  <div class="math-block" data-label="Chiral continuum form">
+    $$-\mathrm{i}\partial_x\psi+\mathrm{i}\alpha\partial_y\psi+k_c(\beta+V_c(x,y))\psi=0$$
+  </div>
+
+  <p>
+    This is the part that makes the paper operationally interesting. A scatterer in the chiral
+    array does not behave like a tiny lens in a passive plane. It behaves more like a localized
+    event inside a propagation geometry: the downstream field sees a cone of influence and the
+    absence of ordinary backscattering along the time-like direction.
+  </p>
+
+  <h2>Antichiral Arrays: Classical Optics Reappears</h2>
+  <p>
+    In the antichiral array, neighboring guides have opposite group velocities. The effective
+    equation becomes a two-dimensional spatial Dirac problem: both coordinates are space-like, and
+    the PDE is elliptic. That shift restores a scattering theory that looks much closer to
+    classical physical optics. Fields smooth out, interference is global, and rotational symmetry
+    allows the authors to compute circular-scatterer analogs of two-dimensional Mie scattering.
+  </p>
+
+  <div class="math-block" data-label="Antichiral continuum form">
+    $$-\mathrm{i}\alpha\partial_x\psi-\mathrm{i}\beta\partial_y\psi+k_a V_a(x,y)\psi=0$$
+  </div>
+
+  <h2>Three Regimes, One Comparison</h2>
+  <p>
+    The authors do not stop at the continuum equation. They work through three regimes that make
+    the chiral/antichiral split concrete:
+  </p>
+  <ul>
+    <li><strong>Geometrical optics:</strong> slowly varying atomic density leads to eikonal and transport equations. Rays in the chiral array reflect the time-like direction; rays in the antichiral array bend like classical optical rays.</li>
+    <li><strong>Diffraction:</strong> single-slit propagation produces different kernels. The chiral case carries light-cone behavior, while the antichiral case looks like ordinary wave diffraction.</li>
+    <li><strong>Scattering:</strong> point scatterers, multiple scatterers, circular obstacles, and slabs expose the same contrast. Chiral scattering remains causally constrained; antichiral scattering supports reflection, transmission, and smooth interference.</li>
+  </ul>
+
+  <h2>Why It Matters for Photonic Routing</h2>
+  <p>
+    For Meridian, the relevant lesson is not a product claim; it is an architectural one. Routing
+    is not only about selecting a path through a graph. In physical photonic systems, the direction
+    and symmetry of the substrate determine what kinds of scattering, latency, and feedback are even
+    possible. The chiral array behaves like a transport surface with a built-in arrow of propagation.
+    The antichiral array behaves more like a spatial medium where conventional interference and
+    boundary-value thinking apply.
+  </p>
+  <p>
+    That distinction is useful when thinking about agent infrastructure by analogy: some systems
+    should be modeled as downstream execution pipelines with limited upstream influence, while others
+    should be modeled as spatial coordination fields where every obstacle can reshape the global
+    solution.
+  </p>
+
+  <h2>What the Paper Does Not Claim</h2>
+  <p>
+    This is a theoretical and numerical study of single-photon scattering in one-way waveguide arrays.
+    It is not an experimental demonstration, not an altermagnetic photonic crystal paper, and not a
+    claim about pseudospin filtering. Its value is the clean mathematical separation between two
+    waveguide-array geometries and the optical regimes each geometry supports.
+  </p>
+
+  <p style="margin-top: 48px;">
+    <strong>Full paper:</strong> <a href="https://arxiv.org/abs/2605.29536" target="_blank" rel="noopener">Wang, Hiltunen, and Schotland, "Quantum optics of chiral and antichiral waveguide arrays," arXiv:2605.29536 (2026).</a>
+  </p>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — Notes on quantum optics and agent infrastructure. <a href="/blog/">More posts</a></p>
+</footer>
+
+<script type="module" src="/blog/listen.js"></script>
+</body>
 </html>
