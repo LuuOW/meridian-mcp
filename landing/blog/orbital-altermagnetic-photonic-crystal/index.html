@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting — Meridian Blog</title>
-<meta name="description" content="A briefing on the experimental realization of an orbital altermagnetic photonic crystal (arXiv:2605.28656) by enforcing antiunitary C4zT symmetry on a local p-orbital sigma/pi doublet, and what it teaches us about routing.">
+<meta name="description" content="A briefing on Kim et al.'s (arXiv:2605.29536) experimental realization of an orbital altermagnetic photonic crystal. Using antiunitary symmetry to achieve d-wave pseudospin splitting in a bosonic system.">
 <meta property="og:title" content="Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/">
 <link rel="canonical" href="https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="/style.css?v=20260530-terminal-v3">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
@@ -20,8 +20,6 @@
   .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
   .article-body p { margin: 14px 0; color: var(--text); }
   .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
-  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
-  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
   .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
   .article-body li { margin: 6px 0; }
   .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
@@ -333,98 +331,95 @@
 </nav>
 
 <article class="article-body">
-  <img src="/img/blog/orbital-altermagnetic-photonic-crystal-banner.svg" alt="Orbital Altermagnetic Photonic Crystal · banner illustrating antiunitary C4zT symmetry and d_xy-wave pseudospin splitting" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+  <img src="/img/blog/orbital-altermagnet-banner.svg" alt="Orbital Altermagnetic Photonic Crystal · banner showing d-wave pseudospin splitting in a technical crystal lattice" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+
   <header style="margin-top: 64px;">
-    <p class="article-meta">2026-05-28 · 7 min read · briefing</p>
+    <p class="article-meta">2026-06-02 · 7 min read · briefing</p>
     <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting</h1>
     <p class="lead">
-      A briefing on a landmark experimental realization, 
-      <em>"Orbital Altermagnetic Photonic Crystal"</em> (arXiv:2605.28656), published recently. 
-      We explore how antiunitary $C_{4z}\mathcal{T}$ symmetry is leveraged to map fermionic altermagnetism onto bosonic photonic crystals—unlocking momentum-dependent pseudospin splitting and a $d_{xy}$-wave form factor for future spinphotonic routing substrates.
+      A briefing on the first experimental realization of an <strong>orbital altermagnetic photonic crystal</strong> by 
+      <strong>Andrew S. Kim</strong> and colleagues (arXiv:2605.29536). They demonstrate how antiunitary 
+      symmetry can enforce momentum-dependent splitting in bosonic systems, opening new frontiers for 
+      spinphotonic routing.
     </p>
   </header>
 
   <section>
     <div class="stat-grid">
       <div class="stat-card">
-        <div class="key-label">Symmetry Gate</div>
-        <div class="key-figure" style="font-size: 32px;">\(C_{4z}\mathcal{T}\)</div>
-        <div style="font-size: 12px; color: var(--text-muted);">antiunitary mapping</div>
+        <div class="key-label">symmetry</div>
+        <div class="key-figure" style="font-size: 32px;">C4zT</div>
+        <div style="font-size: 12px; color: var(--text-muted);">antiunitary</div>
       </div>
       <div class="stat-card">
-        <div class="key-label">Form Factor</div>
-        <div class="key-figure" style="font-size: 32px;">\(d_{xy}\)-wave</div>
+        <div class="key-label">form factor</div>
+        <div class="key-figure" style="font-size: 32px;">dxy-wave</div>
         <div style="font-size: 12px; color: var(--text-muted);">alternating pseudospin</div>
       </div>
       <div class="stat-card">
-        <div class="key-label">Routing Class</div>
-        <div class="key-figure" style="font-size: 32px;">Passive</div>
-        <div style="font-size: 12px; color: var(--text-muted);">pseudospin filtering</div>
+        <div class="key-label">application</div>
+        <div class="key-figure" style="font-size: 32px;">Filtering</div>
+        <div style="font-size: 12px; color: var(--text-muted);">chiral-selective</div>
       </div>
     </div>
   </section>
 
-  <h2>Altermagnetism: The Third Magnetic Paradigm</h2>
+  <h2>The Core Problem: Bosonic Altermagnetism</h2>
   <p>
-    Modern spintronics has historically operated within a binary classification: ferromagnetism, which exhibits macroscopic magnetization and spin-degenerate bands, and antiferromagnetism, which has zero net magnetization but lacks momentum-dependent spin splitting. The discovery of <strong>altermagnetism</strong> has shattered this dichotomy. It represents a third magnetic state combining the advantages of both: momentum-dependent spin splitting with alternating spin polarization in the Brillouin zone, yet maintaining a net-zero magnetization.
-  </p>
-  <p>
-    While altermagnetism has rapidly advanced in fermionic systems (electronic crystals), translating it to bosonic photons has remained a formidable challenge. Photons are bosons; they do not natively possess the spin-1/2 characteristics of electrons, nor do they interact through standard electronic exchange coupling.
-  </p>
-
-  <h2>The Breakthrough: Antiunitary \(C_{4z}\mathcal{T}\) Symmetry</h2>
-  <p>
-    The authors of arXiv:2605.28656 circumvent this fundamental limitation by utilizing an orbital mapping. They construct a 2D photonic crystal and enforce an antiunitary $C_{4z}\mathcal{T}$ symmetry (combining a four-fold spatial rotation $C_{4z}$ with time-reversal symmetry $\mathcal{T}$). 
-  </p>
-  <p>
-    By doing so, they build a strict correspondence between a local $p$-orbital $\sigma/\pi$ doublet (acting as a pseudospin degree of freedom) and crystal momentum. Under this symmetry, the Hamiltonian of the photonic crystal naturally generates momentum-dependent splitting:
+    Altermagnetism is a novel magnetic phase featuring momentum-dependent spin splitting without net 
+    magnetization. While this has been observed in electronic (fermionic) systems, realizing it in 
+    photonic (bosonic) crystals is difficult because photons lack intrinsic spin-half properties. 
+    The authors solve this by using an <strong>orbital doublet</strong> as a "pseudospin."
   </p>
 
-  <div class="math-block" data-label="Altermagnetic Photonic Hamiltonian">
-    $$H(\mathbf{k}) = \begin{pmatrix} E_0 + \Delta(\mathbf{k}) & i\gamma(\mathbf{k}) \\ -i\gamma(\mathbf{k}) & E_0 - \Delta(\mathbf{k}) \end{pmatrix}$$
+  <h2>The Discovery: Antiunitary $C_{4z}\mathcal{T}$ Symmetry</h2>
+  <p>
+    The key technical contribution is the use of the <strong>antiunitary $C_{4z}\mathcal{T}$ symmetry</strong>. 
+    This symmetry enforces a direct correspondence between local $p$-orbital $\sigma/\pi$ states and 
+    crystal momentum. The resulting band structure exhibits splitting that alternates in sign across 
+    the Brillouin zone.
+  </p>
+
+  <div class="math-block" data-label="The Effective Hamiltonian">
+    $$H(\mathbf{k}) = \epsilon_0(\mathbf{k})I + \Delta(\mathbf{k})\sigma_z + g(\mathbf{k})\sigma_x$$
   </div>
 
   <p>
-    Where the splitting parameter $\Delta(\mathbf{k})$ exhibits a characteristic $d_{xy}$-wave form factor across the Brillouin zone, alternating sign in adjacent quadrants:
+    Where the $d_{xy}$-wave form factor emerges in the splitting term:
   </p>
 
-  <div class="math-block" data-label="d_{xy}-wave Form Factor">
-    $$\Delta(\mathbf{k}) \propto k_x k_y$$
+  <div class="math-block" data-label="Splitting Form Factor">
+    $$\Delta(\mathbf{k}) \propto k_x k_y (k_x^2 - k_y^2)$$
   </div>
 
-  <h2>Experimental Demonstration and Photonic Routing</h2>
+  <h2>Experimental Validation</h2>
   <p>
-    The researchers fabricated this orbital altermagnetic photonic crystal in the microwave regime, measuring the band structure and iso-frequency contours to verify the splitting directly.
+    The team fabricated a photonic crystal and measured the band structures using angle-resolved 
+    spectroscopy. They confirmed that the pseudospin splitting follows the predicted $d$-wave 
+    symmetry, with zero net "magnetization" (no global splitting) but significant local 
+    splitting at specific momenta.
   </p>
+
+  <h2>Significance for Orbital Routing</h2>
   <p>
-    Most excitingly for routing architectures, they demonstrated **pseudospin-selective transport**. When an electromagnetic wave is launched into the photonic crystal:
+    At <strong>Meridian</strong>, we use the "Orbital" metaphor for task routing. This research provides 
+    a rigorous physical analog: a system that routes information (photons) based on their 
+    "orbital state" and momentum. 
   </p>
   <ul>
-    <li><strong>Photonic Pseudospin Splitting:</strong> The crystal divides incoming waves along momentum-dependent directions based strictly on their orbital pseudospin.</li>
-    <li><strong>Pseudospin Filtering:</strong> Specific quadrants of the Brillouin zone act as perfect filters, allowing only one circular polarization or orbital doublet component to propagate while reflecting the other.</li>
+    <li><strong>Pseudospin Filtering:</strong> Chiral excitation allows for the creation of selective "valves" for information flow.</li>
+    <li><strong>Topological Stability:</strong> The use of antiunitary symmetries ensures that the splitting is robust against certain classes of disorder.</li>
   </ul>
 
-  <h2>Lessons for Sovereign Task Routing</h2>
-  <p>
-    For projects like <strong>Meridian</strong>, this altermagnetic breakthrough serves as a first-principles proof of concept for **passive, zero-cost, structural routing**.
-  </p>
-  <p>
-    Most modern AI orchestration layers route tasks using high-latency, centralized LLM routers—which require massive computational energy and represent significant runtime costs. Meridian’s orbital classifier, by contrast, maps domain-agnostic task characteristics (entropy, length, fragmentation) onto deterministic orbital classes (planets, moons, trojans) in-memory.
-  </p>
-  <p>
-    The orbital altermagnetic photonic crystal shows us the physical limit of this design: a routing substrate where the "intent signal" is directed along specific execution paths *purely* by its intrinsic orbital momentum, traveling along a $d_{xy}$-wave valley of the lattice with zero active power. By embedding task semantics into structured vector spaces and routing them through deterministic physics frameworks, we can achieve massive routing abundance without sacrificing local execution sovereignty.
-  </p>
-
   <p style="margin-top: 48px;">
-    <strong>Full Paper:</strong> <a href="https://arxiv.org/abs/2605.28656" target="_blank">"Orbital Altermagnetic Photonic Crystal," arXiv:2605.28656 (2026).</a>
+    <strong>Full Paper:</strong> <a href="https://arxiv.org/abs/2605.29536" target="_blank">Kim et al., "Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting," arXiv:2605.29536 (2026).</a>
   </p>
 
 </article>
 
 <footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
-  <p>Meridian — Notes on quantum-inspired retrieval and agent infra. <a href="/blog/">More posts</a></p>
+  <p>Meridian — Notes on topological photonics and agent infra. <a href="/blog/">More posts</a></p>
 </footer>
 
-<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
