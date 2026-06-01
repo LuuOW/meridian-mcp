@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Chiral and antichiral waveguide arrays</title>
+  <desc id="desc">A technical schematic comparing light-cone scattering in a chiral one-way waveguide array with smooth interference in an antichiral array.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#05070c"/>
+      <stop offset="0.48" stop-color="#0b1018"/>
+      <stop offset="1" stop-color="#070b12"/>
+    </linearGradient>
+    <linearGradient id="split" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#7dd3fc" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#7dd3fc" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="#67e8f9"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="#fbbf24"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <path d="M800 94v712" stroke="url(#split)" stroke-width="2"/>
+
+  <g opacity="0.8">
+    <circle cx="328" cy="232" r="3" fill="#94a3b8"/>
+    <circle cx="455" cy="360" r="3" fill="#94a3b8"/>
+    <circle cx="268" cy="548" r="3" fill="#94a3b8"/>
+    <circle cx="575" cy="648" r="3" fill="#94a3b8"/>
+    <circle cx="1025" cy="256" r="3" fill="#94a3b8"/>
+    <circle cx="1268" cy="354" r="3" fill="#94a3b8"/>
+    <circle cx="1122" cy="557" r="3" fill="#94a3b8"/>
+    <circle cx="1360" cy="632" r="3" fill="#94a3b8"/>
+  </g>
+
+  <g fill="none" stroke-linecap="round" stroke-width="6" filter="url(#glow)">
+    <path d="M150 185H690" stroke="#67e8f9" marker-end="url(#arrowCyan)"/>
+    <path d="M150 285H690" stroke="#67e8f9" marker-end="url(#arrowCyan)"/>
+    <path d="M150 385H690" stroke="#67e8f9" marker-end="url(#arrowCyan)"/>
+    <path d="M150 485H690" stroke="#67e8f9" marker-end="url(#arrowCyan)"/>
+    <path d="M150 585H690" stroke="#67e8f9" marker-end="url(#arrowCyan)"/>
+    <path d="M150 685H690" stroke="#67e8f9" marker-end="url(#arrowCyan)"/>
+  </g>
+
+  <g fill="none" stroke-linecap="round" stroke-width="6" filter="url(#glow)">
+    <path d="M915 185h540" stroke="#fbbf24" marker-end="url(#arrowAmber)"/>
+    <path d="M1455 285H915" stroke="#fbbf24" marker-end="url(#arrowAmber)"/>
+    <path d="M915 385h540" stroke="#fbbf24" marker-end="url(#arrowAmber)"/>
+    <path d="M1455 485H915" stroke="#fbbf24" marker-end="url(#arrowAmber)"/>
+    <path d="M915 585h540" stroke="#fbbf24" marker-end="url(#arrowAmber)"/>
+    <path d="M1455 685H915" stroke="#fbbf24" marker-end="url(#arrowAmber)"/>
+  </g>
+
+  <g fill="none" stroke="#67e8f9" stroke-opacity="0.48" stroke-width="3">
+    <path d="M418 185 688 455 418 725"/>
+    <path d="M418 185 148 455 418 725" opacity="0.22"/>
+    <path d="M455 360 690 595"/>
+    <path d="M268 548 575 648"/>
+  </g>
+
+  <g fill="none" stroke="#fbbf24" stroke-opacity="0.44" stroke-width="3">
+    <path d="M1000 210c180 105 290 92 430 0"/>
+    <path d="M960 330c190 92 340 92 500 0"/>
+    <path d="M1000 450c170 120 300 120 430 0"/>
+    <path d="M960 570c200 98 340 98 500 0"/>
+    <path d="M1000 690c170 -112 300 -112 430 0"/>
+  </g>
+
+  <g fill="#0b1220" stroke="#cbd5e1" stroke-opacity="0.62" stroke-width="2">
+    <circle cx="418" cy="185" r="14"/>
+    <circle cx="455" cy="360" r="14"/>
+    <circle cx="268" cy="548" r="14"/>
+    <circle cx="575" cy="648" r="14"/>
+    <circle cx="1000" cy="210" r="14"/>
+    <circle cx="1268" cy="354" r="14"/>
+    <circle cx="1122" cy="557" r="14"/>
+    <circle cx="1360" cy="632" r="14"/>
+  </g>
+
+  <g opacity="0.58">
+    <path d="M117 745h566" stroke="#67e8f9" stroke-opacity="0.16"/>
+    <path d="M916 745h566" stroke="#fbbf24" stroke-opacity="0.16"/>
+    <path d="M117 145h566" stroke="#67e8f9" stroke-opacity="0.16"/>
+    <path d="M916 145h566" stroke="#fbbf24" stroke-opacity="0.16"/>
+  </g>
+</svg>
