@@ -1453,14 +1453,8 @@ section::before {
   font-weight: 520;
   line-height: 1.5;
 }
-.framework-grid {
-  grid-template-columns: repeat(5, 1fr);
-}
 .framework-grid article {
   min-height: 230px;
-}
-.stewardship-grid {
-  grid-template-columns: repeat(4, 1fr);
 }
 .stewardship-card {
   display: block;
