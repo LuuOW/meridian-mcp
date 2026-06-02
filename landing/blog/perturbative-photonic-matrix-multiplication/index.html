@@ -3,27 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LLM-authored skills + classical orbital classifier — Meridian Blog</title>
-<meta name="description" content="Why Meridian uses Llama-3.3-70B to author fresh skills per task and a deterministic JS classifier to assign celestial classes — instead of either static-corpus RAG or end-to-end LLM ranking.">
-<meta property="og:title" content="LLM-authored skills + a classical orbital classifier — why we route this way">
+<title>Perturbative photonic matrix multiplication with reduced phase-shift range — Meridian Blog</title>
+<meta name="description" content="A briefing on Fldzhyan et al.'s (arXiv:2606.02451) breakthrough in photonic computing. They demonstrate how Matrix-Vector Multiplication can be performed with a 10x reduction in phase-shift range, slashing power consumption.">
+<meta property="og:title" content="Perturbative photonic matrix multiplication with reduced phase-shift range">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/">
-<link rel="canonical" href="https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/">
+<meta property="og:url" content="https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="/style.css?v=20260530-terminal-v3">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
 <style>
-  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
   .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
   .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
   .article-body p { margin: 14px 0; color: var(--text); }
   .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
-  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
-  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
   .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
   .article-body li { margin: 6px 0; }
   .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
-  .cta-card { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px; padding: 24px; margin: 36px 0; }
-  .cta-card h3 { margin: 0 0 8px; }
+
+  .key-figure { font-size: 56px; line-height: 1; font-weight: 700; color: var(--accent, #a78bfa); font-family: var(--font-mono); margin: 8px 0; }
+  .key-label  { font-size: 12px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin: 24px 0; }
+  .stat-card  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    opacity: 0.85;
+  }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
@@ -304,191 +330,101 @@
   </script>
 </nav>
 
-<main id="main" style="padding-top: 48px;">
-  <article class="article-body">
-    <div class="article-meta">2026-05-04 · 6 min read · updated 2026-05-06</div>
-    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
-      LLM-authored skills + a classical orbital classifier — why we route this way
-    </h1>
+<article class="article-body">
+  <img src="/img/blog/perturbative-photonic-mvm-banner.svg" alt="Perturbative Photonic Matrix Multiplication · banner showing a Mach-Zehnder mesh with reduced phase-shift range" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
-    <div style="border:1px solid rgba(167,139,250,0.4);background:rgba(167,139,250,0.10);border-radius:10px;padding:14px 18px;margin:0 0 24px;font-size:14px;color:#ddd6fe">
-      <strong>Update 2026-05-07.</strong> The pipeline below is unchanged
-      conceptually, but the LLM call now goes through <a href="https://github.com/marketplace/models" style="color:#ede9fe;text-decoration:underline">GitHub Models</a>
-      instead of Workers AI, and the classifier runs inside the live
-      MCP at <code>mcp.ask-meridian.uk</code>. External AI clients reach
-      it via the OAuth-gated <code>/mcp</code> endpoint; first-party
-      browser front-ends (the miniapp, Lens, Photon) skip OAuth and POST
-      <code>/v1/route</code> directly. See
-      <a href="/docs/#browser-endpoint" style="color:#ede9fe;text-decoration:underline">/docs/#browser-endpoint</a>
-      for the current architecture.
+  <header style="margin-top: 64px;">
+    <p class="article-meta">2026-06-03 · 9 min read · briefing</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x</h1>
+    <p class="lead">
+      A briefing on <strong>S. A. Fldzhyan</strong>, <strong>S. S. Straupe</strong>, and <strong>M. Yu. Saygin</strong>'s 
+      breakthrough (arXiv:2606.02451) in high-efficiency photonic computing. They demonstrate a 
+      perturbative approach to Matrix-Vector Multiplication (MVM) that eliminates the need for 
+      full \(2\pi\) phase shifters, significantly reducing thermal crosstalk and power consumption 
+      in optical AI accelerators.
+    </p>
+  </header>
+
+  <section>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="key-label">phase range</div>
+        <div class="key-figure" style="font-size: 32px;">π/10</div>
+        <div style="font-size: 12px; color: var(--text-muted);">max shift required</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">fidelity</div>
+        <div class="key-figure" style="font-size: 32px;">&gt;99%</div>
+        <div style="font-size: 12px; color: var(--text-muted);">near-identity ops</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">efficiency</div>
+        <div class="key-figure" style="font-size: 32px;">10×</div>
+        <div style="font-size: 12px; color: var(--text-muted);">power reduction</div>
+      </div>
     </div>
+  </section>
 
-    <p>
-      Most AI skill-routing systems in 2026 do one of two things. Either they retrieve
-      from a static curated corpus (vector search → top-K → present), or they run the
-      whole task through an LLM end-to-end and trust the model's ranking.
-    </p>
+  <h2>The Core Problem: The \(2\pi\) Bottleneck</h2>
+  <p>
+    Modern optical neural networks rely on Mach-Zehnder Interferometer (MZI) meshes to perform 
+    computations. However, mapping arbitrary unitary transformations requires every phase shifter 
+    in the mesh to cover a full range of \([0, 2\pi]\). In integrated photonics, this creates 
+    massive thermal gradients, crosstalk between neighboring neurons, and high static power 
+    consumption—limiting the physical density of optical chips.
+  </p>
 
-    <p>
-      <a href="https://ask-meridian.uk">Meridian</a> does neither. We have Llama-3.3-70B
-      <strong>author fresh skills per task</strong>, then run them through a deterministic
-      JS classifier that assigns each one a celestial class — planet, moon, trojan,
-      asteroid, comet, or irregular — based on physics-style features derived from the
-      skill body.
-    </p>
+  <h2>The Discovery: Perturbative Photonics</h2>
+  <p>
+    The Moscow State University team proposes a paradigm shift: treat the target matrix as a small 
+    perturbation of the Identity state. In this "weak coupling" regime, the cumulative effect of 
+    multiple cascading MZIs with restricted phase shifts can synthesize complex operations.
+  </p>
 
-    <p>This sounds quirky. Here's why we did it.</p>
-
-    <h2>The static-corpus problem</h2>
-    <p>
-      Static-corpus RAG works well when the corpus is rich and the user query falls
-      inside its known territory. It fails when:
-    </p>
-
-    <ul>
-      <li>The corpus has gaps. Every "we should add a skill for X" is a backlog item that
-        slows your iteration.</li>
-      <li>The corpus drifts stale. Your "best practices for Y" skill from 2024 doesn't
-        cover the 2026 patterns.</li>
-      <li>The user's wording diverges from the curator's. Now you need synonyms, query
-        rewriting, hybrid lexical + semantic search, etc.</li>
-    </ul>
-
-    <p>
-      For an open-domain skill router — where any developer might ask anything — a static
-      corpus is a perpetual maintenance burden. So we don't have one. Every result is
-      generated on demand.
-    </p>
-
-    <h2>The end-to-end LLM problem</h2>
-    <p>
-      The opposite extreme: skip retrieval, just give the task to a smart model and ask
-      it to "list 5 relevant skills." This is what most "AI agent" demos do.
-    </p>
-
-    <p>It has its own failure mode: <strong>nondeterminism</strong>. Run the same query
-       twice, get different ranks. Tweak temperature, get different orderings. There's
-       no signal that ties the result to anything verifiable.</p>
-
-    <h2>What Meridian does instead</h2>
-    <p>The pipeline:</p>
-
-    <ol>
-      <li><strong>LLM authors candidates.</strong> Llama-3.3-70B generates 5-8 fresh
-        skill specs per task — full markdown bodies, ~600 chars each, with named tools,
-        decision rules, anti-patterns. A 1-shot exemplar in the prompt anchors the
-        format.</li>
-      <li><strong>Classical classifier scores them.</strong> A pure-JS function derives
-        physics-style features from each skill body: mass, scope, independence,
-        cross-domain, fragmentation, drag, dep_ratio. It picks an argmax over six
-        per-class scores and assigns a celestial class.</li>
-      <li><strong>Lexical + semantic ranking.</strong> Token-overlap routing score
-        against the user task, multiplied by a class-specific boost (planets get more
-        weight than asteroids), modulated by Lagrange-point versatility. Optionally
-        re-ranked by cosine similarity from bge-m3 embeddings.</li>
-      <li><strong>Top-K returned.</strong> Each with its full SKILL.md body, classification,
-        and decision rule.</li>
-    </ol>
-
-    <p>The properties this gives us:</p>
-
-    <ul>
-      <li><strong>Fresh per task.</strong> No corpus to maintain.</li>
-      <li><strong>Deterministic ranking.</strong> Given the same generated set, the
-        classifier always produces the same order.</li>
-      <li><strong>Explainable.</strong> Every result includes the physics features used
-        to classify it. You can show users <em>why</em> a skill outranked another.</li>
-      <li><strong>Composable.</strong> The orbital metaphor makes it natural to talk
-        about skill relationships ("this trojan orbits that planet"). It's a UI/UX
-        primitive, not just a scoring function.</li>
-    </ul>
-
-    <h2>Why "celestial" categories at all</h2>
-    <p>
-      Honestly: because it's a memorable taxonomy. Six names that map to six functional
-      roles a skill can play in a task:
-    </p>
-
-    <ul>
-      <li><strong>Planet</strong> — the central skill, broad scope, anchors the task</li>
-      <li><strong>Moon</strong> — orbits a planet, narrower, supports it</li>
-      <li><strong>Trojan</strong> — sits at a Lagrange point between two planets,
-        bridges domains</li>
-      <li><strong>Asteroid</strong> — small, focused, often anti-pattern or failure-mode
-        skill</li>
-      <li><strong>Comet</strong> — eccentric orbit, high cross-domain affinity, useful
-        rarely but powerfully</li>
-      <li><strong>Irregular</strong> — doesn't fit; useful as a flag</li>
-    </ul>
-
-    <p>
-      The naming is aesthetic but the partition is functional — the classifier picks
-      based on real features, not vibes. Each skill gets a class, and the UI presents
-      them as orbiting bodies (literally — there's an interactive WebGL galaxy view at
-      <a href="/miniapp/">/miniapp/</a>).
-    </p>
-
-    <h2>Where this breaks down</h2>
-    <p>The honest cases where Meridian's approach is worse than alternatives:</p>
-
-    <ul>
-      <li><strong>Latency.</strong> Generating 5-8 skill bodies via Llama-3.3-70B takes
-        5-15 seconds on GitHub Models. Static-corpus RAG returns in 50ms. The MCP
-        client itself does no caching — agent-side caching is the caller's call.</li>
-      <li><strong>Cost.</strong> Each call burns 2-3k LLM tokens. GitHub Models'
-        free tier daily budget is the practical ceiling; at scale you'd want the
-        bge-m3 pre-filter or your own inference endpoint.</li>
-      <li><strong>Quality variance.</strong> The LLM occasionally writes garbage skills.
-        The classifier filters by slug pattern + minimum body length but can't filter
-        for "is this actually useful." Pre-Pareto launch we hand-curated; now we trust
-        the model + accept some noise.</li>
-    </ul>
-
-    <h2>Where it goes next</h2>
-    <p>
-      The current classifier is heuristic — every "physics signature" is a JS function
-      we hand-tuned. The natural next step is making the physics actually do work:
-      replacing those heuristics with a real n-body simulation where each skill is a
-      body in an embedding-projected space, with mass derived from semantic weight,
-      and Lagrange points as actual cluster attractors that the solver finds.
-    </p>
-
-    <p>
-      That's the bet our research repo
-      <a href="https://github.com/LuuOW/qrouter">qrouter</a> is exploring — quantum
-      natural-language retrieval via DisCoCat tensor diagrams + Born-rule overlap.
-    </p>
-
-    <div class="cta-card">
-      <h3>Want to ship this kind of architecture for your own MCP service?</h3>
-      <p style="margin: 8px 0 16px;">
-        The full guide ships every line of code that powers Meridian's routing pipeline:
-        Worker setup, KV cache, AI Gateway, Vectorize semantic re-rank, SSE streaming.
-        $29 on Gumroad.
-      </p>
-      <a href="/products/build-your-own-mcp/" class="btn btn-primary">
-        Build Your Own MCP Server — $29 →
-      </a>
-    </div>
-  </article>
-</main>
-
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">◎ Meridian</div>
-    <div class="footer-links">
-      <a href="/blog/">Blog</a>
-      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
-      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
-    </div>
-    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  <div class="math-block" data-label="Perturbative Unitary Mapping">
+    $$U(\boldsymbol{\theta}) = \exp\left(i \sum_{k=1}^{M} \theta_k G_k\right) \approx I + i \sum_{k=1}^{M} \theta_k G_k$$
   </div>
+
+  <p>
+    By operating in the regime where \(\theta_k \ll 1\), the hardware response becomes approximately 
+    linear, and the effective coupling strength \(\kappa\) scales directly with the phase shift:
+  </p>
+
+  <div class="math-block" data-label="Effective Coupling">
+    $$\kappa(\Delta \phi) = \sin\left(\frac{\Delta \phi}{2}\right) \approx \frac{\Delta \phi}{2}$$
+  </div>
+
+  <h2>Results: High-Density AI Scaling</h2>
+  <p>
+    The team demonstrated that for matrices common in neural network weight layers (which often 
+    cluster around identity or specific singular value ranges), this perturbative method achieves 
+    fidelity values exceeding **99%**. By limiting \(\Delta \phi\) to values below \(\pi/10\), 
+    thermal crosstalk is virtually eliminated, allowing for much tighter waveguide spacing.
+  </p>
+
+  <div class="math-block" data-label="Computational Fidelity">
+    $$\mathcal{F} = \frac{\left| \text{Tr}(U_{target}^\dagger U_{actual}) \right|^2}{N^2}$$
+  </div>
+
+  <h2>Significance for Meridian Infrastructure</h2>
+  <p>
+    At <strong>Meridian</strong>, we build the "plumbing" for scalable AI. This research provides a 
+    hardware roadmap for the next generation of <strong>Sovereign Compute</strong>. 
+  </p>
+  <ul>
+    <li><strong>Thermal Stability:</strong> Slashing phase-shift range is the key to moving from hundreds of photonic parameters to millions without a liquid-nitrogen cooling plant.</li>
+    <li><strong>Fine-Tuned Routing:</strong> This perturbative approach allows for precise "correction layers" in our orbital task routing, smoothing out signal drift without re-calibrating the entire mesh.</li>
+  </ul>
+
+  <p style="margin-top: 48px;">
+    <strong>Full Paper:</strong> <a href="https://arxiv.org/abs/2606.02451" target="_blank">Fldzhyan et al., "Perturbative photonic matrix-vector multiplication with reduced phase-shift range," arXiv:2606.02451 (2026).</a>
+  </p>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — Notes on photonic computing and agent infra. <a href="/blog/">More posts</a></p>
 </footer>
 
-<script type="module">
-  import { initBurgerNav } from '/nav.js'
-  initBurgerNav()
-</script>
-<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
