@@ -3,27 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines — Meridian Blog</title>
-<meta name="description" content="Workers AI for embeddings (free tier), Vectorize for semantic search (free tier), AI Gateway for caching + observability (free). The whole stack costs $0 until 100k requests/month.">
-<meta property="og:title" content="Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines">
+<title>Coexistence of dipolar and quadrupolar higher-order topology — Meridian Blog</title>
+<meta name="description" content="A briefing on Rodionenko et al.'s (arXiv:2606.03950) discovery of simultaneous dipolar and quadrupolar topological phases in multi-orbital systems. Exploring nested Wilson loops and doubly-protected corner states.">
+<meta property="og:title" content="Coexistence of dipolar and quadrupolar higher-order topology">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/">
-<link rel="canonical" href="https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/">
+<meta property="og:url" content="https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="/style.css?v=20260530-terminal-v3">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
 <style>
-  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
   .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
   .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
   .article-body p { margin: 14px 0; color: var(--text); }
   .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
-  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
-  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
   .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
   .article-body li { margin: 6px 0; }
   .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
-  .cta-card { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(56,189,248,0.08)); border: 1px solid rgba(139,92,246,0.4); border-radius: 14px; padding: 24px; margin: 36px 0; }
-  .cta-card h3 { margin: 0 0 8px; }
+
+  .key-figure { font-size: 56px; line-height: 1; font-weight: 700; color: var(--accent, #a78bfa); font-family: var(--font-mono); margin: 8px 0; }
+  .key-label  { font-size: 12px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
+  .stat-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin: 24px 0; }
+  .stat-card  { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    opacity: 0.85;
+  }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
@@ -304,198 +330,105 @@
   </script>
 </nav>
 
-<main id="main" style="padding-top: 48px;">
-  <article class="article-body">
-    <div class="article-meta">2026-05-04 · 5 min read</div>
-    <h1 style="margin: 6px 0 24px; font-size: 36px; line-height: 1.15; letter-spacing: -0.02em;">
-      Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines
-    </h1>
+<article class="article-body">
+  <img src="/img/blog/dipolar-quadrupolar-topology-banner.svg" alt="Dipolar and Quadrupolar Higher-Order Topology · banner showing corner states and quantized invariants" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
-    <div style="border:1px solid rgba(248,113,113,0.4);background:rgba(248,113,113,0.08);border-radius:10px;padding:14px 18px;margin:0 0 24px;font-size:14px;color:#fca5a5">
-      <strong>Update 2026-05-06.</strong> ask-meridian.uk has since migrated
-      off Cloudflare entirely. The architecture below still works as written
-      — Vectorize and AI Gateway are excellent — but it's no longer the stack
-      Meridian itself runs on. See <a href="/docs/" style="color:#fecaca;text-decoration:underline">/docs/</a> for the
-      current GitHub-only architecture.
+  <header style="margin-top: 64px;">
+    <p class="article-meta">2026-06-03 · 9 min read · briefing</p>
+    <h1 style="font-size: 36px; margin: 0 0 16px; letter-spacing: -0.01em;">Coexistence of dipolar and quadrupolar higher-order topology</h1>
+    <p class="lead">
+      A briefing on <strong>Konstantin Rodionenko</strong>, <strong>Maxim Mazanov</strong>, and <strong>Maxim A. Gorlach</strong>'s 
+      discovery (arXiv:2606.03950) of a novel multi-orbital topological phase. They demonstrate how 2D systems 
+      can simultaneously support quantized vector polarization and tensor quadrupole moments, leading to 
+      "doubly-protected" corner states.
+    </p>
+  </header>
+
+  <section>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="key-label">polarization</div>
+        <div class="key-figure" style="font-size: 32px;">1/2</div>
+        <div style="font-size: 12px; color: var(--text-muted);">dipolar invariant</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">quadrupole</div>
+        <div class="key-figure" style="font-size: 32px;">1/2</div>
+        <div style="font-size: 12px; color: var(--text-muted);">tensor invariant</div>
+      </div>
+      <div class="stat-card">
+        <div class="key-label">symmetry</div>
+        <div class="key-figure" style="font-size: 32px;">C4 + M</div>
+        <div style="font-size: 12px; color: var(--text-muted);">quantized protection</div>
+      </div>
     </div>
+  </section>
 
-    <p>
-      Most "build RAG" tutorials in 2026 walk you through Pinecone + OpenAI embeddings +
-      LangChain. Pinecone is paid from day 1. OpenAI ada-002 embeddings cost ~$0.02 per
-      million tokens. LangChain adds ~600 KB to your bundle.
-    </p>
+  <h2>The Core Problem: Mutual Exclusivity</h2>
+  <p>
+    In the emerging field of Higher-Order Topological Insulators (HOTIs), topological phases are 
+    typically classified as either <strong>dipolar</strong> (manifesting as edge states) or 
+    <strong>quadrupolar</strong> (manifesting as corner states). Traditionally, these have been 
+    viewed as mutually exclusive. The authors investigate a fundamental question: can these two 
+    topological flavors coexist in the same bulk material?
+  </p>
 
-    <p>
-      The Cloudflare equivalent — Vectorize + Workers AI bge-m3 + AI Gateway — is free up
-      to 30M stored vectors and 50M queries/month, runs at the edge with no cold-start fee,
-      and ships in ~80 lines of code total. This post is the wiring.
-    </p>
+  <h2>The Discovery: Multi-Orbital Nesting</h2>
+  <p>
+    By introducing a <strong>multi-orbital tight-binding model</strong> (using \(p_x\) and \(p_y\) orbitals 
+    per site), the team found a way to "nest" the topological properties. This synthetic degree 
+    of freedom allows the system to satisfy the symmetry requirements for both quantized 
+    polarization and quadrupole moments simultaneously.
+  </p>
 
-    <h2>What you need</h2>
-    <ul>
-      <li>A Cloudflare account (free)</li>
-      <li>A Workers/Pages project (already deployed, see our
-        <a href="/blog/production-mcp-server-cloudflare-workers/">previous post</a>)</li>
-      <li>Wrangler CLI</li>
-    </ul>
-
-    <h2>Create the Vectorize index</h2>
-    <pre><code>wrangler vectorize create my-rag --dimensions=1024 --metric=cosine</code></pre>
-
-    <p>
-      <code>1024</code> dims because that's what bge-m3 emits. <code>cosine</code> metric
-      because that's what bge-m3 was trained on. If you switch embedding models later, the
-      dim has to match — recreate the index.
-    </p>
-
-    <h2>Bind it</h2>
-    <p>Add to <code>wrangler.toml</code>:</p>
-    <pre><code>[[vectorize]]
-binding    = "VECTORIZE"
-index_name = "my-rag"</code></pre>
-
-    <p>Now your Worker has <code>env.VECTORIZE</code> available.</p>
-
-    <h2>Embedding via Workers AI</h2>
-    <pre><code>const out = await env.AI.run('@cf/baai/bge-m3', { text: ['your query here'] })
-const vec = out.data[0]   // Float32Array of 1024 values</code></pre>
-
-    <p>
-      Workers AI free tier covers a lot of bge-m3 calls — typically 10k+ per day with no
-      cost. If you ever cross the free tier, it's $0.011 per 1M input tokens. Compare to
-      OpenAI ada-002 at $0.10 per 1M tokens.
-    </p>
-
-    <h2>Upsert to the index</h2>
-    <pre><code>await env.VECTORIZE.upsert([{
-  id:       'doc-001',
-  values:   Array.from(vec),       // Vectorize wants plain arrays
-  metadata: { slug: 'doc-001', title: 'Whatever you want to look up later' },
-}])</code></pre>
-
-    <p>
-      You can include arbitrary metadata. Vectorize returns it on query, so use it to
-      avoid a second roundtrip to KV/D1 for "what was the actual content of this doc".
-    </p>
-
-    <h2>Query</h2>
-    <pre><code>const matches = await env.VECTORIZE.query(Array.from(qVec), {
-  topK: 5, returnMetadata: true,
-})
-// matches.matches = [{ id, score, metadata }, ...]</code></pre>
-
-    <p>
-      Vectorize is read-after-write consistent within a few seconds. Same caveat as KV —
-      don't depend on "I just upserted, query immediately" being available everywhere.
-    </p>
-
-    <h2>The full RAG pattern</h2>
-    <pre><code>async function rag(env, query, kFromIndex = 3) {
-  // 1. Embed the query
-  const out = await env.AI.run('@cf/baai/bge-m3', { text: [query] })
-  const qVec = out.data[0]
-
-  // 2. Retrieve similar past documents
-  const matches = await env.VECTORIZE.query(Array.from(qVec), {
-    topK: kFromIndex, returnMetadata: true,
-  })
-  const context = matches.matches
-    .filter(m => m.score &gt;= 0.55)
-    .map(m =&gt; `[${m.metadata.slug}] ${m.metadata.title}`)
-    .join('\n')
-
-  // 3. Generate with LLM (Llama-3.3-70B on Workers AI, free up to N calls/day)
-  const llm = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
-    messages: [
-      { role: 'system', content: 'Use the prior context as inspiration. Author a fresh response.' },
-      { role: 'user',   content: `Prior context:\n${context}\n\nUser query: ${query}` },
-    ],
-  })
-
-  // 4. Upsert this query+response back into the index for future hits
-  await env.VECTORIZE.upsert([{
-    id:       crypto.randomUUID(),
-    values:   Array.from(qVec),
-    metadata: { slug: query.slice(0, 50), title: llm.response.slice(0, 200) },
-  }])
-
-  return llm.response
-}</code></pre>
-
-    <p>
-      ~25 lines of actual logic. The embedding + index + LLM are all bound to the
-      same Worker via <code>env</code>. Total external call: 0 (everything runs on
-      Cloudflare).
-    </p>
-
-    <h2>AI Gateway in front of it</h2>
-    <p>
-      Cloudflare AI Gateway is a free observability + caching layer. Create a gateway
-      in the dashboard (AI &rarr; AI Gateway), then configure your <code>env.AI.run</code>
-      calls to route through it:
-    </p>
-
-    <pre><code>await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
-  messages,
-}, {
-  gateway: { id: 'my-gateway' }
-})</code></pre>
-
-    <p>
-      Set <code>cache_ttl=86400</code> in the gateway settings. Now identical
-      <code>messages</code> arrays dedupe at the gateway — saving the LLM call entirely.
-      Combined with our own KV-based response cache, repeat queries hit in ~5ms.
-    </p>
-
-    <h2>Cost ceiling</h2>
-    <p>
-      Free tier ceilings, May 2026:
-    </p>
-    <ul>
-      <li>Workers: 100k requests/day</li>
-      <li>Workers AI bge-m3: typically 10k+ embed calls/day</li>
-      <li>Workers AI Llama-70B: limited but generous (a few k/day)</li>
-      <li>Vectorize: 30M stored vectors, 50M queries/month</li>
-      <li>AI Gateway: free, no usage cap on the cache layer itself</li>
-    </ul>
-
-    <p>
-      For a typical MCP service with ~100 paying users, you'll never approach any of
-      these. Migrating off later (if you ever need to) is a thin-abstraction job —
-      we wrap Vectorize behind a 30-line <code>_vector.ts</code> in the buyer guide
-      so swapping to Upstash Vector / pgvector is one file.
-    </p>
-
-    <div class="cta-card">
-      <h3>Get every line of this — wired into a working MCP server template</h3>
-      <p style="margin: 8px 0 16px;">
-        The full guide on Gumroad ships the RAG layer above pre-wired into the Worker
-        template, plus the AI Gateway integration, plus SSE streaming for live progress
-        events. $29.
-      </p>
-      <a href="/products/build-your-own-mcp/" class="btn btn-primary">
-        Build Your Own MCP Server — $29 →
-      </a>
-    </div>
-  </article>
-</main>
-
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand">◎ Meridian</div>
-    <div class="footer-links">
-      <a href="/blog/">Blog</a>
-      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
-      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
-    </div>
-    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  <div class="math-block" data-label="The Bulk Hamiltonian">
+    $$H(\mathbf{k}) = \sum_{i=1}^{4} d_i(\mathbf{k}) \Gamma_i$$
   </div>
+
+  <p>
+    The quadrupole moment \(q_{xy}\) is extracted from the eigenvalues of the <strong>Nested Wilson Loop</strong> 
+    operator, providing a topological metric for the corner localization:
+  </p>
+
+  <div class="math-block" data-label="Nested Wilson Loop">
+    $$q_{xy} = \frac{1}{2\pi} \int_{0}^{2\pi} p_y^{\nu_x}(k_x) dk_x = \frac{1}{2}$$
+  </div>
+
+  <h2>Findings: Doubly-Protected Corner States</h2>
+  <p>
+    The coexistence phase results in corner states that are unusually robust. Because they are 
+    tied to both the dipolar and quadrupolar invariants, they remain localized at zero energy 
+    even under significant lattice deformations, provided the \(C_4\) and Mirror symmetries 
+    remain intact.
+  </p>
+
+  <div class="math-block" data-label="Corner Energy Condition">
+    $$\hat{H} | \psi_{corner} \rangle = 0$$
+  </div>
+
+  <h2>Significance for Orbital Infrastructure</h2>
+  <p>
+    This paper is a direct application of the <strong>Orbital physics</strong> that inspires our 
+    routing metaphors at <strong>Meridian</strong>. 
+  </p>
+  <ul>
+    <li><strong>Nesting Logic:</strong> The use of "Nested Wilson Loops" mirror our approach to 
+    hierarchical task routing—where a global intent is refined through multiple orbital 
+    classifications.</li>
+    <li><strong>Synthetic Dimensions:</strong> Just as the researchers use orbitals to create 
+    synthetic complexity, we use semantic embedding dimensions to route autonomous tasks 
+    without centralized bottlenecks.</li>
+  </ul>
+
+  <p style="margin-top: 48px;">
+    <strong>Full Paper:</strong> <a href="https://arxiv.org/abs/2606.03950" target="_blank">Rodionenko et al., "Coexistence of dipolar and quadrupolar higher-order topology," arXiv:2606.03950 (2026).</a>
+  </p>
+
+</article>
+
+<footer style="border-top: 1px solid var(--border); margin-top: 48px; padding: 24px; text-align: center; color: var(--text-faint); font-size: 13px;">
+  <p>Meridian — Notes on topological physics and agent infra. <a href="/blog/">More posts</a></p>
 </footer>
 
-<script type="module">
-  import { initBurgerNav } from '/nav.js'
-  initBurgerNav()
-</script>
-<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
