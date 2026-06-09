@@ -15,6 +15,9 @@
 <link rel="canonical" href="https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
 <style>
   .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
   .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -346,21 +349,21 @@
     </p>
 
     <div class="callout" style="text-align: center;">
-      <strong style="font-size: 1.25em;">$O_j = \sum_{i=1}^{n} I_i * K_{ij}$</strong>
+      $$O_j = \sum_{i=1}^{n} I_i \ast K_{ij}$$
     </div>
 
     <p>
-      To map this operation onto a single optical path, the authors tile $n$ input channels across a 2D plane of incoherent light emitters (such as LEDs or VCSELs). Light from these emitters passes through a microlens array ($sp_{MLA}$) and onto a shared amplitude mask (an LCD panel) that displays the entire grid of convolutional kernels ($K_{ij}$).
+      To map this operation onto a single optical path, the authors tile $n$ input channels across a 2D plane of incoherent light emitters (such as LEDs or VCSELs). Light from these emitters passes through a microlens array ($sp_{\text{MLA}}$) and onto a shared amplitude mask (an LCD panel) that displays the entire grid of convolutional kernels ($K_{ij}$).
     </p>
 
     <p>
-      To prevent the overlapping of light beams and ensure that light from adjacent pixels hits the correct kernels, the system enforces a strict geometric constraint relating the microlens spacing $sp_{MLA}$, the emitter spacing $sp_{LE}$, and the magnification factor $M$:
+      To prevent the overlapping of light beams and ensure that light from adjacent pixels hits the correct kernels, the system enforces a strict geometric constraint relating the microlens spacing $sp_{\text{MLA}}$, the emitter spacing $sp_{\text{LE}}$, and the magnification factor $M$:
     </p>
 
     <div class="rule">
       <strong>The Collimation Constraint:</strong>
-      <div style="font-family: var(--font-mono); margin-top: 8px; font-size: 15px;">
-        $\frac{sp_{MLA}}{sp_{LE}} = \frac{M - 1}{M}$
+      <div style="margin-top: 12px;">
+        $$\frac{sp_{\text{MLA}}}{sp_{\text{LE}}} = \frac{M - 1}{M}$$
       </div>
     </div>
 
@@ -369,15 +372,15 @@
     </p>
     <ul>
       <li><strong>Emitter to Microlens ($d_1$):</strong> Set to the focal length of the microlens ($d_1 = f$).</li>
-      <li><strong>Microlens to Mask ($d_2$):</strong> The collimated beams propagate a distance proportional to the magnification ($d_2 = f \times (M - 1)$), producing a grid of spots on the kernel mask with spacing $sp_K = sp_{MLA} \times M$.</li>
-      <li><strong>Mask to Sensor ($d_3$):</strong> The modulated beams propagate a distance $d_3 = f \times M$, projecting onto the photodetector array.</li>
+      <li><strong>Microlens to Mask ($d_2$):</strong> The collimated beams propagate a distance proportional to the magnification ($d_2 = f(M - 1)$), producing a grid of spots on the kernel mask with spacing $sp_{\text{K}} = sp_{\text{MLA}} \times M$.</li>
+      <li><strong>Mask to Sensor ($d_3$):</strong> The modulated beams propagate a distance $d_3 = fM$, projecting onto the photodetector array.</li>
     </ul>
 
     <p>
-      To achieve a convolution stride of 1 where output spacing matches input spacing ($sp_{PD} = sp_{LE}$), the propagation distances must balance:
+      To achieve a convolution stride of 1 where output spacing matches input spacing ($sp_{\text{PD}} = sp_{\text{LE}}$), the propagation distances must balance:
     </p>
-    <div class="callout" style="font-family: var(--font-mono); font-size: 14px; text-align: center;">
-      <strong>$d_1 + d_2 = d_3 \implies f + f(M - 1) = fM$</strong>
+    <div class="callout" style="text-align: center;">
+      $$d_1 + d_2 = d_3 \implies f + f(M - 1) = fM$$
     </div>
 
     <h2>Validation: Simulation vs. Experiment</h2>
