@@ -3,43 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#0a0d14">
-<title>MCP Server Pack — 10 Production-Ready MCP Servers — $49 — Meridian</title>
-<meta name="description" content="10 single-purpose MCP servers (calc, time, fs-search, hn, arxiv, regex, json-tools, markdown, wikipedia, dns) + one-shot install script. All stdio. MIT-licensed. Drop straight into Claude Code.">
-<meta property="og:title" content="MCP Server Pack — 10 Production-Ready MCP Servers for Claude Code">
-<meta property="og:description" content="10 single-purpose MCP servers + install script. Stdio. MIT. $49 one-time.">
-<meta property="og:type" content="product">
-<meta property="og:url" content="https://ask-meridian.uk/products/mcp-server-pack/">
-<meta property="og:image" content="https://ask-meridian.uk/img/products/pack-cover.jpg">
-<link rel="canonical" href="https://ask-meridian.uk/products/mcp-server-pack/">
+<title>Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck — Meridian Blog</title>
+<meta name="description" content="Prior optical computing accelerators were bottlenecked by single-input, multi-output (SISO/SIMO) designs. We dissect a new free-space architecture (arXiv:2606.07265) that uses geometric spatial micro-organization and microlens arrays to compute true multi-channel convolutions in a single shot.">
+<meta property="og:title" content="Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck">
+<meta property="og:description" content="How geometric spatial micro-organization solves the multi-channel convolution problem in free-space optics without digital summation.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/optical-convolutions-banner.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/optical-convolutions-banner.png">
+<link rel="canonical" href="https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260514a">
+<link rel="stylesheet" href="/style.css?v=20260527a">
 <style>
-  .pdp { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; position: relative; z-index: 1; }
-  .pdp-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-size: cover; background-position: center top; background-attachment: fixed; opacity: 0.12; filter: blur(6px) saturate(1.1); }
-  .pdp-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at top, rgba(10,13,20,0.55) 0%, rgba(10,13,20,0.95) 70%); }
-  .pdp h1 { font-size: 32px; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
-  .pdp .pdp-tagline { font-size: 17px; color: var(--text-muted); margin: 0 0 28px; font-style: italic; }
-  .pdp .pdp-price-row { display: flex; align-items: center; gap: 18px; margin: 24px 0; padding: 20px 24px; border: 1px solid rgba(167,139,250,0.4); border-radius: 14px; background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); }
-  .pdp .pdp-price { font-size: 36px; font-weight: 700; background: linear-gradient(180deg, #ddd6fe, var(--accent) 70%, var(--accent-d)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-  .pdp .pdp-price-row .btn { font-size: 16px; padding: 14px 24px; }
-  .pdp h2 { font-size: 22px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
-  .pdp .features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; margin: 18px 0; }
-  .pdp .features li { list-style: none; position: relative; padding-left: 22px; color: var(--text-muted); font-size: 14px; }
-  .pdp .features li::before { content: '✓'; position: absolute; left: 0; color: var(--accent-2); font-weight: 700; }
-  .pdp .server-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
-  .pdp .server-card { padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
-  .pdp .server-card .name { font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 700; }
-  .pdp .server-card .desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-  .pdp .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; font-size: 13px; }
-  .pdp .meta-card { padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
-  .pdp .meta-card .meta-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
-  @media (max-width: 600px) { .pdp .features, .pdp .meta-grid, .pdp .server-grid { grid-template-columns: 1fr; } .pdp h1 { font-size: 26px; } }
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+  .facts-table { font-size: 13px; }
+  .facts-table th, .facts-table td { padding: 8px 10px; }
+  .facts-table td:nth-child(3) { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
 <body>
-<a href="#main" class="skip-link">Skip to main content</a>
 
 <nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
@@ -316,92 +315,134 @@
   </script>
 </nav>
 
-<div class="pdp-bg" aria-hidden="true" style="background-image: url('/img/products/pack-cover.jpg');"></div>
-<main id="main" class="pdp">
-  <h1>MCP Server Pack — 10 Production-Ready MCP Servers for Claude Code</h1>
-  <p class="pdp-tagline">Ten single-purpose stdio MCP servers + a one-shot install script. Drop straight into <code>~/.claude.json</code>. MIT-licensed.</p>
+<main id="main">
+  <article class="article-body">
+    <header style="margin-top: 64px; margin-bottom: 32px;">
+      <div class="article-meta">2026-06-09 · 4 min listen · optics</div>
+      <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck</h1>
+      <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+        Prior optical accelerators were bottlenecked by single-channel mapping. A new architecture (arXiv:2606.07265) achieves true MIMO free-space convolutions using geometric spatial micro-organization and shared optical paths.
+      </p>
+    </header>
 
-  <div class="pdp-price-row">
-    <span class="pdp-price">$49</span>
-    <button class="btn btn-primary product-buy-direct" data-slug="mcp-server-pack" style="margin-left: auto;">Buy now → instant download</button>
-  </div>
+    <img src="/img/blog/optical-convolutions-banner.png" alt="Multi-channel optical convolutions schematic" style="width: 100%; border-radius: 12px; margin: 12px 0 36px; border: 1px solid var(--border);" />
 
-  <p>Most MCP server tutorials teach you how to write <em>one</em> tool. This pack gives you ten, already wired, already tested, already shipped. Calc, time, fs-search, HN search, arXiv, regex, JSON tools, markdown tools, Wikipedia, DNS — each as a single-purpose stdio server you can install in 30 seconds and call from Claude Code, Cursor, or any other MCP-aware client.</p>
+    <p>
+      In modern deep learning, convolutional neural networks (CNNs) are heavily bottlenecked by memory transfer and data movement. While a single convolutional kernel is mathematically compact, convolving hundreds of input channels $n$ to yield hundreds of output channels $m$ across high-resolution spatial feature maps requires massive computational resources. 
+    </p>
 
-  <h2>What's in the pack</h2>
-  <div class="server-grid">
-    <div class="server-card"><div class="name">calc</div><div class="desc">Math expression parser + unit conversion (free public sample)</div></div>
-    <div class="server-card"><div class="name">time</div><div class="desc">now / parse / format / diff / ago / timezone</div></div>
-    <div class="server-card"><div class="name">fs-search</div><div class="desc">grep / find / tree (sandboxed to a workspace dir)</div></div>
-    <div class="server-card"><div class="name">hn-search</div><div class="desc">Algolia HN API — search stories, top, recent</div></div>
-    <div class="server-card"><div class="name">arxiv</div><div class="desc">Search + fetch arXiv abstracts by ID/keyword</div></div>
-    <div class="server-card"><div class="name">regex</div><div class="desc">match, find-all, named groups, replace</div></div>
-    <div class="server-card"><div class="name">json-tools</div><div class="desc">jsonpath, schema-validate, diff, pretty-print</div></div>
-    <div class="server-card"><div class="name">markdown-tools</div><div class="desc">md → html, html → md, TOC extract, slugify</div></div>
-    <div class="server-card"><div class="name">wikipedia</div><div class="desc">summary / search / sections by title or URL</div></div>
-    <div class="server-card"><div class="name">dns-tools</div><div class="desc">A / AAAA / MX / TXT / SPF / DMARC lookups</div></div>
-  </div>
+    <p>
+      Optical computing accelerators—leveraging the physics of free-space light propagation—have long promised an escape hatch. By propagating light through lenses and spatial light modulators, linear operations can be executed at the speed of light. However, prior free-space architectures suffered from a critical structural flaw: they only supported Single-Input Single-Output (SISO) or Single-Input Multi-Output (SIMO) convolutions. Accelerating true Multi-Input Multi-Output (MIMO) layers required sequentially loading individual input channels, running the optical pass, and summing the partial outputs digitally. This hybrid strategy reintroduced the very data-transfer bottlenecks it sought to eliminate.
+    </p>
 
-  <h2>Why this exists</h2>
-  <ul class="features">
-    <li>One <code>install-all.sh</code> wires the lot into <code>~/.claude.json</code></li>
-    <li>Each server is single-purpose (=easy to debug)</li>
-    <li>All stdio (no servers running, no ports open)</li>
-    <li>Zero external dependencies for 7 of the 10</li>
-    <li>Calc is open-sourced as the free public sample</li>
-    <li>Pure Python or Node — pick per server</li>
-    <li>MIT license, commercial use OK</li>
-    <li>Instant download after payment</li>
-  </ul>
+    <p>
+      A new paper, <em>"Multi-channel free-space optical convolutions with incoherent light"</em> (arXiv:2606.07265), changes this landscape. The authors present a scalable, passive free-space design that computes true multi-channel convolutions in a single shot, requiring only a single Microlens Array (MLA) and an amplitude mask.
+    </p>
 
-  <h2>Specs</h2>
-  <div class="meta-grid">
-    <div class="meta-card"><div class="meta-label">Format</div>10 server folders + install script + ZIP</div>
-    <div class="meta-card"><div class="meta-label">Servers</div>10 (1 free public sample)</div>
-    <div class="meta-card"><div class="meta-label">License</div>MIT</div>
-    <div class="meta-card"><div class="meta-label">Transport</div>stdio (MCP standard)</div>
-    <div class="meta-card"><div class="meta-label">Languages</div>Python + Node.js (mixed by server)</div>
-    <div class="meta-card"><div class="meta-label">Free sample</div><a href="https://github.com/LuuOW/mcp-server-pack">GitHub repo</a></div>
-  </div>
+    <h2>The Mathematical Formulation</h2>
+    
+    <p>
+      In a standard convolutional layer, each output channel $O_j$ is defined by summing the spatial convolutions across all input channels $I_i$ with their corresponding kernels $K_{ij}$:
+    </p>
 
-  <h2>How delivery works</h2>
-  <p>Click <strong>Buy now</strong>, you're sent to Stripe's hosted checkout. Pay, you're redirected back to a download page on ask-meridian.uk. Bookmark that URL — you can revisit it anytime to re-download (it's keyed to your Stripe session). Receipt email also has the link. Lost everything? Email <a href="mailto:lucas.kempe@icloud.com">lucas.kempe@icloud.com</a> with your Stripe receipt.</p>
+    <div class="callout" style="text-align: center;">
+      <strong style="font-size: 1.25em;">$O_j = \sum_{i=1}^{n} I_i * K_{ij}$</strong>
+    </div>
 
-  <div class="pdp-price-row">
-    <span class="pdp-price">$49</span>
-    <button class="btn btn-primary product-buy-direct" data-slug="mcp-server-pack" style="margin-left: auto;">Buy now → instant download</button>
-  </div>
+    <p>
+      To map this operation onto a single optical path, the authors tile $n$ input channels across a 2D plane of incoherent light emitters (such as LEDs or VCSELs). Light from these emitters passes through a microlens array ($sp_{MLA}$) and onto a shared amplitude mask (an LCD panel) that displays the entire grid of convolutional kernels ($K_{ij}$).
+    </p>
 
-  <p style="text-align: center; margin-top: 28px; color: var(--text-faint); font-size: 13px;">
-    Built by <a href="https://github.com/LuuOW">@LuuOW</a> · Author of <a href="https://ask-meridian.uk">ask-meridian.uk</a> + <a href="https://github.com/LuuOW/qrouter">qrouter</a> · See also: <a href="/products/build-your-own-mcp/">Build Your Own MCP Server</a> ($29)
-  </p>
+    <p>
+      To prevent the overlapping of light beams and ensure that light from adjacent pixels hits the correct kernels, the system enforces a strict geometric constraint relating the microlens spacing $sp_{MLA}$, the emitter spacing $sp_{LE}$, and the magnification factor $M$:
+    </p>
+
+    <div class="rule">
+      <strong>The Collimation Constraint:</strong>
+      <div style="font-family: var(--font-mono); margin-top: 8px; font-size: 15px;">
+        $\frac{sp_{MLA}}{sp_{LE}} = \frac{M - 1}{M}$
+      </div>
+    </div>
+
+    <p>
+      The physical configuration splits the optical propagation into three distinct stages:
+    </p>
+    <ul>
+      <li><strong>Emitter to Microlens ($d_1$):</strong> Set to the focal length of the microlens ($d_1 = f$).</li>
+      <li><strong>Microlens to Mask ($d_2$):</strong> The collimated beams propagate a distance proportional to the magnification ($d_2 = f \times (M - 1)$), producing a grid of spots on the kernel mask with spacing $sp_K = sp_{MLA} \times M$.</li>
+      <li><strong>Mask to Sensor ($d_3$):</strong> The modulated beams propagate a distance $d_3 = f \times M$, projecting onto the photodetector array.</li>
+    </ul>
+
+    <p>
+      To achieve a convolution stride of 1 where output spacing matches input spacing ($sp_{PD} = sp_{LE}$), the propagation distances must balance:
+    </p>
+    <div class="callout" style="font-family: var(--font-mono); font-size: 14px; text-align: center;">
+      <strong>$d_1 + d_2 = d_3 \implies f + f(M - 1) = fM$</strong>
+    </div>
+
+    <h2>Validation: Simulation vs. Experiment</h2>
+    <p>
+      The authors analyzed and validated their design using a multi-tiered pipeline:
+    </p>
+
+    <table class="facts-table">
+      <thead>
+        <tr>
+          <th>Evaluation Phase</th>
+          <th>Methodology</th>
+          <th>Pearson Correlation ($r$)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Geometric Ray-Tracing</strong></td>
+          <td>Monte-Carlo sampling of uniform-angle emission models</td>
+          <td><code>0.902</code></td>
+        </tr>
+        <tr>
+          <td><strong>Diffraction Simulation</strong></td>
+          <td>Rayleigh-Sommerfeld wave propagation with random phase fields</td>
+          <td><code>0.954</code></td>
+        </tr>
+        <tr>
+          <td><strong>Experimental Setup</strong></td>
+          <td>Projector + scattering mask, Thorlabs MLA, Holoeye LCD</td>
+          <td><code>0.762</code> (vs. Sim) / <code>0.820</code> (vs. GT)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      In their physical prototype, they mapped 4 input channels (using MNIST digits scaled to $8 \times 8$ pixels) onto 4 output channels through $3 \times 3$ kernels. The experimental results yielded an average correlation of <strong>0.82</strong> against ground-truth digital convolutions, demonstrating the viability of the spatial layout despite ambient noise and alignment tolerances.
+    </p>
+
+    <h2>Why This Matters for Co-Processors</h2>
+    <p>
+      This design stands out because it shifts the complexity from active electronics to passive, micro-structured geometry. There is no active routing in the middle of the system. Instead, the microlenses steer the light passively, and the physical superposition of different wavefronts landing on the same photodetector pixel performs the sum-reduction across channels for free.
+    </p>
+    <p>
+      By substituting the prototype projector array with custom high-density microLED or VCSEL arrays, this architecture can scale to hundreds of parallel compute channels, offering a high-throughput, low-latency foundation for next-generation optical coprocessors.
+    </p>
+  </article>
 </main>
 
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-brand">◎ Meridian</div>
     <div class="footer-links">
-      <a href="/">Home</a>
       <a href="/blog/">Blog</a>
+      <a href="/docs/">Documentation</a>
       <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
       <a href="mailto:lucas.kempe@icloud.com">Contact</a>
     </div>
-    <div class="footer-meta">© 2026 Meridian · MIT licensed code</div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
   </div>
 </footer>
 
 <script type="module">
   import { initBurgerNav } from '/nav.js'
   initBurgerNav()
-</script>
-<script>
-  document.querySelectorAll('.product-buy-direct').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.disabled = true
-      btn.textContent = 'Redirecting to Stripe…'
-      location.href = 'https://buy.stripe.com/fZu6oJ6Fn8vx3VZ7EF7ok02'
-    })
-  })
 </script>
 </body>
 </html>
