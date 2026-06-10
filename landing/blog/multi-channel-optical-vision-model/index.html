@@ -3,42 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Meridian — Operational sovereignty for AI abundance</title>
-<meta name="description" content="Meridian is a cognitive infrastructure layer for operational sovereignty: local-first orchestration, deterministic routing, infrastructure stewardship, and execution autonomy in the age of AI abundance.">
-
-<meta property="og:type" content="website">
-<meta property="og:title" content="Meridian — Operational sovereignty for AI abundance">
-<meta property="og:description" content="A local-first orchestration substrate for cognitive routing, resilient execution, and infrastructure stewardship.">
-<meta property="og:url" content="https://ask-meridian.uk">
-
+<title>Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate — Meridian Blog</title>
+<meta name="description" content="Moving beyond parallel throughput: How spatial multiplexing in optical neural networks can serve as a trainable representational coordinate for vision and language tasks.">
+<meta property="og:title" content="Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate">
+<meta property="og:description" content="Dissecting a new million-parameter programmable optical processor (arXiv:2606.10253) that integrates with digital transformers for hybrid vision-language tasks.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/multi-channel-optical-vision-model/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/multi-channel-ovm-banner.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/multi-channel-ovm-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/multi-channel-optical-vision-model/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260530-terminal-v3">
-
-<!-- Speculation Rules: prerender same-origin destinations on a 200ms hover.
-     Cheap perceived-latency win — clicking "Try it live" or "Vision Lab" lands
-     on a fully-rendered page. Browsers without support ignore the rule. -->
-<script type="speculationrules">
-{
-  "prerender": [{
-    "where": { "and": [
-      { "href_matches": "/miniapp/*" },
-      { "not": { "selector_matches": ".no-prerender" } }
-    ]},
-    "eagerness": "moderate"
-  }],
-  "prefetch": [{
-    "where": { "href_matches": "/*" },
-    "eagerness": "conservative"
-  }]
-}
-</script>
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+</style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
 <body>
-<div class="scanline-layer"></div>
-
-<a href="#main" class="skip-link">Skip to main content</a>
-
 
 <nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
@@ -315,323 +315,89 @@
   </script>
 </nav>
 
-<main id="main" class="sovereign-page">
-  <section class="sovereign-hero" aria-labelledby="heroTitle">
-    <div class="alignment-plus ap-tl">+</div>
-    <div class="alignment-plus ap-tr">+</div>
-    <div class="alignment-plus ap-bl">+</div>
-    <div class="alignment-plus ap-br">+</div>
-    <div class="coord-label" style="top: 10px; left: 10px;">X:000 // Y:72</div>
-    <div class="coord-label" style="bottom: 10px; right: 10px;">LAT: 34.05 / LON: -118.24</div>
-    
-    <div class="section-meta">SEC_01 // CORE_INFRA</div>
-    
-    <div class="telemetry-log">
-      <div class="telemetry-item"><span style="padding-right: 8px;">PROD_NODES</span><span class="telemetry-val">28</span></div>
-      <div class="telemetry-item"><span style="padding-right: 8px;">UPTIME_SLO</span><span class="telemetry-val">99.99%</span></div>
-      <div class="telemetry-item"><span style="padding-right: 8px;">MCP_TRAFFIC</span><span class="telemetry-val">HIGH</span></div>
-      <div class="telemetry-item"><span style="padding-right: 8px;">LAST_AUDIT</span><span class="telemetry-val">05.29.26</span></div>
-      <div class="telemetry-item"><span style="padding-right: 8px;">SIGNAL_LOAD</span><span class="telemetry-val">14%</span></div>
-    </div>
-
-    <div class="hero-copy tech-frame">
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-        <span id="heroVersion" class="eyebrow eyebrow-live" data-loading>Infrastructure audit · v3.2.0 active</span>
-        <span class="status-tag">SYSTEM: NOMINAL</span>
-        <span class="status-tag">LATENCY: 14MS</span>
-      </div>
-      <p class="doctrine-kicker">Autonomous AI Infrastructure & Optimization Studio</p>
-      <h1 id="heroTitle" class="glitch-title" data-text="Code is Abundant. Operational Stability is Scarce.">Code is Abundant. Operational Stability is Scarce.</h1>
-      <p class="sovereign-lead">
-        Your AI can generate code. We make it run at scale. Meridian engineers the resilient, low-latency infrastructure required to transition fragile autonomous prototypes into hardened enterprise assets. We replace thin-wrapper agents with sovereign runtimes, stealth execution pipelines, and deterministic MCP vaults.
+<main id="main">
+  <article class="article-body">
+    <header style="margin-top: 64px; margin-bottom: 32px;">
+      <div class="article-meta">2026-06-10 · 6 min listen · optics</div>
+      <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate</h1>
+      <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+        Spatial multiplexing in optical neural networks (ONNs) is typically viewed as a way to increase throughput. A new study (arXiv:2606.10253) proves it can serve as a trainable representational coordinate, enabling million-parameter hybrid vision-language systems.
       </p>
-      <div class="cta-row hero-cta">
-        <a href="#intake" class="btn btn-primary" style="view-transition-name: cta-primary">Request Infrastructure Audit</a>
-        <a href="/miniapp/" class="btn btn-ghost">Open the router</a>
-      </div>
-    </div>
+    </header>
 
-    <div class="ops-map" aria-hidden="true">
-      <svg viewBox="0 0 620 480" focusable="false">
-        <defs>
-          <linearGradient id="signalLine" x1="0" x2="1">
-            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.05"/>
-            <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.65"/>
-            <stop offset="100%" stop-color="#10b981" stop-opacity="0.2"/>
-          </linearGradient>
-          <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(148,163,184,0.05)" stroke-width="1"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#gridPattern)" />
-        <rect x="38" y="38" width="544" height="404" rx="18" fill="none" stroke="rgba(148,163,184,0.16)"/>
-        
-        <!-- Complex Connection Matrix -->
-        <path d="M100 100 L520 380 M100 380 L520 100 M310 50 V430 M50 240 H570" stroke="rgba(148,163,184,0.05)" stroke-width="1" />
-        
-        <path d="M112 302C176 168 250 154 310 240S432 338 508 166" fill="none" stroke="url(#signalLine)" stroke-width="3"/>
-        <path d="M112 178C184 238 220 342 310 292S438 166 508 286" fill="none" stroke="rgba(167,139,250,0.45)" stroke-width="2" stroke-dasharray="3 6"/>
-        
-        <!-- Node Clutter -->
-        <g fill="#0b1220" stroke="#38bdf8" stroke-width="2">
-          <circle cx="112" cy="302" r="10"/> <circle cx="310" cy="240" r="14"/> <circle cx="508" cy="166" r="10"/>
-          <circle cx="150" cy="120" r="4" stroke="rgba(56,189,248,0.3)"/>
-          <circle cx="450" cy="350" r="4" stroke="rgba(56,189,248,0.3)"/>
-        </g>
-        <g fill="#0b1220" stroke="#a78bfa" stroke-width="1.5">
-          <circle cx="112" cy="178" r="8"/> <circle cx="310" cy="292" r="11"/> <circle cx="508" cy="286" r="8"/>
-        </g>
+    <img src="/img/blog/multi-channel-ovm-banner.svg" alt="Multi-channel Optical Vision Model · banner showing multi-layer paths through a programmable phase plane with surrogate backward training" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
-        <g class="map-labels" style="font-size: 8px; opacity: 0.8;">
-          <text x="120" y="315">NODE_ALPHA_01</text>
-          <text x="320" y="255">HUB_CORE_PRIME</text>
-          <text x="515" y="175">NODE_OMEGA_99</text>
-          <text x="45" y="45">TX_READY</text>
-          <text x="530" y="435">INFRA_STABLE</text>
-        </g>
-        
-        <g class="map-labels" style="font-weight: bold; fill: #7dd3fc;">
-          <text x="76" y="82">LOCAL_EXECUTION_LAYER</text>
-          <text x="238" y="82">COGNITIVE_ROUTING_SUBSTRATE</text>
-          <text x="406" y="82">OPERATIONAL_CONTROL_PLANE</text>
-        </g>
-      </svg>
-    </div>
-  </section>
+    <p>
+      Optical Neural Networks (ONNs) have historically excelled at fixed-function, high-speed linear operations. However, scaling them to the complexity of modern vision and language models has remained a challenge. In the recent paper <em>"Multi-channel Optical Vision Model"</em> (arXiv:2606.10253), Ali Momeni et al. present a paradigm shift: treating spatial channels not just as parallel pipes, but as a rich, trainable readout space.
+    </p>
 
-  <section class="problem-grid" aria-labelledby="bottleneckTitle">
-    <div class="alignment-plus ap-tl">+</div>
-    <div class="alignment-plus ap-tr">+</div>
-    <div class="section-meta">SEC_02 // SYSTEM_FRICTION</div>
-    <div class="section-head section-head-left">
-      <p class="section-kicker">The Bottleneck</p>
-      <h2 id="bottleneckTitle">Why Autonomous Systems Fail in Production</h2>
-      <p class="lead">The "Agent" hype cycle has ignored the physical reality of production environments. Most autonomous implementations collapse under three primary pressures.</p>
-    </div>
-    <div class="matrix-grid">
-      <article class="tech-card" data-id="LTNCY_01">
-        <div class="status-tag" style="margin-bottom: 12px;">CRITICAL</div>
-        <span>01</span>
-        <h3>Latency & Token Burn</h3>
-        <p>Naive multi-agent architectures and unoptimized LLM chaining incinerate API budgets while choking user experience. Reasoning is cheap; millisecond-critical execution is expensive.</p>
-      </article>
-      <article class="tech-card" data-id="WALL_02">
-        <div class="status-tag" style="margin-bottom: 12px;">ADVERSARIAL</div>
-        <span>02</span>
-        <h3>The Physical Firewall</h3>
-        <p>High-value data and last-mile execution points are guarded by Cloudflare, reCAPTCHA Enterprise, and origin-binding. Thin-wrapper agents freeze the moment they hit the physical firewall of the modern web.</p>
-      </article>
-      <article class="tech-card" data-id="DRIFT_03">
-        <div class="status-tag" style="margin-bottom: 12px;">FRAGILE</div>
-        <span>03</span>
-        <h3>System Drift & Fragility</h3>
-        <p>Without deterministic circuit breakers and cryptographic state-persistence, autonomous pipelines lack the "memory" to survive mid-operation crashes, leading to silent failures and infinite loops.</p>
-      </article>
-    </div>
-  </section>
+    <p>
+      By leveraging a programmable free-space optical processor with over <strong>one million trainable parameters</strong>, the researchers demonstrate a multi-layer architecture capable of handling tasks ranging from image classification to controlled image-captioning.
+    </p>
 
-  <section class="framework-section" aria-labelledby="coreTitle">
-    <div class="spacing-track-v"></div>
-    <div class="alignment-plus ap-tl">+</div>
-    <div class="alignment-plus ap-tr">+</div>
-    <div class="section-meta">SEC_03 // PROD_CORE</div>
-    <div class="section-head">
-      <p class="section-kicker">Meridian's Production Core</p>
-      <h2 id="coreTitle">Infrastructure for the next generation of autonomous operations.</h2>
-    </div>
-    <div class="framework-grid">
-      <article class="tech-card" data-id="ROUT_01">
-        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-cyan);">ACTIVE</div>
-        <h3>I. Multi-Model Routing</h3>
-        <p>Deterministic proxy engines that optimize for both cost and speed. We shave milliseconds off high-frequency frameworks by dynamically routing tasks between Claude 3.5, DeepSeek, and local edge models.</p>
-        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">RUST PROXIES · SEMANTIC CLASSIFIERS</div>
-      </article>
-      <article class="tech-card" data-id="EXEC_02">
-        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-pink);">STEALTH</div>
-        <h3>II. Stealth Runtimes</h3>
-        <p>Unbannable, last-mile execution pipelines for environments where official APIs do not exist. Custom browser patches and residential proxy rotation to bypass origin-enforcement.</p>
-        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">PATCHRIGHT · IP ROTATION · SESSION HYDRATION</div>
-      </article>
-      <article class="tech-card" data-id="BACK_03">
-        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-mint);">PERSISTENT</div>
-        <h3>III. Distributed Backends</h3>
-        <p>Event-driven runtimes designed for zero-loss operations. State-persistent backends using Redis pub/sub and cryptographic checkpoints so complex workflows resume instantly after failure.</p>
-        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">PM2 CLUSTERS · CRYPTOGRAPHIC CHECKPOINTS</div>
-      </article>
-      <article class="tech-card" data-id="MCP_04">
-        <div class="status-tag" style="margin-bottom: 12px; color: var(--neon-violet);">SECURE</div>
-        <h3>IV. Enterprise Vaults</h3>
-        <p>Secure, self-hosted data bridges (MCP) that allow frontier models to query sensitive internal databases without data-leakage risks or exposing raw data to the public internet.</p>
-        <div style="font-family: var(--font-mono); font-size: 11px; margin-top: 12px; color: var(--accent);">MCP SDK · ISOLATED WORKERS · ZERO-TRUST</div>
-      </article>
-    </div>
-  </section>
-
-  <section class="stewardship-section" aria-labelledby="metricsTitle">
-    <div class="alignment-plus ap-tl">+</div>
-    <div class="alignment-plus ap-tr">+</div>
-    <div class="section-meta">SEC_04 // PERFORMANCE_LOG</div>
-    <div class="section-head section-head-left">
-      <p class="section-kicker">Production Footprint</p>
-      <h2 id="metricsTitle">Proven Metrics. Scalable Infrastructure.</h2>
-      <p class="lead">Deterministic performance across high-frequency autonomous environments.</p>
-    </div>
-
-    <div class="stewardship-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
-      <!-- Card 1: MCP Servers -->
-      <div class="glass-metric-card" data-metric-id="01">
-        <div class="metric-dialog">
-          <div class="dialog-row"><span>STATUS</span><span class="trend-up">OPERATIONAL</span></div>
-          <div class="dialog-row"><span>PEAK_LOAD</span><span>42.4 req/s</span></div>
-          <div class="dialog-row"><span>LOCATION</span><span>US-EAST / EU-CENTRAL</span></div>
-          <div class="dialog-row"><span>TRUST_LEVEL</span><span>L5_SOVEREIGN</span></div>
-        </div>
-        <div class="metric-header">
-          <div>
-            <p class="metric-label">Active Deployments</p>
-            <div class="metric-value-wrap">
-              <span class="metric-value" data-animate-number="25">0</span>
-              <span class="metric-value" style="font-size: 24px; margin-left: -4px;">+</span>
-            </div>
-          </div>
-          <div class="mini-chart-placeholder">
-            <svg class="progress-ring" width="48" height="48">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
-              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" style="--target-offset: 20;"/>
-            </svg>
-          </div>
-        </div>
-        <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">MCP Servers running concurrently in production environments.</p>
-        <div class="metric-forecast">
-          <span class="forecast-tag">PROJECTED</span> +12% scaling next quarter
-        </div>
-      </div>
-
-      <!-- Card 2: PM2 Services -->
-      <div class="glass-metric-card" data-metric-id="02">
-        <div class="metric-dialog">
-          <div class="dialog-row"><span>RUNTIME</span><span>NODE_20_LTS</span></div>
-          <div class="dialog-row"><span>CLUSTERING</span><span>PM2_ACTIVE</span></div>
-          <div class="dialog-row"><span>AUTO_RESTART</span><span>ENABLED</span></div>
-          <div class="dialog-row"><span>LOG_SIZE</span><span>1.2 GB / day</span></div>
-        </div>
-        <div class="metric-header">
-          <div>
-            <p class="metric-label">Automated Loops</p>
-            <div class="metric-value-wrap">
-              <span class="metric-value" data-animate-number="15">0</span>
-              <span class="metric-value" style="font-size: 24px; margin-left: -4px;">+</span>
-            </div>
-          </div>
-          <div class="mini-chart-placeholder">
-            <svg class="progress-ring" width="48" height="48">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
-              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-2)" stroke-width="4" stroke-linecap="round" style="--target-offset: 60;"/>
-            </svg>
-          </div>
-        </div>
-        <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">Self-Hosted PM2 automated services managing 24/7 sovereign logic.</p>
-        <div class="metric-forecast">
-          <span class="forecast-tag">RECOVERY</span> 0ms data loss on last fault
-        </div>
-      </div>
-
-      <!-- Card 3: Engine Skills -->
-      <div class="glass-metric-card" data-metric-id="03">
-        <div class="metric-dialog">
-          <div class="dialog-row"><span>ENGINE_VER</span><span>V1.4_STABLE</span></div>
-          <div class="dialog-row"><span>VECTORS</span><span>2,048_DIM</span></div>
-          <div class="dialog-row"><span>LATENCY</span><span>14ms / route</span></div>
-          <div class="dialog-row"><span>AUTH</span><span>ED25519_SIG</span></div>
-        </div>
-        <div class="metric-header">
-          <div>
-            <p class="metric-label">Autonomous Capability</p>
-            <div class="metric-value-wrap">
-              <span class="metric-value" data-animate-number="19">0</span>
-              <span class="metric-value" style="font-size: 24px; margin-left: -4px;">-SKILL</span>
-            </div>
-          </div>
-          <div class="mini-chart-placeholder">
-            <svg class="progress-ring" width="48" height="48">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>
-              <circle class="progress-ring-circle" cx="24" cy="24" r="20" fill="none" stroke="var(--accent-pink)" stroke-width="4" stroke-linecap="round" style="--target-offset: 35;"/>
-            </svg>
-          </div>
-        </div>
-        <p style="font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5;">B2B Engine actively executing real-world outbound workflows.</p>
-        <div class="metric-forecast">
-          <span class="forecast-tag">AI_INSIGHT</span> Optimizing for DeepSeek V3
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="intake" class="cta-final sovereign-cta">
-    <div class="alignment-plus ap-tl">+</div>
-    <div class="alignment-plus ap-tr">+</div>
-    <div class="section-meta">SEC_05 // INTAKE_GATE</div>
-    <p class="section-kicker">The Gatekeeper</p>
-    <h2>Intake Terminal</h2>
-    <p class="lead">Meridian accepts a limited number of high-stakes infrastructure mandates and architectural consulting roles. We filter for scale and technical complexity.</p>
+    <h2>The representational power of spatial channels</h2>
     
-    <div class="intake-terminal">
-      <div class="terminal-inner">
-        <div class="terminal-header">
-          <div style="display: flex; gap: 8px;">
-            <div style="width: 10px; height: 10px; border-radius: 50%; background: #f87171; box-shadow: 0 0 8px #f87171;"></div>
-            <div style="width: 10px; height: 10px; border-radius: 50%; background: #fbbf24;"></div>
-            <div style="width: 10px; height: 10px; border-radius: 50%; background: #4ad62f;"></div>
-          </div>
-          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.2em; font-weight: 800;">MERIDIAN_CONSOLE_V3.2</span>
-        </div>
+    <p>
+      The core methodology involves mapping the representation space onto $N$ spatially multiplexed channels. Instead of using these channels for redundant computation, the model treats them as independent learners and structured code dimensions.
+    </p>
 
-        <form class="intake-form">
-          <div class="input-frame">
-            <label><div class="port-led"></div> [01] CURRENT INFRASTRUCTURE SCALE</label>
-            <input type="text" class="input-field" placeholder="e.g., Monthly Token Volume / Agent Count">
-          </div>
-
-          <div class="input-frame">
-            <label><div class="port-led"></div> [02] PRIMARY SYSTEM BOTTLENECK</label>
-            <select class="input-field" style="appearance: none; cursor: pointer;">
-              <option>Latency / Token Cost</option>
-              <option>Anti-Bot / CAPTCHA</option>
-              <option>State Drift / Reliability</option>
-            </select>
-          </div>
-
-          <div class="input-frame">
-            <label><div class="port-led"></div> [03] PROJECT_SCOPE (STRICTLY_TECHNICAL)</label>
-            <textarea rows="4" class="input-field" placeholder="Describe your architectural constraints..."></textarea>
-          </div>
-
-          <button type="submit" class="btn-execute">
-            EXECUTE_INTAKE_PROTOCOL
-          </button>
-        </form>
-
-        <div class="terminal-footer">
-          <div>ENCRYPTION: AES_256_GCM // HANDSHAKE_READY</div>
-          <div class="signal-meter">
-            <div class="signal-bar"></div>
-            <div class="signal-bar"></div>
-            <div class="signal-bar"></div>
-            <div class="signal-bar"></div>
-          </div>
-        </div>
-      </div>
+    <div class="callout" style="text-align: center;">
+      The spatial layout of the optical processor defines a multi-dimensional feature group, where interactions between channels are governed by diffraction physics and optimized via phase modulation.
     </div>
-  </section>
+
+    <h2>Surrogate-Backward Training</h2>
+
+    <p>
+      Training a physical optical system with over a million parameters requires a sophisticated approach to gradient estimation. The authors employ an online <strong>physical-forward / surrogate-backward</strong> scheme.
+    </p>
+
+    <div class="rule">
+      <strong>The Training Workflow:</strong>
+      <ol>
+        <li><strong>Physical Forward Pass:</strong> Input data is encoded into the optical field and propagated through the physical phase modulators.</li>
+        <li><strong>Surrogate Estimation:</strong> A differentiable surrogate model estimates the gradient $\nabla_\phi \mathcal{L}$ of the loss with respect to the optical phases.</li>
+        <li><strong>Fine-Tuning:</strong> The surrogate model is continually updated during training to match the experimental measurements, ensuring high-fidelity optimization.</li>
+      </ol>
+    </div>
+
+    <h2>Hybrid ONN-Transformer Integration</h2>
+
+    <p>
+      One of the most impressive findings is the integration of the ONN with a digital transformer decoder. The optical processor acts as a "visual encoder," providing high-dimensional tokens that are fed into the transformer for image-captioning tasks.
+    </p>
+    
+    <p>
+      This hybrid design exploits the low-latency, high-bandwidth nature of optics for front-end feature extraction while utilizing the sequential reasoning capabilities of digital silicon for the language generation phase.
+    </p>
+
+    <h2>Mathematical Implications</h2>
+    <p>
+      The transition of optical channels into a representational coordinate system can be viewed as an expansion of the network's latent space capacity:
+    </p>
+
+    <div style="text-align: center; margin: 24px 0;">
+      $$Z_{\text{out}} = \sigma \left( \sum_{k=1}^{N} W_k \ast X_k \right)$$
+    </div>
+
+    <p>
+      Where $W_k$ represents the optimized phase mask for the $k$-th spatial channel. By increasing the number of trainable channels $N$ and parameters per channel, the OVM achieves a representational density previously reserved for all-digital deep learning models.
+    </p>
+
+    <h2>Conclusion</h2>
+    <p>
+      The <strong>Multi-channel Optical Vision Model</strong> provides a blueprint for truly scalable optical computing. By moving beyond SISO/SIMO constraints and embracing spatial multiplexing as a fundamental learnable coordinate, this work paves the way for optical co-processors that can handle the sheer parameter count and architectural diversity of next-generation AI.
+    </p>
+  </article>
 </main>
 
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-brand">◎ Meridian</div>
     <div class="footer-links">
+      <a href="/blog/">Blog</a>
       <a href="/docs/">Documentation</a>
       <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
-      <a href="https://www.npmjs.com/package/meridian-orbital">npm</a>
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
       <a href="mailto:lucas.kempe@icloud.com">Contact</a>
     </div>
     <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
@@ -639,15 +405,9 @@
 </footer>
 
 <script type="module">
-import { initBurgerNav, loadVersionBadge } from '/nav.js'
-import { initCopySnippet, initHeroCursor, initViewTransitions, initMetricCounters } from '/landing.js'
-initBurgerNav()
-loadVersionBadge('heroVersion', 'versionBadge')
-initCopySnippet()
-initHeroCursor()
-initViewTransitions()
-initMetricCounters()
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
 </script>
-
+<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
