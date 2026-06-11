@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <radialGradient id="spaceGradient" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a1625" />
+      <stop offset="60%" stop-color="#050c16" />
+      <stop offset="100%" stop-color="#02050a" />
+    </radialGradient>
+
+    <linearGradient id="noiseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="pureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e9dc" />
+      <stop offset="60%" stop-color="#dfc29e" />
+      <stop offset="100%" stop-color="#b89773" />
+    </linearGradient>
+    
+    <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="rgba(88, 166, 255, 0.15)"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
+  <rect width="1920" height="1080" fill="url(#dotPattern)"/>
+
+  <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+
+  <g transform="translate(960, 220)" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <g transform="translate(0, -90)">
+      <rect x="-130" y="-18" width="260" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+      <circle cx="-100" cy="-2" r="3" fill="#10b981"/>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">QUANTUM PURIFICATION</text>
+    </g>
+
+    <text font-size="64" font-weight="800" fill="#ffffff" letter-spacing="5">SCALING-OPTIMAL PURIFICATION OF</text>
+    <text y="85" font-size="64" font-weight="800" fill="url(#goldText)" letter-spacing="5">NOISY QUBIT UNITARY CHANNELS</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">ASYMPTOTIC O(1/n) NOISE SUPPRESSION VIA U(2)-COVARIANT SUPERCHANNELS</text>
+  </g>
+
+  <!-- Quantum Channel Purification Visualization -->
+  <g transform="translate(960, 680)">
+    <!-- Noisy Input side -->
+    <g transform="translate(-400, 0)">
+      <circle cx="0" cy="0" r="120" fill="none" stroke="url(#noiseGrad)" stroke-width="4" stroke-dasharray="10,5"/>
+      <text y="160" font-family="monospace" font-size="16" fill="#ef4444" text-anchor="middle">NOISY CHANNELS ε_U</text>
+      <g transform="scale(0.8)">
+        <path d="M -50,0 L 50,0 M 0,-50 L 0,50" stroke="#ef4444" stroke-width="2" opacity="0.5"/>
+        <circle cx="20" cy="-30" r="8" fill="#ef4444">
+          <animate attributeName="cx" values="20;25;20" dur="1s" infinite="true"/>
+          <animate attributeName="cy" values="-30;-35;-30" dur="1s" infinite="true"/>
+        </circle>
+      </g>
+    </g>
+
+    <!-- Superchannel Processor -->
+    <g transform="translate(0, 0)">
+      <rect x="-150" y="-200" width="300" height="400" rx="15" fill="rgba(30, 41, 59, 0.8)" stroke="#ffffff" stroke-opacity="0.2"/>
+      <text y="-220" font-family="monospace" font-size="14" fill="#ffffff" text-anchor="middle">SUPERCHANNEL PROTOCOL</text>
+      <g transform="translate(0, 0)">
+        <rect x="-80" y="-40" width="160" height="80" rx="4" fill="rgba(16, 185, 129, 0.1)" stroke="#10b981" stroke-width="2"/>
+        <text y="10" font-family="monospace" font-size="24" fill="#10b981" text-anchor="middle" font-weight="bold">U(2)</text>
+      </g>
+      <path d="M -250,0 L -100,0" stroke="#38bdf8" stroke-width="2" stroke-dasharray="8,4"/>
+      <path d="M 100,0 L 250,0" stroke="#10b981" stroke-width="2" stroke-dasharray="8,4"/>
+    </g>
+
+    <!-- Purified Output side -->
+    <g transform="translate(400, 0)">
+      <circle cx="0" cy="0" r="120" fill="none" stroke="url(#pureGrad)" stroke-width="4"/>
+      <text y="160" font-family="monospace" font-size="16" fill="#10b981" text-anchor="middle">IDEAL UNITARY U</text>
+      <g transform="scale(0.8)">
+        <path d="M -50,0 L 50,0 M 0,-50 L 0,50" stroke="#10b981" stroke-width="2" opacity="0.8"/>
+        <circle cx="45" cy="0" r="8" fill="#10b981"/>
+      </g>
+    </g>
+
+    <text y="280" font-family="monospace" font-size="18" fill="#a78bfa" text-anchor="middle">OPTIMAL SCALING: ERROR ~ O(1/n)</text>
+  </g>
+
+  <!-- Technical Brackets -->
+  <g stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
+    <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
+  </g>
+
+  <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
+    <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/purification-noisy-qubit-unitary-channels/</text>
+  </g>
+</svg>
