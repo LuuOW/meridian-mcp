@@ -73,7 +73,7 @@
   </g>
 
   <!-- Technical Brackets -->
-  <g stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.5">
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
     <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
     <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
     <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>

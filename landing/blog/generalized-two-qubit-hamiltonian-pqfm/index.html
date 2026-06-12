@@ -35,6 +35,27 @@
   .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
   .callout strong { color: #ddd6fe; }
   .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+  }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
@@ -325,7 +346,7 @@
       </p>
     </header>
 
-    <img src="/img/blog/generalized-hamiltonian-pqfm-banner.svg" alt="Generalized two-qubit Hamiltonian · banner showing parameterized qubit interactions and Pauli fields" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+    <img src="/img/blog/generalized-hamiltonian-pqfm-banner.svg?v=2" alt="Generalized two-qubit Hamiltonian · banner showing parameterized qubit interactions and Pauli fields" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
     <p>
       In Quantum Machine Learning (QML), the **Projective Quantum Feature Map (PQFM)** is a critical tool for mapping classical data into the high-dimensional Hilbert space of a quantum computer. Traditionally, these maps relied on simple, independent qubit rotations. However, the recent paper <em>"Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps"</em> (arXiv:2606.13641) by Rafael Simões do Carmo et al. suggests a more powerful approach: using the full generalized two-qubit Hamiltonian.
@@ -347,7 +368,7 @@
       The authors consider a Hamiltonian $H$ that acts on a pair of qubits, defined by local fields $h_i$ and interaction terms $J_{ij}$:
     </p>
 
-    <div class="callout" style="text-align: center;">
+    <div class="math-block" data-label="Generalized Hamiltonian PQFM">
       $$H(\mathbf{x}) = \sum_{i, a} h_{i, a}(\mathbf{x}) \sigma_{i, a} + \sum_{i < j, a, b} J_{ij, ab}(\mathbf{x}) \sigma_{i, a} \otimes \sigma_{j, b}$$
     </div>
 
