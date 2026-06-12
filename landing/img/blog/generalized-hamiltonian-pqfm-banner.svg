@@ -30,13 +30,13 @@
   <g transform="translate(960, 220)" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
     <g transform="translate(0, -90)">
       <rect x="-130" y="-18" width="260" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
-      <circle cx="-100" cy="-2" r="3" fill="#fbbf24"/>
+      <circle cx="-100" cy="-2" r="3" fill="#38bdf8"/>
       <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">QUANTUM COMPUTING</text>
     </g>
 
-    <text font-size="64" font-weight="800" fill="#ffffff" letter-spacing="5">GENERALIZED TWO-QUBIT HAMILTONIAN</text>
-    <text y="85" font-size="64" font-weight="800" fill="url(#goldText)" letter-spacing="5">FOR PROJECTIVE FEATURE MAPS</text>
-    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">UNIFYING LOCAL FIELDS & PAIRWISE INTERACTIONS FOR HIGH-DENSITY ENCODING</text>
+    <text font-size="54" font-weight="800" fill="#ffffff" letter-spacing="5">GENERALIZED TWO-QUBIT HAMILTONIAN</text>
+    <text y="85" font-size="54" font-weight="800" fill="url(#goldText)" letter-spacing="5">FOR PROJECTIVE FEATURE MAPS</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">UNIFYING LOCAL FIELDS & PAIRWISE INTERACTIONS (arXiv:2606.13641)</text>
   </g>
 
   <!-- Hamiltonian / PQFM Visualization -->
@@ -65,8 +65,8 @@
     
     <!-- Hamiltonian Equation Placeholder -->
     <g transform="translate(0, -100)">
-      <rect x="-180" y="-30" width="360" height="60" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#fbbf24" stroke-opacity="0.3"/>
-      <text font-family="monospace" font-size="20" fill="#fbbf24" text-anchor="middle">H = Σ h_i σ_i + Σ J_ij σ_i σ_j</text>
+      <rect x="-180" y="-30" width="360" height="60" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#38bdf8" stroke-opacity="0.3"/>
+      <text font-family="monospace" font-size="20" fill="#ffffff" text-anchor="middle">H = Σ h_i σ_i + Σ J_ij σ_i σ_j</text>
     </g>
 
     <text y="200" font-family="monospace" font-size="18" fill="#a78bfa" text-anchor="middle">OPTIMIZING INFORMATION DENSITY IN SHALLOW CIRCUITS</text>
