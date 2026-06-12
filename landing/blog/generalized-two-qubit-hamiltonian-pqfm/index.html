@@ -2,18 +2,43 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<meta name="theme-color" content="#0a0d14">
-<title>Meridian — Try the router</title>
-<meta name="description" content="Type a task. See which candidates the router picks and why.">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps — Meridian Blog</title>
+<meta name="description" content="Encoding classical data via Hamiltonian evolution: How unified Pauli fields and pairwise interactions increase information density in shallow quantum circuits.">
+<meta property="og:title" content="Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps">
+<meta property="og:description" content="Dissecting a new unified Hamiltonian-based PQFM framework (arXiv:2606.13641) that demonstrates consistent statistical gains on biomedical datasets using IBM quantum processors.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/generalized-hamiltonian-pqfm-banner.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/generalized-hamiltonian-pqfm-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260514a">
-<link rel="stylesheet" href="/miniapp/miniapp.css?v=20260514a">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+</style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
 <body>
-
-<a href="#main" class="skip-link">Skip to main content</a>
 
 <nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
@@ -290,121 +315,95 @@
   </script>
 </nav>
 
-<main id="main" class="mini-wrap">
-  <header class="mini-head">
-    <span class="eyebrow">Live demo</span>
-    <h1>Type a task. See which candidates the router picks.</h1>
-    <p class="lead">
-      Describe what you're trying to do — or scan a real-world object. An LLM authors fresh
-      candidates for your task and the orbital engine classifies each into a celestial class.
-    </p>
-  </header>
-
-  <div class="meta-bar">
-  </div>
-
-  <section class="ask-card" aria-labelledby="taskLabel">
-    <label for="taskInput" id="taskLabel" class="sr-only">Task description</label>
-    <div class="input-frame">
-      <textarea
-        id="taskInput"
-        class="task-input"
-        placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
-        rows="3"
-        maxlength="800"
-        aria-describedby="taskHelp"></textarea>
-    </div>
-    <p id="taskHelp" class="sr-only">Describe what you are trying to build. The router generates 5 candidates, then assigns each a celestial class.</p>
-    <div class="ask-controls">
-      <button id="askBtn" class="btn btn-primary">Find compatible candidates →</button>
-      <button id="arBtn" class="ar-pill" type="button" aria-label="Scan a real-world object with the camera (uses object detection)">
-        <span class="ar-pill-icon" aria-hidden="true">📷</span>
-        <span class="ar-pill-label">Scan an object</span>
-      </button>
-    </div>
-
-    <div class="examples">
-      <span class="examples-label">Try:</span>
-      <button class="ex-chip" data-task="Set up rate limiting on a public API endpoint with Redis">Rate limit a public API</button>
-      <button class="ex-chip" data-task="Stake a position on a prediction market on World Chain using ethers.js">DeFi staking on World Chain</button>
-      <button class="ex-chip" data-task="Write a SKILL.md authoring guide for new contributors">Author a SKILL.md</button>
-      <button class="ex-chip" data-task="Run a difference-in-differences analysis on rollout impact">Causal analysis of a rollout</button>
-    </div>
-  </section>
-
-  <section id="arSection" class="ar-section" hidden>
-    <div class="ar-stage">
-      <video id="arVideo" class="ar-video" playsinline muted autoplay></video>
-      <canvas id="arOverlay" class="ar-overlay" aria-label="Object detection overlay"></canvas>
-      <div class="ar-controls">
-        <span class="ar-status" id="arStatus">initializing…</span>
-        <button id="arCloseBtn" class="btn-ghost btn-sm">close ✕</button>
-      </div>
-      <div class="ar-detections" id="arDetections" hidden></div>
-    </div>
-    <p class="ar-foot">
-      Frames stay in your browser. Only the detected object class is sent to the router.
-      Powered by <code>tf.js + COCO-SSD</code> (80 classes).
-    </p>
-  </section>
-
-  <section id="resultsSection" class="results-section" hidden>
-    <div class="mini-galaxy-frame">
-      <canvas id="miniGalaxyCanvas" class="mini-galaxy-canvas" aria-label="Visualization of routed candidates as orbiting planets"></canvas>
-      <div class="mini-galaxy-controls">
-        <span class="mini-galaxy-label">view</span>
-        <div class="mode-toggle" role="tablist" aria-label="2D / 3D view">
-          <button id="mode2d" class="mode-btn active" role="tab" aria-selected="true">2D</button>
-          <button id="mode3d" class="mode-btn" role="tab" aria-selected="false">3D</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="results-header">
-      <h2>Results</h2>
-      <div id="resultsMeta" class="results-meta" role="status" aria-live="polite"></div>
-    </div>
-    <ol id="resultsList" class="results-list" aria-live="polite" aria-busy="false"></ol>
-  </section>
-
-  <footer class="mini-foot">
-    <p>
-      <strong>About this demo:</strong> the in-browser router uses lexical + IDF scoring
-      with orbital-class boosts (planet/trojan/moon/asteroid/comet) — a self-contained JS
-      port of the same orbital classifier shipped in the
-      <a href="https://www.npmjs.com/package/meridian-mcp">npm package</a>.
-      With <code>🪐 dynamic</code> on, the page POSTs to
-      <code>mcp.ask-meridian.uk/v1/route</code> — Llama-3.3-70B via GitHub Models
-      authors fresh candidates and the operator-paid Worker scores them alongside
-      the static corpus.
-    </p>
-  </footer>
-</main>
-
-<!-- Candidate detail side panel -->
-<aside id="candidatePanel" class="candidate-panel" hidden aria-hidden="true">
-  <div class="candidate-panel-backdrop" id="candidatePanelBackdrop"></div>
-  <div class="candidate-panel-body">
-    <header class="candidate-panel-header">
-      <div class="candidate-panel-title-row">
-        <h3 id="candidatePanelTitle"></h3>
-        <span class="candidate-panel-class" id="candidatePanelClass"></span>
-      </div>
-      <button id="candidatePanelClose" class="btn-ghost btn-sm" aria-label="Close candidate panel">✕</button>
+<main id="main">
+  <article class="article-body">
+    <header style="margin-top: 64px; margin-bottom: 32px;">
+      <div class="article-meta">2026-06-10 · 6 min listen · quantum ml</div>
+      <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps</h1>
+      <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+        How do we encode classical data into quantum states efficiently? A new study (arXiv:2606.13641) introduces a unified Hamiltonian framework that leverages pairwise interactions to maximize information density in near-term quantum processors.
+      </p>
     </header>
 
-    <div class="candidate-panel-scroll">
-      <section class="candidate-panel-why" id="candidatePanelWhy">
-        <!-- score breakdown chart + decision rule injected by JS -->
-      </section>
+    <img src="/img/blog/generalized-hamiltonian-pqfm-banner.svg" alt="Generalized Hamiltonian PQFM · banner showing two-qubit interactions and high-density data encoding" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
-      <section class="candidate-panel-content" id="candidatePanelContent">
-        <!-- candidate description + body markdown injected by JS -->
-      </section>
+    <p>
+      In Quantum Machine Learning (QML), the **Projective Quantum Feature Map (PQFM)** is a critical tool for mapping classical data into the high-dimensional Hilbert space of a quantum computer. Traditionally, these maps relied on simple, independent qubit rotations. However, the recent paper <em>"Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps"</em> (arXiv:2606.13641) by Rafael Simões do Carmo et al. suggests a more powerful approach: using the full generalized two-qubit Hamiltonian.
+    </p>
+
+    <h2>Encoding via Hamiltonian Evolution</h2>
+    
+    <p>
+      The core concept is to treat data encoding as a physical evolution under a parameterized Hamiltonian $H(\mathbf{x})$. By utilizing both local Pauli fields and pairwise interactions, the model can pack significantly more information into shallow, NISQ-friendly circuits.
+    </p>
+
+    <div class="callout" style="text-align: center;">
+      The generalized Hamiltonian framework unifies disparate encoding techniques into a single, optimized operation that captures complex data correlations directly in the quantum state.
     </div>
-  </div>
-</aside>
 
-<script type="module" src="/miniapp/app.js"></script>
+    <h2>The Mathematical Framework</h2>
+
+    <p>
+      The authors consider a Hamiltonian $H$ that acts on a pair of qubits, defined by local fields $h_i$ and interaction terms $J_{ij}$:
+    </p>
+
+    <div style="text-align: center; margin: 24px 0;">
+      $$H(\mathbf{x}) = \sum_{i, a} h_{i,a}(\mathbf{x}) \sigma_{i,a} + \sum_{i<j, a, b} J_{ij,ab}(\mathbf{x}) \sigma_{i,a} \otimes \sigma_{j,b}$$
+    </div>
+
+    <p>
+      Where $\sigma_{i,a}$ are the Pauli operators ($X, Y, Z$) for qubit $i$. The classical data $\mathbf{x}$ is mapped to the coefficients $h$ and $J$, effectively "programming" the quantum landscape to represent the input features.
+    </p>
+
+    <h2>Near-Term Quantum Utility</h2>
+
+    <p>
+      To validate the approach, the researchers benchmarked the generalized PQFM on various biomedical datasets using IBM quantum processors, scaling up to **156 qubits**.
+    </p>
+
+    <div class="rule">
+      <strong>Key Experimental Results:</strong>
+      <ul>
+        <li><strong>Statistical Gains:</strong> Consistent performance improvements over standard classical kernels and simpler quantum feature maps.</li>
+        <li><strong>Information Density:</strong> The ability to represent complex features using fewer gates and lower circuit depth.</li>
+        <li><strong>Robustness:</strong> Demonstrated utility on actual hardware despite the presence of gate noise and decoherence.</li>
+      </ul>
+    </div>
+
+    <h2>Implications for AI Infrastructure</h2>
+    <p>
+      As we move toward hybrid AI architectures, the efficiency of the "quantum-classical bridge"—the data encoding step—becomes paramount. Hamiltonian-based PQFMs provide a rigorous path to maximizing the representational capacity of quantum co-processors.
+    </p>
+    
+    <p>
+      By shifting from heuristic gate sequences to physical Hamiltonian parameters, this work aligns QML with the fundamental principles of quantum simulation and control.
+    </p>
+
+    <h2>Conclusion</h2>
+    <p>
+      The <strong>Generalized two-qubit Hamiltonian PQFM</strong> represents a significant step toward practical quantum advantage in machine learning. By leveraging the rich interaction space of superconducting qubits, we can build feature maps that are not just theoretically interesting, but statistically superior for real-world analytical tasks.
+    </p>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="/docs/">Documentation</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
