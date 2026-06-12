@@ -325,7 +325,7 @@
       </p>
     </header>
 
-    <img src="/img/blog/generalized-hamiltonian-pqfm-banner.svg" alt="Generalized Hamiltonian PQFM · banner showing two-qubit interactions and high-density data encoding" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+    <img src="/img/blog/generalized-hamiltonian-pqfm-banner.svg" alt="Generalized two-qubit Hamiltonian · banner showing parameterized qubit interactions and Pauli fields" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
     <p>
       In Quantum Machine Learning (QML), the **Projective Quantum Feature Map (PQFM)** is a critical tool for mapping classical data into the high-dimensional Hilbert space of a quantum computer. Traditionally, these maps relied on simple, independent qubit rotations. However, the recent paper <em>"Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps"</em> (arXiv:2606.13641) by Rafael Simões do Carmo et al. suggests a more powerful approach: using the full generalized two-qubit Hamiltonian.
@@ -347,8 +347,8 @@
       The authors consider a Hamiltonian $H$ that acts on a pair of qubits, defined by local fields $h_i$ and interaction terms $J_{ij}$:
     </p>
 
-    <div style="text-align: center; margin: 24px 0;">
-      $$H(\mathbf{x}) = \sum_{i, a} h_{i,a}(\mathbf{x}) \sigma_{i,a} + \sum_{i < j, a, b} J_{ij,ab}(\mathbf{x}) \sigma_{i,a} \otimes \sigma_{j,b}$$
+    <div class="callout" style="text-align: center;">
+      $$H(\mathbf{x}) = \sum_{i, a} h_{i, a}(\mathbf{x}) \sigma_{i, a} + \sum_{i < j, a, b} J_{ij, ab}(\mathbf{x}) \sigma_{i, a} \otimes \sigma_{j, b}$$
     </div>
 
     <p>
