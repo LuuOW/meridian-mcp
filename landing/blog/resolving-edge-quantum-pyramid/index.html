@@ -2,18 +2,64 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<meta name="theme-color" content="#0a0d14">
-<title>Meridian — Try the router</title>
-<meta name="description" content="Type a task. See which candidates the router picks and why.">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Resolving the Edge of a Quantum Pyramid: Confirmed Globally Information-Optimal Measurements — Meridian Blog</title>
+<meta name="description" content="Confirmation of the Englert-Řeháček conjecture: how entropy inequalities for obtuse and flat pyramids establish the absolute limits of information extraction from symmetric quantum states.">
+<meta property="og:title" content="Resolving the Edge of a Quantum Pyramid: Confirmed Globally Information-Optimal Measurements">
+<meta property="og:description" content="Confirming the information-optimal measurement for equiangular equiprobable pure states via Lambert W function analysis and tight ℓp inequalities.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/quantum-pyramid-banner.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/quantum-pyramid-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260514a">
-<link rel="stylesheet" href="/miniapp/miniapp.css?v=20260514a">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+  }
+</style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
 <body>
-
-<a href="#main" class="skip-link">Skip to main content</a>
 
 <nav class="nav" aria-label="Primary">
   <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
@@ -290,121 +336,93 @@
   </script>
 </nav>
 
-<main id="main" class="mini-wrap">
-  <header class="mini-head">
-    <span class="eyebrow">Live demo</span>
-    <h1>Type a task. See which candidates the router picks.</h1>
-    <p class="lead">
-      Describe what you're trying to do — or scan a real-world object. An LLM authors fresh
-      candidates for your task and the orbital engine classifies each into a celestial class.
-    </p>
-  </header>
-
-  <div class="meta-bar">
-  </div>
-
-  <section class="ask-card" aria-labelledby="taskLabel">
-    <label for="taskInput" id="taskLabel" class="sr-only">Task description</label>
-    <div class="input-frame">
-      <textarea
-        id="taskInput"
-        class="task-input"
-        placeholder="e.g. Write integration tests for a Stripe webhook handler in a TypeScript Express app"
-        rows="3"
-        maxlength="800"
-        aria-describedby="taskHelp"></textarea>
-    </div>
-    <p id="taskHelp" class="sr-only">Describe what you are trying to build. The router generates 5 candidates, then assigns each a celestial class.</p>
-    <div class="ask-controls">
-      <button id="askBtn" class="btn btn-primary">Find compatible candidates →</button>
-      <button id="arBtn" class="ar-pill" type="button" aria-label="Scan a real-world object with the camera (uses object detection)">
-        <span class="ar-pill-icon" aria-hidden="true">📷</span>
-        <span class="ar-pill-label">Scan an object</span>
-      </button>
-    </div>
-
-    <div class="examples">
-      <span class="examples-label">Try:</span>
-      <button class="ex-chip" data-task="Set up rate limiting on a public API endpoint with Redis">Rate limit a public API</button>
-      <button class="ex-chip" data-task="Stake a position on a prediction market on World Chain using ethers.js">DeFi staking on World Chain</button>
-      <button class="ex-chip" data-task="Write a SKILL.md authoring guide for new contributors">Author a SKILL.md</button>
-      <button class="ex-chip" data-task="Run a difference-in-differences analysis on rollout impact">Causal analysis of a rollout</button>
-    </div>
-  </section>
-
-  <section id="arSection" class="ar-section" hidden>
-    <div class="ar-stage">
-      <video id="arVideo" class="ar-video" playsinline muted autoplay></video>
-      <canvas id="arOverlay" class="ar-overlay" aria-label="Object detection overlay"></canvas>
-      <div class="ar-controls">
-        <span class="ar-status" id="arStatus">initializing…</span>
-        <button id="arCloseBtn" class="btn-ghost btn-sm">close ✕</button>
-      </div>
-      <div class="ar-detections" id="arDetections" hidden></div>
-    </div>
-    <p class="ar-foot">
-      Frames stay in your browser. Only the detected object class is sent to the router.
-      Powered by <code>tf.js + COCO-SSD</code> (80 classes).
-    </p>
-  </section>
-
-  <section id="resultsSection" class="results-section" hidden>
-    <div class="mini-galaxy-frame">
-      <canvas id="miniGalaxyCanvas" class="mini-galaxy-canvas" aria-label="Visualization of routed candidates as orbiting planets"></canvas>
-      <div class="mini-galaxy-controls">
-        <span class="mini-galaxy-label">view</span>
-        <div class="mode-toggle" role="tablist" aria-label="2D / 3D view">
-          <button id="mode2d" class="mode-btn active" role="tab" aria-selected="true">2D</button>
-          <button id="mode3d" class="mode-btn" role="tab" aria-selected="false">3D</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="results-header">
-      <h2>Results</h2>
-      <div id="resultsMeta" class="results-meta" role="status" aria-live="polite"></div>
-    </div>
-    <ol id="resultsList" class="results-list" aria-live="polite" aria-busy="false"></ol>
-  </section>
-
-  <footer class="mini-foot">
-    <p>
-      <strong>About this demo:</strong> the in-browser router uses lexical + IDF scoring
-      with orbital-class boosts (planet/trojan/moon/asteroid/comet) — a self-contained JS
-      port of the same orbital classifier shipped in the
-      <a href="https://www.npmjs.com/package/meridian-mcp">npm package</a>.
-      With <code>🪐 dynamic</code> on, the page POSTs to
-      <code>mcp.ask-meridian.uk/v1/route</code> — Llama-3.3-70B via GitHub Models
-      authors fresh candidates and the operator-paid Worker scores them alongside
-      the static corpus.
-    </p>
-  </footer>
-</main>
-
-<!-- Candidate detail side panel -->
-<aside id="candidatePanel" class="candidate-panel" hidden aria-hidden="true">
-  <div class="candidate-panel-backdrop" id="candidatePanelBackdrop"></div>
-  <div class="candidate-panel-body">
-    <header class="candidate-panel-header">
-      <div class="candidate-panel-title-row">
-        <h3 id="candidatePanelTitle"></h3>
-        <span class="candidate-panel-class" id="candidatePanelClass"></span>
-      </div>
-      <button id="candidatePanelClose" class="btn-ghost btn-sm" aria-label="Close candidate panel">✕</button>
+<main id="main">
+  <article class="article-body">
+    <header style="margin-top: 64px; margin-bottom: 32px;">
+      <div class="article-meta">2026-06-11 · 5 min listen · quantum information</div>
+      <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Resolving the Edge of a Quantum Pyramid</h1>
+      <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+        Information theory meets geometry: A new proof (arXiv:2606.14698) confirms the globally optimal measurement for symmetric quantum states, resolving a long-standing conjecture in the field.
+      </p>
     </header>
 
-    <div class="candidate-panel-scroll">
-      <section class="candidate-panel-why" id="candidatePanelWhy">
-        <!-- score breakdown chart + decision rule injected by JS -->
-      </section>
+    <img src="/img/blog/quantum-pyramid-banner.svg?v=101" alt="Resolving the Edge of a Quantum Pyramid · banner showing state vectors forming a quantum pyramid and the Lambert W relation" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
-      <section class="candidate-panel-content" id="candidatePanelContent">
-        <!-- candidate description + body markdown injected by JS -->
-      </section>
+    <p>
+      Extracting information from quantum states is one of the most fundamental tasks in quantum communication and computing. When presented with an ensemble of symmetric quantum states, what is the best measurement to distinguish them? This question was famously crystallized in the **Englert-Řeháček conjecture**, which posited the globally information-optimal measurement for equiangular equiprobable pure states.
+    </p>
+
+    <p>
+      In the recent paper <em>"Resolving the Edge of a Quantum Pyramid"</em> (arXiv:2606.14698), Alvan Arulandu provides the definitive mathematical resolution to this problem. By analyzing "quantum pyramids"—geometric representations of these state ensembles—Arulandu proves the remaining entropy inequalities for the "obtuse" and "flat" regimes.
+    </p>
+
+    <h2>Geometric Entropy Minimization</h2>
+    
+    <p>
+      The core of the proof lies in establishing entropy inequalities that govern the mutual information between the prepared state and the measurement outcome. For symmetric ensembles, the optimal measurement is often the **square-root measurement (SRM)**, but proving its global optimality across all geometric configurations (acute vs. obtuse pyramids) has been notoriously difficult.
+    </p>
+
+    <div class="callout" style="text-align: center;">
+      The "quantum pyramid" refers to the convex hull of the state vectors in the Bloch sphere or higher-dimensional Hilbert space. The "edge" of this pyramid represents the limit where states become nearly indistinguishable.
     </div>
-  </div>
-</aside>
 
-<script type="module" src="/miniapp/app.js"></script>
+    <h2>The Lambert W Connection</h2>
+
+    <p>
+      To resolve the inequalities, Arulandu employs a novel algebraic reciprocal inequality involving the **Lambert $W$ function**. The Lambert $W$ function, which solves equations of the form $w e^w = z$, appears naturally when dealing with the transcendental equations arising from Shannon entropy optimization.
+    </p>
+
+    <div class="math-block" data-label="Lambert W Inequality">
+      $$W(z) \approx \ln(z) - \ln(\ln(z)) + \dots$$
+    </div>
+
+    <h2>Confirming Global Optimality</h2>
+
+    <p>
+      The paper utilizes the **equal variables method** for $\ell^p$ inequalities to analyze the local minimizers of the entropy function. By showing that the SRM remains the global minimizer even for obtuse pyramids, the research establishes a unified bound for information extraction.
+    </p>
+
+    <div class="rule">
+      <strong>Key Result:</strong>
+      <p>
+        The globally information-optimal measurement for any ensemble of $N$ equiangular equiprobable pure states is confirmed to be the Symmetric POVM (Positive Operator-Valued Measure).
+      </p>
+    </div>
+
+    <h2>Significance for Quantum Science</h2>
+    <p>
+      This resolution provides a rigorous benchmark for quantum state discrimination. For practitioners building quantum sensors or communication links, it defines the absolute "speed limit" of information gain per state use. 
+    </p>
+    
+    <p>
+      By bridging complex analysis (Lambert $W$) and quantum geometry, Arulandu’s work transforms a geometric intuition into a fundamental law of quantum information theory.
+    </p>
+
+    <h2>Conclusion</h2>
+    <p>
+      The resolution of the quantum pyramids conjecture marks the closing of a significant chapter in quantum foundations. We now have a complete mathematical picture of how symmetry in state preparation translates to limits in measurement precision—a vital piece of the puzzle for future scalable quantum architectures.
+    </p>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="/docs/">Documentation</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
