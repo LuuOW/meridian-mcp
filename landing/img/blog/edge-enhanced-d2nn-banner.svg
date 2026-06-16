@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="spaceGradient" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a1625" />
+      <stop offset="60%" stop-color="#050c16" />
+      <stop offset="100%" stop-color="#02050a" />
+    </radialGradient>
+
+    <linearGradient id="spinGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#a78bfa" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.8"/>
+    </linearGradient>
+
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e9dc" />
+      <stop offset="60%" stop-color="#dfc29e" />
+      <stop offset="100%" stop-color="#b89773" />
+    </linearGradient>
+    
+    <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
+    </pattern>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
+  <rect width="1920" height="1080" fill="url(#dotPattern)"/>
+
+  <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+
+  <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
+    <g transform="translate(0, -90)">
+      <rect x="-130" y="-18" width="260" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+      <circle cx="-100" cy="-2" r="3" fill="#38bdf8"/>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">DIFFRACTIVE PHOTONICS</text>
+    </g>
+
+    <text font-size="54" font-weight="800" fill="#ffffff" letter-spacing="5">EDGE-ENHANCED DIFFRACTIVE</text>
+    <text y="85" font-size="54" font-weight="800" fill="url(#goldText)" letter-spacing="5">NEURAL NETWORKS (D2NN)</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">SPIN-MULTIPLEXED NONLOCAL METASURFACES (arXiv:2606.16938)</text>
+  </g>
+
+  <!-- Metasurface / Optical Flow Visualization -->
+  <g transform="translate(960, 680)">
+    <!-- Metasurface Plane -->
+    <g transform="rotate(20)">
+      <rect x="-300" y="-150" width="600" height="300" rx="4" fill="rgba(15, 23, 42, 0.6)" stroke="#38bdf8" stroke-width="2" opacity="0.4"/>
+      <!-- Grid of meta-atoms -->
+      <g opacity="0.3" fill="#ffffff">
+        <circle cx="-250" cy="-100" r="4"/><circle cx="-200" cy="-100" r="4"/><circle cx="-150" cy="-100" r="4"/>
+        <circle cx="-100" cy="-100" r="4"/><circle cx="-50" cy="-100" r="4"/><circle cx="0" cy="-100" r="4"/>
+        <circle cx="-250" cy="-50" r="4"/><circle cx="-200" cy="-50" r="4"/><circle cx="-150" cy="-50" r="4"/>
+        <!-- ... more dots implied ... -->
+      </g>
+    </g>
+
+    <!-- Spin-Multiplexed Beams -->
+    <!-- Left Hand Circular -->
+    <path d="M -600,0 Q -300,-100 0,0" fill="none" stroke="#38bdf8" stroke-width="4" stroke-dasharray="15,10" filter="url(#glow)">
+       <animate attributeName="stroke-dashoffset" from="0" to="-50" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <text x="-450" y="-120" font-family="monospace" font-size="16" fill="#38bdf8" text-anchor="middle">LCP: EDGE DETECTION</text>
+
+    <!-- Right Hand Circular -->
+    <path d="M -600,0 Q -300,100 0,0" fill="none" stroke="#a78bfa" stroke-width="4" stroke-dasharray="15,10" filter="url(#glow)">
+       <animate attributeName="stroke-dashoffset" from="0" to="-50" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <text x="-450" y="140" font-family="monospace" font-size="16" fill="#a78bfa" text-anchor="middle">RCP: CLASSIFICATION</text>
+
+    <!-- Output Detection -->
+    <g transform="translate(450, 0)">
+      <rect x="-100" y="-100" width="200" height="200" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#ffffff" stroke-opacity="0.2"/>
+      <!-- Edge Detected Image Placeholder -->
+      <path d="M -40,-40 L 40,-40 L 40,40 L -40,40 Z" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.8"/>
+      <path d="M -38,-38 L 38,-38 M 38,-38 L 38,38" fill="none" stroke="#ffffff" stroke-width="2" filter="url(#glow)"/>
+      <text y="140" font-family="monospace" font-size="14" fill="#ffffff" text-anchor="middle">CONVERSION EFFICIENCY: 55%</text>
+    </g>
+
+    <text y="280" font-family="monospace" font-size="18" fill="#fbbf24" text-anchor="middle">MOMENTUM-SPACE FILTERING &amp; GEOMETRIC PHASE MODULATION</text>
+  </g>
+
+  <!-- Technical Brackets -->
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
+    <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
+  </g>
+
+  <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
+    <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/edge-enhanced-diffractive-neural-networks/</text>
+  </g>
+</svg>
