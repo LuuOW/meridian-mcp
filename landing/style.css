@@ -199,6 +199,35 @@ pre code { background: none; padding: 0; color: inherit; }
   border-color: var(--border-2);
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+.btn-arxiv {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(148, 163, 184, 0.05);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all 0.2s var(--ease-out);
+  text-decoration: none;
+  margin-top: 12px;
+}
+.btn-arxiv:hover {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: var(--accent);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.12);
+  transform: translateY(-1px);
+}
+.btn-arxiv svg { opacity: 0.8; color: var(--accent); }
+.btn-arxiv span { position: relative; top: 0.5px; }
+
 .btn-block { display: block; text-align: center; margin-top: 18px; }
 
 .hero-snippet {
