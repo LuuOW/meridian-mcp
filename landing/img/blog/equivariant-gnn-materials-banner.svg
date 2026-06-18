@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="spaceGradient" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a1625" />
+      <stop offset="60%" stop-color="#050c16" />
+      <stop offset="100%" stop-color="#02050a" />
+    </radialGradient>
+
+    <linearGradient id="spectrumGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="20%" stop-color="#f59e0b" />
+      <stop offset="40%" stop-color="#10b981" />
+      <stop offset="60%" stop-color="#3b82f6" />
+      <stop offset="80%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e9dc" />
+      <stop offset="60%" stop-color="#dfc29e" />
+      <stop offset="100%" stop-color="#b89773" />
+    </linearGradient>
+    
+    <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
+    </pattern>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
+  <rect width="1920" height="1080" fill="url(#dotPattern)"/>
+
+  <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+
+  <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
+    <g transform="translate(0, -90)">
+      <rect x="-130" y="-18" width="260" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+      <circle cx="-100" cy="-2" r="3" fill="#10b981"/>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">EQUIVARIANT GNNs</text>
+    </g>
+
+    <text font-size="54" font-weight="800" fill="#ffffff" letter-spacing="5">OPTICAL SPECTRA PREDICTION</text>
+    <text y="85" font-size="54" font-weight="800" fill="url(#goldText)" letter-spacing="5">FOR MATERIALS SCREENING</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">GEOMETRIC DEEP LEARNING IN THE RANDOM PHASE APPROXIMATION (arXiv:2606.19133)</text>
+  </g>
+
+  <!-- Visualization: Crystal Lattice to Spectrum -->
+  <g transform="translate(960, 680)">
+    <!-- Lattice / Graph -->
+    <g transform="translate(-400, 0)">
+      <!-- Points -->
+      <circle cx="-50" cy="-50" r="10" fill="#38bdf8"/>
+      <circle cx="50" cy="-50" r="10" fill="#a78bfa"/>
+      <circle cx="0" cy="50" r="10" fill="#38bdf8"/>
+      <circle cx="80" cy="20" r="10" fill="#10b981"/>
+      
+      <!-- Edges -->
+      <g stroke="#ffffff" stroke-width="2" opacity="0.3">
+        <line x1="-50" y1="-50" x2="50" y2="-50"/>
+        <line x1="50" y1="-50" x2="0" y2="50"/>
+        <line x1="0" y1="50" x2="-50" y2="-50"/>
+        <line x1="50" y1="-50" x2="80" y2="20"/>
+        <line x1="0" y1="50" x2="80" y2="20"/>
+      </g>
+      
+      <text y="140" font-family="monospace" font-size="16" fill="#a0afb7" text-anchor="middle">CRYSTAL LATTICE GRAPH</text>
+    </g>
+
+    <!-- Equivariant Mapping Arrow -->
+    <g transform="translate(0, 0)">
+      <path d="M -150,0 L 150,0" stroke="#fbbf24" stroke-width="3" stroke-dasharray="10,5">
+        <animate attributeName="stroke-dashoffset" from="0" to="-30" dur="1s" infinite="true"/>
+      </path>
+      <text y="-30" font-family="monospace" font-size="14" fill="#fbbf24" text-anchor="middle">SO(3) EQUIVARIANCE</text>
+    </g>
+
+    <!-- Spectrum Curve -->
+    <g transform="translate(400, 0)">
+      <rect x="-150" y="-120" width="300" height="240" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#ffffff" stroke-opacity="0.1"/>
+      <!-- Grid -->
+      <g stroke="#ffffff" stroke-width="0.5" opacity="0.1">
+        <line x1="-150" y1="0" x2="150" y2="0"/>
+        <line x1="-150" y1="-60" x2="150" y2="-60"/>
+        <line x1="-150" y1="60" x2="150" y2="60"/>
+        <line x1="-75" y1="-120" x2="-75" y2="120"/>
+        <line x1="75" y1="-120" x2="75" y2="120"/>
+      </g>
+      <!-- Spectrum Path -->
+      <path d="M -150,80 Q -100,80 -70,20 T -20,-80 T 30,20 T 100,50 T 150,60" fill="none" stroke="url(#spectrumGrad)" stroke-width="4" filter="url(#glow)"/>
+      <text y="160" font-family="monospace" font-size="16" fill="#ec4899" text-anchor="middle">ε(ω) PREDICTION</text>
+    </g>
+
+    <!-- Formula block -->
+    <g transform="translate(0, 220)">
+      <rect x="-240" y="-35" width="480" height="70" rx="12" fill="#0f172a" fill-opacity="0.9" stroke="#38bdf8" stroke-opacity="0.4"/>
+      <text font-family="'Times New Roman', Times, serif" font-size="26" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">
+        <tspan font-style="italic">ε</tspan>(<tspan font-style="italic">ω</tspan>) = <tspan font-style="italic">ε</tspan><tspan font-size="16" dy="8">1</tspan><tspan dy="-8">(<tspan font-style="italic">ω</tspan>) + </tspan><tspan font-style="italic">iε</tspan><tspan font-size="16" dy="8">2</tspan><tspan dy="-8">(<tspan font-style="italic">ω</tspan>)</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- Technical Brackets -->
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
+    <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
+  </g>
+
+  <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
+    <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/equivariant-gnn-optical-spectra-materials/</text>
+  </g>
+</svg>

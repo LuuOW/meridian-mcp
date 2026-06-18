@@ -2,35 +2,60 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<meta name="theme-color" content="#0a0d14">
-<title>Meridian — Payment received</title>
-<meta name="description" content="Your subscription is active. We'll be in touch within 24 hours to schedule your MCP deployment.">
-<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Equivariant Graph Neural Networks for Optical Spectra Prediction — Meridian Blog</title>
+<meta name="description" content="High-fidelity materials screening via geometric deep learning. We dissect a new framework (arXiv:2606.19133) that uses equivariant GNNs to predict complex dielectric functions with state-of-the-art accuracy.">
+<meta property="og:title" content="Equivariant Graph Neural Networks for Optical Spectra Prediction">
+<meta property="og:description" content="Predicting optical spectra for materials screening using SO(3)-equivariant graph neural networks (arXiv:2606.19133). Significant improvements in static real permittivity prediction.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/equivariant-gnn-materials-banner.svg?v=101">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/equivariant-gnn-materials-banner.svg?v=101">
+<link rel="canonical" href="https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="stylesheet" href="/style.css?v=20260514a">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
 <style>
-  .success-wrap { max-width: 640px; margin: 64px auto; padding: 0 24px; }
-  .success-card {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 28px;
-    backdrop-filter: blur(8px);
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
   }
-  .success-card h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: -0.02em; }
-  .success-card .lead { margin: 0 0 22px; }
-  .next-steps { margin-top: 18px; }
-  .next-steps h2 { font-size: 17px; margin: 22px 0 10px; }
-  .next-steps p { margin: 8px 0; }
-  .next-steps ol { padding-left: 22px; margin: 8px 0; }
-  .next-steps ol li { margin: 6px 0; }
-  .timeline-card {
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    border-radius: 10px; padding: 14px 16px;
-    color: #a7f3d0; font-size: 13.5px;
-    margin: 14px 0 0;
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
   }
-  .timeline-card strong { color: #6ee7b7; }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
@@ -311,55 +336,99 @@
   </script>
 </nav>
 
-<main class="success-wrap">
-  <div class="success-card">
-    <h1>🎉 Payment received</h1>
-    <p class="lead">Thanks for subscribing. Stripe will email your receipt within a minute.</p>
+<main id="main">
+  <article class="article-body">
+    <header style="margin-top: 64px; margin-bottom: 32px;">
+      <div class="article-meta">2026-06-14 · 6 min listen · materials science</div>
+      <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Equivariant Graph Neural Networks for Optical Spectra Prediction</h1>
+      <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+        Scalable materials screening requires high-fidelity prediction of optical properties. A new study (arXiv:2606.19133) leverages SO(3)-equivariant GNNs to outperform existing surrogate models in predicting the complex dielectric function.
+      </p>
+      <a href="https://arxiv.org/abs/2606.19133" class="btn-arxiv" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Paper: arXiv:2606.19133
+      </a>
+    </header>
 
-    <div class="timeline-card">
-      <strong>What happens next.</strong> I&rsquo;ll reach out by email within 24 hours
-      from the address on your Stripe receipt to confirm which MCP you want
-      deployed (or to scope your custom build) and arrange access to the
-      subdomain we&rsquo;ll host it on.
+    <img src="/img/blog/equivariant-gnn-materials-banner.svg?v=101" alt="Equivariant GNN Materials · banner showing crystal lattice graph mapped to optical spectrum via SO(3) equivariance" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+
+    <p>
+      High-throughput screening of materials for optoelectronic applications—such as solar cells and thin-film transistors—relies on the ability to rapidly predict optical spectra. Traditionally, this required expensive first-principles calculations like the **Random Phase Approximation (RPA)**. While machine learning surrogate models have emerged, they often rely on rotation-invariant features that discard vital geometric information.
+    </p>
+
+    <p>
+      In the recent paper <em>"Equivariant Graph Neural Networks Improve Optical Spectra Prediction for Materials Screening"</em> (arXiv:2606.19133), Kasper Helverskov Petersen and colleagues introduce a more expressive approach: using equivariant graph neural networks (GNNs).
+    </p>
+
+    <h2>The Geometric Advantage: SO(3) Equivariance</h2>
+    
+    <p>
+      The core methodology involves adapting <strong>GotenNet</strong>, an equivariant GNN, to predict the complex dielectric function $\epsilon(\omega)$. Unlike invariant models, equivariant networks preserve the geometric relationships between atoms when the entire structure is rotated or translated.
+    </p>
+
+    <div class="math-block" data-label="Complex Dielectric Function">
+      $$\epsilon(\omega) = \epsilon_1(\omega) + i\epsilon_2(\omega)$$
     </div>
 
-    <div class="next-steps">
-      <h2>If you subscribed to <em>1 MCP</em> ($29/mo)</h2>
-      <ol>
-        <li>I&rsquo;ll ask which MCP from the catalog you want
-          (Meridian / Finance / Pharmacy / future).</li>
-        <li>You pick a subdomain on a zone you control, or use one of mine.</li>
-        <li>I deploy the MCP there with OAuth + PKCE wired up. ~24h turnaround
-          from your reply.</li>
-        <li>You add the connector to your AI host (Grok / Claude.ai / ChatGPT)
-          using the URL I send you.</li>
-      </ol>
+    <p>
+      This mathematical framework allows the model to capture the directional nature of optical responses in anisotropic crystals, leading to significantly better generalization across different material classes.
+    </p>
 
-      <h2>If you subscribed to <em>Custom Enterprise MCP</em> ($149/mo)</h2>
-      <ol>
-        <li>I&rsquo;ll set up a 30-min call to scope the tool surface — what your
-          MCP should read, what it should write, what auth model it lives behind.</li>
-        <li>We agree on a build window (typically 1–2 weeks for a v1).</li>
-        <li>You get a private repo, a deployed worker on your subdomain, and a
-          month of build-in support to wire it into your AI host and any
-          downstream tooling.</li>
-        <li>Renews monthly thereafter for ongoing maintenance + iteration.</li>
-      </ol>
+    <h2>Surrogate Modeling at the RPA Level</h2>
 
-      <h2>Manage your subscription</h2>
-      <p>Stripe sends every receipt with a &ldquo;Manage subscription&rdquo; link
-        for the customer portal — use that to update card, cancel, or
-        download invoices. Or email
-        <a href="mailto:lucas.kempe@icloud.com?subject=Meridian%20subscription">lucas.kempe@icloud.com</a>
-        directly with your Stripe session ID.</p>
+    <p>
+      The researchers evaluated their model on a massive dataset of 10,533 structures with spectra computed at the RPA level. This is a critical step up from lower-level theories (like PBE-level DFT), which often underestimate band gaps and misplace peak positions.
+    </p>
 
-      <h2>Didn&rsquo;t hear back within 24h?</h2>
-      <p>Reply to your Stripe receipt or email
-        <a href="mailto:lucas.kempe@icloud.com?subject=Meridian%20deployment%20-%20no%20contact%20yet">lucas.kempe@icloud.com</a>
-        with the session ID — it&rsquo;ll be in my inbox, just nudge.</p>
+    <div class="rule">
+      <strong>Key Performance Benchmarks:</strong>
+      <ul>
+        <li><strong>Low-Energy Accuracy:</strong> Largest gains achieved in the 0-8 eV range, the most relevant spectrum for photovoltaics.</li>
+        <li><strong>Static Permittivity:</strong> Significant improvement in predicting $\epsilon_1(0)$, essential for thin-film design.</li>
+        <li><strong>Scalability:</strong> Enables high-fidelity screening at a fraction of the computational cost of traditional RPA.</li>
+      </ul>
     </div>
-  </div>
+
+    <h2>Mathematical Expressiveness</h2>
+
+    <p>
+      The transition to equivariant GNNs expands the model's ability to represent the crystal's symmetry group directly in the latent space. By treating atomic positions as geometric vectors rather than scalar distances, the model naturally respects the physics of the underlying crystal field.
+    </p>
+
+    <div class="callout" style="text-align: center;">
+      Equivariance ensures that a rotation of the input crystal structure results in a corresponding, predictable transformation of the predicted spectral features, rather than a random fluctuation in output.
+    </div>
+
+    <h2>Implications for Meridian Infrastructure</h2>
+    <p>
+      As we build co-processors for scientific discovery, the ability to integrate geometric deep learning with physical constraints is paramount. This research provides a rigorous proof-of-concept for how equivariant architectures can accelerate the discovery of next-generation optical materials.
+    </p>
+
+    <h2>Conclusion</h2>
+    <p>
+      The <strong>Equivariant GNN framework</strong> for optical spectra prediction represents a significant leap forward in computational materials science. By moving beyond simple scalar features and embracing the geometric truth of crystal structures, we can now screen materials for the future of clean energy and photonics with unprecedented speed and accuracy.
+    </p>
+  </article>
 </main>
 
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="/docs/">Documentation</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { initBurgerNav } from '/nav.js'
+  initBurgerNav()
+</script>
+<script type="module" src="/blog/listen.js"></script>
 </body>
 </html>
