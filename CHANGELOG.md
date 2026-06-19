@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.2.1] — 2026-06-19
+
+### Changed
+- See commit history for details.
 ## [3.2.0] — 2026-05-14
 
 Bundles three independent improvements landed across 2026-05-14 — the
