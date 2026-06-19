@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="spaceGradient" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a1625" />
+      <stop offset="60%" stop-color="#050c16" />
+      <stop offset="100%" stop-color="#02050a" />
+    </radialGradient>
+
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e9dc" />
+      <stop offset="60%" stop-color="#dfc29e" />
+      <stop offset="100%" stop-color="#b89773" />
+    </linearGradient>
+
+    <linearGradient id="spectrumGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="20%" stop-color="#f59e0b" />
+      <stop offset="40%" stop-color="#10b981" />
+      <stop offset="60%" stop-color="#3b82f6" />
+      <stop offset="80%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+    
+    <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
+    </pattern>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
+  <rect width="1920" height="1080" fill="url(#dotPattern)"/>
+
+  <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+
+  <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
+    <g transform="translate(0, -90)">
+      <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+      <circle cx="-110" cy="-2" r="3" fill="#38bdf8"/>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">QUANTUM MACHINE LEARNING</text>
+    </g>
+
+    <text font-size="54" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM KERNELS ARE</text>
+    <text y="85" font-size="54" font-weight="800" fill="url(#goldText)" letter-spacing="5">SPECTRAL TENSOR NETWORKS</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">SPECTRAL COMPRESSIBILITY &amp; CLASSICAL REPRESENTABILITY (arXiv:2606.20402)</text>
+  </g>
+
+  <!-- Central Visual Group -->
+  <g transform="translate(960, 680)">
+    
+    <!-- Left: Quantum Circuit Feature Map -->
+    <g transform="translate(-400, 0)">
+      <rect x="-160" y="-120" width="320" height="240" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#ffffff" stroke-opacity="0.1"/>
+      <!-- Qubit lines -->
+      <line x1="-140" y1="-50" x2="140" y2="-50" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/>
+      <line x1="-140" y1="0" x2="140" y2="0" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/>
+      <line x1="-140" y1="50" x2="140" y2="50" stroke="#ffffff" stroke-width="1.5" opacity="0.4"/>
+      
+      <!-- H gates -->
+      <rect x="-110" y="-65" width="30" height="30" rx="3" fill="#3b82f6" stroke="#3b82f6" stroke-width="1"/>
+      <text x="-95" y="-45" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">H</text>
+      <rect x="-110" y="-15" width="30" height="30" rx="3" fill="#3b82f6" stroke="#3b82f6" stroke-width="1"/>
+      <text x="-95" y="5" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">H</text>
+      <rect x="-110" y="35" width="30" height="30" rx="3" fill="#3b82f6" stroke="#3b82f6" stroke-width="1"/>
+      <text x="-95" y="55" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">H</text>
+
+      <!-- Rz(x) gates -->
+      <rect x="-50" y="-70" width="56" height="40" rx="4" fill="#10b981" stroke="#10b981" stroke-width="1" filter="url(#glow)"/>
+      <text x="-22" y="-45" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Rz(x₁)</text>
+      <rect x="-50" y="-20" width="56" height="40" rx="4" fill="#10b981" stroke="#10b981" stroke-width="1" filter="url(#glow)"/>
+      <text x="-22" y="5" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Rz(x₂)</text>
+      <rect x="-50" y="30" width="56" height="40" rx="4" fill="#10b981" stroke="#10b981" stroke-width="1" filter="url(#glow)"/>
+      <text x="-22" y="55" font-family="monospace" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">Rz(x₃)</text>
+
+      <!-- Entangler block -->
+      <rect x="30" y="-60" width="50" height="120" rx="5" fill="rgba(139, 92, 246, 0.4)" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="55" y="5" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle" transform="rotate(-90 55 5)">CNOTs</text>
+
+      <text y="160" font-family="monospace" font-size="16" fill="#a0afb7" text-anchor="middle">QUANTUM FEATURE MAP U(x)</text>
+    </g>
+
+    <!-- Center: MPO Arrow -->
+    <g transform="translate(0, 0)">
+      <path d="M -160,0 L 160,0" stroke="#fbbf24" stroke-width="3" stroke-dasharray="10,5"/>
+      <polygon points="160,-8 176,0 160,8" fill="#fbbf24"/>
+      <text y="-30" font-family="monospace" font-size="14" fill="#fbbf24" text-anchor="middle">MPO FACTORIZATION</text>
+    </g>
+
+    <!-- Right: Matrix Product Operator (Tensor Network) -->
+    <g transform="translate(400, 0)">
+      <rect x="-160" y="-120" width="320" height="240" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#ffffff" stroke-opacity="0.1"/>
+      <!-- Bond dimension lines -->
+      <line x1="-100" y1="0" x2="100" y2="0" stroke="#a78bfa" stroke-width="4" filter="url(#glow)"/>
+      
+      <!-- Tensors (Circles) -->
+      <circle cx="-100" cy="0" r="22" fill="#8b5cf6" stroke="#ffffff" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="22" fill="#8b5cf6" stroke="#ffffff" stroke-width="1.5"/>
+      <circle cx="100" cy="0" r="22" fill="#8b5cf6" stroke="#ffffff" stroke-width="1.5"/>
+      
+      <!-- Labels inside Tensors -->
+      <text x="-100" y="5" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">T₁</text>
+      <text x="0" y="5" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">T₂</text>
+      <text x="100" y="5" font-family="sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">T₃</text>
+      
+      <!-- Physical index lines -->
+      <line x1="-100" y1="-22" x2="-100" y2="-60" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+      <line x1="-100" y1="22" x2="-100" y2="60" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+      <line x1="0" y1="-22" x2="0" y2="-60" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+      <line x1="0" y1="22" x2="0" y2="60" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+      <line x1="100" y1="-22" x2="100" y2="-60" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+      <line x1="100" y1="22" x2="100" y2="60" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+      
+      <!-- Index Labels -->
+      <text x="-100" y="-70" font-family="monospace" font-size="12" fill="#38bdf8" text-anchor="middle">μ₁</text>
+      <text x="-100" y="75" font-family="monospace" font-size="12" fill="#38bdf8" text-anchor="middle">ν₁</text>
+      <text x="0" y="-70" font-family="monospace" font-size="12" fill="#38bdf8" text-anchor="middle">μ₂</text>
+      <text x="0" y="75" font-family="monospace" font-size="12" fill="#38bdf8" text-anchor="middle">ν₂</text>
+      <text x="100" y="-70" font-family="monospace" font-size="12" fill="#38bdf8" text-anchor="middle">μ₃</text>
+      <text x="100" y="75" font-family="monospace" font-size="12" fill="#38bdf8" text-anchor="middle">ν₃</text>
+      
+      <text x="-50" y="-12" font-family="monospace" font-size="11" fill="#a78bfa" text-anchor="middle">χ</text>
+      <text x="50" y="-12" font-family="monospace" font-size="11" fill="#a78bfa" text-anchor="middle">χ</text>
+
+      <text y="160" font-family="monospace" font-size="16" fill="#a78bfa" text-anchor="middle">SPECTRAL TN / MPO</text>
+    </g>
+
+    <!-- Formula block -->
+    <g transform="translate(0, 220)">
+      <rect x="-260" y="-35" width="520" height="70" rx="12" fill="#0f172a" fill-opacity="0.9" stroke="#38bdf8" stroke-opacity="0.4"/>
+      <text font-family="'Times New Roman', Times, serif" font-size="24" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">
+        κ(<tspan font-style="italic">x</tspan>, <tspan font-style="italic">x</tspan>') = ⟨<tspan font-style="italic">Ξ(x)</tspan>| <tspan font-style="italic">Ĉ</tspan> |<tspan font-style="italic">Ξ(x</tspan>')⟩
+      </text>
+    </g>
+  </g>
+
+  <!-- Technical Brackets -->
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
+    <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
+  </g>
+
+  <!-- Footer Branding -->
+  <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
+    <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/quantum-kernels-spectral-tensor-networks/</text>
+  </g>
+</svg>
