@@ -3,34 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>HelioCast — solar irradiance triangulator from PSP × JWST · Meridian</title>
-<meta name="description" content="Build log for HelioCast: a multi-spacecraft solar irradiance forecaster that combines Parker Solar Probe direct measurements with JWST observations of solar-system bodies that reflect sunlight. Six cloud workflows, one HF dataset, one live dashboard. Honest data scale: one perihelion, three JWST observations, zero coincidences yet — and that's the point.">
-<meta property="og:title" content="HelioCast — solar irradiance triangulator from PSP × JWST">
+<title>Beyond Static Endpoints: Tool Programs as an Interface for Flexible Agentic Web Services — Meridian Blog</title>
+<meta name="description" content="Operationalizing Tool Programs as an interface for agentic workflows. We dissect arXiv:2606.19992, presenting ToolPro: a Wasm-based runtime that reduces network turns via consolidation and ensures retry-safe side effects.">
+<meta property="og:title" content="Beyond Static Endpoints: Tool Programs">
+<meta property="og:description" content="Making tool intent first-class via executable programs (arXiv:2606.19992). How consolidation and effect-aware replay optimize the agentic web.">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://ask-meridian.uk/blog/helio-mirror/">
-<meta property="og:image" content="https://ask-meridian.uk/img/fleet/helio-cover.svg">
+<meta property="og:url" content="https://ask-meridian.uk/blog/beyond-static-endpoints-tool-programs/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/beyond-static-endpoints-tool-programs-banner.svg?v=101">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://ask-meridian.uk/img/fleet/helio-cover.svg">
-<link rel="canonical" href="https://ask-meridian.uk/blog/helio-mirror/">
-<link rel="icon" type="image/svg+xml" href="https://ask-meridian.uk/favicon.svg">
-<link rel="stylesheet" href="https://ask-meridian.uk/style.css?v=20260527a">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/beyond-static-endpoints-tool-programs-banner.svg?v=101">
+<link rel="canonical" href="https://ask-meridian.uk/blog/beyond-static-endpoints-tool-programs/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
 <style>
-  body { background: var(--bg, #0c0e12); color: var(--text, #e9eaee); }
-  .post { max-width: 760px; margin: 0 auto; padding: 32px 24px 96px; line-height: 1.65; }
-  .post h1 { font-size: 32px; margin: 4px 0 6px; letter-spacing: -0.01em; line-height: 1.15; }
-  .post h2 { font-size: 22px; margin: 36px 0 10px; }
-  .post h3 { font-size: 17px; margin: 24px 0 8px; }
-  .meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.12em; text-transform: uppercase; }
-  .lead { color: var(--text-faint, #9aa0a6); font-size: 16px; }
-  code { background: #15171c; border: 1px solid #2a2e36; border-radius: 4px; padding: 1px 6px; font-size: 0.9em; }
-  pre { background: #0c0e12; border: 1px solid #2a2e36; border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 12px; line-height: 1.55; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 14px 0; }
-  th, td { padding: 8px 10px; border-bottom: 1px solid #2a2e36; text-align: left; }
-  th { color: var(--text-faint); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
-  blockquote { border-left: 3px solid #3a8dde; padding: 4px 0 4px 14px; color: var(--text-muted); margin: 14px 0; font-style: italic; }
-  .banner { width: 100%; border-radius: 12px; border: 1px solid #2a2e36; margin: 18px 0 24px; }
-  .ascii { font-family: var(--font-mono); white-space: pre; font-size: 11px; color: #a5b4fc; background: #0c0e12; border: 1px solid #2a2e36; border-radius: 8px; padding: 14px; overflow-x: auto; line-height: 1.4; }
-  .links a { color: #a5b4fc; }
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-body table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+  .article-body th, .article-body td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .article-body th { font-weight: 600; color: var(--text-faint); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout { background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05)); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 18px 22px; margin: 22px 0; font-size: 15px; }
+  .callout strong { color: #ddd6fe; }
+  .rule { background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05)); border-left: 3px solid #7dd3fc; border-radius: 0 10px 10px 0; padding: 14px 20px; margin: 22px 0; font-size: 17px; color: #e0f2fe; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.38);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+  }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
@@ -311,124 +336,105 @@
   </script>
 </nav>
 
-<article class="post">
-  <p class="meta">2026-05-11 · build log · helio-mirror</p>
-  <h1>HelioCast — predicting how much sunlight a planet will receive in the next 24 h</h1>
-  <p class="lead">
-    PSP measures the Sun directly. JWST observes other bodies that reflect the Sun. Cross-correlate the two and you can measure — and then forecast — the irradiance delivered to specific bodies in the solar system. The first end-to-end pipeline is live; the data scale isn't there yet, and we're saying so.
-  </p>
+<main id="main">
+  <article class="article-body">
+    <header style="margin-top: 64px; margin-bottom: 32px;">
+      <div class="article-meta">2026-06-19 · 8 min read · agentic infrastructure</div>
+      <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Beyond Static Endpoints: Tool Programs</h1>
+      <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+        Static API endpoints are the representational bottleneck of the agentic web. A new framework, ToolPro (arXiv:2606.19992), proposes shifting the interface from stepwise endpoint sequences to executable, effect-typed tool programs, slashing latency by up to 53% and ensuring retry-safe side effects.
+      </p>
+      <a href="https://arxiv.org/abs/2606.19992" class="btn-arxiv" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Paper: arXiv:2606.19992
+      </a>
+    </header>
 
-  <img src="https://ask-meridian.uk/img/fleet/helio-cover.svg" alt="HelioCast cover" class="banner">
+    <img src="/img/blog/beyond-static-endpoints-tool-programs-banner.svg?v=101" alt="ToolPro architecture banner comparing stepwise endpoint interaction vs consolidated tool program execution" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
 
-  <h2>The question</h2>
-  <p>
-    For any body in the solar system — a planet, a moon, a satellite, a future harvester — how much sunlight will reach it over the next 24 hours? The deterministic part is geometry: orbits set the distance and view angle. The stochastic part is the Sun's own state: sunspot rotation, faculae, flares, CME-driven irradiance dips. To forecast you need to measure both.
-  </p>
+    <p>
+      As LLM-based agents move into production, they are increasingly tasked with long-horizon workflows involving complex service interactions. However, the prevailing interface—<strong>stepwise endpoint sequences</strong>—fragments coherent plans into local decisions conditioned on intermediate responses. Each step multiplies network round trips and reasoning overhead, while partial failures trigger brittle retries that can duplicate side effects and corrupt service state.
+    </p>
 
-  <h2>Two instruments, one product</h2>
-  <table>
-    <thead><tr><th>Source</th><th>What it measures</th><th>What it can't see</th></tr></thead>
-    <tbody>
-      <tr><td><strong>PSP</strong></td><td>Direct in-situ B-field, plasma, energetic particles at 0.1–0.2 AU. Sees solar events at their source.</td><td>Only its own location. Can't tell you what's hitting Earth or Mars unless they're on the same Parker spiral.</td></tr>
-      <tr><td><strong>JWST</strong></td><td>Reflected sunlight off bodies (Mars, Jupiter, Saturn, moons, asteroids). Each body is a mirror of the solar irradiance at its position.</td><td>Photometric, not in-situ. Phase angle and albedo are in the way; need to invert the planetary photometry to recover the underlying I<sub>solar</sub>.</td></tr>
-    </tbody>
-  </table>
+    <p>
+      In <em>"Beyond Static Endpoints: Tool Programs as an Interface for Flexible Agentic Web Services"</em> (arXiv:2606.19992), Liu et al. introduce <strong>ToolPro</strong>: a system that makes tool intent first-class by representing workflows as executable tool programs. By delegating interaction logic to a server-side sandbox, ToolPro enables turn reduction and enforces rigorous effect-aware semantics.
+    </p>
 
-  <h2>The pipeline (six stages, all cloud)</h2>
+    <h2>The Latency Model: Why Consolidation Wins</h2>
 
-  <div class="ascii">┌─ 1 pull ───────────────────────────────────────────────────────────────┐
-│  pyspedas    →  PSP FIELDS L2 + SWEAP/SPAN-I L3                        │
-│  astroquery  →  JWST solar-system observations (Mars / Jupiter / …)    │
-│  JPL Horizons→  ephemerides for PSP + every candidate body             │
-└────────────────────────────────────────────────────────────────────────┘
-                                  │
-┌─ 2 register ──────────────────────────────────────────────────────────┐
-│  Every measurement gets (helio_lon, helio_lat, r_AU, t).              │
-│  PSP B-field samples tagged with PSP's position at sample time.       │
-│  Each JWST FITS tagged with the target body's heliographic position.  │
-└────────────────────────────────────────────────────────────────────────┘
-                                  │
-┌─ 3 detect ────────────────────────────────────────────────────────────┐
-│  PSP   →  PVI(τ=100s) > 3 candidate samples → cluster on 60-s gaps    │
-│           → distinct events with max PVI + duration                   │
-│  JWST  →  per-FITS integrated flux on the SCI core (trim edges 10%)   │
-└────────────────────────────────────────────────────────────────────────┘
-                                  │
-┌─ 4 coincide ──────────────────────────────────────────────────────────┐
-│  For each PSP event, predict arrival at each body via:                │
-│    WIND  : t + (r_body − r_PSP) / v_sw   (≈3.5 d at 1 AU)            │
-│    LIGHT : t + (r_body − r_PSP) / c       (≤9 min)                   │
-│  Match if (Δ_lon < 20°) and (Δ_t < tolerance per mechanism).          │
-└────────────────────────────────────────────────────────────────────────┘
-                                  │
-┌─ 5 calibrate ─────────────────────────────────────────────────────────┐
-│  Invert Lambertian-disk photometry per FITS:                          │
-│    F_obs ∝ I_solar · A_bond · R² · Φ(α) / Δ²                          │
-│    →  I_solar(at body) ∝ F_obs · Δ² / (A_bond · R² · Φ(α))            │
-└────────────────────────────────────────────────────────────────────────┘
-                                  │
-┌─ 6 forecast ──────────────────────────────────────────────────────────┐
-│  Per body, hourly for next 24 h:                                      │
-│    I(t+Δt) = I(t_last) · (r(t_last) / r(t+Δt))²                       │
-│  PSP-event coincidence within the horizon → confidence-band flag.     │
-│  Write forecast/latest.json → dashboard reads it live.                │
-└────────────────────────────────────────────────────────────────────────┘
-</div>
+    <p>
+      The efficiency gap between stepwise calling ($T_{\text{step}}$) and program execution ($T_{\text{prog}}$) can be modeled by the number of turns $N$. While stepwise execution pays the round-trip penalty ($T_{\text{rtt}}$) and decision overhead ($T_{\text{dec}}$) at every step, a tool program consolidates these into a one-time build cost ($T_{\text{build}}$):
+    </p>
 
-  <h2>What's actually true today</h2>
-  <p>
-    First end-to-end run on perihelion E20 (2024-06-28 to 2024-07-02):
-  </p>
-  <table>
-    <thead><tr><th>Stage</th><th>Output</th><th>Notes</th></tr></thead>
-    <tbody>
-      <tr><td>pull</td><td>5 days PSP FIELDS · 7 ephemerides · 3 JWST FITS (Mars × 2 NIRCam, Jupiter × 1)</td><td>PSP SWEAP/SPC L3i is gappy post-E18; we switched to SWEAP/SPAN-I.</td></tr>
-      <tr><td>register</td><td>3 long-form parquets in <code>coords/</code></td><td>~5 ms per FITS for the header read.</td></tr>
-      <tr><td>detect</td><td><strong>413 PSP events</strong> (clustered from 13,775 PVI&gt;3 samples) · 3 JWST aggregates</td><td>Real CME-candidate and current-sheet count at perihelion.</td></tr>
-      <tr><td>coincide</td><td><strong>0 coincidences</strong></td><td>Honest result: JWST observations in the cache pre-date E20 by ~1.5 y. Fixed by ±90 d temporal window in the next pull.</td></tr>
-      <tr><td>calibrate</td><td>3 inferred-irradiance proxies</td><td>Lambertian disk + Bond albedo + phase angle.</td></tr>
-      <tr><td>forecast</td><td>24 × 3 hourly rows → <a href="https://ask-meridian.uk/helio/">dashboard</a></td><td>Flat-looking because Jupiter barely moves in 24 h; the value of the model shows only when an event coincidence triggers the PSP flag.</td></tr>
-    </tbody>
-  </table>
+    <div class="math-block" data-label="Latency Comparison Model">
+      $$T_{\text{step}} \approx \sum_{i=1}^{N} (T_{\text{rtt}} + T_{\text{dec}} + T_{\text{api}})$$
+      $$T_{\text{prog}} \approx T_{\text{build}} + (T_{\text{rtt}} + \sum_{i=1}^{N} T_{\text{api}})$$
+    </div>
 
-  <h2>Why zero coincidences is the most useful result of the first run</h2>
-  <p>
-    The first pull asked MAST "give me the most recent JWST observation of Mars / Jupiter / Saturn". MAST obliged with science-grade FITS from 2022–2023, irrespective of when PSP happened to be at perihelion. The pipeline did exactly what we asked. The pipeline doesn't decide what data is contemporaneous — we have to.
-  </p>
-  <p>
-    Patch (already shipped): the MAST query now requires <code>t_min</code> within ±90 days of the perihelion window. If a body simply hasn't been observed near a given perihelion, the search falls back to the nearest-in-time observation, with the gap logged. No silent empties.
-  </p>
+    <p>
+      The net benefit $\Delta T$ is realized when the savings from turn reduction exceed the program synthesis and compilation time. ToolPro uses a <strong>profile-driven policy</strong> to predict this delta and adaptively select the optimal execution mode:
+    </p>
 
-  <h2>What the resume bullet says</h2>
-  <blockquote>
-    <strong>HelioCast</strong> — multi-spacecraft solar irradiance triangulator. Six cloud workflows (GH Actions + HF Datasets) ingest Parker Solar Probe in-situ measurements + JWST observations of solar-system bodies + JPL Horizons ephemerides, register everything in heliographic coordinates, detect PSP events (PVI &gt; 3) and JWST reflectance excursions, match PSP→body advection (wind / light), invert Lambertian-disk photometry to recover per-body irradiance proxies, and forecast 24 h hourly. End-user dashboard at <code>ask-meridian.uk/helio/</code> reads its own outputs from the public HF dataset <code>luuow/meridian-helio-mirror</code>. First end-to-end run on one perihelion; honest about the data-scale gap (3 JWST FITS, 0 coincidences in v0.1 — temporal query fixed in v0.2).
-  </blockquote>
+    <div class="math-block" data-label="Consolidation Delta">
+      $$\Delta T = (N-1) \cdot (\overline{T_{\text{rtt}}} + \overline{T_{\text{dec}}}) - \overline{T_{\text{build}}}$$
+    </div>
 
-  <h2>What's not in v0.1</h2>
-  <ul>
-    <li><strong>WISPR coronagraph imagery</strong> — necessary for true 3-D CME direction (PSP B-field gives 1-D radial-direction inference only).</li>
-    <li><strong>ISOIS energetic-particle data</strong> — would tighten SEP onset detection vs the PVI proxy.</li>
-    <li><strong>ML residual layer</strong> — the persistence × r² baseline is the floor. Training a per-body residual model requires more observations per body than we have. v0.2 work.</li>
-    <li><strong>Absolute W/m² calibration</strong> — current inferred-irradiance is a proxy comparable within (body, filter); cross-comparable units require per-filter zero-point work.</li>
-    <li><strong>Multi-perihelion run</strong> — only E20 is processed end-to-end. E21–E24 are one workflow-dispatch away.</li>
-  </ul>
+    <h2>Exactly-Once Semantics via Effect-Aware Replay</h2>
 
-  <h2>Reproduce</h2>
-  <pre>git clone https://github.com/LuuOW/meridian-mcp
-cd meridian-mcp
-gh secret set HF_TOKEN -b "&lt;your hf write token&gt;"
-gh workflow run helio-mirror-all.yml -f perihelion=E20</pre>
-  <p class="links">
-    Code: <a href="https://github.com/LuuOW/meridian-mcp/tree/main/helio-mirror">github.com/LuuOW/meridian-mcp/tree/main/helio-mirror</a><br>
-    Data: <a href="https://huggingface.co/datasets/luuow/meridian-helio-mirror">huggingface.co/datasets/luuow/meridian-helio-mirror</a><br>
-    Dashboard: <a href="https://ask-meridian.uk/helio/">ask-meridian.uk/helio/</a>
-  </p>
+    <p>
+      A major challenge in programmatic tool use is handling partial failures. If a program fails after committing several state-modifying calls, a naive retry would duplicate those side effects. ToolPro resolves this by introducing <strong>effect typing</strong> (READ vs. WRITE) and a <strong>log-based replay mediator</strong>.
+    </p>
 
-  <p class="meta" style="margin-top: 36px; text-align: center;">
-    site: <a href="https://ask-meridian.uk/" style="color: inherit;">ask-meridian.uk</a> ·
-    code: <a href="https://github.com/LuuOW/meridian-mcp" style="color: inherit;">github</a>
-  </p>
-</article>
+    <div class="rule">
+      <strong>The Replay Discipline:</strong>
+      <ul>
+        <li><strong>READ calls:</strong> Always forwarded to the service, as re-issuing them is state-preserving.</li>
+        <li><strong>WRITE calls:</strong> Intercepted and matched against a history log $\mathcal{H}$. If a call with identical arguments $(e, a)$ has already completed, the cached outcome is replayed without re-emitting the call.</li>
+        <li><strong>Fail-Closed Guard:</strong> If a repaired program attempts to change the order or arguments of a committed WRITE prefix, replay is disabled, and the system falls back to safe stepwise execution.</li>
+      </ul>
+    </div>
+
+    <h2>Wasm Sandboxing and Implementation</h2>
+
+    <p>
+      To execute untrusted, LLM-generated code safely, ToolPro instantiates a <strong>WebAssembly (Wasm)</strong> runtime. The Wasm module runs with no ambient authority; its only capability is a host-imported unified stub <code>Call(e, a, eff)</code>.
+    </p>
+
+    <p>
+      This architecture provides:
+    </p>
+    <ul>
+      <li><strong>Strong Isolation:</strong> No filesystem or network access beyond the mediated tool boundary.</li>
+      <li><strong>Typed Enforcement:</strong> The runtime verifies that effect annotations at each call site match the service's own specifications.</li>
+      <li><strong>Verifiable Feedback:</strong> Precise compiler diagnostics and runtime traces are returned to the agent for bounded in-place repair.</li>
+    </ul>
+
+    <div class="callout">
+      <strong>Performance Impact:</strong><br>
+      Evaluated on realistic workflows (Memos, Directus, MinIO), ToolPro reduces end-to-end latency by up to <strong>53.4%</strong> and client-side traffic by up to <strong>96.1%</strong>. The gains are most pronounced in high-latency network conditions and complex, branch-heavy workflows where turn reduction becomes the dominant factor.
+    </div>
+
+    <h2>Conclusion</h2>
+    <p>
+      ToolPro represents a fundamental shift in how we think about agent–service interfaces. By moving away from reactive, stepwise endpoints and toward explicit, executable representations of intent, we can build an agentic web that is not only faster but also significantly more robust.
+    </p>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">◎ Meridian</div>
+    <div class="footer-links">
+      <a href="/blog/">Blog</a>
+      <a href="/docs/">Documentation</a>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub</a>
+      <a href="https://www.npmjs.com/package/meridian-mcp">npm</a>
+      <a href="mailto:lucas.kempe@icloud.com">Contact</a>
+    </div>
+    <div class="footer-meta">© 2026 Meridian · MIT licensed</div>
+  </div>
+</footer>
+
 <script type="module">
   import { initBurgerNav } from '/nav.js'
   initBurgerNav()

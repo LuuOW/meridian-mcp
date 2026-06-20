@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="spaceGradient" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a1625" />
+      <stop offset="60%" stop-color="#050c16" />
+      <stop offset="100%" stop-color="#02050a" />
+    </radialGradient>
+
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e9dc" />
+      <stop offset="60%" stop-color="#dfc29e" />
+      <stop offset="100%" stop-color="#b89773" />
+    </linearGradient>
+
+    <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
+    </pattern>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
+  <rect width="1920" height="1080" fill="url(#dotPattern)"/>
+
+  <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+
+  <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
+    <g transform="translate(0, -90)">
+      <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+      <circle cx="-110" cy="-2" r="3" fill="#10b981"/>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">AGENTIC INFRASTRUCTURE</text>
+    </g>
+
+    <text font-size="54" font-weight="800" fill="#ffffff" letter-spacing="5">BEYOND STATIC ENDPOINTS:</text>
+    <text y="85" font-size="54" font-weight="800" fill="url(#goldText)" letter-spacing="5">TOOL PROGRAMS</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">TURN-REDUCTION &amp; RETRY-SAFE SEMANTICS (arXiv:2606.19992)</text>
+  </g>
+
+  <!-- Central Visual Group -->
+  <g transform="translate(960, 680)">
+
+    <!-- Left: Stepwise Interaction (Current Bottleneck) -->
+    <g transform="translate(-450, 0)">
+      <rect x="-200" y="-180" width="400" height="360" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#ef4444" stroke-opacity="0.3" stroke-width="2"/>
+      <text y="-140" font-family="monospace" font-size="16" fill="#ef4444" text-anchor="middle">STEPWISE ENDPOINTS (MWS)</text>
+
+      <!-- Client & Server blocks -->
+      <rect x="-160" y="-100" width="80" height="200" rx="4" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-opacity="0.5"/>
+      <text x="-120" y="120" font-family="sans-serif" font-size="12" fill="#38bdf8" text-anchor="middle">AGENT</text>
+
+      <rect x="80" y="-100" width="80" height="200" rx="4" fill="rgba(139, 92, 246, 0.1)" stroke="#8b5cf6" stroke-opacity="0.5"/>
+      <text x="120" y="120" font-family="sans-serif" font-size="12" fill="#8b5cf6" text-anchor="middle">SERVICE</text>
+
+      <!-- Multiple Arrows -->
+      <g stroke="#ffffff" stroke-width="1.5" opacity="0.6">
+        <path d="M -80,-60 L 80,-60" marker-end="url(#arrowhead)"/>
+        <path d="M 80,-40 L -80,-40" marker-end="url(#arrowhead)"/>
+
+        <path d="M -80,-10 L 80,-10" marker-end="url(#arrowhead)"/>
+        <path d="M 80,10 L -80,10" marker-end="url(#arrowhead)"/>
+
+        <path d="M -80,40 L 80,40" marker-end="url(#arrowhead)"/>
+        <path d="M 80,60 L -80,60" marker-end="url(#arrowhead)"/>
+      </g>
+
+      <text y="190" font-family="sans-serif" font-size="14" fill="#a0afb7" text-anchor="middle">Multiple RTTs + Decision Rounds</text>
+    </g>
+
+    <!-- Center: The Efficiency Delta -->
+    <g transform="translate(0, 0)">
+      <path d="M -160,0 L 160,0" stroke="#fbbf24" stroke-width="3" stroke-dasharray="10,5"/>
+      <polygon points="160,-8 176,0 160,8" fill="#fbbf24"/>
+      <text y="-30" font-family="monospace" font-size="14" fill="#fbbf24" text-anchor="middle">CONSOLIDATION</text>
+    </g>
+
+    <!-- Right: ToolPro Execution -->
+    <g transform="translate(450, 0)">
+      <rect x="-200" y="-180" width="400" height="360" rx="10" fill="rgba(15, 23, 42, 0.8)" stroke="#10b981" stroke-opacity="0.5" stroke-width="2" filter="url(#glow)"/>
+      <text y="-140" font-family="monospace" font-size="16" fill="#10b981" text-anchor="middle">TOOL PROGRAMS (ToolPro)</text>
+
+      <!-- Client & Server blocks -->
+      <rect x="-160" y="-100" width="80" height="200" rx="4" fill="rgba(56, 189, 248, 0.1)" stroke="#38bdf8" stroke-opacity="0.5"/>
+      <rect x="80" y="-100" width="80" height="200" rx="4" fill="rgba(139, 92, 246, 0.1)" stroke="#8b5cf6" stroke-opacity="0.5"/>
+
+      <!-- Wasm Sandbox inside Server -->
+      <rect x="90" y="-60" width="60" height="120" rx="4" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="1"/>
+      <text x="120" y="5" font-family="sans-serif" font-size="10" font-weight="bold" fill="#10b981" text-anchor="middle" transform="rotate(-90 120 5)">WASM</text>
+
+      <!-- Single Program Arrow -->
+      <g stroke="#ffffff" stroke-width="2" opacity="0.9">
+        <path d="M -80,0 L 80,0"/>
+        <polygon points="80,-6 92,0 80,6" fill="#ffffff"/>
+      </g>
+      <text x="0" y="-15" font-family="monospace" font-size="12" fill="#ffffff" text-anchor="middle">SUBMIT(P)</text>
+
+      <text y="190" font-family="sans-serif" font-size="14" fill="#a0afb7" text-anchor="middle">Single Turn + Local Execution</text>
+    </g>
+
+    <!-- Formula block -->
+    <g transform="translate(0, 240)">
+      <rect x="-300" y="-35" width="600" height="70" rx="12" fill="#0f172a" fill-opacity="0.9" stroke="#fbbf24" stroke-opacity="0.4"/>
+      <text font-family="'Times New Roman', Times, serif" font-size="24" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">
+        ΔT = (N - 1) · (T<tspan font-size="16" baseline-shift="sub">rtt</tspan> + T<tspan font-size="16" baseline-shift="sub">dec</tspan>) - T<tspan font-size="16" baseline-shift="sub">build</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- Technical Brackets -->
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
+    <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
+  </g>
+
+  <!-- Marker definition for arrows in the stepwise block -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ffffff" opacity="0.6"/>
+    </marker>
+  </defs>
+
+  <!-- Footer Branding -->
+  <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
+    <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/beyond-static-endpoints-tool-programs/</text>
+  </g>
+</svg>
