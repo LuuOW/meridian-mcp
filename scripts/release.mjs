@@ -103,11 +103,11 @@ run('npm publish --access public')
 console.log(`✓ Published meridian-skills-mcp@${next} to npm`)
 
 // ── Deploy docs site ──────────────────────────────────────────────────────
-const { copyFileSync, readdirSync } = await import('node:fs')
+const { copyFileSync: copyFileSyncFs } = await import('node:fs')
 const SITE_SRC = join(REPO_ROOT, 'site')
 const SITE_DST = '/var/www/html/docs'
 for (const f of readdirSync(SITE_SRC)) {
-  copyFileSync(join(SITE_SRC, f), join(SITE_DST, f))
+  copyFileSyncFs(join(SITE_SRC, f), join(SITE_DST, f))
 }
 console.log(`✓ Deployed site/ → ${SITE_DST}`)
 
