@@ -75,8 +75,13 @@
 
     <g transform="translate(0, 220)">
       <rect x="-240" y="-35" width="480" height="70" rx="12" fill="#0f172a" fill-opacity="0.9" stroke="#38bdf8" stroke-opacity="0.4"/>
-      <text font-family="'Times New Roman', Times, serif" font-size="24" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">
-        $\hat{t} = f(\mathbf{c}, I_{\mathrm{illum}}, S_{\mathrm{ref}})$
+      <text text-anchor="middle" dominant-baseline="middle" font-family="'Times New Roman', Times, serif" font-size="24" fill="#ffffff">
+        <tspan font-style="italic">t</tspan><tspan baseline-shift="super" font-size="16">^</tspan>
+        <tspan dx="14">=</tspan>
+        <tspan dx="14" font-style="italic">f</tspan><tspan>(</tspan>
+        <tspan font-style="italic">c⃗</tspan><tspan>, </tspan>
+        <tspan font-style="italic">I</tspan><tspan baseline-shift="sub" font-size="16">illum</tspan><tspan>, </tspan>
+        <tspan font-style="italic">S</tspan><tspan baseline-shift="sub" font-size="16">ref</tspan><tspan>)</tspan>
       </text>
     </g>
 
