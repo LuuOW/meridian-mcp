@@ -3,14 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Plasma Etch Process Optimization for Photonic-Grade Diamond-ON-Insulator Substrates — Meridian Blog</title>
+<title>Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates — Meridian Blog</title>
 <meta name="description" content="A briefing on arXiv:2606.20412: plasma etch optimization for photonic-grade diamond-on-insulator substrates, preserved bonding and surface quality, and colorimetry-based thickness evaluation.">
 <meta property="og:title" content="Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
-<meta property="og:image" content="https://ask-meridian.uk/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=2">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=2">
 <link rel="canonical" href="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css?v=20260527a">
@@ -18,16 +15,18 @@
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
 <style>
-  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .blog-article { width: 100%; }
+  .article-body { width: 100%; box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
   .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
   .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
   .article-body p { margin: 14px 0; color: var(--text); }
   .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
-  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
-  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
   .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
   .article-body li { margin: 6px 0; }
   .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
   .banner-frame {
     margin: 30px 0 34px;
     border-radius: 18px;
@@ -85,6 +84,14 @@
   }
   .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
   .article-body .katex-display > .katex { font-size: 1.15em; }
+  .formula-inline {
+    display: block;
+    text-align: center;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    color: #ffffff;
+    letter-spacing: 0.02em;
+  }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
@@ -329,7 +336,7 @@
       <h1>Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry</h1>
 
       <div class="banner-frame">
-        <img src="/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=2" alt="Banner for diamond-on-insulator plasma etch and colorimetry">
+        <img src="/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=3" alt="Banner for diamond-on-insulator plasma etch and colorimetry">
       </div>
       <div class="figure-note">A dark technical banner in the same treatment as the other briefings: gold headline, schematic center, subtle dot field, and a small footer marker.</div>
 
