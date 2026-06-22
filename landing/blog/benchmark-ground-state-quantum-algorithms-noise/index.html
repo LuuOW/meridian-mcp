@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Benchmark of quantum algorithms for ground state preparation in the presence of noise &mdash; Meridian Blog</title>
+<meta name="description" content="A briefing on arXiv:2606.20551: a controlled benchmark of adiabatic, cooling, and QAOA algorithms for ground state preparation under depolarizing noise, on a solvable fermionic Hamiltonian with a quantum phase transition.">
+<meta property="og:title" content="Benchmark of quantum algorithms for ground state preparation in the presence of noise">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/benchmark-ground-state-quantum-algorithms-noise/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/benchmark-ground-state-quantum-algorithms-noise-banner.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/benchmark-ground-state-quantum-algorithms-noise-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/benchmark-ground-state-quantum-algorithms-noise/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.07));
+    border: 1px solid rgba(56,189,248,0.32);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    opacity: 0.85;
+  }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
+
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item nav-apps" data-dropdown>
+      <button type="button" class="nav-inline-link nav-apps-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="appsMenu">
+        Apps <span class="caret" aria-hidden="true">▾</span>
+      </button>
+      <div id="appsMenu" class="nav-apps-menu" role="menu">
+        <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+      </div>
+    </li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
+  </ul>
+
+  <button type="button" id="cmdkBtn" class="cmdk-trigger" aria-label="Open search palette">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="cmdk-label">Search</span>
+    <kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+
+  <a href="https://github.com/LuuOW/meridian-mcp" class="nav-gh-link" aria-label="View on GitHub" target="_blank" rel="noopener">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Apps</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+
+  <!-- Cmd-K palette: opens on ⌘K / Ctrl-K or clicking the trigger.
+       Searches the inlined __CMDK_INDEX__ (apps + docs sections + blog posts).
+       Sits at the end of <nav> so sync-nav.py treats it as part of the
+       single synced block. -->
+  <div id="cmdk" class="cmdk" hidden aria-modal="true" role="dialog" aria-label="Search">
+    <div class="cmdk-backdrop" data-cmdk-close></div>
+    <div class="cmdk-panel">
+      <div class="cmdk-input-row">
+        <svg aria-hidden="true" class="cmdk-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="cmdkInput" class="cmdk-input" type="search" placeholder="Search apps, docs, blog…" autocomplete="off" spellcheck="false" aria-label="Search">
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <ul id="cmdkList" class="cmdk-list" role="listbox"></ul>
+      <div class="cmdk-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
+    </div>
+  </div>
+
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛︎"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "HelioCast", "tag": "Solar irradiance forecasting dashboard & per-body triangulator", "href": "https://ask-meridian.uk/helio/", "category": "App", "emoji": "☀"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "100% on the Apple Neural Engine — eligibility is not placement", "href": "https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/", "category": "Blog", "emoji": "✎"}, {"label": "Benchmark of quantum algorithms for ground state preparation in the presence of noise", "href": "https://ask-meridian.uk/blog/benchmark-ground-state-quantum-algorithms-noise/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/chiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "Coexistence of dipolar and quadrupolar higher-order topology", "href": "https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/", "category": "Blog", "emoji": "✎"}, {"label": "Edge-Enhanced Diffractive Neural Networks: Spin-Multiplexed Nonlocal Metasurfaces", "href": "https://ask-meridian.uk/blog/edge-enhanced-diffractive-neural-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Equivariant Graph Neural Networks for Optical Spectra Prediction", "href": "https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps", "href": "https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark", "href": "https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/", "category": "Blog", "emoji": "✎"}, {"label": "One-photon communication in atomic media: Yale's first-principles fidelity bounds", "href": "https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck", "href": "https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/", "category": "Blog", "emoji": "✎"}, {"label": "Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate", "href": "https://ask-meridian.uk/blog/multi-channel-optical-vision-model/", "category": "Blog", "emoji": "✎"}, {"label": "Optimal Probe State for Phase Estimation Under Covariant Measurement", "href": "https://ask-meridian.uk/blog/optimal-probe-state-phase-estimation/", "category": "Blog", "emoji": "✎"}, {"label": "Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting", "href": "https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x", "href": "https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Physical Bounds on Optical Micromanipulation: Maximal Stiffness in the Dipole Regime", "href": "https://ask-meridian.uk/blog/physical-bounds-optical-micromanipulation-maximal-stiffness/", "category": "Blog", "emoji": "✎"}, {"label": "Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry", "href": "https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Scaling-optimal purification of noisy qubit unitary channels", "href": "https://ask-meridian.uk/blog/purification-noisy-qubit-unitary-channels/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum Kernels are Spectral Tensor Networks", "href": "https://ask-meridian.uk/blog/quantum-kernels-spectral-tensor-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Resolving the Edge of a Quantum Pyramid", "href": "https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}];</script>
+  <script>
+  /* Self-contained wiring for every nav-bearing surface.
+     - desktop Apps dropdown (hover + click)
+     - mobile burger / nav-menu
+     - cross-host current-link highlight
+     - ⌘K palette (search + keyboard nav)
+     Single dataset.wired guard so duplicate registrations are a no-op.
+     Lives inside <nav> so sync-nav.py captures and propagates it. */
+  (function () {
+    function setup() {
+      var btn  = document.getElementById('burgerBtn')
+      var menu = document.getElementById('navMenu')
+      if (!btn || !menu) return
+      if (btn.dataset.wired) return
+      btn.dataset.wired = '1'
+
+      /* ───── mobile burger ───── */
+      function toggleMobile(open) {
+        var isOpen = open === undefined ? !menu.classList.contains('open') : open
+        menu.classList.toggle('open', isOpen)
+        btn.classList.toggle('open', isOpen)
+        btn.setAttribute('aria-expanded', String(isOpen))
+      }
+      btn.addEventListener('click', function (e) { e.stopPropagation(); toggleMobile() })
+      menu.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () { toggleMobile(false) })
+      })
+
+      /* ───── desktop Apps dropdown ─────
+         Click toggles. Hover-to-open is CSS-only (`.nav-apps:hover .nav-apps-menu`)
+         so a mouse-enter doesn't fight a same-tick click — we hit that
+         race when Playwright's click runs hover-then-click and the
+         mouseenter handler flipped state before the click did. */
+      var appsTrigger = document.querySelector('.nav-apps-trigger')
+      var appsMenu    = document.getElementById('appsMenu')
+      var appsItem    = document.querySelector('.nav-apps')
+      function toggleApps(open) {
+        if (!appsItem) return
+        var isOpen = open === undefined ? !appsItem.classList.contains('open') : open
+        appsItem.classList.toggle('open', isOpen)
+        if (appsTrigger) appsTrigger.setAttribute('aria-expanded', String(isOpen))
+      }
+      if (appsTrigger) {
+        appsTrigger.addEventListener('click', function (e) { e.stopPropagation(); toggleApps() })
+      }
+
+      /* ───── close menus on outside click / Escape ───── */
+      document.addEventListener('click', function (e) {
+        if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) toggleMobile(false)
+        if (appsItem && appsItem.classList.contains('open') && !appsItem.contains(e.target)) toggleApps(false)
+      })
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { toggleMobile(false); toggleApps(false); closeCmdk() }
+      })
+
+      /* ───── cross-host current-link highlight ───── */
+      var here = location.host + location.pathname.replace(/\/index\.html$/, '/')
+      document.querySelectorAll('.nav a, #appsMenu a, #navMenu a').forEach(function (a) {
+        var href = a.getAttribute('href')
+        if (!href) return
+        try {
+          var u = new URL(href, location.href)
+          var target = u.host + u.pathname.replace(/\/index\.html$/, '/')
+          if (target === here) a.classList.add('current')
+        } catch (_) {}
+      })
+
+      /* ───── ⌘K palette ───── */
+      var cmdkBtn   = document.getElementById('cmdkBtn')
+      var cmdk      = document.getElementById('cmdk')
+      var cmdkInput = document.getElementById('cmdkInput')
+      var cmdkList  = document.getElementById('cmdkList')
+      var idx       = Array.isArray(window.__CMDK_INDEX__) ? window.__CMDK_INDEX__ : []
+      var active    = 0
+
+      function openCmdk() {
+        if (!cmdk) return
+        cmdk.hidden = false
+        cmdkInput.value = ''
+        active = 0
+        render('')
+        setTimeout(function () { cmdkInput.focus() }, 10)
+      }
+      function closeCmdk() { if (cmdk) cmdk.hidden = true }
+      function score(item, q) {
+        if (!q) return 0
+        var hay = (item.label + ' ' + (item.category || '') + ' ' + (item.tag || '')).toLowerCase()
+        var qLow = q.toLowerCase()
+        if (hay.indexOf(qLow) === -1) return -1
+        var pos = hay.indexOf(qLow)
+        return 1000 - pos - hay.length * 0.01
+      }
+      function render(q) {
+        if (!cmdkList) return
+        var results = idx.map(function (it, i) { return { it: it, s: score(it, q), i: i } })
+          .filter(function (r) { return !q || r.s >= 0 })
+          .sort(function (a, b) { return b.s - a.s })
+          .slice(0, 20)
+        cmdkList.innerHTML = results.map(function (r, n) {
+          var it = r.it
+          return '<li role="option" class="cmdk-item' + (n === active ? ' active' : '') + '" data-href="' + it.href + '">' +
+                 '<span class="cmdk-item-emoji">' + (it.emoji || '·') + '</span>' +
+                 '<span class="cmdk-item-label">' + escapeHtml(it.label) + '</span>' +
+                 '<span class="cmdk-item-cat">' + escapeHtml(it.category || '') + '</span>' +
+                 '</li>'
+        }).join('')
+        if (!results.length) {
+          cmdkList.innerHTML = '<li class="cmdk-empty">No matches.</li>'
+        }
+        cmdkList.querySelectorAll('.cmdk-item').forEach(function (li) {
+          li.addEventListener('click', function () { location.href = li.dataset.href })
+          li.addEventListener('mouseenter', function () {
+            cmdkList.querySelectorAll('.cmdk-item').forEach(function (x, k) { x.classList.toggle('active', x === li) })
+            active = Array.from(cmdkList.querySelectorAll('.cmdk-item')).indexOf(li)
+          })
+        })
+      }
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+        })
+      }
+      if (cmdkBtn) cmdkBtn.addEventListener('click', openCmdk)
+      if (cmdk) {
+        cmdk.querySelectorAll('[data-cmdk-close]').forEach(function (el) {
+          el.addEventListener('click', closeCmdk)
+        })
+        cmdkInput.addEventListener('input', function (e) { active = 0; render(e.target.value) })
+        cmdkInput.addEventListener('keydown', function (e) {
+          var items = cmdkList.querySelectorAll('.cmdk-item')
+          if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, items.length - 1); render(cmdkInput.value) }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); render(cmdkInput.value) }
+          else if (e.key === 'Enter') {
+            e.preventDefault()
+            var sel = items[active]
+            if (sel) location.href = sel.dataset.href
+          }
+        })
+      }
+      document.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault()
+          if (cmdk && cmdk.hidden) openCmdk(); else closeCmdk()
+        }
+      })
+
+      /* Expose closeCmdk so the Escape handler above can reach it.
+         Declared late so it's safe across all return paths. */
+      window.__cmdkClose = closeCmdk
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setup, { once: true })
+    } else {
+      setup()
+    }
+  })()
+  </script>
+</nav>
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛︎"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "HelioCast", "tag": "Solar irradiance forecasting dashboard & per-body triangulator", "href": "https://ask-meridian.uk/helio/", "category": "App", "emoji": "☀"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "100% on the Apple Neural Engine — eligibility is not placement", "href": "https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/chiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "Coexistence of dipolar and quadrupolar higher-order topology", "href": "https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/", "category": "Blog", "emoji": "✎"}, {"label": "Edge-Enhanced Diffractive Neural Networks: Spin-Multiplexed Nonlocal Metasurfaces", "href": "https://ask-meridian.uk/blog/edge-enhanced-diffractive-neural-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Equivariant Graph Neural Networks for Optical Spectra Prediction", "href": "https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps", "href": "https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark", "href": "https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/", "category": "Blog", "emoji": "✎"}, {"label": "One-photon communication in atomic media: Yale's first-principles fidelity bounds", "href": "https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck", "href": "https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/", "category": "Blog", "emoji": "✎"}, {"label": "Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate", "href": "https://ask-meridian.uk/blog/multi-channel-optical-vision-model/", "category": "Blog", "emoji": "✎"}, {"label": "Optimal Probe State for Phase Estimation Under Covariant Measurement", "href": "https://ask-meridian.uk/blog/optimal-probe-state-phase-estimation/", "category": "Blog", "emoji": "✎"}, {"label": "Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting", "href": "https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x", "href": "https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Physical Bounds on Optical Micromanipulation: Maximal Stiffness in the Dipole Regime", "href": "https://ask-meridian.uk/blog/physical-bounds-optical-micromanipulation-maximal-stiffness/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Scaling-optimal purification of noisy qubit unitary channels", "href": "https://ask-meridian.uk/blog/purification-noisy-qubit-unitary-channels/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum Kernels are Spectral Tensor Networks", "href": "https://ask-meridian.uk/blog/quantum-kernels-spectral-tensor-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Resolving the Edge of a Quantum Pyramid", "href": "https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Benchmark of quantum algorithms for ground state preparation in the presence of noise", "href": "https://ask-meridian.uk/blog/benchmark-ground-state-quantum-algorithms-noise/", "category": "Blog", "emoji": "✎"}];</script>
+  <main id="main" style="padding-top: 48px;">
+    <article class="article-body">
+      <header style="margin-top: 64px; margin-bottom: 32px;">
+        <div class="article-meta">2026-06-22 · 8 min read · quantum simulation</div>
+        <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Benchmark of quantum algorithms for ground state preparation in the presence of noise</h1>
+        <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0 0 16px;">
+          Three families of ground-state-preparation algorithms &mdash; adiabatic, multi-frequency cooling, and QAOA &mdash; are put on a single solvable footing. The result is a controlled comparison that says where each one wins, where it breaks, and how noise reshapes the trade.
+        </p>
+        <a href="https://arxiv.org/abs/2606.20551" class="btn-arxiv" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></polyline><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Paper: arXiv:2606.20551
+        </a>
+      </header>
+
+      <img src="/img/blog/benchmark-ground-state-quantum-algorithms-noise-banner.svg" alt="Benchmark of quantum algorithms for ground state preparation in the presence of noise &mdash; banner showing three algorithm lanes (adiabatic, multi-frequency cooling, QAOA) meeting at a phase transition on a dark technical background" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+
+      <p><strong>arXiv:2606.20551</strong> is not a new algorithm paper. It is a benchmark paper, and the framing matters. <em>Molpeceres, Lu, Cirac &amp; Kraus</em> take a single exactly-solvable family of quadratic fermionic Hamiltonians, instrument it with depolarizing noise, and ask the question that any practical ground-state-preparation team has to answer eventually: <strong>given a fixed noise budget, which algorithm wins &mdash; and where?</strong></p>
+
+      <p>The model has two phases separated by a quantum phase transition, which is the entire point of the choice. The two phases stress the algorithms in different ways: in the trivial phase the spectral gap stays open, and slow protocols have time to work; in the topological phase the gap closes, and that is where the protocol choice has to change. The same Hamiltonian, the same noise channel, the same metric &mdash; only the operating point moves.</p>
+
+      <p>The headline result is that no single algorithm wins everywhere. Adiabatic evolution is favorable in the trivial phase, where it can out-perform both cooling and QAOA on relative-energy error. A multi-frequency cooling algorithm becomes competitive or superior in the topological phase, where the gap closes and adiabaticity breaks down. QAOA sits between them &mdash; competitive with cooling in the trivial phase, typically outperformed in the topological regime.</p>
+
+      <h2>The model and the metric</h2>
+
+      <p>The Hamiltonian family is quadratic in fermionic operators, parametrized by a coupling \(g\) that drives the system across a phase transition:</p>
+
+      <div class="math-block" data-label="quadratic fermionic Hamiltonian">
+        \[
+          H(g) = \sum_{i} \bigl( -J \, c_i^\dagger c_{i+1} + \Delta(g) \, c_i^\dagger c_i + \text{h.c.} \bigr)
+        \]
+      </div>
+
+      <p>The exact solvability of the model is what makes the benchmark clean: the ground state and the gap are known in closed form, so the achievable relative energy \(\varepsilon_{\text{rel}} = |E - E_0| / |E_0|\) is a closed expression in the noise rate, the protocol depth, and the gap. No numerics are required to anchor the scaling &mdash; the simulations only validate the closed form and the regime boundaries.</p>
+
+      <p>The depolarizing channel acts on every qubit after every layer with rate \(p\). That choice is the worst-case asymmetric noise model: it does not preserve any symmetry the Hamiltonian has, which is why the analytical scaling of \(\varepsilon_{\text{rel}}\) versus \(p\) and the protocol parameters is the cleanest version of the comparison.</p>
+
+      <h2>How the three algorithms stack up</h2>
+
+      <p>The three families are not adversaries in the same sense. They make different bets about what the bottleneck is, and the paper makes those bets explicit:</p>
+
+      <ul>
+        <li><strong>Adiabatic evolution</strong> trusts the gap. When the gap is open, you can change the Hamiltonian slowly enough that the system tracks the instantaneous ground state. The cost is time: total evolution time scales as \(1/\Delta_{\min}^2\) in the worst case, and in the topological phase \(\Delta_{\min}\) closes. That is the loss mechanism.</li>
+        <li><strong>Multi-frequency cooling</strong> is dissipative by design. It uses engineered Lindblad operators that target the relevant low-energy subspace and bleed excitations out at controlled rates. In the topological phase it pays off because it does not need a finite gap &mdash; it just needs the dissipative gap.</li>
+        <li><strong>QAOA</strong> is a variational ansatz with discrete layers. Its competitive region is bounded by the ansatz depth; the paper shows where the achievable \(\varepsilon_{\text{rel}}\) curve crosses the cooling curve as a function of \(p\) and depth, and that crossing moves into the trivial-phase region as the topological gap closes.</li>
+      </ul>
+
+      <p>The numerical simulations confirm the analytical scaling and pin down the crossover. The figure that earns its keep is the phase diagram: relative-energy contours in the \((g, p)\) plane, with the algorithm that wins each cell annotated. That diagram is the kind of artifact that turns a benchmark into a decision tool.</p>
+
+      <div class="rule"><strong>The point of the paper is the diagram, not the algorithm.</strong> The algorithm news is the cooling-vs-adabatic crossover in the topological phase. The benchmark news is that the same diagram can be regenerated for any future ground-state-prep protocol and slotted into the same plane.</div>
+
+      <h2>Noise robustness, not just noise scaling</h2>
+
+      <p>Most noise benchmarks stop at "how does the error grow with rate". This one goes further and asks: how robust is the protocol to parameter imperfections &mdash; miscalibrated drive amplitudes, off-resonant drives, imperfect timing? The answer matters because in practice the protocol error floor is set by control imperfections, not the depolarizing channel.</p>
+
+      <div class="math-block" data-label="achievable relative energy vs noise">
+        \[
+          \varepsilon_{\text{rel}}(p, T) \;=\; A\,\frac{p\,T}{\Delta_{\min}} \;+\; B\,\exp\!\left(-\frac{\Delta_{\min}^2 T}{\kappa}\right)
+        \]
+      </div>
+
+      <p>The first term is the noise floor: linear in the depolarizing rate \(p\) and the protocol depth or time \(T\). The second term is the algorithmic floor: adiabatic or cooling-limited, decaying with the square of the gap. The crossover where the noise floor equals the algorithmic floor is the operating point that determines the minimum \(\varepsilon_{\text{rel}}\) the benchmark can ever resolve.</p>
+
+      <p>For cooling, the parameter-robustness margin is wider than for adiabatic or QAOA. In other words: when the calibration of the cooling rates drifts, the protocol degrades gracefully. The same drift on an adiabatic schedule or on QAOA angles pushes you out of the operational envelope much faster.</p>
+
+      <div class="callout"><strong>Why a benchmark beats another algorithm paper:</strong> A new algorithm can be tuned to win on a specific family; a benchmark with closed-form scalings and a phase diagram lets you check whether the tuning transfers to other regions of the same plane. This is the test every "we beat cooling on a random model" claim should pass before it lands in a roadmap.</div>
+
+      <h2>What I'd keep in mind</h2>
+
+      <p>There are three numbers worth carrying forward from this paper:</p>
+
+      <ul>
+        <li>The <strong>gap-closing exponent</strong> that sets the adiabatic break-even: \(\Delta_{\min}(g) \sim |g - g_c|^{z\nu}\). Once you know \(z\nu\) for your model, you know the protocol time you need, and you know when adiabatic is no longer competitive.</li>
+        <li>The <strong>noise-rate scaling</strong> \(\varepsilon_{\text{rel}} \propto p\) at fixed protocol depth. Linear is good news: it means the noise channel can be characterized once, and the achievable floor extrapolates without re-running the full benchmark.</li>
+        <li>The <strong>parameter-robustness margin</strong> of the cooling protocol. This is the number that decides whether a benchmark winner is actually deployable on hardware that drifts.</li>
+      </ul>
+
+      <p>What I'd <em>not</em> carry forward: the specific algorithm choice for any particular \((g, p)\) cell. The cells will move the moment you swap the Hamiltonian family, the noise model, or the protocol depth. The framework is the durable artifact.</p>
+
+      <h2>Takeaway</h2>
+
+      <p>Benchmarks with closed-form scalings and an explicit phase diagram are what move ground-state-preparation from algorithm-of-the-month to engineering. This paper is less about cooling beating adiabatic and more about putting all three contenders on the same solvable footing, with a metric that closes analytically and a parameter-robustness test that closes the door on over-tuned wins.</p>
+
+      <p>That is the standard to hold new ground-state-prep protocols to: not a single-cell win, but a cell-by-cell map and a robustness number. Once that template is in place, every future claim is forced to be either an extension of the diagram or an honest retreat.</p>
+
+      <p class="article-meta">Reference: arXiv:2606.20551 &middot; Molpeceres, Lu, Cirac &amp; Kraus &middot; Benchmark of quantum algorithms for ground state preparation in the presence of noise</p>
+    </article>
+  </main>
+
+<script type="module" src="/blog/listen.js"></script>
+</body>
+</html>
