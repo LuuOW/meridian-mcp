@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check — Meridian Blog</title>
+<meta name="description" content="A practical path to photonic-grade diamond-on-insulator substrates: plasma etch optimization, preserved bonding and surface quality, and colorimetry-based thickness evaluation that tracks WLI at 5 nm resolution.">
+<meta property="og:title" content="Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
+<link rel="canonical" href="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand">◎ Meridian</a>
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link current">Blog</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://github.com/LuuOW/meridian-mcp" class="nav-inline-link">Source</a></li>
+  </ul>
+</nav>
+<main class="blog-article">
+  <article class="article-body" style="max-width:760px;margin:0 auto;padding:32px 24px 96px;line-height:1.7;">
+    <div class="article-meta" style="font-family:var(--font-mono);font-size:12px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">ArXiv briefing · diamond photonics · process control · metrology</div>
+    <h1>Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check</h1>
+    <div style="margin:30px 0 18px;border-radius:18px;overflow:hidden;border:1px solid rgba(148,163,184,0.18);box-shadow:0 28px 80px rgba(2,6,23,0.55);background:#020817;">
+      <img src="/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg" alt="Stylized banner for a diamond-on-insulator plasma etch and colorimetry blog" style="display:block;width:100%;height:auto;">
+    </div>
+    <p><strong>arXiv:2606.20412</strong> is a fabrication paper with a practical punchline: you can thin a directly bonded single-crystal diamond membrane into a photonic-grade diamond-on-insulator substrate without the usual stack of transfers, under-etches, or sacrificial gymnastics.</p>
+    <p>The authors report a recipe that preserves diamond bonding and surface quality, reaches a thickness of <strong>300 nm or below</strong> over a <strong>0.5 × 0.5 mm²</strong> uniform area, and keeps roughness under <strong>0.5 nm</strong>. They also show a colorimetry-based thickness estimator that tracks white-light interferometry and gives a useful <strong>5 nm</strong> resolution from microscope images.</p>
+    <h2>Why this matters</h2>
+    <p>Diamond photonics has never lacked ambition. What it often lacks is a substrate route that plays nicely with manufacturing. Color centers, waveguides, and chiplets all want a low-loss platform, but the substrate stack has to be thin, uniform, and mechanically credible enough to survive the rest of the flow. That is the real bottleneck here.</p>
+    <p>This paper is interesting because it attacks the boring part directly: plasma etch process development. The result is not a one-off demo on an exotic corner case. It is a recipe aimed at turning direct-bonded diamond membranes into usable thin-film DOI substrates.</p>
+    <h2>The process in one sentence</h2>
+    <p>The core move is an <strong>ICP-RIE</strong> recipe tuned to thin a bonded (100) single-crystal diamond membrane while keeping the interface intact and the surface smooth enough for photonic devices.</p>
+    <blockquote style="margin:22px 0;padding:16px 18px;border-left:3px solid #38bdf8;background:rgba(15,23,42,0.78);border-radius:12px;">
+      <strong>Key engineering tradeoff:</strong> aggressive enough etching to thin a 10 µm plate all the way down, but controlled enough to avoid destroying bonding quality or turning the surface into a scattering problem.
+    </blockquote>
+    <h2>What the paper shows</h2>
+    <ul>
+      <li>Direct-bonded diamond membranes thinner than <code>50 µm</code> can be converted into large-area thin-film DOI substrates.</li>
+      <li>The authors demonstrate a free-standing photonic chiplet made from the resulting substrate.</li>
+      <li>Diamond thickness of <code>≤300 nm</code> is reached from a 10 µm starting plate.</li>
+      <li>Surface roughness stays below <code>0.5 nm</code>, which is the kind of number photonics people actually care about.</li>
+      <li>The workflow stays within a standard two-step lithography flow, which is a big deal for adoption.</li>
+    </ul>
+    <h2>A simple thickness proxy</h2>
+    <p>The colorimetry contribution is the quiet second half of the paper. In spirit, the microscope image color is being used as a proxy for optical thickness, with the spectral response translating into a thickness estimate:</p>
+    <div style="background:linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));border:1px solid rgba(139,92,246,0.35);border-radius:14px;padding:24px 22px 18px;margin:26px 0;overflow-x:auto;position:relative;">
+      $$\hat{t} = f(\text{RGB}, \text{illumination}, \text{reference stack})$$
+    </div>
+    <p>That is deliberately generic, because the implementation is empirical rather than a closed-form universal law. The point is practical: the color field of the microscope image is mapped to thickness quickly enough that you can evaluate large areas without waiting on metrology bottlenecks, and the result matches white-light interferometry closely enough to be useful.</p>
+    <h2>Why the color check is valuable</h2>
+    <p>In a fabrication line, the expensive part is often not the measurement itself. It is the time cost of measuring every region you care about. A microscope image is already sitting there. If its color variation can be calibrated against thickness, the same image becomes an early-stage screening tool for etch uniformity, yield, and process drift.</p>
+    <p>That makes the paper more than a materials result. It is a process-control result. The substrate is the outcome, but the metrology path is what makes the workflow scalable.</p>
+    <h2>My read</h2>
+    <p>The strongest part of the work is its restraint. It does not promise some magical diamond transfer stack or a fragile ultra-specialized pathway. It builds around a direct-bonded starting point, keeps the process conventional, and reports numbers that are immediately legible to photonics engineers.</p>
+    <p>If you are working on diamond photonics, this is the kind of result that changes the conversion rate from “interesting demo” to “something we can actually fabricate repeatedly.”</p>
+    <h2>Takeaway</h2>
+    <p>Photonic-grade DOI is hard because the substrate is the device platform, not just a passive carrier. This paper shows a credible route to thin, uniform, smooth diamond-on-insulator material and adds a lightweight colorimetry check that can speed up the whole loop.</p>
+    <p>That combination is the story: better substrate formation, simpler device flow, and faster thickness validation.</p>
+    <p class="article-meta">Reference: arXiv:2606.20412 · Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry</p>
+  </article>
+</main>
+</body>
+</html>
