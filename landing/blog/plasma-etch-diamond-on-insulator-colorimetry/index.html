@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates — Meridian Blog</title>
-<meta name="description" content="A briefing on arXiv:2606.20412: plasma etch optimization for photonic-grade diamond-on-insulator substrates, preserved bonding and surface quality, and colorimetry-based thickness evaluation.">
-<meta property="og:title" content="Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates">
+<title>Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check — Meridian Blog</title>
+<meta name="description" content="A practical path to photonic-grade diamond-on-insulator substrates: plasma etch optimization, preserved bonding and surface quality, and colorimetry-based thickness evaluation that tracks WLI at 5 nm resolution.">
+<meta property="og:title" content="Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
 <link rel="canonical" href="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
@@ -13,10 +13,9 @@
 <link rel="stylesheet" href="/style.css?v=20260527a">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
 <style>
-  .blog-article { width: 100%; }
-  .article-body { width: 100%; box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
   .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
   .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
   .article-body p { margin: 14px 0; color: var(--text); }
@@ -25,35 +24,34 @@
   .article-body li { margin: 6px 0; }
   .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
 
-  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
-  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
   .banner-frame {
     margin: 30px 0 34px;
     border-radius: 18px;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(148,163,184,0.18);
     box-shadow: 0 28px 80px rgba(2,6,23,0.55);
-    background: #02050a;
+    background: #020817;
   }
   .banner-frame img { display: block; width: 100%; height: auto; }
+
+  .lead-panel {
+    background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(167,139,250,0.09));
+    border: 1px solid rgba(148,163,184,0.2);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin: 22px 0 26px;
+  }
+  .lead-panel p:first-child { margin-top: 0; }
+  .lead-panel p:last-child { margin-bottom: 0; }
   .callout {
-    background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05));
-    border: 1px solid rgba(139,92,246,0.3);
+    background: rgba(15,23,42,0.78);
+    border: 1px solid rgba(56,189,248,0.2);
+    border-left: 3px solid #38bdf8;
     border-radius: 12px;
-    padding: 18px 22px;
+    padding: 16px 18px;
     margin: 22px 0;
-    font-size: 15px;
   }
-  .callout strong { color: #ddd6fe; }
-  .rule {
-    background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05));
-    border-left: 3px solid #7dd3fc;
-    border-radius: 0 10px 10px 0;
-    padding: 14px 20px;
-    margin: 22px 0;
-    font-size: 17px;
-    color: #e0f2fe;
-  }
+  .callout strong { color: #e2e8f0; }
   .figure-note {
     font-size: 12px;
     color: var(--text-faint);
@@ -62,7 +60,7 @@
     letter-spacing: 0.04em;
     margin-top: 10px;
   }
-  .math-block {
+  .formula {
     background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
     border: 1px solid rgba(139,92,246,0.35);
     border-radius: 14px;
@@ -71,8 +69,8 @@
     overflow-x: auto;
     position: relative;
   }
-  .math-block::before {
-    content: attr(data-label);
+  .formula::before {
+    content: "thickness proxy";
     position: absolute;
     top: 10px;
     left: 16px;
@@ -83,15 +81,6 @@
     color: #c4b5fd;
   }
   .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
-  .article-body .katex-display > .katex { font-size: 1.15em; }
-  .formula-inline {
-    display: block;
-    text-align: center;
-    font-family: "Times New Roman", Times, serif;
-    font-size: 24px;
-    color: #ffffff;
-    letter-spacing: 0.02em;
-  }
 </style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
@@ -330,23 +319,25 @@
     else setup()
   })();
   </script>
+</nav>
   <main id="main" class="blog-article">
     <article class="article-body">
       <div class="article-meta">ArXiv briefing · diamond photonics · process control · metrology</div>
-      <h1>Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry</h1>
+      <h1>Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check</h1>
 
       <div class="banner-frame">
-        <img src="/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=3" alt="Banner for diamond-on-insulator plasma etch and colorimetry">
+        <img src="/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg" alt="Stylized banner for a diamond-on-insulator plasma etch and colorimetry blog">
       </div>
-      <div class="figure-note">A dark technical banner in the same treatment as the other briefings: gold headline, schematic center, subtle dot field, and a small footer marker.</div>
+      <div class="figure-note">Banner direction: clean plasma glow, thin-film diamond cross-section, metrology bands, and a darker technical finish to match the existing blog set.</div>
 
-      <p><strong>arXiv:2606.20412</strong> is a fabrication paper with a practical punchline: you can thin a directly bonded single-crystal diamond membrane into a photonic-grade diamond-on-insulator substrate without the usual stack of transfers, under-etches, or sacrificial gymnastics.</p>
-      <p>The authors report a recipe that preserves diamond bonding and surface quality, reaches a thickness of <strong>300 nm or below</strong> over a <strong>0.5 × 0.5 mm²</strong> uniform area, and keeps roughness under <strong>0.5 nm</strong>. They also show a colorimetry-based thickness estimator that tracks white-light interferometry and gives a useful <strong>5 nm</strong> resolution from microscope images.</p>
+      <div class="lead-panel">
+        <p><strong>arXiv:2606.20412</strong> is a fabrication paper with a practical punchline: you can thin a directly bonded single-crystal diamond membrane into a photonic-grade diamond-on-insulator substrate without the usual stack of transfers, under-etches, or sacrificial gymnastics.</p>
+        <p>The authors report a recipe that preserves diamond bonding and surface quality, reaches a thickness of <strong>300 nm or below</strong> over a <strong>0.5 × 0.5 mm²</strong> uniform area, and keeps roughness under <strong>0.5 nm</strong>. They also show a colorimetry-based thickness estimator that tracks white-light interferometry and gives a useful <strong>5 nm</strong> resolution from microscope images.</p>
+      </div>
 
       <h2>Why this matters</h2>
       <p>Diamond photonics has never lacked ambition. What it often lacks is a substrate route that plays nicely with manufacturing. Color centers, waveguides, and chiplets all want a low-loss platform, but the substrate stack has to be thin, uniform, and mechanically credible enough to survive the rest of the flow. That is the real bottleneck here.</p>
       <p>This paper is interesting because it attacks the boring part directly: plasma etch process development. The result is not a one-off demo on an exotic corner case. It is a recipe aimed at turning direct-bonded diamond membranes into usable thin-film DOI substrates.</p>
-      <div class="rule">The story is not just “we etched diamond thinner.” It is “we found a process window that still looks manufacturable.”</div>
 
       <h2>The process in one sentence</h2>
       <p>The core move is an <strong>ICP-RIE</strong> recipe tuned to thin a bonded (100) single-crystal diamond membrane while keeping the interface intact and the surface smooth enough for photonic devices.</p>
@@ -366,34 +357,19 @@
       <h2>A simple thickness proxy</h2>
       <p>The colorimetry contribution is the quiet second half of the paper. In spirit, the microscope image color is being used as a proxy for optical thickness, with the spectral response translating into a thickness estimate:</p>
 
-      <div class="math-block" data-label="thickness proxy">
-        $$\hat{t} = f(\mathbf{c}, I_{\mathrm{illum}}, S_{\mathrm{ref}})$$
+      <div class="formula">
+        $$\hat{t} = f(\text{RGB}, \text{illumination}, \text{reference stack})$$
       </div>
 
       <p>That is deliberately generic, because the implementation is empirical rather than a closed-form universal law. The point is practical: the color field of the microscope image is mapped to thickness quickly enough that you can evaluate large areas without waiting on metrology bottlenecks, and the result matches white-light interferometry closely enough to be useful.</p>
-
-      <div class="math-block" data-label="uniformity check">
-        $$\Delta t_{\max} = \max_{(x,y)\in A} t(x,y) - \min_{(x,y)\in A} t(x,y)$$
-      </div>
-
-      <p>For a device substrate, the relevant number is not only the mean thickness but the span across the useful area. That is why the reported <strong>0.5 × 0.5 mm²</strong> uniform patch matters. In a photonics flow, the uniformity constraint is often what separates a publishable wafer from a usable one.</p>
 
       <h2>Why the color check is valuable</h2>
       <p>In a fabrication line, the expensive part is often not the measurement itself. It is the time cost of measuring every region you care about. A microscope image is already sitting there. If its color variation can be calibrated against thickness, the same image becomes an early-stage screening tool for etch uniformity, yield, and process drift.</p>
       <p>That makes the paper more than a materials result. It is a process-control result. The substrate is the outcome, but the metrology path is what makes the workflow scalable.</p>
 
-      <div class="math-block" data-label="roughness target">
-        $$\sigma_{\mathrm{rms}} < 0.5\,\mathrm{nm} \qquad \text{and} \qquad t \le 300\,\mathrm{nm}$$
-      </div>
-
       <h2>My read</h2>
       <p>The strongest part of the work is its restraint. It does not promise some magical diamond transfer stack or a fragile ultra-specialized pathway. It builds around a direct-bonded starting point, keeps the process conventional, and reports numbers that are immediately legible to photonics engineers.</p>
       <p>If you are working on diamond photonics, this is the kind of result that changes the conversion rate from “interesting demo” to “something we can actually fabricate repeatedly.”</p>
-      <div class="rule">That is the Meridian-style criterion: not novelty for its own sake, but a route that can survive the first manufacturing conversation.</div>
-
-      <h2>What I’d keep in mind</h2>
-      <p>There are three practical numbers to remember from this paper: <code>≤300 nm</code> thickness, <code>&lt;0.5 nm</code> roughness, and <code>5 nm</code> colorimetric resolution. Those numbers are not decorative. They define the process window, the photonic surface quality, and the usefulness of the fast metrology path.</p>
-      <p>That is also why the paper reads as a manufacturing-enabling result rather than just a characterization exercise. The value is in the full stack: etch recipe, surface quality, bonded starting point, and rapid thickness estimation.</p>
 
       <h2>Takeaway</h2>
       <p>Photonic-grade DOI is hard because the substrate is the device platform, not just a passive carrier. This paper shows a credible route to thin, uniform, smooth diamond-on-insulator material and adds a lightweight colorimetry check that can speed up the whole loop.</p>
