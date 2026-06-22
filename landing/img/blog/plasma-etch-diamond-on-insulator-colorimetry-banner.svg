@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="80%">
+      <stop offset="0%" stop-color="#10203b"/>
+      <stop offset="55%" stop-color="#08111f"/>
+      <stop offset="100%" stop-color="#03060b"/>
+    </radialGradient>
+    <linearGradient id="plasma" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85"/>
+      <stop offset="55%" stop-color="#8b5cf6" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="diamond" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d9f0ff" stop-opacity="0.92"/>
+      <stop offset="50%" stop-color="#8fd3ff" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#111827" stop-opacity="0.98"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#7dd3fc" stroke-opacity="0.07" stroke-width="1"/>
+      <circle cx="4" cy="4" r="1.2" fill="#93c5fd" fill-opacity="0.12"/>
+    </pattern>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <rect x="32" y="32" width="1856" height="1016" rx="14" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+
+  <g transform="translate(960 170)" text-anchor="middle" font-family="Arial, sans-serif">
+    <text font-size="13" letter-spacing="5" fill="#93c5fd" fill-opacity="0.9">PLASMA ETCH · DIAMOND PHOTONICS · COLORIMETRY</text>
+    <text y="80" font-size="58" font-weight="800" fill="#f8fafc" letter-spacing="4">PHOTONIC-GRADE DIAMOND-ON-INSULATOR</text>
+    <text y="148" font-size="58" font-weight="800" fill="url(#plasma)" letter-spacing="4">THINNING WITH A BUILT-IN THICKNESS CHECK</text>
+    <text y="206" font-size="20" fill="#cbd5e1" letter-spacing="2" opacity="0.9">arXiv:2606.20412 · ICP-RIE recipe, preserved bonding, and 5 nm colorimetric evaluation</text>
+  </g>
+
+  <g transform="translate(960 610)">
+    <ellipse cx="0" cy="210" rx="340" ry="54" fill="#000" opacity="0.38"/>
+    <rect x="-430" y="170" width="860" height="86" rx="18" fill="url(#glass)" stroke="#7dd3fc" stroke-opacity="0.18"/>
+    <rect x="-405" y="188" width="810" height="50" rx="12" fill="#0b1220" stroke="#38bdf8" stroke-opacity="0.18"/>
+
+    <g filter="url(#glow)">
+      <path d="M -220 6 L 0 -168 L 220 6 L 0 180 Z" fill="none" stroke="#38bdf8" stroke-width="5" opacity="0.75"/>
+      <path d="M -220 6 L 0 -168 L 220 6" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.5"/>
+      <path d="M -220 6 L 0 180 L 220 6" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0.35"/>
+      <circle cx="0" cy="-18" r="42" fill="#38bdf8" opacity="0.2"/>
+      <circle cx="0" cy="-18" r="20" fill="#f59e0b" opacity="0.55"/>
+    </g>
+
+    <g stroke="#dbeafe" stroke-opacity="0.22" stroke-width="1.4">
+      <path d="M -170 20 L 0 -120 L 170 20"/>
+      <path d="M -170 20 L 0 150 L 170 20"/>
+      <path d="M -120 74 L 0 -58 L 120 74"/>
+      <path d="M -120 74 L 0 118 L 120 74"/>
+      <path d="M -72 116 L 0 22 L 72 116"/>
+    </g>
+
+    <g transform="translate(0 268)" text-anchor="middle" font-family="monospace">
+      <text font-size="16" fill="#93c5fd" letter-spacing="3">DIRECT-BONDED (100) SCD → THIN-FILM DOI → FREE-STANDING CHIPLETS</text>
+    </g>
+  </g>
+
+  <g transform="translate(150 860)" font-family="Arial, sans-serif">
+    <rect x="0" y="-42" width="430" height="124" rx="14" fill="#050814" fill-opacity="0.78" stroke="#38bdf8" stroke-opacity="0.16"/>
+    <text x="24" y="-4" font-size="22" fill="#e2e8f0" font-weight="700">Colorimetry as process control</text>
+    <text x="24" y="28" font-size="14" fill="#94a3b8">Microscope color becomes a thickness proxy when WLI is too slow for every region.</text>
+    <text x="24" y="56" font-size="14" fill="#94a3b8">That is the practical hinge of the paper.</text>
+  </g>
+
+  <g transform="translate(1800 980)" text-anchor="end" font-family="monospace">
+    <text font-size="14" fill="#e2e8f0" fill-opacity="0.45">ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/</text>
+  </g>
+</svg>
