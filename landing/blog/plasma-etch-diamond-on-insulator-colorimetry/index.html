@@ -3,67 +3,398 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check — Meridian Blog</title>
-<meta name="description" content="A practical path to photonic-grade diamond-on-insulator substrates: plasma etch optimization, preserved bonding and surface quality, and colorimetry-based thickness evaluation that tracks WLI at 5 nm resolution.">
-<meta property="og:title" content="Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check">
+<title>Plasma Etch Process Optimization for Photonic-Grade Diamond-ON-Insulator Substrates — Meridian Blog</title>
+<meta name="description" content="A briefing on arXiv:2606.20412: plasma etch optimization for photonic-grade diamond-on-insulator substrates, preserved bonding and surface quality, and colorimetry-based thickness evaluation.">
+<meta property="og:title" content="Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=2">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=2">
 <link rel="canonical" href="https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 720px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .banner-frame {
+    margin: 30px 0 34px;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 28px 80px rgba(2,6,23,0.55);
+    background: #02050a;
+  }
+  .banner-frame img { display: block; width: 100%; height: auto; }
+  .callout {
+    background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(56,189,248,0.05));
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin: 22px 0;
+    font-size: 15px;
+  }
+  .callout strong { color: #ddd6fe; }
+  .rule {
+    background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(139,92,246,0.05));
+    border-left: 3px solid #7dd3fc;
+    border-radius: 0 10px 10px 0;
+    padding: 14px 20px;
+    margin: 22px 0;
+    font-size: 17px;
+    color: #e0f2fe;
+  }
+  .figure-note {
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: center;
+    font-family: var(--font-mono);
+    letter-spacing: 0.04em;
+    margin-top: 10px;
+  }
+  .math-block {
+    background: linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));
+    border: 1px solid rgba(139,92,246,0.35);
+    border-radius: 14px;
+    padding: 24px 22px 18px;
+    margin: 26px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #c4b5fd;
+  }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.15em; }
+</style>
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
 <body>
+
+<a href="#main" class="skip-link">Skip to main content</a>
+
 <nav class="nav" aria-label="Primary">
-  <a href="https://ask-meridian.uk/" class="brand">◎ Meridian</a>
+  <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
   <ul class="nav-inline" role="menubar">
-    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link current">Blog</a></li>
+    <li class="nav-inline-item nav-apps" data-dropdown>
+      <button type="button" class="nav-inline-link nav-apps-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="appsMenu">
+        Apps <span class="caret" aria-hidden="true">▾</span>
+      </button>
+      <div id="appsMenu" class="nav-apps-menu" role="menu">
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+      </div>
+    </li>
     <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
-    <li class="nav-inline-item"><a href="https://github.com/LuuOW/meridian-mcp" class="nav-inline-link">Source</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
   </ul>
-</nav>
-<main class="blog-article">
-  <article class="article-body" style="max-width:760px;margin:0 auto;padding:32px 24px 96px;line-height:1.7;">
-    <div class="article-meta" style="font-family:var(--font-mono);font-size:12px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">ArXiv briefing · diamond photonics · process control · metrology</div>
-    <h1>Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check</h1>
-    <div style="margin:30px 0 18px;border-radius:18px;overflow:hidden;border:1px solid rgba(148,163,184,0.18);box-shadow:0 28px 80px rgba(2,6,23,0.55);background:#020817;">
-      <img src="/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg" alt="Stylized banner for a diamond-on-insulator plasma etch and colorimetry blog" style="display:block;width:100%;height:auto;">
+  <button type="button" id="cmdkBtn" class="cmdk-trigger" aria-label="Open search palette">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="cmdk-label">Search</span>
+    <kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+  <a href="https://github.com/LuuOW/meridian-mcp" class="nav-gh-link" aria-label="View on GitHub" target="_blank" rel="noopener">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+    <details class="nav-group" open>
+      <summary class="nav-section">Apps</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+  <div id="cmdk" class="cmdk" hidden aria-modal="true" role="dialog" aria-label="Search">
+    <div class="cmdk-backdrop" data-cmdk-close></div>
+    <div class="cmdk-panel">
+      <div class="cmdk-input-row">
+        <svg aria-hidden="true" class="cmdk-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="cmdkInput" class="cmdk-input" type="search" placeholder="Search apps, docs, blog…" autocomplete="off" spellcheck="false" aria-label="Search">
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <ul id="cmdkList" class="cmdk-list" role="listbox"></ul>
+      <div class="cmdk-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
     </div>
-    <p><strong>arXiv:2606.20412</strong> is a fabrication paper with a practical punchline: you can thin a directly bonded single-crystal diamond membrane into a photonic-grade diamond-on-insulator substrate without the usual stack of transfers, under-etches, or sacrificial gymnastics.</p>
-    <p>The authors report a recipe that preserves diamond bonding and surface quality, reaches a thickness of <strong>300 nm or below</strong> over a <strong>0.5 × 0.5 mm²</strong> uniform area, and keeps roughness under <strong>0.5 nm</strong>. They also show a colorimetry-based thickness estimator that tracks white-light interferometry and gives a useful <strong>5 nm</strong> resolution from microscope images.</p>
-    <h2>Why this matters</h2>
-    <p>Diamond photonics has never lacked ambition. What it often lacks is a substrate route that plays nicely with manufacturing. Color centers, waveguides, and chiplets all want a low-loss platform, but the substrate stack has to be thin, uniform, and mechanically credible enough to survive the rest of the flow. That is the real bottleneck here.</p>
-    <p>This paper is interesting because it attacks the boring part directly: plasma etch process development. The result is not a one-off demo on an exotic corner case. It is a recipe aimed at turning direct-bonded diamond membranes into usable thin-film DOI substrates.</p>
-    <h2>The process in one sentence</h2>
-    <p>The core move is an <strong>ICP-RIE</strong> recipe tuned to thin a bonded (100) single-crystal diamond membrane while keeping the interface intact and the surface smooth enough for photonic devices.</p>
-    <blockquote style="margin:22px 0;padding:16px 18px;border-left:3px solid #38bdf8;background:rgba(15,23,42,0.78);border-radius:12px;">
-      <strong>Key engineering tradeoff:</strong> aggressive enough etching to thin a 10 µm plate all the way down, but controlled enough to avoid destroying bonding quality or turning the surface into a scattering problem.
-    </blockquote>
-    <h2>What the paper shows</h2>
-    <ul>
-      <li>Direct-bonded diamond membranes thinner than <code>50 µm</code> can be converted into large-area thin-film DOI substrates.</li>
-      <li>The authors demonstrate a free-standing photonic chiplet made from the resulting substrate.</li>
-      <li>Diamond thickness of <code>≤300 nm</code> is reached from a 10 µm starting plate.</li>
-      <li>Surface roughness stays below <code>0.5 nm</code>, which is the kind of number photonics people actually care about.</li>
-      <li>The workflow stays within a standard two-step lithography flow, which is a big deal for adoption.</li>
-    </ul>
-    <h2>A simple thickness proxy</h2>
-    <p>The colorimetry contribution is the quiet second half of the paper. In spirit, the microscope image color is being used as a proxy for optical thickness, with the spectral response translating into a thickness estimate:</p>
-    <div style="background:linear-gradient(135deg, rgba(139,92,246,0.13), rgba(56,189,248,0.06));border:1px solid rgba(139,92,246,0.35);border-radius:14px;padding:24px 22px 18px;margin:26px 0;overflow-x:auto;position:relative;">
-      $$\hat{t} = f(\text{RGB}, \text{illumination}, \text{reference stack})$$
-    </div>
-    <p>That is deliberately generic, because the implementation is empirical rather than a closed-form universal law. The point is practical: the color field of the microscope image is mapped to thickness quickly enough that you can evaluate large areas without waiting on metrology bottlenecks, and the result matches white-light interferometry closely enough to be useful.</p>
-    <h2>Why the color check is valuable</h2>
-    <p>In a fabrication line, the expensive part is often not the measurement itself. It is the time cost of measuring every region you care about. A microscope image is already sitting there. If its color variation can be calibrated against thickness, the same image becomes an early-stage screening tool for etch uniformity, yield, and process drift.</p>
-    <p>That makes the paper more than a materials result. It is a process-control result. The substrate is the outcome, but the metrology path is what makes the workflow scalable.</p>
-    <h2>My read</h2>
-    <p>The strongest part of the work is its restraint. It does not promise some magical diamond transfer stack or a fragile ultra-specialized pathway. It builds around a direct-bonded starting point, keeps the process conventional, and reports numbers that are immediately legible to photonics engineers.</p>
-    <p>If you are working on diamond photonics, this is the kind of result that changes the conversion rate from “interesting demo” to “something we can actually fabricate repeatedly.”</p>
-    <h2>Takeaway</h2>
-    <p>Photonic-grade DOI is hard because the substrate is the device platform, not just a passive carrier. This paper shows a credible route to thin, uniform, smooth diamond-on-insulator material and adds a lightweight colorimetry check that can speed up the whole loop.</p>
-    <p>That combination is the story: better substrate formation, simpler device flow, and faster thickness validation.</p>
-    <p class="article-meta">Reference: arXiv:2606.20412 · Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry</p>
-  </article>
-</main>
+  </div>
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛︎"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "HelioCast", "tag": "Solar irradiance forecasting dashboard & per-body triangulator", "href": "https://ask-meridian.uk/helio/", "category": "App", "emoji": "☀"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "100% on the Apple Neural Engine — eligibility is not placement", "href": "https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/chiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "Coexistence of dipolar and quadrupolar higher-order topology", "href": "https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/", "category": "Blog", "emoji": "✎"}, {"label": "Edge-Enhanced Diffractive Neural Networks: Spin-Multiplexed Nonlocal Metasurfaces", "href": "https://ask-meridian.uk/blog/edge-enhanced-diffractive-neural-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Equivariant Graph Neural Networks for Optical Spectra Prediction", "href": "https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps", "href": "https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark", "href": "https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/", "category": "Blog", "emoji": "✎"}, {"label": "One-photon communication in atomic media: Yale's first-principles fidelity bounds", "href": "https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck", "href": "https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/", "category": "Blog", "emoji": "✎"}, {"label": "Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate", "href": "https://ask-meridian.uk/blog/multi-channel-optical-vision-model/", "category": "Blog", "emoji": "✎"}, {"label": "Optimal Probe State for Phase Estimation Under Covariant Measurement", "href": "https://ask-meridian.uk/blog/optimal-probe-state-phase-estimation/", "category": "Blog", "emoji": "✎"}, {"label": "Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting", "href": "https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x", "href": "https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Physical Bounds on Optical Micromanipulation: Maximal Stiffness in the Dipole Regime", "href": "https://ask-meridian.uk/blog/physical-bounds-optical-micromanipulation-maximal-stiffness/", "category": "Blog", "emoji": "✎"}, {"label": "Plasma etch optimization for photonic-grade diamond-on-insulator, with colorimetry as a thickness check", "href": "https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Scaling-optimal purification of noisy qubit unitary channels", "href": "https://ask-meridian.uk/blog/purification-noisy-qubit-unitary-channels/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum Kernels are Spectral Tensor Networks", "href": "https://ask-meridian.uk/blog/quantum-kernels-spectral-tensor-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Resolving the Edge of a Quantum Pyramid", "href": "https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}];</script>
+  <script>
+  (function () {
+    function setup() {
+      var btn  = document.getElementById('burgerBtn')
+      var menu = document.getElementById('navMenu')
+      if (!btn || !menu) return
+      if (btn.dataset.wired) return
+      btn.dataset.wired = '1'
+      function toggleMobile(open) {
+        var isOpen = open === undefined ? !menu.classList.contains('open') : open
+        menu.classList.toggle('open', isOpen)
+        btn.classList.toggle('open', isOpen)
+        btn.setAttribute('aria-expanded', String(isOpen))
+      }
+      btn.addEventListener('click', function (e) { e.stopPropagation(); toggleMobile() })
+      menu.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () { toggleMobile(false) })
+      })
+      var appsTrigger = document.querySelector('.nav-apps-trigger')
+      var appsItem    = document.querySelector('.nav-apps')
+      function toggleApps(open) {
+        if (!appsItem) return
+        var isOpen = open === undefined ? !appsItem.classList.contains('open') : open
+        appsItem.classList.toggle('open', isOpen)
+        if (appsTrigger) appsTrigger.setAttribute('aria-expanded', String(isOpen))
+      }
+      if (appsTrigger) {
+        appsTrigger.addEventListener('click', function (e) { e.stopPropagation(); toggleApps() })
+      }
+      document.addEventListener('click', function (e) {
+        if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) toggleMobile(false)
+        if (appsItem && appsItem.classList.contains('open') && !appsItem.contains(e.target)) toggleApps(false)
+      })
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { toggleMobile(false); toggleApps(false); closeCmdk() }
+      })
+      var here = location.host + location.pathname.replace(/\/index\.html$/, '/')
+      document.querySelectorAll('.nav a, #appsMenu a, #navMenu a').forEach(function (a) {
+        var href = a.getAttribute('href')
+        if (!href) return
+        try {
+          var u = new URL(href, location.href)
+          var target = u.host + u.pathname.replace(/\/index\.html$/, '/')
+          if (target === here) a.classList.add('current')
+        } catch (_) {}
+      })
+      var cmdkBtn   = document.getElementById('cmdkBtn')
+      var cmdk      = document.getElementById('cmdk')
+      var cmdkInput = document.getElementById('cmdkInput')
+      var cmdkList  = document.getElementById('cmdkList')
+      var idx       = Array.isArray(window.__CMDK_INDEX__) ? window.__CMDK_INDEX__ : []
+      var active    = 0
+      function openCmdk() {
+        if (!cmdk) return
+        cmdk.hidden = false
+        cmdkInput.value = ''
+        active = 0
+        render('')
+        setTimeout(function () { cmdkInput.focus() }, 10)
+      }
+      function closeCmdk() { if (cmdk) cmdk.hidden = true }
+      function score(item, q) {
+        if (!q) return 0
+        q = q.toLowerCase()
+        var label = (item.label || '').toLowerCase()
+        var tag   = (item.tag || '').toLowerCase()
+        if (label === q) return 100
+        var s = 0
+        if (label.indexOf(q) !== -1) s += 20 - label.indexOf(q)
+        if (tag.indexOf(q) !== -1) s += 6
+        q.split(/\s+/).forEach(function (part) {
+          if (!part) return
+          if (label.indexOf(part) !== -1) s += 3
+          if (tag.indexOf(part) !== -1) s += 1
+        })
+        return s
+      }
+      function render(q) {
+        if (!cmdkList) return
+        var arr = idx
+          .map(function (item) { return { item: item, score: score(item, q) } })
+          .filter(function (x) { return !q || x.score > 0 || x.item.category === 'Page' })
+          .sort(function (a, b) { return b.score - a.score })
+          .slice(0, 8)
+          .map(function (x) { return x.item })
+        if (!arr.length) {
+          cmdkList.innerHTML = '<li class="cmdk-empty">No results.</li>'
+          return
+        }
+        cmdkList.innerHTML = arr.map(function (item, i) {
+          return '<li role="option" aria-selected="' + (i === active) + '" data-href="' + item.href + '" class="cmdk-item' + (i === active ? ' active' : '') + '">' +
+            '<span class="cmdk-emoji">' + (item.emoji || '·') + '</span>' +
+            '<span class="cmdk-text"><strong>' + item.label + '</strong>' + (item.tag ? '<span>' + item.tag + '</span>' : '') + '</span>' +
+          '</li>'
+        }).join('')
+        cmdkList.querySelectorAll('.cmdk-item').forEach(function (li, i) {
+          li.addEventListener('mouseenter', function () { active = i; render(q) })
+          li.addEventListener('click', function () { location.href = li.dataset.href })
+        })
+      }
+      if (cmdkBtn) cmdkBtn.addEventListener('click', openCmdk)
+      if (cmdkInput) cmdkInput.addEventListener('input', function (e) { active = 0; render(e.target.value || '') })
+      if (cmdkInput) cmdkInput.addEventListener('keydown', function (e) {
+        var max = Math.max(0, (cmdkList ? cmdkList.children.length : 1) - 1)
+        if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(max, active + 1); render(this.value || ''); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(0, active - 1); render(this.value || ''); }
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          var el = cmdkList && cmdkList.children[active]
+          if (el && el.dataset && el.dataset.href) location.href = el.dataset.href
+        }
+        if (e.key === 'Escape') closeCmdk()
+      })
+      document.querySelectorAll('[data-cmdk-close]').forEach(function (el) { el.addEventListener('click', closeCmdk) })
+      if (cmdk) cmdk.addEventListener('click', function (e) { if (e.target === cmdk) closeCmdk() })
+      function onKey(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault()
+          if (cmdk.hidden) openCmdk()
+          else closeCmdk()
+        }
+      }
+      window.addEventListener('keydown', onKey)
+      render('')
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup)
+    else setup()
+  })();
+  </script>
+  <main id="main" class="blog-article">
+    <article class="article-body">
+      <div class="article-meta">ArXiv briefing · diamond photonics · process control · metrology</div>
+      <h1>Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry</h1>
+
+      <div class="banner-frame">
+        <img src="/img/blog/plasma-etch-diamond-on-insulator-colorimetry-banner.svg?v=2" alt="Banner for diamond-on-insulator plasma etch and colorimetry">
+      </div>
+      <div class="figure-note">A dark technical banner in the same treatment as the other briefings: gold headline, schematic center, subtle dot field, and a small footer marker.</div>
+
+      <p><strong>arXiv:2606.20412</strong> is a fabrication paper with a practical punchline: you can thin a directly bonded single-crystal diamond membrane into a photonic-grade diamond-on-insulator substrate without the usual stack of transfers, under-etches, or sacrificial gymnastics.</p>
+      <p>The authors report a recipe that preserves diamond bonding and surface quality, reaches a thickness of <strong>300 nm or below</strong> over a <strong>0.5 × 0.5 mm²</strong> uniform area, and keeps roughness under <strong>0.5 nm</strong>. They also show a colorimetry-based thickness estimator that tracks white-light interferometry and gives a useful <strong>5 nm</strong> resolution from microscope images.</p>
+
+      <h2>Why this matters</h2>
+      <p>Diamond photonics has never lacked ambition. What it often lacks is a substrate route that plays nicely with manufacturing. Color centers, waveguides, and chiplets all want a low-loss platform, but the substrate stack has to be thin, uniform, and mechanically credible enough to survive the rest of the flow. That is the real bottleneck here.</p>
+      <p>This paper is interesting because it attacks the boring part directly: plasma etch process development. The result is not a one-off demo on an exotic corner case. It is a recipe aimed at turning direct-bonded diamond membranes into usable thin-film DOI substrates.</p>
+      <div class="rule">The story is not just “we etched diamond thinner.” It is “we found a process window that still looks manufacturable.”</div>
+
+      <h2>The process in one sentence</h2>
+      <p>The core move is an <strong>ICP-RIE</strong> recipe tuned to thin a bonded (100) single-crystal diamond membrane while keeping the interface intact and the surface smooth enough for photonic devices.</p>
+      <div class="callout">
+        <strong>Key engineering tradeoff:</strong> aggressive enough etching to thin a 10 µm plate all the way down, but controlled enough to avoid destroying bonding quality or turning the surface into a scattering problem.
+      </div>
+
+      <h2>What the paper shows</h2>
+      <ul>
+        <li>Direct-bonded diamond membranes thinner than <code>50 µm</code> can be converted into large-area thin-film DOI substrates.</li>
+        <li>The authors demonstrate a free-standing photonic chiplet made from the resulting substrate.</li>
+        <li>Diamond thickness of <code>≤300 nm</code> is reached from a 10 µm starting plate.</li>
+        <li>Surface roughness stays below <code>0.5 nm</code>, which is the kind of number photonics people actually care about.</li>
+        <li>The workflow stays within a standard two-step lithography flow, which is a big deal for adoption.</li>
+      </ul>
+
+      <h2>A simple thickness proxy</h2>
+      <p>The colorimetry contribution is the quiet second half of the paper. In spirit, the microscope image color is being used as a proxy for optical thickness, with the spectral response translating into a thickness estimate:</p>
+
+      <div class="math-block" data-label="thickness proxy">
+        $$\hat{t} = f(\mathbf{c}, I_{\mathrm{illum}}, S_{\mathrm{ref}})$$
+      </div>
+
+      <p>That is deliberately generic, because the implementation is empirical rather than a closed-form universal law. The point is practical: the color field of the microscope image is mapped to thickness quickly enough that you can evaluate large areas without waiting on metrology bottlenecks, and the result matches white-light interferometry closely enough to be useful.</p>
+
+      <div class="math-block" data-label="uniformity check">
+        $$\Delta t_{\max} = \max_{(x,y)\in A} t(x,y) - \min_{(x,y)\in A} t(x,y)$$
+      </div>
+
+      <p>For a device substrate, the relevant number is not only the mean thickness but the span across the useful area. That is why the reported <strong>0.5 × 0.5 mm²</strong> uniform patch matters. In a photonics flow, the uniformity constraint is often what separates a publishable wafer from a usable one.</p>
+
+      <h2>Why the color check is valuable</h2>
+      <p>In a fabrication line, the expensive part is often not the measurement itself. It is the time cost of measuring every region you care about. A microscope image is already sitting there. If its color variation can be calibrated against thickness, the same image becomes an early-stage screening tool for etch uniformity, yield, and process drift.</p>
+      <p>That makes the paper more than a materials result. It is a process-control result. The substrate is the outcome, but the metrology path is what makes the workflow scalable.</p>
+
+      <div class="math-block" data-label="roughness target">
+        $$\sigma_{\mathrm{rms}} < 0.5\,\mathrm{nm} \qquad \text{and} \qquad t \le 300\,\mathrm{nm}$$
+      </div>
+
+      <h2>My read</h2>
+      <p>The strongest part of the work is its restraint. It does not promise some magical diamond transfer stack or a fragile ultra-specialized pathway. It builds around a direct-bonded starting point, keeps the process conventional, and reports numbers that are immediately legible to photonics engineers.</p>
+      <p>If you are working on diamond photonics, this is the kind of result that changes the conversion rate from “interesting demo” to “something we can actually fabricate repeatedly.”</p>
+      <div class="rule">That is the Meridian-style criterion: not novelty for its own sake, but a route that can survive the first manufacturing conversation.</div>
+
+      <h2>What I’d keep in mind</h2>
+      <p>There are three practical numbers to remember from this paper: <code>≤300 nm</code> thickness, <code>&lt;0.5 nm</code> roughness, and <code>5 nm</code> colorimetric resolution. Those numbers are not decorative. They define the process window, the photonic surface quality, and the usefulness of the fast metrology path.</p>
+      <p>That is also why the paper reads as a manufacturing-enabling result rather than just a characterization exercise. The value is in the full stack: etch recipe, surface quality, bonded starting point, and rapid thickness estimation.</p>
+
+      <h2>Takeaway</h2>
+      <p>Photonic-grade DOI is hard because the substrate is the device platform, not just a passive carrier. This paper shows a credible route to thin, uniform, smooth diamond-on-insulator material and adds a lightweight colorimetry check that can speed up the whole loop.</p>
+      <p>That combination is the story: better substrate formation, simpler device flow, and faster thickness validation.</p>
+
+      <p class="article-meta">Reference: arXiv:2606.20412 · Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry</p>
+    </article>
+  </main>
+
 </body>
 </html>
