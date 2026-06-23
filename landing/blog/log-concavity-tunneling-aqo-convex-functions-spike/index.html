@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike) &mdash; Meridian Blog</title>
+<meta name="description" content="A briefing on arXiv:2606.23614: log-concavity of the ground state as the structural property that lets adiabatic quantum optimization beat classical local search on convex potentials with a spike, extending the Hamming-weight-with-a-spike analysis.">
+<meta property="og:title" content="Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike)">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/log-concavity-tunneling-aqo-convex-functions-spike/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/log-concavity-tunneling-aqo-convex-functions-spike-banner.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/log-concavity-tunneling-aqo-convex-functions-spike-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/log-concavity-tunneling-aqo-convex-functions-spike/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.07));
+    border: 1px solid rgba(56,189,248,0.32);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    opacity: 0.85;
+  }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
+
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item nav-apps" data-dropdown>
+      <button type="button" class="nav-inline-link nav-apps-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="appsMenu">
+        Apps <span class="caret" aria-hidden="true">▾</span>
+      </button>
+      <div id="appsMenu" class="nav-apps-menu" role="menu">
+        <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+      </div>
+    </li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
+  </ul>
+
+  <button type="button" id="cmdkBtn" class="cmdk-trigger" aria-label="Open search palette">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="cmdk-label">Search</span>
+    <kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+
+  <a href="https://github.com/LuuOW/meridian-mcp" class="nav-gh-link" aria-label="View on GitHub" target="_blank" rel="noopener">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Apps</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛︎</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+
+  <!-- Cmd-K palette: opens on ⌘K / Ctrl-K or clicking the trigger.
+       Searches the inlined __CMDK_INDEX__ (apps + docs sections + blog posts).
+       Sits at the end of <nav> so sync-nav.py treats it as part of the
+       single synced block. -->
+  <div id="cmdk" class="cmdk" hidden aria-modal="true" role="dialog" aria-label="Search">
+    <div class="cmdk-backdrop" data-cmdk-close></div>
+    <div class="cmdk-panel">
+      <div class="cmdk-input-row">
+        <svg aria-hidden="true" class="cmdk-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="cmdkInput" class="cmdk-input" type="search" placeholder="Search apps, docs, blog…" autocomplete="off" spellcheck="false" aria-label="Search">
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <ul id="cmdkList" class="cmdk-list" role="listbox"></ul>
+      <div class="cmdk-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
+    </div>
+  </div>
+
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛︎"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "HelioCast", "tag": "Solar irradiance forecasting dashboard & per-body triangulator", "href": "https://ask-meridian.uk/helio/", "category": "App", "emoji": "☀"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "100% on the Apple Neural Engine — eligibility is not placement", "href": "https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/", "category": "Blog", "emoji": "✎"}, {"label": "Benchmark of quantum algorithms for ground state preparation in the presence of noise", "href": "https://ask-meridian.uk/blog/benchmark-ground-state-quantum-algorithms-noise/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/chiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "Coexistence of dipolar and quadrupolar higher-order topology", "href": "https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/", "category": "Blog", "emoji": "✎"}, {"label": "Edge-Enhanced Diffractive Neural Networks: Spin-Multiplexed Nonlocal Metasurfaces", "href": "https://ask-meridian.uk/blog/edge-enhanced-diffractive-neural-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Equivariant Graph Neural Networks for Optical Spectra Prediction", "href": "https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps", "href": "https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark", "href": "https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/", "category": "Blog", "emoji": "✎"}, {"label": "One-photon communication in atomic media: Yale's first-principles fidelity bounds", "href": "https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike)", "href": "https://ask-meridian.uk/blog/log-concavity-tunneling-aqo-convex-functions-spike/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck", "href": "https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/", "category": "Blog", "emoji": "✎"}, {"label": "Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate", "href": "https://ask-meridian.uk/blog/multi-channel-optical-vision-model/", "category": "Blog", "emoji": "✎"}, {"label": "Optimal Probe State for Phase Estimation Under Covariant Measurement", "href": "https://ask-meridian.uk/blog/optimal-probe-state-phase-estimation/", "category": "Blog", "emoji": "✎"}, {"label": "Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting", "href": "https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x", "href": "https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Physical Bounds on Optical Micromanipulation: Maximal Stiffness in the Dipole Regime", "href": "https://ask-meridian.uk/blog/physical-bounds-optical-micromanipulation-maximal-stiffness/", "category": "Blog", "emoji": "✎"}, {"label": "Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry", "href": "https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Scaling-optimal purification of noisy qubit unitary channels", "href": "https://ask-meridian.uk/blog/purification-noisy-qubit-unitary-channels/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum Kernels are Spectral Tensor Networks", "href": "https://ask-meridian.uk/blog/quantum-kernels-spectral-tensor-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Resolving the Edge of a Quantum Pyramid", "href": "https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}];</script>
+  <script>
+  /* Self-contained wiring for every nav-bearing surface.
+     - desktop Apps dropdown (hover + click)
+     - mobile burger / nav-menu
+     - cross-host current-link highlight
+     - ⌘K palette (search + keyboard nav)
+     Single dataset.wired guard so duplicate registrations are a no-op.
+     Lives inside <nav> so sync-nav.py captures and propagates it. */
+  (function () {
+    function setup() {
+      var btn  = document.getElementById('burgerBtn')
+      var menu = document.getElementById('navMenu')
+      if (!btn || !menu) return
+      if (btn.dataset.wired) return
+      btn.dataset.wired = '1'
+
+      /* ───── mobile burger ───── */
+      function toggleMobile(open) {
+        var isOpen = open === undefined ? !menu.classList.contains('open') : open
+        menu.classList.toggle('open', isOpen)
+        btn.classList.toggle('open', isOpen)
+        btn.setAttribute('aria-expanded', String(isOpen))
+      }
+      btn.addEventListener('click', function (e) { e.stopPropagation(); toggleMobile() })
+      menu.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () { toggleMobile(false) })
+      })
+
+      /* ───── desktop Apps dropdown ─────
+         Click toggles. Hover-to-open is CSS-only (`.nav-apps:hover .nav-apps-menu`)
+         so a mouse-enter doesn't fight a same-tick click — we hit that
+         race when Playwright's click runs hover-then-click and the
+         mouseenter handler flipped state before the click did. */
+      var appsTrigger = document.querySelector('.nav-apps-trigger')
+      var appsMenu    = document.getElementById('appsMenu')
+      var appsItem    = document.querySelector('.nav-apps')
+      function toggleApps(open) {
+        if (!appsItem) return
+        var isOpen = open === undefined ? !appsItem.classList.contains('open') : open
+        appsItem.classList.toggle('open', isOpen)
+        if (appsTrigger) appsTrigger.setAttribute('aria-expanded', String(isOpen))
+      }
+      if (appsTrigger) {
+        appsTrigger.addEventListener('click', function (e) { e.stopPropagation(); toggleApps() })
+      }
+
+      /* ───── close menus on outside click / Escape ───── */
+      document.addEventListener('click', function (e) {
+        if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) toggleMobile(false)
+        if (appsItem && appsItem.classList.contains('open') && !appsItem.contains(e.target)) toggleApps(false)
+      })
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { toggleMobile(false); toggleApps(false); closeCmdk() }
+      })
+
+      /* ───── cross-host current-link highlight ───── */
+      var here = location.host + location.pathname.replace(/\/index\.html$/, '/')
+      document.querySelectorAll('.nav a, #appsMenu a, #navMenu a').forEach(function (a) {
+        var href = a.getAttribute('href')
+        if (!href) return
+        try {
+          var u = new URL(href, location.href)
+          var target = u.host + u.pathname.replace(/\/index\.html$/, '/')
+          if (target === here) a.classList.add('current')
+        } catch (_) {}
+      })
+
+      /* ───── ⌘K palette ───── */
+      var cmdkBtn   = document.getElementById('cmdkBtn')
+      var cmdk      = document.getElementById('cmdk')
+      var cmdkInput = document.getElementById('cmdkInput')
+      var cmdkList  = document.getElementById('cmdkList')
+      var idx       = Array.isArray(window.__CMDK_INDEX__) ? window.__CMDK_INDEX__ : []
+      var active    = 0
+
+      function openCmdk() {
+        if (!cmdk) return
+        cmdk.hidden = false
+        cmdkInput.value = ''
+        active = 0
+        render('')
+        setTimeout(function () { cmdkInput.focus() }, 10)
+      }
+      function closeCmdk() { if (cmdk) cmdk.hidden = true }
+      function score(item, q) {
+        if (!q) return 0
+        var hay = (item.label + ' ' + (item.category || '') + ' ' + (item.tag || '')).toLowerCase()
+        var qLow = q.toLowerCase()
+        if (hay.indexOf(qLow) === -1) return -1
+        var pos = hay.indexOf(qLow)
+        return 1000 - pos - hay.length * 0.01
+      }
+      function render(q) {
+        if (!cmdkList) return
+        var results = idx.map(function (it, i) { return { it: it, s: score(it, q), i: i } })
+          .filter(function (r) { return !q || r.s >= 0 })
+          .sort(function (a, b) { return b.s - a.s })
+          .slice(0, 20)
+        cmdkList.innerHTML = results.map(function (r, n) {
+          var it = r.it
+          return '<li role="option" class="cmdk-item' + (n === active ? ' active' : '') + '" data-href="' + it.href + '">' +
+                 '<span class="cmdk-item-emoji">' + (it.emoji || '·') + '</span>' +
+                 '<span class="cmdk-item-label">' + escapeHtml(it.label) + '</span>' +
+                 '<span class="cmdk-item-cat">' + escapeHtml(it.category || '') + '</span>' +
+                 '</li>'
+        }).join('')
+        if (!results.length) {
+          cmdkList.innerHTML = '<li class="cmdk-empty">No matches.</li>'
+        }
+        cmdkList.querySelectorAll('.cmdk-item').forEach(function (li) {
+          li.addEventListener('click', function () { location.href = li.dataset.href })
+          li.addEventListener('mouseenter', function () {
+            cmdkList.querySelectorAll('.cmdk-item').forEach(function (x, k) { x.classList.toggle('active', x === li) })
+            active = Array.from(cmdkList.querySelectorAll('.cmdk-item')).indexOf(li)
+          })
+        })
+      }
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+        })
+      }
+      if (cmdkBtn) cmdkBtn.addEventListener('click', openCmdk)
+      if (cmdk) {
+        cmdk.querySelectorAll('[data-cmdk-close]').forEach(function (el) {
+          el.addEventListener('click', closeCmdk)
+        })
+        cmdkInput.addEventListener('input', function (e) { active = 0; render(e.target.value) })
+        cmdkInput.addEventListener('keydown', function (e) {
+          var items = cmdkList.querySelectorAll('.cmdk-item')
+          if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, items.length - 1); render(cmdkInput.value) }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); render(cmdkInput.value) }
+          else if (e.key === 'Enter') {
+            e.preventDefault()
+            var sel = items[active]
+            if (sel) location.href = sel.dataset.href
+          }
+        })
+      }
+      document.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault()
+          if (cmdk && cmdk.hidden) openCmdk(); else closeCmdk()
+        }
+      })
+
+      /* Expose closeCmdk so the Escape handler above can reach it.
+         Declared late so it's safe across all return paths. */
+      window.__cmdkClose = closeCmdk
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setup, { once: true })
+    } else {
+      setup()
+    }
+  })()
+  </script>
+</nav>
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛︎"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "HelioCast", "tag": "Solar irradiance forecasting dashboard & per-body triangulator", "href": "https://ask-meridian.uk/helio/", "category": "App", "emoji": "☀"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "100% on the Apple Neural Engine — eligibility is not placement", "href": "https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/", "category": "Blog", "emoji": "✎"}, {"label": "Benchmark of quantum algorithms for ground state preparation in the presence of noise", "href": "https://ask-meridian.uk/blog/benchmark-ground-state-quantum-algorithms-noise/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/chiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "Coexistence of dipolar and quadrupolar higher-order topology", "href": "https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/", "category": "Blog", "emoji": "✎"}, {"label": "Edge-Enhanced Diffractive Neural Networks: Spin-Multiplexed Nonlocal Metasurfaces", "href": "https://ask-meridian.uk/blog/edge-enhanced-diffractive-neural-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Equivariant Graph Neural Networks for Optical Spectra Prediction", "href": "https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps", "href": "https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark", "href": "https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/", "category": "Blog", "emoji": "✎"}, {"label": "One-photon communication in atomic media: Yale's first-principles fidelity bounds", "href": "https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck", "href": "https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/", "category": "Blog", "emoji": "✎"}, {"label": "Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate", "href": "https://ask-meridian.uk/blog/multi-channel-optical-vision-model/", "category": "Blog", "emoji": "✎"}, {"label": "Optimal Probe State for Phase Estimation Under Covariant Measurement", "href": "https://ask-meridian.uk/blog/optimal-probe-state-phase-estimation/", "category": "Blog", "emoji": "✎"}, {"label": "Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting", "href": "https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x", "href": "https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Physical Bounds on Optical Micromanipulation: Maximal Stiffness in the Dipole Regime", "href": "https://ask-meridian.uk/blog/physical-bounds-optical-micromanipulation-maximal-stiffness/", "category": "Blog", "emoji": "✎"}, {"label": "Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry", "href": "https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Scaling-optimal purification of noisy qubit unitary channels", "href": "https://ask-meridian.uk/blog/purification-noisy-qubit-unitary-channels/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum Kernels are Spectral Tensor Networks", "href": "https://ask-meridian.uk/blog/quantum-kernels-spectral-tensor-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Resolving the Edge of a Quantum Pyramid", "href": "https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike)", "href": "https://ask-meridian.uk/blog/log-concavity-tunneling-aqo-convex-functions-spike/", "category": "Blog", "emoji": "✎"}];</script>
+  <main id="main" style="padding-top: 48px;">
+    <article class="article-body">
+      <header style="margin-top: 64px; margin-bottom: 32px;">
+        <div class="article-meta">2026-06-23 · 9 min read · quantum algorithms</div>
+        <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike)</h1>
+        <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0 0 16px;">
+          Tunneling is the supposed ace of adiabatic quantum optimization, but the evidence has lived in a single toy: the Hamming-weight-with-a-spike problem. A new paper by Braida, Bermot and Apers extends that analysis to a much wider family of potentials, anchored on a structural property the ground state turns out to share with convex cases.
+        </p>
+        <a href="https://arxiv.org/abs/2606.23614" class="btn-arxiv" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Paper: arXiv:2606.23614
+        </a>
+      </header>
+
+      <img src="/img/blog/log-concavity-tunneling-aqo-convex-functions-spike-banner.svg" alt="Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike) &mdash; banner showing a convex potential well with a thin spike at the centre, an adiabatic sweep arrow crossing the tunnel barrier, and the log-concave ground-state envelope overlaid" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+
+      <p><strong>arXiv:2606.23614</strong> takes a single observation &mdash; that the ground state of the Hamming-weight-with-a-spike Hamiltonian is log-concave &mdash; and asks how far that observation actually travels. <em>Braida, Bermot &amp; Apers</em> turn it into a structural property of the ground state of a wide class of one-dimensional Schr&ouml;dinger operators, and then use it to extend the perturbative tunneling analysis of the original HWS problem (Reichardt, &rsquo;04) to potentials that are not exactly solvable.</p>
+
+      <p>The upshot is a structural rather than a numerical claim: tunneling beats local search on a <em>family</em> of convex potentials with a single spike, not just on the linear spike toy. The analysis is discrete, one-dimensional, and clean &mdash; and it improves the spectral-gap bound of Jarret and Jordan (&rsquo;14) along the way.</p>
+
+      <h2>Why a single toy was the wrong unit</h2>
+
+      <p>The HWS problem is the canonical &ldquo;this is where AQO wins&rdquo; example. The Hamiltonian is diagonal in the Hamming-weight basis with a linear ramp plus a single spike at a fixed Hamming weight, and the proof-of-concept story is that AQO crosses the spike faster than any local-search algorithm by tunneling through the Hamming barrier. Reichardt&rsquo;s perturbative analysis pinned down the scaling.</p>
+
+      <p>But the result was load-bearing for a single potential shape. Every time someone wanted to extend it to a different convex-with-spike family, they had to redo the perturbative expansion from scratch. The new paper argues that log-concavity of the ground state is the right unit: it is the property that makes the perturbative expansion tractable, and it survives generalisation from linear ramps to arbitrary convex shapes (and beyond, to a meaningful family of non-convex shapes with local minima).</p>
+
+      <p>That is the move from one toy to a class of toys. Once the structural property is identified, the same machinery reaches further.</p>
+
+      <h2>The structural property: log-concavity</h2>
+
+      <p>For a discrete, one-dimensional Schr&ouml;dinger operator on a finite or half-infinite chain, the ground state \(\psi_0\) is log-concave if</p>
+
+      <div class="math-block" data-label="log-concavity of the ground state">
+        \[
+          \psi_0(i)\,\psi_0(j) \;\geq\; \psi_0(k)^2, \qquad \forall\, i \leq k \leq j.
+        \]
+      </div>
+
+      <p>This is the discrete analogue of \(\psi'' \leq 0\) for a continuous ground state. The continuous analogue is a 1976 Brascamp&ndash;Lieb result that proves log-concavity of the ground state for convex potentials. Braida, Bermot &amp; Apers produce a discrete version of that argument and show it covers the convex case plus a meaningful class of potentials with local minima.</p>
+
+      <p>Once the ground state is log-concave, the rest of the paper&rsquo;s two contributions fall out:</p>
+
+      <ul>
+        <li><strong>Spectral-gap lower bounds.</strong> Log-concavity gives a tighter control on the ground-state mass distribution. The new bounds strictly improve over the Jarret&ndash;Jordan (&rsquo;14) convex-potential result.</li>
+        <li><strong>Perturbative HWS analysis.</strong> Reichardt&rsquo;s expansion transfers to any potential in the log-concave-ground-state family. The concrete instantiation in the paper takes a quadratic potential (which is no longer exactly solvable) and shows the same AQO speedup.</li>
+      </ul>
+
+      <h2>From Hamming-weight-with-a-spike to convex-with-a-spike</h2>
+
+      <p>The headline new example is the quadratic variant of HWS. The original analysis assumed a linear potential so that the off-spike part of the Hamiltonian was exactly solvable (free-fermion-like). The quadratic variant breaks that solvability, which is exactly the case where the old perturbative toolbox does not work out of the box.</p>
+
+      <div class="math-block" data-label="convex-with-a-spike Hamiltonian">
+        \[
+          H(s) \;=\; \underbrace{\bigl(1 - s\bigr)\,\Delta_{\text{quad}}\,\sum_{i} i^2\,|i\rangle\!\langle i|}_{\text{quadratic ramp}} \;+\; \underbrace{s\,\gamma\,|k^\star\rangle\!\langle k^\star|}_{\text{spike}}, \qquad s \in [0,1].
+        \]
+      </div>
+
+      <p>The ground state is log-concave by the new theorem. The perturbative expansion goes through and gives an AQO runtime that scales polynomially in the inverse spike height, beating local search by a factor polynomial in the system size. The same scaling Reichardt obtained for the linear case.</p>
+
+      <div class="rule"><strong>The unit of analysis shifts from the toy to the property.</strong> Asking &ldquo;does AQO beat local search on HWS?&rdquo; was the right question once. The right question now is &ldquo;for which ground-state-shape properties does AQO beat local search, and what does that buy us in practice?&rdquo;</div>
+
+      <h2>What log-concavity actually buys</h2>
+
+      <p>Log-concavity is not just a label. It is the property that turns a perturbative expansion of the ground-state mass around the spike into a controlled error term. Intuitively: if the ground state is log-concave, then the probability mass around the spike is well-approximated by a one-mode coherent excitation, and the second-order corrections are bounded by the curvature of the log-concave envelope.</p>
+
+      <p>Concretely, that means:</p>
+
+      <ul>
+        <li><strong>The AQO speedup transfers</strong> to any potential whose ground state stays log-concave through the adiabatic sweep.</li>
+        <li><strong>The spectral-gap bound</strong> improves because log-concavity rules out the ground-state mass concentrating in two disjoint lumps (which would be the failure mode for the Jarret&ndash;Jordan bound).</li>
+        <li><strong>The class of eligible potentials</strong> is larger than convex &mdash; it includes some local-minimum potentials, which means the result is not a flat re-derivation of the Brascamp&ndash;Lieb continuous result.</li>
+      </ul>
+
+      <p>The cost is that the structural property is non-trivial to check for a given potential. Log-concavity is not a closed-form condition; you prove it by a careful Schur-test or comparison argument, and the bookkeeping for non-convex potentials is delicate.</p>
+
+      <div class="callout"><strong>Why a structural paper is a useful algorithmic result:</strong> Once the structural property is named, every future AQO analysis on a new potential starts with &ldquo;is the ground state log-concave?&rdquo; That question takes a fraction of the time of a full perturbative analysis, and a negative answer tells you immediately that the HWS-style speedup is not going to transfer. The structural move converts an open-ended problem into a checkable one.</div>
+
+      <h2>What I'd keep in mind</h2>
+
+      <p>Three things to carry forward from this paper:</p>
+
+      <ul>
+        <li><strong>Log-concavity is the unit.</strong> When you see a &ldquo;AQO beats local search on X&rdquo; claim, ask whether X has a log-concave ground state through the sweep. That is the testable structural property the new paper puts on the table.</li>
+        <li><strong>The spectral-gap improvement is strict.</strong> For convex potentials, the new bound dominates Jarret&ndash;Jordan (&rsquo;14). Anywhere that bound was the bottleneck for a downstream runtime argument, the new paper buys you an improvement.</li>
+        <li><strong>The HWS program has a wider scope.</strong> Quadratic ramps are the immediate win, but the proof goes through for the entire log-concave-ground-state family. If you have a candidate AQO advantage problem on a non-linear potential, this paper is the place to start.</li>
+      </ul>
+
+      <p>What I would <em>not</em> over-claim: AQO is now a general-purpose optimizer. The result is structural &mdash; it tells you when the HWS-style argument transfers &mdash; not universal. Convex-with-a-spike is a class, not all of optimization.</p>
+
+      <h2>Takeaway</h2>
+
+      <p>Braida, Bermot and Apers do not propose a new algorithm. They identify the structural property that makes the canonical AQO-tunneling argument work, prove it holds for a wider family than was previously known, and use it to extend Reichardt&rsquo;s perturbative analysis past the exactly-solvable linear case. The improvement over Jarret&ndash;Jordan is the clean numerical headline; the structural move is the durable contribution.</p>
+
+      <p>That is the version of an AQO result that ages well: not a single-instance speedup, but a property-named generalisation that lets every future potential be classified by a checkable condition. Once the property is in the literature, the question stops being &ldquo;does AQO win on my problem?&rdquo; and becomes &ldquo;is the ground state of my problem log-concave through the sweep?&rdquo; &mdash; and the latter is a question a paper can answer.</p>
+
+      <p class="article-meta">Reference: arXiv:2606.23614 &middot; Braida, Bermot &amp; Apers &middot; Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike)</p>
+    </article>
+  </main>
+
+<script type="module" src="/blog/listen.js"></script>
+</body>
+</html>

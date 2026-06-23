@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="spaceGradient" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a1625" />
+      <stop offset="60%" stop-color="#050c16" />
+      <stop offset="100%" stop-color="#02050a" />
+    </radialGradient>
+
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e9dc" />
+      <stop offset="60%" stop-color="#dfc29e" />
+      <stop offset="100%" stop-color="#b89773" />
+    </linearGradient>
+
+    <linearGradient id="potential" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.0"/>
+      <stop offset="20%" stop-color="#a78bfa" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#fbbf24" stop-opacity="0.95"/>
+      <stop offset="80%" stop-color="#a78bfa" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <linearGradient id="envelope" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.0"/>
+      <stop offset="20%" stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#10b981" stop-opacity="0.95"/>
+      <stop offset="80%" stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
+  <rect width="1920" height="1080" fill="url(#dotPattern)"/>
+
+  <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+
+  <!-- Title block -->
+  <g transform="translate(960, 220)" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <g transform="translate(0, -90)">
+      <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+      <circle cx="-110" cy="-2" r="3" fill="#38bdf8"/>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">QUANTUM ALGORITHMS</text>
+    </g>
+
+    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">LOG-CONCAVITY AND TUNNELING</text>
+    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">ADIABATIC QUANTUM OPTIMIZATION</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">CONVEX POTENTIALS WITH A SPIKE &#183; arXiv:2606.23614</text>
+  </g>
+
+  <!-- Convex potential well with central spike -->
+  <g transform="translate(960, 720)">
+    <!-- x-axis baseline -->
+    <line x1="-560" y1="0" x2="560" y2="0" stroke="#ffffff" stroke-width="1" opacity="0.25"/>
+
+    <!-- Convex well: deep at edges, dip in middle (where the spike is) -->
+    <path d="M -560,180 Q -380,80 -200,30 Q -100,10 0,140 Q 100,10 200,30 Q 380,80 560,180"
+          stroke="url(#potential)" stroke-width="3" fill="none"/>
+
+    <!-- Spike at centre -->
+    <line x1="0" y1="140" x2="0" y2="-50" stroke="#fbbf24" stroke-width="3"/>
+    <polygon points="0,-58 -8,-44 8,-44" fill="#fbbf24"/>
+    <text x="20" y="-40" font-family="monospace" font-size="14" fill="#fbbf24" letter-spacing="2">SPIKE &#183; γ</text>
+
+    <!-- Log-concave ground-state envelope sitting low in the well -->
+    <path d="M -520,-30 Q -260,140 0,150 Q 260,140 520,-30"
+          stroke="url(#envelope)" stroke-width="3" fill="none" opacity="0.85"/>
+    <path d="M -520,-30 Q -260,140 0,150 Q 260,140 520,-30 L 520,180 L -520,180 Z"
+          fill="url(#envelope)" opacity="0.10"/>
+
+    <!-- Tunneling arrow through the spike -->
+    <g stroke="#10b981" stroke-width="2.5" fill="none" stroke-dasharray="6 6">
+      <path d="M -200,80 Q -90,40 0,-20 Q 90,40 200,80" />
+    </g>
+    <polygon points="-206,82 -188,74 -198,68" fill="#10b981"/>
+    <polygon points="206,82 188,74 198,68" fill="#10b981"/>
+    <text x="0" y="-78" text-anchor="middle" font-family="monospace" font-size="14" fill="#10b981" letter-spacing="2">TUNNELING &#183; AQO</text>
+
+    <!-- Axis label -->
+    <text x="-560" y="220" font-family="monospace" font-size="13" fill="#a0afb7" letter-spacing="2">x = 0</text>
+    <text x="540" y="220" text-anchor="end" font-family="monospace" font-size="13" fill="#a0afb7" letter-spacing="2">x = N</text>
+    <text x="0" y="220" text-anchor="middle" font-family="monospace" font-size="13" fill="#a0afb7" letter-spacing="2">k&#8727; (spike site)</text>
+
+    <!-- Legend -->
+    <g transform="translate(-560, -120)" font-family="monospace" font-size="12" fill="#a0afb7" letter-spacing="2">
+      <line x1="0" y1="0" x2="40" y2="0" stroke="url(#potential)" stroke-width="3"/>
+      <text x="50" y="4">V(x) &#183; convex ramp + spike</text>
+      <line x1="0" y1="20" x2="40" y2="20" stroke="url(#envelope)" stroke-width="3"/>
+      <text x="50" y="24">&#968;&#8320;(x) &#183; log-concave ground state</text>
+    </g>
+  </g>
+
+  <!-- Corner markers -->
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
+    <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
+  </g>
+
+  <!-- Footer -->
+  <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
+    <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/log-concavity-tunneling-aqo-convex-functions-spike/</text>
+  </g>
+</svg>
