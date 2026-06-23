@@ -17,6 +17,42 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.07));
+    border: 1px solid rgba(56,189,248,0.32);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    opacity: 0.85;
+  }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+</style>
 </head>
 <body>
 <nav class="nav" aria-label="Primary">
@@ -312,31 +348,46 @@
       <p><strong>arXiv:2606.23334</strong> — Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation. Shyam, Ikshvaku, Singh, Raj, Akkanaboina, Mangababu, Sonawane, A. M. et al..</p>
 
       <h2>Ion Implantation Methodology</h2>
-      <p>The study introduces krypton ion ($	ext{Kr}^+$) implantation as a method to create luminescent defects in hexagonal boron nitride (hBN). This technique operates at room temperature and does not require any annealing steps, simplifying the fabrication process.</p>
-      <p>Using 40 keV $	ext{Kr}^+$ ions, the researchers optimized the implantation parameters through SRIM Monte Carlo simulations, which guided the effective generation of defect centers.</p>
+      <p>The study introduces krypton ion ($\mathrm{Kr}^+$) implantation as a method to create luminescent defects in hexagonal boron nitride (hBN). This technique operates at room temperature and does not require any annealing steps, simplifying the fabrication process.</p>
+      <p>Using 40 keV $\mathrm{Kr}^+$ ions, the researchers optimized the implantation parameters through SRIM Monte Carlo simulations, which guided the effective generation of defect centers.</p>
       <ul>
         <li>No pre- or post-implantation annealing required</li>
-        <li>Stable luminescence at $	ext{~830 nm}$</li>
-        <li>Fluence range: $10^{11}$ to $10^{15}$ ions/cm$^{2}$</li>
+        <li>Stable luminescence at $\mathrm{~830 nm}$</li>
+        <li>Fluence range: $10^{11}$–$10^{15}\ \mathrm{ions/cm}^{2}$</li>
       </ul>
 
       <h2>Photoluminescence Characteristics</h2>
-      <p>The implanted hBN samples exhibited a stable near-infrared photoluminescence band centered around $	ext{~830 nm}$. The intensity of this luminescence increased with higher implantation fluences, indicating a direct correlation between the number of ions and defect formation.</p>
-      <p>Temperature-dependent measurements showed a linewidth broadening that follows a $T^{3}$ dependence, suggesting that acoustic phonons play a significant role in the dephasing of the luminescent states.</p>
+      <p>The implanted hBN samples exhibited a stable near-infrared photoluminescence band centered around $\mathrm{~830 nm}$. The intensity of this luminescence increased with higher implantation fluences, indicating a direct correlation between the number of ions and defect formation.</p>
+      <p>Temperature-dependent measurements showed a linewidth broadening that follows a $T^{3}$ temperature dependence, suggesting that acoustic phonons play a significant role in the dephasing of the luminescent states.</p>
       <ul>
         <li>Photoluminescence intensity increases with fluence</li>
         <li>Broadening consistent with acoustic-phonon interactions</li>
       </ul>
 
+      <div class="math-block" data-label="Kr&#x207A; IMPLANTATION ENERGY">
+        \[
+          E_{\mathrm{Kr}} \;=\; 40\ \mathrm{keV}, \qquad
+          \Phi \in \bigl[10^{11},\,10^{15}\bigr]\ \mathrm{ions/cm}^{2}.
+        \]
+      </div>
+
+      <div class="math-block" data-label="EMISSION WAVELENGTH">
+        \[
+          \lambda_{\mathrm{PL}} \;\approx\; 830\ \mathrm{nm}, \qquad
+          g \;=\; 2.003 \pm \epsilon.
+        \]
+      </div>
+
       <div class="math-block" data-label="LINEWIDTH DEPENDENCE">
-        $$
-T^{3}
-$$
+        \[
+          \Gamma(T) \;=\; \Gamma_{0} \;+\; \alpha\,T^{3}, \qquad
+          \alpha \;\propto\; \text{acoustic-phonon coupling}.
+        \]
       </div>
 
       <h2>Defect Characterization</h2>
-      <p>Raman spectroscopy confirmed the presence of implantation-induced defects alongside the characteristic modes of pristine hBN. The $E_{2g}$ mode was observed at $	ext{~1366 cm}^{-1}$, with a defect feature at $	ext{~1295 cm}^{-1}$.</p>
-      <p>Electron paramagnetic resonance (EPR) measurements identified a paramagnetic center with a $g$-factor of 2.003, supporting the formation of a $V_{	ext{N}}$-$C_{	ext{B}}$ donor-acceptor pair complex as the source of the optical and magnetic properties.</p>
+      <p>Raman spectroscopy confirmed the presence of implantation-induced defects alongside the characteristic modes of pristine hBN. The $E_{2g}$ mode was observed at $\mathrm{~1366 cm}^{-1}$, with a defect feature at $\mathrm{~1295 cm}^{-1}$.</p>
+      <p>Electron paramagnetic resonance (EPR) measurements identified a paramagnetic center with a $g$-factor of $2.003$, supporting the formation of a $V_{\mathrm{N}}$–$C_{\mathrm{B}}$ donor-acceptor pair complex as the source of the optical and magnetic properties.</p>
       <ul>
         <li>Raman modes confirm defect presence</li>
         <li>EPR reveals paramagnetic centers</li>
@@ -358,6 +409,7 @@ $$
         <li>Room-temperature operation is a key advantage</li>
       </ul>
 
+      <div class="callout"><strong>Why an annealing-free result matters for device integration:</strong> Most solid-state colour centres (NV in diamond, SiV, various rare-earth dopants) require a high-temperature anneal to mobilise vacancies and stabilise the optically active defect. Skipping the anneal means the hBN film can be implanted <em>after</em> it is integrated with a photonic or electronic structure, which is the move that makes wafer-scale device fab feasible. The SRIM-optimised fluence window is what makes that possible without amorphising the lattice.</div>
       <p class="article-meta">Reference: arXiv:2606.23334 &middot; Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation</p>
     </article>
   </main>
