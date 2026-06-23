@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation &mdash; Meridian Blog</title>
+<meta name="description" content="A technical briefing on arXiv:2606.23334: Kr+ ion implantation produces luminescent spin defects in hBN at room temperature with no anneal step, giving a chemically inert route to NIR quantum-photonics emitters.">
+<meta property="og:title" content="Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/hexagonal-boron-nitride-spin-defects-for-quantum-photonics-annealing-free-genera/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/hexagonal-boron-nitride-spin-defects-for-quantum-photonics-annealing-free-genera-banner.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/hexagonal-boron-nitride-spin-defects-for-quantum-photonics-annealing-free-genera-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/hexagonal-boron-nitride-spin-defects-for-quantum-photonics-annealing-free-genera/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.07));
+    border: 1px solid rgba(56,189,248,0.32);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    opacity: 0.85;
+  }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">&#9678; Meridian</a>
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item nav-apps" data-dropdown>
+      <button type="button" class="nav-inline-link nav-apps-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="appsMenu">
+        Apps <span class="caret" aria-hidden="true">&#9662;</span>
+      </button>
+      <div id="appsMenu" class="nav-apps-menu" role="menu">
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#129516;</span>helix &middot; proteins</span>
+        <span class="nav-app-tag">Injury &rarr; top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#128752;&#65039;</span>Try it &middot; Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp &middot; routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#128269;</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#9885;</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval &middot; trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#9678;</span>Lens &middot; WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR &middot; controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#9728;</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard &amp; per-body triangulator</span>
+      </a>
+      </div>
+    </li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
+  </ul>
+  <button type="button" id="cmdkBtn" class="cmdk-trigger" aria-label="Open search palette">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="cmdk-label">Search</span>
+    <kbd class="cmdk-kbd">&#8984;K</kbd>
+  </button>
+  <a href="https://github.com/LuuOW/meridian-mcp" class="nav-gh-link" aria-label="View on GitHub" target="_blank" rel="noopener">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.55v1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+    <details class="nav-group" open>
+      <summary class="nav-section">Apps</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#129516;</span>helix &middot; proteins</span>
+        <span class="nav-app-tag">Injury &rarr; top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#128752;&#65039;</span>Try it &middot; Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp &middot; routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#128268;&#65039;</span>Vision Lab</span>
+        <span class="nav-app-tag">WebGPU inference: Moondream + SmolVLM in the browser</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#9885;&#65039;</span>Photon Router</span>
+        <span class="nav-app-tag">Photonic CV retrieval, trained on the HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#128300;</span>Lens &middot; WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR: controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">&#9728;&#65039;</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard &amp; per-body triangulator</span>
+      </a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub &middot; meridian-mcp</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub &middot; photon-route</a>
+    </details>
+  </div>
+</nav>
+  <main id="main" style="padding-top: 48px;">
+    <article class="article-body">
+      <header style="margin-top: 64px; margin-bottom: 32px;">
+        <div class="article-meta">2026-06-23 &middot; 7 min read &middot; quantum photonics</div>
+        <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation</h1>
+        <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0 0 16px;">
+          Kr<sup>+</sup> ion implantation produces luminescent spin defects in hexagonal boron nitride at room temperature with no anneal step, giving a chemically inert, single-recipe route to NIR quantum-photonics emitters.
+        </p>
+        <a href="https://arxiv.org/abs/2606.23334" class="btn-arxiv" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Paper: arXiv:2606.23334
+        </a>
+      </header>
+      <img src="/img/blog/hexagonal-boron-nitride-spin-defects-for-quantum-photonics-annealing-free-genera-banner.svg" alt="Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation &mdash; banner showing Kr+ ions raining down onto an hBN flake, depositing a thin defect layer" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+      <div class="figure-note">Schematic: 40 keV Kr<sup>+</sup> ions deposit a thin V<sub>N</sub>&ndash;C<sub>B</sub> defect layer near the surface of an hBN flake. No pre- or post-implant anneal is required for the PL band to appear.</div>
+
+      <p><strong>arXiv:2606.23334</strong> is a fabrication paper with a sharp practical claim: <em>Shyam, Singh, Akkanaboina et al.</em> generate room-temperature near-infrared luminescent spin defects in hexagonal boron nitride by krypton-ion implantation, with no pre- or post-implantation anneal. The defect layer is stable, the recipe is a single step at room temperature, and the chemical inertness of Kr<sup>+</sup> in the hBN lattice avoids the surface chemistry that has plagued earlier recipes.</p>
+
+      <p>That last point is what separates this result from the rest of the hBN-defect literature. Until now, every published route to a luminescent hBN defect has needed a thermal anneal &mdash; either to activate the implant, to heal surface damage, or to migrate the defect into a stable configuration. The anneal is what makes reproducibility hard, because anneal temperature and ambient atmosphere dominate the variance. Removing it collapses the process to a single ion-implant step.</p>
+
+      <h2>Why an annealing-free route matters</h2>
+
+      <p>Hexagonal boron nitride has been the third solid-state quantum emitter host for about six years, sitting alongside diamond (NV, SiV) and silicon carbide (divacancy, V<sub>Si</sub>). Its attraction is a wide bandgap (~6 eV), a low natural-abundance of nuclear spins, and a Debye&ndash;Waller factor that pushes the phonon sideband well below the zero-phonon line for several defect species. The blocker has always been reproducibility: defect yield is sensitive to implantation dose, anneal time, anneal temperature, ambient chemistry, and substrate quality, and no two published recipes agree on the right combination.</p>
+
+      <p>The new paper removes the anneal axis entirely. That collapses the parameter space by one dimension and makes the process friendly to standard ion-implant lines that don't carry a high-temperature anneal module.</p>
+
+      <h2>What the team measured</h2>
+
+      <p>The authors ran SRIM Monte Carlo simulations to optimise the implant parameters, then irradiated hBN flakes with 40 keV Kr<sup>+</sup> at fluences from 10<sup>11</sup> to 10<sup>15</sup> ions/cm<sup>2</sup>. They report three measurements that pin down the defect.</p>
+
+      <p>First, a stable near-infrared photoluminescence band centred at <strong>~830 nm</strong>, whose intensity scales monotonically with fluence over three decades. Second, temperature-dependent PL linewidth (20&ndash;300 K) that fits a clean T<sup>3</sup> dependence:</p>
+
+      <div class="math-block" data-label="acoustic-phonon dephasing">
+        \[
+          \Gamma(T) = \Gamma_0 + \alpha\, T^3,
+          \qquad \alpha \sim 10^{-7}\,\mathrm{nm/K^3}.
+        \]
+      </div>
+
+      <p>The T<sup>3</sup> scaling is the textbook signature of acoustic-phonon-mediated dephasing via two-phonon Raman scattering. It's the right physical mechanism, and it gives a single number (\(\alpha\)) that lets a process engineer compare recipes across labs.</p>
+
+      <p>Third, Raman spectroscopy confirms the implant writes disorder into the lattice. The pristine hBN E<sub>2g</sub> mode at ~1366 cm<sup>&minus;1</sup> survives, and a new defect-induced feature appears at ~1295 cm<sup>&minus;1</sup>, consistent with bond breaking around the implanted ions.</p>
+
+      <p>Finally, electron paramagnetic resonance (EPR) shows a paramagnetic centre with g = 2.003. DFT calculations attribute that to a <em>spatially separated</em> V<sub>N</sub>&ndash;C<sub>B</sub> donor-acceptor pair &mdash; the substitutional nitrogen vacancy paired with a carbon-on-boron antisite a few lattice sites away. That separation is what makes the centre addressable as a single defect: the two charges don't collapse onto one site.</p>
+
+      <div class="callout"><strong>Why g = 2.003 matters:</strong> free-electron g is 2.0023. A defect with g &minus; g<sub>e</sub> &asymp; 0.0007 is a clean spin-1/2 with weak spin-orbit coupling. That is exactly what you want for an optically addressable qubit at room temperature &mdash; the spin relaxation stays long, and the optical contrast stays readable.</div>
+
+      <h2>What the recipe buys</h2>
+
+      <p>The single-step, room-temperature recipe has three practical consequences.</p>
+
+      <ul>
+        <li><strong>Standard ion-implant lines work.</strong> No furnace, no controlled atmosphere, no anneal chamber. A fab with a standard 40 keV implant tool can do this run.</li>
+        <li><strong>Yield is dose-driven, not chemistry-driven.</strong> The PL intensity scales with fluence over 10<sup>11</sup>&ndash;10<sup>15</sup> ions/cm<sup>2</sup>. That is the dimension you want to be the dominant variable.</li>
+        <li><strong>The defect identity is fixed by the SRIM profile.</strong> The 40 keV implant deposits energy within a ~30 nm surface layer. The defect is shallow, spatially localised, and reproducible.</li>
+      </ul>
+
+      <div class="rule"><strong>The point of the paper is not the defect &mdash; it is the recipe.</strong> Removing the anneal axis makes hBN defect generation compatible with the same fab flow that already produces diamond NV centres. That is the manufacturing story.</div>
+
+      <h2>What is open next</h2>
+
+      <p>Three things the paper does not yet answer, and that a process engineer would want before committing to a roadmap:</p>
+
+      <ul>
+        <li><strong>Single-defect addressability.</strong> The optical measurements are ensemble. Site-controlled single defects are the next milestone &mdash; typically via pre-patterned apertures in a PMMA mask, or via focused ion beam (FIB) implantation.</li>
+        <li><strong>Spin coherence at room temperature.</strong> T<sub>2</sub> and T<sub>1</sub> measurements on the ensemble, and ultimately on single defects, are what determines whether the centre is competitive with NV diamond for room-temperature quantum sensing.</li>
+        <li><strong>Defect stability under device processing.</strong> Does the luminescent band survive typical back-end-of-line steps &mdash; dielectric deposition, anneals at 400 &deg;C, metal lift-off? For most solid-state emitters this is where the real-world failure mode lives.</li>
+      </ul>
+
+      <h2>What I'd keep in mind</h2>
+
+      <p>Three numbers worth carrying forward from this paper, the same way I would from any solid-state-emitter fabrication result.</p>
+
+      <ul>
+        <li><strong>Process window:</strong> 40 keV Kr<sup>+</sup>, 10<sup>11</sup>&ndash;10<sup>15</sup> ions/cm<sup>2</sup>, no anneal. Anything outside that fluence range is unverified.</li>
+        <li><strong>PL signature:</strong> ~830 nm zero-phonon, T<sup>3</sup> broadening, g = 2.003. The T<sup>3</sup> coefficient is the most useful single number for cross-lab comparison.</li>
+        <li><strong>Defect identity:</strong> spatially separated V<sub>N</sub>&ndash;C<sub>B</sub> donor-acceptor pair, per DFT. Treat this as a hypothesis until single-defect data confirms it.</li>
+      </ul>
+
+      <p>What I would <em>not</em> over-claim: the ensemble measurements tell you the defect exists and is optically active. They do not tell you it is a useful qubit yet. Single-defect addressability and spin coherence are the gates between &ldquo;recipe works&rdquo; and &ldquo;qubit&rdquo;.</p>
+
+      <h2>Takeaway</h2>
+
+      <p>Kr<sup>+</sup> implantation on hBN produces a stable room-temperature NIR spin defect with no anneal step. The recipe is a single ion-implant step at room temperature, using a standard 40 keV tool, with a chemically inert species. That collapses the hBN defect-generation process space by one dimension and makes the route compatible with the same fab flow that already produces diamond NV centres.</p>
+
+      <p>That is the standard to hold the next hBN-defect paper to: ensemble PL is not enough. Show single-defect addressability, T<sub>1</sub>/T<sub>2</sub> at the single-emitter level, and survival through back-end-of-line processing. The recipe is now good enough that those questions are the right ones to ask.</p>
+
+      <p class="article-meta">Reference: arXiv:2606.23334 &middot; Shyam, Singh, Akkanaboina, Sonawane, Satheeshkumar, Majumder, Ekta, Khunte, Khaire, Watanabe, Taniguchi, Rajaraman, Dahiwale, Kumar &middot; Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation</p>
+    </article>
+  </main>
+<script type="module" src="/blog/listen.js"></script>
+</body>
+</html>
