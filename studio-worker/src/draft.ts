@@ -83,6 +83,7 @@ export async function composeDraft(meta: ArxivMeta, env?: LLMEnv): Promise<Draft
       console.warn("[studio] LLM returned malformed response, falling back to rule-based composer")
     } catch (e) {
       console.warn(`[studio] LLM call failed (${e instanceof Error ? e.message : String(e)}); falling back to rule-based composer`)
+      console.warn('[studio] LLM stack:', e instanceof Error ? e.stack : String(e))
     }
   }
 
