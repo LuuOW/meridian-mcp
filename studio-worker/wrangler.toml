@@ -30,7 +30,8 @@ GITHUB_REPO = "LuuOW/meridian-mcp"
 
 [[kv_namespaces]]
 binding = "STUDIO_KV"
-id      = "6d2c1f9a7b8e4d3a9f0c1d2e3b4a5f01"  # placeholder — run `wrangler kv namespace create STUDIO_KV` and replace
+id        = "07e09facfd194ad992a7efec8c3cd6b1"
+preview_id = "2b0fb383b0c7428491b2553ac721479a"
 
 [observability]
 enabled = true
