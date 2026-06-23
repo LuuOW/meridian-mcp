@@ -15,6 +15,9 @@ routes = [
 
 [vars]
 RP_NAME = "Meridian Studio"
+# RP_ID and ORIGIN can be overridden locally via:
+#   npx wrangler dev --var "RP_ID:localhost" --var "ORIGIN:http://localhost:8787"
+# (the values shown here are for the production deploy)
 RP_ID = "studio.ask-meridian.uk"
 ORIGIN = "https://studio.ask-meridian.uk"
 USER_ID = "lucas"
