@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <radialGradient id="spaceGradient" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a1625" />
+      <stop offset="60%" stop-color="#050c16" />
+      <stop offset="100%" stop-color="#02050a" />
+    </radialGradient>
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f3e9dc" />
+      <stop offset="60%" stop-color="#dfc29e" />
+      <stop offset="100%" stop-color="#b89773" />
+    </linearGradient>
+    <linearGradient id="amberAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#fbbf24" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#fbbf24" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="hexLattice" width="80" height="92" patternUnits="userSpaceOnUse">
+      <polygon points="40,8 70,25 70,65 40,82 10,65 10,25" fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.18"/>
+      <polygon points="40,28 56,38 56,58 40,68 24,58 24,38" fill="none" stroke="#fbbf24" stroke-width="0.6" opacity="0.10"/>
+      <circle cx="40" cy="45" r="2" fill="#fbbf24" opacity="0.30"/>
+    </pattern>
+    <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
+  <rect width="1920" height="1080" fill="url(#hexLattice)"/>
+  <rect width="1920" height="1080" fill="url(#dotPattern)" opacity="0.5"/>
+
+  <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
+
+  <!-- Kicker chip -->
+  <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
+    <g transform="translate(0, -90)">
+      <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
+      <circle cx="-110" cy="-2" r="3" fill="#fbbf24"/>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">QUANTUM PHOTONICS</text>
+    </g>
+
+    <!-- Title -->
+    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">KR+ IMPLANTATION \xc2\xb7 40 keV \xc2\xb7 hBN</text>
+    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">ANNEALING-FREE SPIN DEFECTS</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Shyam, Singh et al. \xc2\xb7 arXiv:2606.23334 \xc2\xb7 single-step RT generation</text>
+  </g>
+
+  <!-- Schematic: a horizontal slab representing the hBN flake, with Kr+ ions raining down.
+       The ions deposit a thin defect layer (amber band) at the surface. -->
+  <g transform="translate(960, 720)">
+    <!-- hBN slab -->
+    <rect x="-560" y="40" width="1120" height="60" fill="rgba(148,163,184,0.10)" stroke="#94a3b8" stroke-width="1" opacity="0.6"/>
+    <text x="-540" y="78" font-family="monospace" font-size="14" fill="#94a3b8" letter-spacing="2">hBN flake</text>
+
+    <!-- defect layer (thin amber band at the top of the slab) -->
+    <rect x="-560" y="40" width="1120" height="6" fill="url(#amberAccent)"/>
+    <text x="540" y="36" text-anchor="end" font-family="monospace" font-size="12" fill="#fbbf24" letter-spacing="2">defect layer \xc2\xb7 V_N\u2013C_B</text>
+
+    <!-- Kr+ ions raining down -->
+    <g fill="#38bdf8" opacity="0.85">
+      <circle cx="-440" cy="-60" r="4"/>
+      <circle cx="-360" cy="-30" r="4"/>
+      <circle cx="-280" cy="-80" r="4"/>
+      <circle cx="-200" cy="-50" r="4"/>
+      <circle cx="-120" cy="-100" r="4"/>
+      <circle cx="-40"  cy="-70" r="4"/>
+      <circle cx="40"   cy="-110" r="4"/>
+      <circle cx="120"  cy="-40" r="4"/>
+      <circle cx="200"  cy="-90" r="4"/>
+      <circle cx="280"  cy="-60" r="4"/>
+      <circle cx="360"  cy="-100" r="4"/>
+      <circle cx="440"  cy="-50" r="4"/>
+    </g>
+    <g stroke="#38bdf8" stroke-width="1" opacity="0.4">
+      <line x1="-440" y1="-56" x2="-440" y2="38"/>
+      <line x1="-280" y1="-76" x2="-280" y2="38"/>
+      <line x1="-120" y1="-96" x2="-120" y2="38"/>
+      <line x1="40"   y1="-106" x2="40" y2="38"/>
+      <line x1="200"  y1="-86" x2="200" y2="38"/>
+      <line x1="360"  y1="-96" x2="360" y2="38"/>
+    </g>
+    <text x="-560" y="-110" font-family="monospace" font-size="14" fill="#38bdf8" letter-spacing="2">Kr\u207a ions \xc2\xb7 40 keV \xc2\xb7 10\u00b9\u00b9\u201310\u00b9\u2075 ions/cm\u00b2</text>
+
+    <!-- readout on the right -->
+    <text x="-560" y="180" font-family="monospace" font-size="14" fill="#a0afb7" letter-spacing="2">PL band \xc2\xb7 ~830 nm \xc2\xb7 linewidth \u221d T\u00b3 \xc2\xb7 g = 2.003</text>
+  </g>
+
+  <!-- Corner markers -->
+  <g stroke="#fbbf24" stroke-width="2" fill="none" opacity="0.5">
+    <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
+    <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
+  </g>
+
+  <!-- Footer marker -->
+  <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
+    <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">\u2014 ASK-MERIDIAN.UK \u2014</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/hexagonal-boron-nitride-spin-defects-for-quantum-photonics-annealing-free-genera/</text>
+  </g>
+</svg>
