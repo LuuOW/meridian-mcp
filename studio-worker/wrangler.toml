@@ -1,0 +1,33 @@
+# Meridian Studio — Cloudflare Worker.
+# URL: https://studio.ask-meridian.uk/
+# Auth: WebAuthn passkey (single-tenant, USER_ID=lucas).
+# Storage: STUDIO_KV (sessions, challenges, registration links, jobs).
+# Publishing: GitHub Contents API with a PAT in the GITHUB_TOKEN secret.
+
+name = "meridian-studio"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "studio.ask-meridian.uk", custom_domain = true }
+]
+
+[vars]
+RP_NAME = "Meridian Studio"
+RP_ID = "studio.ask-meridian.uk"
+ORIGIN = "https://studio.ask-meridian.uk"
+USER_ID = "lucas"
+PUBLIC_ORIGIN = "https://ask-meridian.uk"
+GITHUB_REPO = "LuuOW/meridian-mcp"
+
+# Secrets (set via `wrangler secret put`):
+#   ADMIN_SECRET         — for /admin/create-registration-link
+#   GITHUB_TOKEN         — PAT with contents:write on LuuOW/meridian-mcp only
+
+[[kv_namespaces]]
+binding = "STUDIO_KV"
+id      = "6d2c1f9a7b8e4d3a9f0c1d2e3b4a5f01"  # placeholder — run `wrangler kv namespace create STUDIO_KV` and replace
+
+[observability]
+enabled = true
