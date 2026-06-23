@@ -24,10 +24,11 @@ USER_ID = "lucas"
 PUBLIC_ORIGIN = "https://ask-meridian.uk"
 GITHUB_REPO = "LuuOW/meridian-mcp"
 
-# LLM editorial pass — public defaults; secret key set via `wrangler secret put`.
-# Override locally with: npx wrangler dev --var "LLM_MODEL:deepseek-chat" etc.
-LLM_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
-LLM_MODEL = "gemini-2.0-flash"
+# LLM editorial pass — public defaults. The LLM_API_KEY secret is set to the
+# GitHub PAT (which doubles as the GitHub Models inference credential).
+# Override locally with: npx wrangler dev --var "LLM_MODEL:gpt-4o-mini" etc.
+LLM_BASE_URL = "https://models.inference.ai.azure.com"
+LLM_MODEL = "gpt-4o-mini"
 
 # Secrets (set via `wrangler secret put`):
 #   ADMIN_SECRET         — for /admin/create-registration-link
