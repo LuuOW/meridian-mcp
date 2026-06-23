@@ -28,6 +28,14 @@ export interface Env {
 
   // Where the page is deployed. Defaults to ask-meridian.uk.
   PUBLIC_ORIGIN?: string
+
+  // Optional LLM credentials for the editorial pass. When set, the studio
+  // produces a structured Meridian briefing instead of dumping the abstract.
+  // Compatible with OpenAI, DeepSeek, OpenRouter, or any OpenAI-shaped
+  // chat-completions endpoint.
+  LLM_API_KEY?: string
+  LLM_BASE_URL?: string
+  LLM_MODEL?: string
 }
 
 export interface CredentialRecord {
@@ -83,6 +91,9 @@ export interface JobRecord {
   banner_commit?: string          // commit sha for the SVG push
   page_commit?: string            // commit sha for the page push
   index_commit?: string | null    // commit sha for the index card push
+  llm_used?: boolean              // true when the LLM editorial pass ran
+  llm_model?: string              // model id used
+  llm_duration_ms?: number        // how long the LLM call took
   created_at: number
   updated_at: number
 }

@@ -24,6 +24,11 @@ USER_ID = "lucas"
 PUBLIC_ORIGIN = "https://ask-meridian.uk"
 GITHUB_REPO = "LuuOW/meridian-mcp"
 
+# LLM editorial pass — public defaults; secret key set via `wrangler secret put`.
+# Override locally with: npx wrangler dev --var "LLM_MODEL:deepseek-chat" etc.
+LLM_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+LLM_MODEL = "gemini-2.0-flash"
+
 # Secrets (set via `wrangler secret put`):
 #   ADMIN_SECRET         — for /admin/create-registration-link
 #   GITHUB_TOKEN         — PAT with contents:write on LuuOW/meridian-mcp only

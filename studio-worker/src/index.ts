@@ -28,7 +28,7 @@ import {
 } from "./webauthn"
 import { loginPage, registrationPage, statusPage } from "./pages"
 import { normalizeArxivUrl, fetchArxiv } from "./arxiv"
-import { composeDraft, renderPostHtml } from "./draft"
+import { composeDraft } from "./draft"
 import { publish, deleteBlog, listBlogs } from "./github"
 import { waitForLive } from "./deploy"
 
@@ -77,21 +77,19 @@ async function runJob(env: Env, jobId: string, customBodyOverride?: string): Pro
     const arxiv = await fetchArxiv(job0.abs_url)
 
     await setStage("drafting", { title: arxiv.title, abstract: arxiv.abstract })
-    const draft = composeDraft(arxiv)
+    const draft = await composeDraft(arxiv, env)
     const slug = draft.slug
-    // If the studio submitted an explicit body override, splice it into the rendered HTML.
-    const page_html = renderPostHtml({
-      meta_line: draft.meta_line,
-      h1: draft.h1,
-      lead: draft.lead,
-      body_paragraphs: draft.body_paragraphs,
-      banner_svg_path: `/img/blog/${slug}-banner.svg`,
-      banner_alt: `${arxiv.title} — banner`,
-      arxiv_id: arxiv.arxiv_id,
-      paper_url: arxiv.abs_url,
-      slug,
-      custom_body: customBodyOverride,
-    })
+    // If the studio submitted an explicit body override, swap it into the page_html
+    // between <article ...> and the takeaway. This lets the dashboard do a manual
+    // editorial pass after seeing the LLM draft.
+    let page_html = draft.page_html
+    if (customBodyOverride && customBodyOverride.trim()) {
+      // Insert the override as the first child of <article>, after the banner.
+      page_html = page_html.replace(
+        /(<img[^>]*-banner\.svg"[^>]*>\s*)/,
+        `$1\n${customBodyOverride}\n      `,
+      )
+    }
 
     await setStage("banner", { slug })
 
@@ -115,7 +113,10 @@ async function runJob(env: Env, jobId: string, customBodyOverride?: string): Pro
         banner_commit: pub.banner_commit,
         page_commit: pub.page_commit,
         index_commit: pub.index_commit,
-      })
+        llm_used: draft.llm_used,
+        llm_model: draft.llm_model,
+        llm_duration_ms: draft.llm_duration_ms,
+      } as Partial<JobRecord>)
     } else {
       await fail(`deploy timed out (status=${live.status ?? "unknown"})`)
     }
@@ -381,6 +382,11 @@ function renderActive(job) {
       '</div>' +
       stages(job) +
       (job.title ? '<div class="muted">' + job.title + '</div>' : '') +
+      (job.llm_used === true
+        ? '<div class="faint">editorial pass: LLM (' + (job.llm_model || 'unknown') + ', ' + (job.llm_duration_ms ?? '?') + 'ms)</div>'
+        : (job.llm_used === false
+          ? '<div class="warn">editorial pass: rule-based fallback (no LLM configured / credits exhausted)</div>'
+          : '')) +
       (job.error ? '<div class="err">' + job.error + '</div>' : '') +
       (job.live_url ? '<div><a href="' + job.live_url + '" target="_blank" rel="noopener" class="ok">' + job.live_url + ' ↗</a></div>' : '') +
       (job.stage === "drafting" ? '<details><summary class="muted">edit body (resubmits with override)</summary>' +
