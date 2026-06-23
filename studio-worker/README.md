@@ -98,23 +98,35 @@ dashboard can show the timeline of every job.
 
 ## Deploy
 
+The deploy workflow in `.github/workflows/deploy-studio.yml` runs on
+every push to `main` that touches `studio-worker/**`. To deploy, set
+these GitHub repo secrets once at
+<https://github.com/LuuOW/meridian-mcp/settings/secrets/actions>:
+
+| Secret | What to put |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | A scoped API token from <https://dash.cloudflare.com/profile/api-tokens> with **Workers Scripts: Edit** + **Account Settings: Read** + **Workers KV Storage: Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | The account id shown in the Cloudflare dashboard URL |
+
+Then push to main. The workflow will run `npx wrangler deploy` against
+the configured route (`studio.ask-meridian.uk`). On first run wrangler
+will create the Worker; subsequent runs update it.
+
+If you'd rather deploy from your laptop once instead of via CI:
+
 ```bash
 cd studio-worker
 npm install
-npm run typecheck
+npx tsc --noEmit   # typecheck
 
-# 1) Create the KV namespace
+# 1) Create the KV namespace and paste the id into wrangler.toml.
 npx wrangler kv namespace create STUDIO_KV
-# Paste the returned id into wrangler.toml [[kv_namespaces]] binding = "STUDIO_KV"
 
-# 2) Set secrets
+# 2) Set per-Worker secrets (these live in the Worker, not in CI).
 npx wrangler secret put ADMIN_SECRET       # any long random string
 npx wrangler secret put GITHUB_TOKEN       # PAT scoped to contents:write on LuuOW/meridian-mcp
 
-# 3) Configure the route — bind a custom subdomain
-# (already in wrangler.toml: studio.ask-meridian.uk)
-
-# 4) Deploy
+# 3) Deploy.
 npx wrangler deploy
 ```
 
