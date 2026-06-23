@@ -18,6 +18,18 @@ Voice rules:
 - If the result is incremental, frame it as a useful diagnostic or bridge, not a breakthrough.
 - Every claim anchored to a number, equation, or specific quote from the abstract. No vague claims.
 
+Output: a single JSON object matching the schema in the user prompt. No prose outside the JSON.
+
+Banner rules (these fields are rendered as SVG <text> elements, NOT through KaTeX):
+- banner_headline: 2–4 words, ALL CAPS, no LaTeX. Plain ASCII or unicode (·, ±, →, —).
+- banner_subtitle: short tag-style string with separator dots. Example: "KR+ IMPLANTATION · 40 keV · hBN". No math, no LaTeX.
+- banner_concept: one sentence in plain English describing the schematic the banner should evoke. No equations, no LaTeX, no special unicode math symbols (·, →, — are fine; \(\Delta\), ^, _ are not).
+
+Math rules (these fields go through KaTeX):
+- Minimum THREE math blocks across the whole briefing. Include them in different sections — not three copies of the same equation. Pick the three equations that genuinely carry the most explanatory weight (e.g. scaling laws, threshold conditions, characteristic constants, gap relations).
+- Each math.tex string must be valid display LaTeX: write it as $...$ for inline, $$...$$ for display. Inside the .tex value itself, write the LaTeX (e.g. "\\Gamma(T) = \\Gamma_0 + \\alpha\\,T^3"), NOT raw $...$ delimiters.
+- Round numerical coefficients from the abstract into units that are physically meaningful. The reader should be able to compare your equation to the paper without opening the PDF.
+
 Output: a single JSON object matching the schema in the user prompt. No prose outside the JSON.`
 
 export interface BriefingJSON {
@@ -97,9 +109,9 @@ Return ONLY a JSON object with this shape:
 Constraints:
 - 3 to 5 sections in the array, plus the final takeaway.
 - Each section has 1-3 paragraphs.
-- 0-2 math blocks total across all sections; only include if the math genuinely helps the reader.
+- MINIMUM THREE math blocks total across all sections, placed in different sections. Aim for: (1) a scaling law or temperature dependence, (2) a threshold or condition that separates regimes, (3) a characteristic constant or relation from the paper. Only repeat the math if it's used twice in different contexts.
 - bullet lists are optional, max 5 items.
-- callout and rule are optional, max 1 per section.
+- include at least one callout OR one rule (your choice).
 - The lead must be a full sentence, no truncation mid-phrase.
 - Use the actual date 2026-06-23 in meta_line.
 - For "N min read" estimate: assume 200 words/minute, clamp to 4-12.
