@@ -241,12 +241,38 @@ export async function deleteBlog(env: Env, slug: string): Promise<{ deleted: str
 }
 
 // ─── List existing blogs (read-only, used by the dashboard) ────────
+//
+// Single GitHub call: read landing/blog/index.html (the public index page),
+// parse out every <article><h2><a href="/blog/<slug>/">title</a></h2>…</article>
+// block. That gives us titles + slugs + a stable display order that already
+// matches the public /blog/ page (newest first, since Studio always inserts
+// new cards at the top via patchIndexHtml).
+//
+// Why one call instead of N: each /studio/blogs request used to make
+//   1 git-trees recursive=1 + N contents API calls (one per post)
+// which exceeded Cloudflare Worker subrequest budgets on the free plan and
+// surfaced as a 500 the moment any one of the per-post fetches threw. The
+// index page already has everything we need, so read it once.
 export interface BlogEntry {
   slug: string
   title: string
   href: string
   path: string
 }
+
+const ARTICLE_RE = /<article[^>]*>([\s\S]*?)<\/article>/g
+const H2_RE      = /<h2[^>]*>([\s\S]*?)<\/h2>/
+const HREF_RE    = /href="(\/blog\/[^/]+\/)(?:[\s\S]*?)"/
+const TAG_RE     = /<[^>]+>/g
+const DECODE_HTML = (s: string) =>
+  s.replace(/&amp;/g, "&")
+   .replace(/&lt;/g, "<")
+   .replace(/&gt;/g, ">")
+   .replace(/&quot;/g, "\"")
+   .replace(/&#39;/g, "\u0027")
+   .replace(/&mdash;/g, "\u2014")
+   .replace(/&middot;/g, "\u00b7")
+   .replace(/&ndash;/g, "\u2013")
 
 export async function listBlogs(env: Env): Promise<BlogEntry[]> {
   const repo = env.GITHUB_REPO ?? "LuuOW/meridian-mcp"
@@ -260,37 +286,22 @@ export async function listBlogs(env: Env): Promise<BlogEntry[]> {
     ]
   }
 
-  // Use the git trees API with recursive=1 to walk landing/blog/*.
-  // Truncate the response to slug + title only (title comes from the post's <h1>).
-  // We fetch the tree, then for each candidate we read its index.html to pull <h1>.
-  const tree = await gh<{ tree: Array<{ path: string; type: string }> }>(
-    env,
-    `/repos/${repo}/git/trees/${branch}?recursive=1`,
-  )
-  const blogIndexPaths = tree.tree
-    .filter(t => t.type === "blob" && /^landing\/blog\/[^/]+\/index\.html$/.test(t.path))
-    .map(t => t.path)
-    .sort()
-    .reverse()  // newest first
+  // ONE GitHub call: read the public /blog/ index page (base64 encoded).
+  const idx = await gh<{ content: string }>(env, `/repos/${repo}/contents/landing/blog/index.html?ref=${branch}`)
+  const html = atob(idx.content.replace(/\s+/g, ""))
 
+  // Walk every <article>…</article> in document order (= public display order).
   const out: BlogEntry[] = []
-  for (const path of blogIndexPaths) {
-    const slug = path.split("/")[2]
-    const title = await getTitle(env, repo, branch, path).catch(() => slug)
-    out.push({
-      slug,
-      title,
-      href: `/blog/${slug}/`,
-      path,
-    })
-    if (out.length >= 100) break  // cap for UI
+  for (const m of html.matchAll(ARTICLE_RE)) {
+    const block = m[1]
+    const h2 = block.match(H2_RE)
+    if (!h2) continue
+    const hrefMatch = h2[1].match(HREF_RE)
+    if (!hrefMatch) continue
+    const slug = hrefMatch[1].replace(/^\/blog\//, "").replace(/\/$/, "")
+    const title = DECODE_HTML(h2[1].replace(TAG_RE, "").trim())
+    out.push({ slug, title, href: `/blog/${slug}/`, path: `landing/blog/${slug}/index.html` })
+    if (out.length >= 100) break
   }
   return out
-}
-
-async function getTitle(env: Env, repo: string, branch: string, path: string): Promise<string> {
-  const res = await gh<{ content: string }>(env, `/repos/${repo}/contents/${encodeURI(path)}?ref=${branch}`)
-  const decoded = atob(res.content.replace(/\s+/g, ""))
-  const m = decoded.match(/<h1[^>]*>([\s\S]+?)<\/h1>/)
-  return m ? m[1].replace(/<[^>]+>/g, "").trim() : ""
 }
