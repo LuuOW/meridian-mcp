@@ -126,6 +126,12 @@ async function getIndexHtml(env: Env, repo: string, branch: string): Promise<Ind
   return { content: decoded, sha: res.sha }
 }
 
+// ─── Date-sorted index card insertion ─────────────────────────────
+// Inserts (or replaces) a card in landing/blog/index.html such that all
+// cards end up sorted newest-first by their meta_line date prefix
+// (YYYY-MM-DD). Also fixes the historical bug where patchIndexHtml would
+// only insert at the top, leaving a stale card behind if the same slug
+// had been published before.
 function patchIndexHtml(html: string, card: { meta: string; title: string; href: string; description: string }): string {
   const cardHtml = `    <article style="margin-bottom: 32px; padding: 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card);">
       <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;">${card.meta}</div>
@@ -138,8 +144,48 @@ function patchIndexHtml(html: string, card: { meta: string; title: string; href:
         ${card.description}
       </p>
     </article>\n\n`
-  // Insert immediately after the first <article ...> card so it appears at the top.
-  return html.replace(/(<section style="padding: 0 0 72px;">\s*)<article/, `$1${cardHtml}<article`)
+
+  // Extract the date prefix from the meta_line. Format: 'YYYY-MM-DD · ...'
+  const dateMatch = card.meta.match(/^(\d{4}-\d{2}-\d{2})/)
+  const cardDate = dateMatch ? dateMatch[1] : ""
+
+  // Find the section that wraps the cards.
+  const sectionRe = /(<section style="padding: 0 0 72px;">)([\s\S]*?)(<\/section>)/
+  const sectionMatch = html.match(sectionRe)
+  if (!sectionMatch) return html  // nothing to do
+  const [, sectionOpen, sectionInner, sectionClose] = sectionMatch
+
+  // Walk the section, split into individual <article> blocks plus whitespace.
+  const articleRe = /<article[^>]*>[\s\S]*?<\/article>/g
+  const existing: { html: string; date: string; href: string }[] = []
+  for (const m of sectionInner.matchAll(articleRe)) {
+    const block = m[0]
+    const hrefMatch = block.match(/href="\/blog\/([^/]+)\//)
+    const dateInBlock = block.match(/^\s*<div[^>]+>(\d{4}-\d{2}-\d{2})/)
+    existing.push({
+      html: block,
+      date: dateInBlock ? dateInBlock[1] : "",
+      href: hrefMatch ? `/blog/${hrefMatch[1]}/` : "",
+    })
+  }
+
+  // Idempotency: if a card with the same href already exists, replace it
+  // in place instead of duplicating.
+  const filtered = existing.filter(c => c.href !== card.href)
+
+  // Insert the new card, then sort by date DESC (newest first).
+  // Cards without a date go to the end so they don't block dated cards.
+  const newEntry = { html: cardHtml, date: cardDate, href: card.href }
+  filtered.unshift(newEntry)
+  filtered.sort((a, b) => {
+    if (!a.date && !b.date) return 0
+    if (!a.date) return 1
+    if (!b.date) return -1
+    return b.date.localeCompare(a.date)
+  })
+
+  const newInner = "\n" + filtered.map(c => c.html).join("\n\n") + "\n  "
+  return html.replace(sectionRe, sectionOpen + newInner + sectionClose)
 }
 
 export async function publish(env: Env, input: PublishInput): Promise<PublishResult> {
