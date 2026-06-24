@@ -35,9 +35,9 @@
     </g>
 
     <!-- Title -->
-    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">DESIGN EFFICIENCY · LOW LOSS · HIGH BAND</text>
-    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">PHOTONIC CRYSTALS OPTIMIZED</text>
-    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">A schematic showing the enhanced performance of photonic crystal waveguides in optical applications.</text>
+    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">INVERSE DESIGN · LOW LOSS · HIGH BANDWID</text>
+    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">PHOTONIC CRYSTAL WAVEGUIDES</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">A visual representation of advanced photonic crystal waveguides optimizing light manipulation.</text>
   </g>
 
   <!-- Bottom-half schematic: a single accent gradient curve evoking the paper's structure -->
@@ -48,7 +48,7 @@
     <circle cx="-160" cy="-20" r="6" fill="#38bdf8"/>
     <circle cx="240"  cy="0"   r="6" fill="#0ea5e9"/>
     <circle cx="560"  cy="-10" r="6" fill="#0ea5e9"/>
-    <text x="0" y="120" text-anchor="middle" font-family="monospace" font-size="14" fill="#a0afb7" letter-spacing="2">A schematic showing the enhanced performance of photonic crystal waveguides in optical app</text>
+    <text x="0" y="120" text-anchor="middle" font-family="monospace" font-size="14" fill="#a0afb7" letter-spacing="2">A visual representation of advanced photonic crystal waveguides optimizing light manipulat</text>
   </g>
 
   <!-- Corner markers -->
