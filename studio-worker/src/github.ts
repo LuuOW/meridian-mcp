@@ -161,7 +161,7 @@ function patchIndexHtml(html: string, card: { meta: string; title: string; href:
   for (const m of sectionInner.matchAll(articleRe)) {
     const block = m[0]
     const hrefMatch = block.match(/href="\/blog\/([^/]+)\//)
-    const dateInBlock = block.match(/^\s*<div[^>]+>(\d{4}-\d{2}-\d{2})/)
+    const dateInBlock = block.match(/(\d{4}-\d{2}-\d{2})/)
     existing.push({
       html: block,
       date: dateInBlock ? dateInBlock[1] : "",
