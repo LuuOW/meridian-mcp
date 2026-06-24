@@ -30,7 +30,6 @@ import { loginPage, registrationPage, statusPage } from "./pages"
 import { normalizeArxivUrl, fetchArxiv } from "./arxiv"
 import { composeDraft } from "./draft"
 import { publish, deleteBlog, listBlogs } from "./github"
-import { waitForLive } from "./deploy"
 
 function html(body: string): Response {
   return new Response(body, { headers: { "content-type": "text/html; charset=utf-8" } })
@@ -104,22 +103,24 @@ async function runJob(env: Env, jobId: string, customBodyOverride?: string): Pro
 
     await setStage("pushing")
     // Files are committed; GitHub is already on main. Pages workflow picks up.
-    await setStage("deploying")
-
-    const live = await waitForLive(slug)
-    if (live.live) {
-      await setStage("live", {
-        live_url: live.url,
-        banner_commit: pub.banner_commit,
-        page_commit: pub.page_commit,
-        index_commit: pub.index_commit,
-        llm_used: draft.llm_used,
-        llm_model: draft.llm_model,
-        llm_duration_ms: draft.llm_duration_ms,
-      } as Partial<JobRecord>)
-    } else {
-      await fail(`deploy timed out (status=${live.status ?? "unknown"})`)
-    }
+    // Mark the job as "deploying" and let the dashboard self-update once the
+    // GitHub Pages URL returns 200 on its own (polled from the browser, not
+    // the worker). Skipping the server-side poll keeps KV free-tier usage
+    // bounded — each publish would otherwise issue 60+ GETs to the live URL.
+    await setStage("deploying", {
+      live_url: `https://ask-meridian.uk/blog/${slug}/`,
+      banner_commit: pub.banner_commit,
+      page_commit: pub.page_commit,
+      index_commit: pub.index_commit,
+      llm_used: draft.llm_used,
+      llm_model: draft.llm_model,
+      llm_duration_ms: draft.llm_duration_ms,
+    } as Partial<JobRecord>)
+    // Optimistically flip to "live" — Pages deploys land in 30-90s; if the
+    // page is actually 404 the dashboard's poll will surface that to the user.
+    await setStage("live", {
+      live_url: `https://ask-meridian.uk/blog/${slug}/`,
+    } as Partial<JobRecord>)
   } catch (e) {
     await fail(e)
   }
