@@ -12,9 +12,9 @@
       <stop offset="100%" stop-color="#b89773" />
     </linearGradient>
     <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   stop-color="#a78bfa" stop-opacity="0" />
-      <stop offset="50%"  stop-color="#a78bfa" stop-opacity="0.95" />
-      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0" />
+      <stop offset="0%"   stop-color="#38bdf8" stop-opacity="0" />
+      <stop offset="50%"  stop-color="#38bdf8" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
     </linearGradient>
     <linearGradient id="spectrumGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#ef4444"/>
@@ -37,17 +37,17 @@
   <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
     <g transform="translate(0, -90)">
       <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
-      <circle cx="-110" cy="-2" r="3" fill="#a78bfa"/>
+      <circle cx="-110" cy="-2" r="3" fill="#38bdf8"/>
       <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">ARXIV BRIEFING</text>
     </g>
-    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM ALGORITHMS</text>
-    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">LOG-CONCAVITY AND TUNNELING: ADIABATIC</text>
-    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike)</text>
+    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM</text>
+    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">PERTURBATIVE PHOTONIC MATRIX MULTIPLICAT</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x</text>
   </g>
 
   
   <g transform="translate(960, 720)">
-    <text x="-540" y="-220" font-family="monospace" font-size="14" fill="#a78bfa" letter-spacing="2">POTENTIAL + ψ</text>
+    <text x="-540" y="-220" font-family="monospace" font-size="14" fill="#38bdf8" letter-spacing="2">POTENTIAL + ψ</text>
 
     <!-- axes -->
     <line x1="-480" y1="80" x2="480" y2="80" stroke="#ffffff" stroke-opacity="0.7" stroke-width="1.5"/>
@@ -56,26 +56,26 @@
     <text x="490" y="100" font-family="serif" font-style="italic" font-size="22" fill="#ffffff">x</text>
 
     <!-- V(x) curve filled underneath -->
-    <path d="M -460,80 L -300,80 L -200,20 L -100,-80 L -20,20 L 80,80 L 200,80 L 300,40 L 460,80 L 460,80 L -460,80 Z" fill="#a78bfa" fill-opacity="0.18"/>
-    <path d="M -460,80 L -300,80 L -200,20 L -100,-80 L -20,20 L 80,80 L 200,80 L 300,40 L 460,80" stroke="#a78bfa" stroke-width="3" fill="none" filter="url(#glow)"/>
+    <path d="M -460,80 L -300,80 L -200,20 L -100,-80 L -20,20 L 80,80 L 200,80 L 300,40 L 460,80 L 460,80 L -460,80 Z" fill="#38bdf8" fill-opacity="0.18"/>
+    <path d="M -460,80 L -300,80 L -200,20 L -100,-80 L -20,20 L 80,80 L 200,80 L 300,40 L 460,80" stroke="#38bdf8" stroke-width="3" fill="none" filter="url(#glow)"/>
 
     <!-- ψ(x) -->
-    <path d="M -440,80 Q -360,80 -340,30 Q -320,-20 -260,-30 Q -200,-30 -180,20 Q -160,60 -100,80 L 60,80 Q 100,80 120,40 Q 140,0 180,-10 Q 240,-10 260,30 Q 280,70 360,80 L 460,80" stroke="#7c3aed" stroke-width="2.5" fill="none" stroke-dasharray="6,4"/>
-    <text x="-380" y="-50" font-family="serif" font-style="italic" font-size="20" fill="#7c3aed">ψ(x)</text>
+    <path d="M -440,80 Q -360,80 -340,30 Q -320,-20 -260,-30 Q -200,-30 -180,20 Q -160,60 -100,80 L 60,80 Q 100,80 120,40 Q 140,0 180,-10 Q 240,-10 260,30 Q 280,70 360,80 L 460,80" stroke="#0ea5e9" stroke-width="2.5" fill="none" stroke-dasharray="6,4"/>
+    <text x="-380" y="-50" font-family="serif" font-style="italic" font-size="20" fill="#0ea5e9">ψ(x)</text>
 
     <!-- barrier label -->
-    <text x="-110" y="-100" font-family="monospace" font-size="13" fill="#a78bfa" text-anchor="middle">BARRIER</text>
-    <text x="-110" y="-86" font-family="monospace" font-size="11" fill="#a78bfa" text-anchor="middle">ΔV</text>
+    <text x="-110" y="-100" font-family="monospace" font-size="13" fill="#38bdf8" text-anchor="middle">BARRIER</text>
+    <text x="-110" y="-86" font-family="monospace" font-size="11" fill="#38bdf8" text-anchor="middle">ΔV</text>
 
     <!-- classical turning points -->
-    <circle cx="-300" cy="80" r="3" fill="#a78bfa"/>
-    <circle cx="200" cy="80" r="3" fill="#a78bfa"/>
+    <circle cx="-300" cy="80" r="3" fill="#38bdf8"/>
+    <circle cx="200" cy="80" r="3" fill="#38bdf8"/>
 
     <!-- caption -->
-    <text x="0" y="160" font-family="monospace" font-size="14" fill="#a78bfa" text-anchor="middle">V(x) · ψ(x) · CLASSICAL ↔ TUNNELING</text>
+    <text x="0" y="160" font-family="monospace" font-size="14" fill="#38bdf8" text-anchor="middle">V(x) · ψ(x) · CLASSICAL ↔ TUNNELING</text>
   </g>
 
-  <g stroke="#a78bfa" stroke-width="2" fill="none" opacity="0.5">
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
     <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
     <path d="M 1870,50 L 1770,50 M 1870,50 M 1870,150"/>
     <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
@@ -84,6 +84,6 @@
 
   <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
     <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
-    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/log-concavity-tunneling-aqo-convex-functions-spike/</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/perturbative-photonic-matrix-multiplication/</text>
   </g>
 </svg>

@@ -10,6 +10,7 @@
 
 import type { ArxivMeta } from "./arxiv"
 import { slugifyTitle } from "./arxiv"
+import { pickArchetype } from "./banners/archetypes"
 import { callLLM, type LLMConfig, LLMSchemaError } from "./llm"
 import { SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, type BriefingJSON } from "./prompts"
 
@@ -364,6 +365,15 @@ function renderBannerSvg(slug: string, title: string, brief: BriefingJSON): stri
       <stop offset="50%"  stop-color="${palette.accent1}" stop-opacity="0.95" />
       <stop offset="100%" stop-color="${palette.accent1}" stop-opacity="0" />
     </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="spectrumGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="20%" stop-color="#f59e0b"/>
+      <stop offset="40%" stop-color="#10b981"/>
+      <stop offset="60%" stop-color="#3b82f6"/>
+      <stop offset="80%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
     <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
       <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
     </pattern>
@@ -388,16 +398,19 @@ function renderBannerSvg(slug: string, title: string, brief: BriefingJSON): stri
     <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">${safe((brief.banner_concept || title).slice(0, 100))}</text>
   </g>
 
-  <!-- Bottom-half schematic: a single accent gradient curve evoking the paper's structure -->
-  <g transform="translate(960, 720)">
-    <path d="M -560,0 Q -360,80 -160,-20 Q 40,-80 240,0 Q 440,60 560,-10"
-          stroke="url(#accentGrad)" stroke-width="3" fill="none"/>
-    <circle cx="-560" cy="0" r="6" fill="${palette.accent1}"/>
-    <circle cx="-160" cy="-20" r="6" fill="${palette.accent1}"/>
-    <circle cx="240"  cy="0"   r="6" fill="${palette.accent2}"/>
-    <circle cx="560"  cy="-10" r="6" fill="${palette.accent2}"/>
-    <text x="0" y="120" text-anchor="middle" font-family="monospace" font-size="14" fill="#a0afb7" letter-spacing="2">${safe((brief.banner_concept || "").slice(0, 90))}</text>
-  </g>
+  <!-- Bottom-half schematic: archetype picked by topic keywords in the
+       LLM-provided banner_concept and the paper title. -->
+  ${pickArchetype([
+    brief.banner_concept || "",
+    title,
+    brief.banner_subtitle || "",
+  ])({
+    accent1: palette.accent1,
+    accent2: palette.accent2,
+    kicker:  palette.kicker,
+    bg:      "#0a1625",
+    ink:     "#ffffff",
+  })}
 
   <!-- Corner markers -->
   <g stroke="${palette.kicker}" stroke-width="2" fill="none" opacity="0.5">

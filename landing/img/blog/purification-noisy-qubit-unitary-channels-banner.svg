@@ -37,12 +37,12 @@
   <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
     <g transform="translate(0, -90)">
       <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
-      <circle cx="-110" cy="-2" r="3" fill="#a78bfa"/>
+      <circle cx="-110" cy="-2" r="3" fill="#38bdf8"/>
       <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">ARXIV BRIEFING</text>
     </g>
-    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM SIMULATION</text>
-    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">BENCHMARK OF QUANTUM ALGORITHMS</text>
-    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Benchmark of quantum algorithms for ground state preparation in the presence of noise</text>
+    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM COMPUTING</text>
+    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">SCALING-OPTIMAL PURIFICATION OF NOISY</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Scaling-optimal purification of noisy qubit unitary channels</text>
   </g>
 
   
@@ -88,22 +88,22 @@
     <!-- Rz gates with parameter slots -->
     
       <g transform="translate(-220, -90)" filter="url(#glow)">
-        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#7c3aed" stroke="#7c3aed"/>
+        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#38bdf8" stroke="#38bdf8"/>
         <text y="6" font-family="monospace" font-size="14" font-weight="bold" fill="#0a1625" text-anchor="middle">R$_z$(θ$_1$)</text>
       </g>
     
       <g transform="translate(-220, -30)" filter="url(#glow)">
-        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#7c3aed" stroke="#7c3aed"/>
+        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#38bdf8" stroke="#38bdf8"/>
         <text y="6" font-family="monospace" font-size="14" font-weight="bold" fill="#0a1625" text-anchor="middle">R$_z$(θ$_2$)</text>
       </g>
     
       <g transform="translate(-220, 30)" filter="url(#glow)">
-        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#7c3aed" stroke="#7c3aed"/>
+        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#38bdf8" stroke="#38bdf8"/>
         <text y="6" font-family="monospace" font-size="14" font-weight="bold" fill="#0a1625" text-anchor="middle">R$_z$(θ$_3$)</text>
       </g>
     
       <g transform="translate(-220, 90)" filter="url(#glow)">
-        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#7c3aed" stroke="#7c3aed"/>
+        <rect x="-44" y="-22" width="88" height="44" rx="6" fill="#38bdf8" stroke="#38bdf8"/>
         <text y="6" font-family="monospace" font-size="14" font-weight="bold" fill="#0a1625" text-anchor="middle">R$_z$(θ$_4$)</text>
       </g>
     
@@ -124,43 +124,43 @@
     <!-- Measurement icons -->
     
       <g transform="translate(280, -90)">
-        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <line x1="0" y1="2" x2="0" y2="14" stroke="#a78bfa" stroke-width="1.6"/>
+        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <line x1="0" y1="2" x2="0" y2="14" stroke="#38bdf8" stroke-width="1.6"/>
       </g>
     
       <g transform="translate(280, -30)">
-        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <line x1="0" y1="2" x2="0" y2="14" stroke="#a78bfa" stroke-width="1.6"/>
+        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <line x1="0" y1="2" x2="0" y2="14" stroke="#38bdf8" stroke-width="1.6"/>
       </g>
     
       <g transform="translate(280, 30)">
-        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <line x1="0" y1="2" x2="0" y2="14" stroke="#a78bfa" stroke-width="1.6"/>
+        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <line x1="0" y1="2" x2="0" y2="14" stroke="#38bdf8" stroke-width="1.6"/>
       </g>
     
       <g transform="translate(280, 90)">
-        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
-        <line x1="0" y1="2" x2="0" y2="14" stroke="#a78bfa" stroke-width="1.6"/>
+        <path d="M -16,-16 L 16,-16 L 16,16 L -16,16 Z" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <path d="M -10,16 A 12 12 0 0 0 10 16" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+        <line x1="0" y1="2" x2="0" y2="14" stroke="#38bdf8" stroke-width="1.6"/>
       </g>
     
 
     <!-- Classical register lanes -->
     
-      <line x1="320" y1="-90" x2="440" y2="-90" stroke="#a78bfa" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
+      <line x1="320" y1="-90" x2="440" y2="-90" stroke="#38bdf8" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
     
-      <line x1="320" y1="-30" x2="440" y2="-30" stroke="#a78bfa" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
+      <line x1="320" y1="-30" x2="440" y2="-30" stroke="#38bdf8" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
     
-      <line x1="320" y1="30" x2="440" y2="30" stroke="#a78bfa" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
+      <line x1="320" y1="30" x2="440" y2="30" stroke="#38bdf8" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
     
-      <line x1="320" y1="90" x2="440" y2="90" stroke="#a78bfa" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
+      <line x1="320" y1="90" x2="440" y2="90" stroke="#38bdf8" stroke-opacity="0.4" stroke-dasharray="6,4" stroke-width="1.2"/>
     
   </g>
 
-  <g stroke="#a78bfa" stroke-width="2" fill="none" opacity="0.5">
+  <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
     <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
     <path d="M 1870,50 L 1770,50 M 1870,50 M 1870,150"/>
     <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
@@ -169,6 +169,6 @@
 
   <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
     <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
-    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/benchmark-ground-state-quantum-algorithms-noise/</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/purification-noisy-qubit-unitary-channels/</text>
   </g>
 </svg>

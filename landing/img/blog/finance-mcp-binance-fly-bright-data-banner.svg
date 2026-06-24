@@ -12,9 +12,9 @@
       <stop offset="100%" stop-color="#b89773" />
     </linearGradient>
     <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   stop-color="#a78bfa" stop-opacity="0" />
-      <stop offset="50%"  stop-color="#a78bfa" stop-opacity="0.95" />
-      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0" />
+      <stop offset="0%"   stop-color="#fbbf24" stop-opacity="0" />
+      <stop offset="50%"  stop-color="#fbbf24" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0" />
     </linearGradient>
     <linearGradient id="spectrumGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#ef4444"/>
@@ -37,20 +37,20 @@
   <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
     <g transform="translate(0, -90)">
       <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
-      <circle cx="-110" cy="-2" r="3" fill="#a78bfa"/>
+      <circle cx="-110" cy="-2" r="3" fill="#fbbf24"/>
       <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">ARXIV BRIEFING</text>
     </g>
-    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM CODES</text>
-    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">LARGE-LANGUAGE-MODEL DISCOVERY OF QUANTU</text>
-    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Large-Language-Model Discovery of Quantum LDPC Codes through Structured Concept Evolution</text>
+    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">NEW</text>
+    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">AI FOR PERSONAL FINANCE</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey</text>
   </g>
 
   
   <g transform="translate(960, 720)">
-    <text x="-540" y="-220" font-family="monospace" font-size="14" fill="#a78bfa" letter-spacing="2">SCHEMATIC</text>
-    <path d="M 0,-280 L -340,100 L 340,100 Z" fill="none" stroke="#a78bfa" stroke-width="2.5" opacity="0.5"/>
-    <path d="M 0,-280 L 0,180 L -340,100" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.4"/>
-    <path d="M 0,-280 L 0,180 L 340,100" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.4"/>
+    <text x="-540" y="-220" font-family="monospace" font-size="14" fill="#fbbf24" letter-spacing="2">SCHEMATIC</text>
+    <path d="M 0,-280 L -340,100 L 340,100 Z" fill="none" stroke="#fbbf24" stroke-width="2.5" opacity="0.5"/>
+    <path d="M 0,-280 L 0,180 L -340,100" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0.4"/>
+    <path d="M 0,-280 L 0,180 L 340,100" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0.4"/>
 
     <g stroke="#ffffff" stroke-width="3" opacity="0.85">
       <line x1="0" y1="0" x2="0" y2="-180"/>
@@ -58,7 +58,7 @@
       <line x1="0" y1="0" x2="220" y2="80"/>
       <line x1="0" y1="0" x2="0" y2="120"/>
     </g>
-    <circle cx="0" cy="0" r="18" fill="#a78bfa">
+    <circle cx="0" cy="0" r="18" fill="#fbbf24">
       <animate attributeName="r" values="18;24;18" dur="3s" repeatCount="indefinite"/>
     </circle>
 
@@ -66,10 +66,10 @@
       <rect x="-300" y="-10" width="600" height="20" rx="10" fill="url(#spectrumGrad)" opacity="0.7"/>
     </g>
 
-    <text x="0" y="200" font-family="monospace" font-size="14" fill="#a78bfa" text-anchor="middle">GENERIC SCHEMATIC</text>
+    <text x="0" y="200" font-family="monospace" font-size="14" fill="#fbbf24" text-anchor="middle">GENERIC SCHEMATIC</text>
   </g>
 
-  <g stroke="#a78bfa" stroke-width="2" fill="none" opacity="0.5">
+  <g stroke="#fbbf24" stroke-width="2" fill="none" opacity="0.5">
     <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
     <path d="M 1870,50 L 1770,50 M 1870,50 M 1870,150"/>
     <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
@@ -78,6 +78,6 @@
 
   <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
     <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
-    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/large-language-model-discovery-of-quantum-ldpc-codes-through-structured-concept/</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/finance-mcp-binance-fly-bright-data/</text>
   </g>
 </svg>

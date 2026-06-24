@@ -40,9 +40,9 @@
       <circle cx="-110" cy="-2" r="3" fill="#38bdf8"/>
       <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">ARXIV BRIEFING</text>
     </g>
-    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM CONTROL</text>
-    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">RAPID CAVITY-BASED MID-CIRCUIT MEASUREME</text>
-    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Rapid Cavity-Based Mid-Circuit Measurement and Feedforward in a Neutral Atom Array</text>
+    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">QUANTUM</text>
+    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">METAGENOMICS AT HOME: ORCHESTRATING</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark</text>
   </g>
 
   
@@ -105,6 +105,6 @@
 
   <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
     <text font-size="15" font-weight="bold" fill="#ffffff" fill-opacity="0.4" letter-spacing="4">— ASK-MERIDIAN.UK —</text>
-    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/rapid-cavity-based-mid-circuit-measurement-and-feedforward-in-a-neutral-atom-arr/</text>
+    <text y="24" font-size="13" fill="#718096" fill-opacity="0.8" letter-spacing="1">/blog/home-edna-sequencing-dgx-spark/</text>
   </g>
 </svg>
