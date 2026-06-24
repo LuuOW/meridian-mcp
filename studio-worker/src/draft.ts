@@ -64,7 +64,14 @@ export async function composeDraft(meta: ArxivMeta, env?: LLMEnv): Promise<Draft
       const brief = result.parsed as BriefingJSON
       // Trust the schema we asked for; if sections is missing or empty, fall through.
       if (Array.isArray(brief.sections) && brief.sections.length > 0 && brief.takeaway && Array.isArray(brief.takeaway.paragraphs)) {
-        const page_html = renderBriefingHtml(slug, meta, brief)
+        const article_body = renderBriefingHtml(slug, meta, brief)
+        const page_html = wrapPageHtml({
+          slug, title: meta.title,
+          description: `A technical briefing on arXiv:${meta.arxiv_id}: ${(brief.lead || "").slice(0, 200)}${(brief.lead || "").length > 200 ? "…" : ""}`,
+          banner_filename: `${slug}-banner.svg`,
+          arxiv_id: meta.arxiv_id,
+          article_body,
+        })
         const banner_svg = renderBannerSvg(slug, meta.title, brief)
         return {
           slug,
@@ -98,7 +105,14 @@ function composeRuleBased(meta: ArxivMeta, slug: string, today: string): DraftAr
   const meta_line = `${today} · ${minutes} min read · ${subject}`
   const { lead, body } = ruleLeadAndBody(meta.abstract)
   const banner_svg = ruleBanner(slug, meta.title)
-  const page_html = renderRuleHtml({ meta_line, h1: meta.title, lead, body, slug, arxiv_id: meta.arxiv_id, abs_url: meta.abs_url })
+  const article_body = renderRuleHtml({ meta_line, h1: meta.title, lead, body, slug, arxiv_id: meta.arxiv_id, abs_url: meta.abs_url })
+  const page_html = wrapPageHtml({
+    slug, title: meta.title,
+    description: `A technical briefing on arXiv:${meta.arxiv_id}: ${lead.slice(0, 200)}${lead.length > 200 ? "…" : ""}`,
+    banner_filename: `${slug}-banner.svg`,
+    arxiv_id: meta.arxiv_id,
+    article_body,
+  })
   return {
     slug,
     meta_line,
@@ -178,6 +192,94 @@ ${takeawayHtml}
 
       <p class="article-meta">Reference: arXiv:${escHtml(arxiv_id)} &middot; ${escHtml(meta.title)}</p>
     </article>`
+}
+
+
+
+// ─── HTML document wrapper ──────────────────────────────────────────
+// Wraps an <article> fragment into a full HTML document with the same
+// chrome as the hand-written blog posts: meta tags, KaTeX wired up,
+// article-body <style>, /nav.css link. The nav block itself is injected
+// post-publish by scripts/sync-nav.py so this worker doesn't have to
+// carry the full nav template.
+const KATEX_VERSION = "0.16.11"
+const ARTICLE_BODY_STYLE = `<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.07));
+    border: 1px solid rgba(56,189,248,0.32);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    opacity: 0.85;
+  }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+</style>`
+
+export function wrapPageHtml(opts: {
+  slug: string
+  title: string
+  description: string
+  banner_filename: string
+  arxiv_id: string
+  article_body: string
+}): string {
+  const url = `https://ask-meridian.uk/blog/${opts.slug}/`
+  const banner_url = `https://ask-meridian.uk/img/blog/${opts.banner_filename}`
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${escHtml(opts.title)} &mdash; Meridian Blog</title>
+<meta name="description" content="${escAttr(opts.description)}">
+<meta property="og:title" content="${escAttr(opts.title)}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="${escAttr(url)}">
+<meta property="og:image" content="${escAttr(banner_url)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${escAttr(banner_url)}">
+<link rel="canonical" href="${escAttr(url)}">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@${KATEX_VERSION}/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@${KATEX_VERSION}/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@${KATEX_VERSION}/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], throwOnError: false});"></script>
+${ARTICLE_BODY_STYLE}
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+  <main id="main" style="padding-top: 48px;">
+    ${opts.article_body}
+  </main>
+<script type="module" src="/blog/listen.js"></script>
+</body>
+</html>
+`
 }
 
 // ─── LLM-driven banner SVG ──────────────────────────────────────────

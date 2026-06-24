@@ -88,9 +88,20 @@ async function putContents(
     // 404 — file doesn't exist yet, that's fine for create.
     if (!(e instanceof Error && /→ 404/.test(e.message))) throw e
   }
+  // Encode the JS string to base64 the way GitHub Contents API expects:
+  // GitHub stores files as raw UTF-8 bytes; the API takes base64 of those bytes.
+  // The classic `btoa(unescape(encodeURIComponent(s)))` trick turns non-ASCII
+  // characters into mojibake (`🧬` → `ð§¬`) because unescape() treats each
+  // percent-decoded byte as a Latin-1 codepoint instead of packing them into
+  // a UTF-8 string. Use TextEncoder + btoa-of-byte-string instead.
+  const utf8Bytes = new TextEncoder().encode(content)
+  let bin = ""
+  for (let i = 0; i < utf8Bytes.length; i++) bin += String.fromCharCode(utf8Bytes[i])
+  const content_b64 = btoa(bin)
+
   const body: Record<string, unknown> = {
     message,
-    content: btoa(unescape(encodeURIComponent(content))),
+    content: content_b64,
     branch,
     committer: { name: "Meridian Studio", email: "studio@ask-meridian.uk" },
     author:    { name: "Meridian Studio", email: "studio@ask-meridian.uk" },
