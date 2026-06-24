@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>The Quantum Split-Step Fourier Algorithm for Nonlinear Optical Waveguides &mdash; Meridian Blog</title>
+<meta name="description" content="A technical briefing on arXiv:2606.24643: Biancalana's Quantum Split-Step Fourier algorithm propagates classical mean field + Bogoliubov matrices U, V of quantum fluctuations through the same split-step integrator used in nonlinear Schrodinger simulations, then reconstructs symplectic eigenvalues, Williamson modes, and von Neumann entropy for any spectral window. Lossless Gaussian regime, exact diagnostics, low effective dimension even for radiation spanning many Fourier bins.">
+<meta property="og:title" content="The Quantum Split-Step Fourier Algorithm for Nonlinear Optical Waveguides">
+<meta property="og:description" content="A technical briefing on arXiv:2606.24643: Biancalana's Quantum Split-Step Fourier algorithm propagates classical mean field + Bogoliubov matrices U, V of quantum fluctuations through the same split-step integrator used in nonlinear Schrodinger simulations, then reconstructs symplectic eigenvalues, Williamson modes, and von Neumann entropy for any spectral window. Lossless Gaussian regime, exact diagnostics, low effective dimension even for radiation spanning many Fourier bins.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ask-meridian.uk/blog/quantum-split-step-fourier-nonlinear-optical-waveguides/">
+<meta property="og:image" content="https://ask-meridian.uk/img/blog/quantum-split-step-fourier-nonlinear-optical-waveguides-banner.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask-meridian.uk/img/blog/quantum-split-step-fourier-nonlinear-optical-waveguides-banner.svg">
+<link rel="canonical" href="https://ask-meridian.uk/blog/quantum-split-step-fourier-nonlinear-optical-waveguides/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/style.css?v=20260527a">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], throwOnError: false});"></script>
+<style>
+  .article-body { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; line-height: 1.7; }
+  .article-body h2 { font-size: 24px; margin: 36px 0 12px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .article-body h3 { font-size: 18px; margin: 28px 0 8px; }
+  .article-body p { margin: 14px 0; color: var(--text); }
+  .article-body code { background: rgba(167,139,250,0.12); color: #ddd6fe; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+  .article-body pre { background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px; padding: 18px; overflow-x: auto; font-size: 13px; }
+  .article-body pre code { background: none; color: #a5b4fc; padding: 0; }
+  .article-body ul, .article-body ol { margin: 14px 0; padding-left: 24px; }
+  .article-body li { margin: 6px 0; }
+  .article-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .math-block {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(251,191,36,0.07));
+    border: 1px solid rgba(56,189,248,0.32);
+    border-radius: 12px;
+    padding: 30px 24px 22px;
+    margin: 26px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+  .math-block::before {
+    content: attr(data-label);
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    opacity: 0.85;
+  }
+  .article-body .katex { font-size: 1.05em; color: #e9e6ff; }
+  .article-body .katex-display > .katex { font-size: 1.18em; }
+</style>
+<link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
+</head>
+<body>
+<nav class="nav" aria-label="Primary">
+  <a href="https://ask-meridian.uk/" class="brand" style="view-transition-name: brand">◎ Meridian</a>
+
+  <ul class="nav-inline" role="menubar">
+    <li class="nav-inline-item nav-apps" data-dropdown>
+      <button type="button" class="nav-inline-link nav-apps-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="appsMenu">
+        Apps <span class="caret" aria-hidden="true">▾</span>
+      </button>
+      <div id="appsMenu" class="nav-apps-menu" role="menu">
+        <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛ï¸</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+      </div>
+    </li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/docs/" class="nav-inline-link">Docs</a></li>
+    <li class="nav-inline-item"><a href="https://ask-meridian.uk/blog/" class="nav-inline-link">Blog</a></li>
+  </ul>
+
+  <button type="button" id="cmdkBtn" class="cmdk-trigger" aria-label="Open search palette">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="cmdk-label">Search</span>
+    <kbd class="cmdk-kbd">⌘K</kbd>
+  </button>
+
+  <a href="https://github.com/LuuOW/meridian-mcp" class="nav-gh-link" aria-label="View on GitHub" target="_blank" rel="noopener">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.55v-1.94c-3.2.69-3.87-1.55-3.87-1.55-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11.06 11.06 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.66.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+  </a>
+
+  <button id="burgerBtn" class="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+    <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+  </button>
+
+  <div id="navMenu" class="nav-menu" role="menu">
+    <a href="https://ask-meridian.uk/">Home</a>
+
+    <details class="nav-group" open>
+      <summary class="nav-section">Apps</summary>
+      <a href="https://meridian.ask-meridian.uk/helix/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🧬</span>helix · proteins</span>
+        <span class="nav-app-tag">Injury → top therapeutic protein candidates, each rendered as its own star system</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🛰️</span>Try it · Task orbit</span>
+        <span class="nav-app-tag">Browser miniapp · routes any task to candidates</span>
+      </a>
+      <a href="https://ask-meridian.uk/miniapp/vision-lab/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">🔭</span>Vision Lab</span>
+        <span class="nav-app-tag">SmolVLM / Moondream in browser via WebGPU</span>
+      </a>
+      <a href="https://photon.ask-meridian.uk" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">⚛ï¸</span>Photon Router</span>
+        <span class="nav-app-tag">CV photonic retrieval · trained on HF Space</span>
+      </a>
+      <a href="https://meridian.ask-meridian.uk/lens/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">◎</span>Lens · WebXR</span>
+        <span class="nav-app-tag">Vision Lab in VR · controllers, raycaster, orbit</span>
+      </a>
+      <a href="https://ask-meridian.uk/helio/" class="nav-app" data-status="live">
+        <span class="nav-app-name"><span class="nav-app-emoji">☀</span>HelioCast</span>
+        <span class="nav-app-tag">Solar irradiance forecasting dashboard & per-body triangulator</span>
+      </a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Resources</summary>
+      <a href="https://ask-meridian.uk/blog/">Blog</a>
+      <a href="https://ask-meridian.uk/docs/">Docs</a>
+      <a href="https://ask-meridian.uk/#pricing">Pricing</a>
+    </details>
+
+    <details class="nav-group">
+      <summary class="nav-section">Source</summary>
+      <a href="https://github.com/LuuOW/meridian-mcp">GitHub · meridian-mcp</a>
+      <a href="https://github.com/LuuOW/photon-route">GitHub · photon-route</a>
+    </details>
+  </div>
+
+  <!-- Cmd-K palette: opens on ⌘K / Ctrl-K or clicking the trigger.
+       Searches the inlined __CMDK_INDEX__ (apps + docs sections + blog posts).
+       Sits at the end of <nav> so sync-nav.py treats it as part of the
+       single synced block. -->
+  <div id="cmdk" class="cmdk" hidden aria-modal="true" role="dialog" aria-label="Search">
+    <div class="cmdk-backdrop" data-cmdk-close></div>
+    <div class="cmdk-panel">
+      <div class="cmdk-input-row">
+        <svg aria-hidden="true" class="cmdk-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="cmdkInput" class="cmdk-input" type="search" placeholder="Search apps, docs, blog…" autocomplete="off" spellcheck="false" aria-label="Search">
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <ul id="cmdkList" class="cmdk-list" role="listbox"></ul>
+      <div class="cmdk-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
+    </div>
+  </div>
+
+  <script>window.__CMDK_INDEX__ = [{"label": "helix · proteins", "tag": "Injury → top therapeutic protein candidates, each rendered as its own star system", "href": "https://meridian.ask-meridian.uk/helix/", "category": "App", "emoji": "🧬"}, {"label": "Try it · Task orbit", "tag": "Browser miniapp · routes any task to candidates", "href": "https://ask-meridian.uk/miniapp/", "category": "App", "emoji": "🛰️"}, {"label": "Vision Lab", "tag": "SmolVLM / Moondream in browser via WebGPU", "href": "https://ask-meridian.uk/miniapp/vision-lab/", "category": "App", "emoji": "🔭"}, {"label": "Photon Router", "tag": "CV photonic retrieval · trained on HF Space", "href": "https://photon.ask-meridian.uk", "category": "App", "emoji": "⚛ï¸"}, {"label": "Lens · WebXR", "tag": "Vision Lab in VR · controllers, raycaster, orbit", "href": "https://meridian.ask-meridian.uk/lens/", "category": "App", "emoji": "◎"}, {"label": "HelioCast", "tag": "Solar irradiance forecasting dashboard & per-body triangulator", "href": "https://ask-meridian.uk/helio/", "category": "App", "emoji": "☀"}, {"label": "Home", "href": "https://ask-meridian.uk/", "category": "Page", "emoji": "◎"}, {"label": "Blog", "href": "https://ask-meridian.uk/blog/", "category": "Page", "emoji": "·"}, {"label": "Docs", "href": "https://ask-meridian.uk/docs/", "category": "Page", "emoji": "·"}, {"label": "Pricing", "href": "https://ask-meridian.uk/#pricing", "category": "Page", "emoji": "·"}, {"label": "GitHub · meridian-mcp", "href": "https://github.com/LuuOW/meridian-mcp", "category": "Source", "emoji": "⌥"}, {"label": "GitHub · photon-route", "href": "https://github.com/LuuOW/photon-route", "category": "Source", "emoji": "⌥"}, {"label": "100% on the Apple Neural Engine — eligibility is not placement", "href": "https://ask-meridian.uk/blog/apple-neural-engine-eligibility-vs-placement/", "category": "Blog", "emoji": "✎"}, {"label": "Benchmark of quantum algorithms for ground state preparation in the presence of noise", "href": "https://ask-meridian.uk/blog/benchmark-ground-state-quantum-algorithms-noise/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/chiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Real RAG with Cloudflare Vectorize + AI Gateway in 80 lines", "href": "https://ask-meridian.uk/blog/cloudflare-ai-gateway-vectorize-rag/", "category": "Blog", "emoji": "✎"}, {"label": "Coexistence of dipolar and quadrupolar higher-order topology", "href": "https://ask-meridian.uk/blog/dipolar-quadrupolar-topology-coexistence/", "category": "Blog", "emoji": "✎"}, {"label": "Edge-Enhanced Diffractive Neural Networks: Spin-Multiplexed Nonlocal Metasurfaces", "href": "https://ask-meridian.uk/blog/edge-enhanced-diffractive-neural-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Equivariant Graph Neural Networks for Optical Spectra Prediction", "href": "https://ask-meridian.uk/blog/equivariant-gnn-optical-spectra-materials/", "category": "Blog", "emoji": "✎"}, {"label": "AI for personal finance — Grok ↔ Binance through Fly + Bright Data, locked behind a passkey", "href": "https://ask-meridian.uk/blog/finance-mcp-binance-fly-bright-data/", "category": "Blog", "emoji": "✎"}, {"label": "Generalized two-qubit Hamiltonian for Projective Quantum Feature Maps", "href": "https://ask-meridian.uk/blog/generalized-two-qubit-hamiltonian-pqfm/", "category": "Blog", "emoji": "✎"}, {"label": "GitHub Packages vs npm — should you publish to both?", "href": "https://ask-meridian.uk/blog/github-packages-vs-npm/", "category": "Blog", "emoji": "✎"}, {"label": "Meridian as a Grok connector — orbital skill routing inside Grok", "href": "https://ask-meridian.uk/blog/grok-meridian-orbital-connector/", "category": "Blog", "emoji": "✎"}, {"label": "HelioCast — predicting how much sunlight a planet will receive in the next 24 h", "href": "https://ask-meridian.uk/blog/helio-mirror/", "category": "Blog", "emoji": "✎"}, {"label": "Hexagonal Boron Nitride Spin Defects for Quantum Photonics: Annealing-Free Generation by Krypton Ion Implantation", "href": "https://ask-meridian.uk/blog/hexagonal-boron-nitride-spin-defects-for-quantum-photonics-annealing-free-genera/", "category": "Blog", "emoji": "✎"}, {"label": "Metagenomics at Home: Orchestrating an eDNA Pipeline with Oxford Nanopore and NVIDIA DGX Spark", "href": "https://ask-meridian.uk/blog/home-edna-sequencing-dgx-spark/", "category": "Blog", "emoji": "✎"}, {"label": "One-photon communication in atomic media: Yale's first-principles fidelity bounds", "href": "https://ask-meridian.uk/blog/hong-schotland-one-photon-communication/", "category": "Blog", "emoji": "✎"}, {"label": "Large-Language-Model Discovery of Quantum LDPC Codes through Structured Concept Evolution", "href": "https://ask-meridian.uk/blog/large-language-model-discovery-of-quantum-ldpc-codes-through-structured-concept/", "category": "Blog", "emoji": "✎"}, {"label": "LLM-authored skills + a classical orbital classifier — why we route this way", "href": "https://ask-meridian.uk/blog/llm-skill-routing-orbital-classifier/", "category": "Blog", "emoji": "✎"}, {"label": "Log-concavity and tunneling: adiabatic quantum optimization for convex functions (with a spike)", "href": "https://ask-meridian.uk/blog/log-concavity-tunneling-aqo-convex-functions-spike/", "category": "Blog", "emoji": "✎"}, {"label": "Reading Loudon to improve a router: nine experiments, one ship", "href": "https://ask-meridian.uk/blog/loudon-photon-route-coherence-time/", "category": "Blog", "emoji": "✎"}, {"label": "Single-Shot Multi-Channel Convolutions in Free Space — Overcoming the SISO Optical Bottleneck", "href": "https://ask-meridian.uk/blog/multi-channel-free-space-optical-convolutions/", "category": "Blog", "emoji": "✎"}, {"label": "Multi-channel Optical Vision Model: Spatial Multiplexing as a Trainable Coordinate", "href": "https://ask-meridian.uk/blog/multi-channel-optical-vision-model/", "category": "Blog", "emoji": "✎"}, {"label": "Optimal Probe State for Phase Estimation Under Covariant Measurement", "href": "https://ask-meridian.uk/blog/optimal-probe-state-phase-estimation/", "category": "Blog", "emoji": "✎"}, {"label": "Orbital altermagnetic photonic crystals: Momentum-dependent pseudospin splitting", "href": "https://ask-meridian.uk/blog/orbital-altermagnetic-photonic-crystal/", "category": "Blog", "emoji": "✎"}, {"label": "From 17% to 81%: calibrating an orbital skill classifier with simulations and online SGD", "href": "https://ask-meridian.uk/blog/orbital-classifier-online-learning/", "category": "Blog", "emoji": "✎"}, {"label": "Perturbative photonic matrix multiplication: Slashing phase-shift range by 10x", "href": "https://ask-meridian.uk/blog/perturbative-photonic-matrix-multiplication/", "category": "Blog", "emoji": "✎"}, {"label": "AI agents vs. reCAPTCHA Enterprise — building a pharmacy MCP that ships", "href": "https://ask-meridian.uk/blog/pharmacy-mcp-recaptcha-origin-pivot/", "category": "Blog", "emoji": "✎"}, {"label": "Physical Bounds on Optical Micromanipulation: Maximal Stiffness in the Dipole Regime", "href": "https://ask-meridian.uk/blog/physical-bounds-optical-micromanipulation-maximal-stiffness/", "category": "Blog", "emoji": "✎"}, {"label": "Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Evaluation using Colorimetry", "href": "https://ask-meridian.uk/blog/plasma-etch-diamond-on-insulator-colorimetry/", "category": "Blog", "emoji": "✎"}, {"label": "Building a production MCP server on Cloudflare Workers (with auth + Stripe)", "href": "https://ask-meridian.uk/blog/production-mcp-server-cloudflare-workers/", "category": "Blog", "emoji": "✎"}, {"label": "Scaling-optimal purification of noisy qubit unitary channels", "href": "https://ask-meridian.uk/blog/purification-noisy-qubit-unitary-channels/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum Kernels are Spectral Tensor Networks", "href": "https://ask-meridian.uk/blog/quantum-kernels-spectral-tensor-networks/", "category": "Blog", "emoji": "✎"}, {"label": "Quantum optics of chiral and antichiral waveguide arrays", "href": "https://ask-meridian.uk/blog/quantum-optics-chiral-antichiral-waveguide-arrays/", "category": "Blog", "emoji": "✎"}, {"label": "Resolving the Edge of a Quantum Pyramid", "href": "https://ask-meridian.uk/blog/resolving-edge-quantum-pyramid/", "category": "Blog", "emoji": "✎"}, {"label": "Browser AI on a RAM diet — what we shipped in WebGPU, what we sent back to the server", "href": "https://ask-meridian.uk/blog/webgpu-vlm-molstar-ram-pivot/", "category": "Blog", "emoji": "✎"}];</script>
+  <script>
+  /* Self-contained wiring for every nav-bearing surface.
+     - desktop Apps dropdown (hover + click)
+     - mobile burger / nav-menu
+     - cross-host current-link highlight
+     - ⌘K palette (search + keyboard nav)
+     Single dataset.wired guard so duplicate registrations are a no-op.
+     Lives inside <nav> so sync-nav.py captures and propagates it. */
+  (function () {
+    function setup() {
+      var btn  = document.getElementById('burgerBtn')
+      var menu = document.getElementById('navMenu')
+      if (!btn || !menu) return
+      if (btn.dataset.wired) return
+      btn.dataset.wired = '1'
+
+      /* ───── mobile burger ───── */
+      function toggleMobile(open) {
+        var isOpen = open === undefined ? !menu.classList.contains('open') : open
+        menu.classList.toggle('open', isOpen)
+        btn.classList.toggle('open', isOpen)
+        btn.setAttribute('aria-expanded', String(isOpen))
+      }
+      btn.addEventListener('click', function (e) { e.stopPropagation(); toggleMobile() })
+      menu.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () { toggleMobile(false) })
+      })
+
+      /* ───── desktop Apps dropdown ─────
+         Click toggles. Hover-to-open is CSS-only (`.nav-apps:hover .nav-apps-menu`)
+         so a mouse-enter doesn't fight a same-tick click — we hit that
+         race when Playwright's click runs hover-then-click and the
+         mouseenter handler flipped state before the click did. */
+      var appsTrigger = document.querySelector('.nav-apps-trigger')
+      var appsMenu    = document.getElementById('appsMenu')
+      var appsItem    = document.querySelector('.nav-apps')
+      function toggleApps(open) {
+        if (!appsItem) return
+        var isOpen = open === undefined ? !appsItem.classList.contains('open') : open
+        appsItem.classList.toggle('open', isOpen)
+        if (appsTrigger) appsTrigger.setAttribute('aria-expanded', String(isOpen))
+      }
+      if (appsTrigger) {
+        appsTrigger.addEventListener('click', function (e) { e.stopPropagation(); toggleApps() })
+      }
+
+      /* ───── close menus on outside click / Escape ───── */
+      document.addEventListener('click', function (e) {
+        if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) toggleMobile(false)
+        if (appsItem && appsItem.classList.contains('open') && !appsItem.contains(e.target)) toggleApps(false)
+      })
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { toggleMobile(false); toggleApps(false); closeCmdk() }
+      })
+
+      /* ───── cross-host current-link highlight ───── */
+      var here = location.host + location.pathname.replace(/\/index\.html$/, '/')
+      document.querySelectorAll('.nav a, #appsMenu a, #navMenu a').forEach(function (a) {
+        var href = a.getAttribute('href')
+        if (!href) return
+        try {
+          var u = new URL(href, location.href)
+          var target = u.host + u.pathname.replace(/\/index\.html$/, '/')
+          if (target === here) a.classList.add('current')
+        } catch (_) {}
+      })
+
+      /* ───── ⌘K palette ───── */
+      var cmdkBtn   = document.getElementById('cmdkBtn')
+      var cmdk      = document.getElementById('cmdk')
+      var cmdkInput = document.getElementById('cmdkInput')
+      var cmdkList  = document.getElementById('cmdkList')
+      var idx       = Array.isArray(window.__CMDK_INDEX__) ? window.__CMDK_INDEX__ : []
+      var active    = 0
+
+      function openCmdk() {
+        if (!cmdk) return
+        cmdk.hidden = false
+        cmdkInput.value = ''
+        active = 0
+        render('')
+        setTimeout(function () { cmdkInput.focus() }, 10)
+      }
+      function closeCmdk() { if (cmdk) cmdk.hidden = true }
+      function score(item, q) {
+        if (!q) return 0
+        var hay = (item.label + ' ' + (item.category || '') + ' ' + (item.tag || '')).toLowerCase()
+        var qLow = q.toLowerCase()
+        if (hay.indexOf(qLow) === -1) return -1
+        var pos = hay.indexOf(qLow)
+        return 1000 - pos - hay.length * 0.01
+      }
+      function render(q) {
+        if (!cmdkList) return
+        var results = idx.map(function (it, i) { return { it: it, s: score(it, q), i: i } })
+          .filter(function (r) { return !q || r.s >= 0 })
+          .sort(function (a, b) { return b.s - a.s })
+          .slice(0, 20)
+        cmdkList.innerHTML = results.map(function (r, n) {
+          var it = r.it
+          return '<li role="option" class="cmdk-item' + (n === active ? ' active' : '') + '" data-href="' + it.href + '">' +
+                 '<span class="cmdk-item-emoji">' + (it.emoji || '·') + '</span>' +
+                 '<span class="cmdk-item-label">' + escapeHtml(it.label) + '</span>' +
+                 '<span class="cmdk-item-cat">' + escapeHtml(it.category || '') + '</span>' +
+                 '</li>'
+        }).join('')
+        if (!results.length) {
+          cmdkList.innerHTML = '<li class="cmdk-empty">No matches.</li>'
+        }
+        cmdkList.querySelectorAll('.cmdk-item').forEach(function (li) {
+          li.addEventListener('click', function () { location.href = li.dataset.href })
+          li.addEventListener('mouseenter', function () {
+            cmdkList.querySelectorAll('.cmdk-item').forEach(function (x, k) { x.classList.toggle('active', x === li) })
+            active = Array.from(cmdkList.querySelectorAll('.cmdk-item')).indexOf(li)
+          })
+        })
+      }
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+          return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+        })
+      }
+      if (cmdkBtn) cmdkBtn.addEventListener('click', openCmdk)
+      if (cmdk) {
+        cmdk.querySelectorAll('[data-cmdk-close]').forEach(function (el) {
+          el.addEventListener('click', closeCmdk)
+        })
+        cmdkInput.addEventListener('input', function (e) { active = 0; render(e.target.value) })
+        cmdkInput.addEventListener('keydown', function (e) {
+          var items = cmdkList.querySelectorAll('.cmdk-item')
+          if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, items.length - 1); render(cmdkInput.value) }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); render(cmdkInput.value) }
+          else if (e.key === 'Enter') {
+            e.preventDefault()
+            var sel = items[active]
+            if (sel) location.href = sel.dataset.href
+          }
+        })
+      }
+      document.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault()
+          if (cmdk && cmdk.hidden) openCmdk(); else closeCmdk()
+        }
+      })
+
+      /* Expose closeCmdk so the Escape handler above can reach it.
+         Declared late so it's safe across all return paths. */
+      window.__cmdkClose = closeCmdk
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', setup, { once: true })
+    } else {
+      setup()
+    }
+  })()
+  </script>
+</nav>  <main id="main" style="padding-top: 48px;">
+<article class="article-body">
+      <header style="margin-top: 64px; margin-bottom: 32px;">
+        <div class="article-meta">2026-06-24 · 9 min read · quantum optics</div>
+        <h1 style="font-size: 36px; line-height: 1.15; margin: 8px 0 16px;">The Quantum Split-Step Fourier Algorithm for Nonlinear Optical Waveguides</h1>
+        <p class="lead" style="font-size: 18px; color: var(--text-muted); line-height: 1.5; margin: 0 0 16px;">
+          A new numerical framework from Biancalana (arXiv:2606.24643) propagates a classical mean field and the Bogoliubov matrices U, V of its quantum fluctuations through the same split-step operator used in nonlinear Schrödinger simulations, then reconstructs the full reduced Gaussian state of any chosen spectral window — symplectic eigenvalues, Williamson modes, von Neumann entropy, and purity all follow from one Bogoliubov pair. Applied to soliton-driven resonant radiation, QSSF shows the selected band steadily thermalises toward a mixed Gaussian state whose purity is governed by only a handful of dominant Williamson modes.
+        </p>
+        <a href="https://arxiv.org/abs/2606.24643" class="btn-arxiv" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Paper: arXiv:2606.24643
+        </a>
+      </header>
+
+      <img src="/img/blog/quantum-split-step-fourier-nonlinear-optical-waveguides-banner.svg" alt="The Quantum Split-Step Fourier Algorithm for Nonlinear Optical Waveguides — banner" style="width: 100%; height: auto; display: block; border-radius: 14px; margin: 32px 0 28px; border: 1px solid var(--border);">
+
+      <p><strong>arXiv:2606.24643</strong> — The Quantum Split-Step Fourier Algorithm for Nonlinear Optical Waveguides. Biancalana, Fabio.</p>
+
+      <h2>Classical and quantum, propagated together</h2>
+      <p>The classical split-step Fourier (SSF) method has been the workhorse of ultrafast optics for three decades: alternate a half-step under the nonlinear operator in real space with a full step under the dispersive operator in Fourier space, and the symmetric Strang splitting makes the integrator second-order accurate at near-machine-precision cost. The QSSF paper keeps that integrator intact but enlarges the state vector. Each frequency bin now carries a Bogoliubov pair of operators $(\delta\hat a_k, \delta\hat a_k^\dagger)$, evolved by a $2\times 2$ block of the matrices $U(z)$, $V(z)$ that commute under the nonlinear Hamiltonian the same way the classical mean field does.</p>
+      <p>What the extra width buys is symplecticity for free. Because the nonlinear step is symmetric under the Bogoliubov transformation (the commutator $[U,V]$ contracts against the sympletic form $\Sigma$ in exactly the way the nonlinear Schrödinger equation is symmetric under particle-number reversal), the discretised evolution preserves the canonical commutation relations to numerical precision — no artificial squeezing, no spurious heating, no drift in the vacuum eigenvalues. That is what allows QSSF to read the second moments of the field as a physical covariance matrix rather than as a numerically corrupted one.</p>
+      <div class="callout"><strong>Note:</strong> A single integrator — already trusted for classical pulse propagation — now propagates the quantum fluctuation field with the same Strang-split error budget. There is no separate Truncated Wigner or $P$-representation solver to keep in step with the classical code.</div>
+      <h2>From $U$, $V$ to a reduced Gaussian state</h2>
+      <p>Once $U(z)$ and $V(z)$ are known for every propagation distance, the second-moment matrix $\sigma$ of any chosen spectral window is reconstructed by tracing the Bogoliubov-evolved operators against the vacuum initial state. The window can be one resonant-radiation sideband, the soliton core, or any linear combination of bins — QSSF evaluates the window matrix on the fly, so the diagnostics do not require a separate simulation pass.</p>
+      <p>Diagonalising the window's $\sigma$ in the basis that symplectic-rotates it to a normal form yields the Williamson modes: the canonical modes whose excitations $\nu_k$ measure, exactly, how far each mode has been driven away from the vacuum. $\nu_k=1$ on every mode is vacuum; $\nu_k>1$ means the mode is squeezed; $\nu_k<1$ is anti-squeezed. The reduced state itself factorises as a tensor product of one thermal-mode state per Williamson mode, so the full Gaussian picture is in hand once the $\nu_k$ spectrum is known.</p>
+
+      <div class="math-block" data-label="BOGOLIUBOV COMMUTATOR-PRESERVING STEP">
+        $$
+\Sigma^{-1}\,H_{\mathrm{QNL}}\,\Sigma\;=\;J\,H_{\mathrm{QNL}}\,J,\qquad \Sigma=\begin{pmatrix}0&I\\ -I&0\end{pmatrix},\quad J=\begin{pmatrix}I&0\\ 0&-I\end{pmatrix}
+$$
+      </div>
+
+      <h2>Entropy and purity as propagation diagnostics</h2>
+      <p>Both the von Neumann entropy of the reduced state and its purity $\mathrm{Tr}(\rho^2)$ are explicit functionals of the symplectic eigenvalues. So once QSSF has run, the entropy-versus-distance curve, the purity floor of a chosen band, and the rate at which a sideband thermalises all come out without an extra post-processing step. For soliton-driven resonant radiation, the diagnostic is sharp: the selected band acquires a steadily increasing $S_{\mathrm{vN}}$ with propagation distance, while the rest of the spectrum stays close to vacuum. The loss of purity of the band is direct, quantitative evidence of entanglement with the modes it scattered into.</p>
+      <p>Because QSSF is lossless by construction, the entropy growth is not numerical heating — it is the physical entanglement entropy between the selected window and its complement. That is the diagnostic the abstract leans on: a Gaussian window is mixed because the photons it counts are quantum-correlated with photons it does not count, and QSSF makes that accounting exact.</p>
+
+      <div class="math-block" data-label="SYMPLECTIC EIGENVALUES + VON NEUMANN ENTROPY">
+        $$
+\nu_k=\sqrt{\lambda_k+\tfrac12},\qquad S_{\mathrm{vN}}(\rho_{\text{red}})=-\sum_k\!\Big[\big(\nu_k+\tfrac12\big)\ln\!\big(\nu_k+\tfrac12\big)-\big(\nu_k-\tfrac12\big)\ln\!\big(\nu_k-\tfrac12\big)\Big]
+$$
+      </div>
+
+      <h2>Why a few Williamson modes carry the radiation</h2>
+      <p>The most surprising numerical finding of the paper is structural. The resonant-radiation band occupies many tens — sometimes hundreds — of Fourier bins, and one might expect a comparable number of squeezed Williamson modes. The opposite is true. Across the parameter sweep, the bulk of the entropy and the bulk of the impurity are concentrated in just a handful of Williamson modes; the rest of the $\nu_k$ spectrum sits at the vacuum floor within numerical precision.</p>
+      <p>QSSF therefore turns what is normally a high-dimensional correlation problem into a low-dimensional one. Engineers modelling quantum correlations in nonlinear frequency conversion, supercontinuum generation, or multimode squeezed-light formation in chip-scale waveguide platforms can read off the effective number of dominant modes from a single spectrum plot and treat the rest as vacuum. That is what the paper means by an "information-theoretic diagnostic": not just measuring entropy, but locating where it lives.</p>
+
+      <div class="math-block" data-label="WILLIAMSON EIGENMODES (LOW-DIM STRUCTURE)">
+        $$
+\rho_{\text{red}}=\bigotimes_k\,S_k\,\nu_k\,S_k^\dagger\,\big|\,0_k\big\rangle\!\big\langle 0_k\big|,\qquad \dim_{\mathrm{eff}}=\#\{k:\nu_k>1+\varepsilon\}\ll N_{\text{bins}}
+$$
+      </div>
+
+      <div class="rule">Many bins, but only a handful of Williamson modes dominate. The effective dimension of the radiation Gaussian state is small even when the spectral support is large.</div>
+      <h2>Where QSSF slots in next to existing methods</h2>
+      <p>Truncated Wigner and the positive-$P$ representation are the standard tools for quantum propagation in nonlinear optics, and QSSF is not a replacement for either — it is a different observable. Wigner and $P$ give you trajectory-level observables (single-shot homodyne traces, g2 functions), at the cost of stochastic sampling. QSSF gives you the exact Gaussian observables — symplectic eigenvalues, Williamson modes, entropy, purity — at the cost of staying in the Gaussian sector. For diagnostics that are linear or quadratic in the second moments, which is most of the information-theoretic vocabulary of modern quantum optics, QSSF is the cheaper, more transparent tool.</p>
+      <p>The integration with the existing classical split-step Fourier code is the practical hook. Anyone already running SSF on a soliton or supercontinuum simulation can graft QSSF on as a post-processing layer: re-run the saved $U$, $V$ matrices through QSSF and ask how entangled the output is with the modes you did not measure. The classical infrastructure — split-step propagators, absorbing boundaries, adaptive step sizing — carries over unchanged.</p>
+      <div class="callout"><strong>Note:</strong> QSSF is a post-processing layer over existing SSF code, not a replacement for Wigner or $P$-rep. It answers Gaussian questions exactly; Wigner/$P$ answer trajectory questions stochastically. They are complementary, not competing.</div>
+      <h2>Takeaway</h2>
+      <p>QSSF is the right tool when the question is Gaussian — symplectic eigenvalues, Williamson modes, von Neumann entropy, purity of a spectral window — and the system is lossless. It propagates the Bogoliubov matrices $U$, $V$ alongside the classical mean field inside the same split-step Fourier loop, so the cost over a classical SSF run is one extra $2\times 2$ block per bin per step. It is exact within the Gaussian sector, preserves the canonical commutation relations by construction, and exposes a low-dimensional structure in resonant-radiation entanglement that was hidden inside high-dimensional covariance matrices. For ultrafast waveguide platforms — where the classical SSF integrator is already the production tool — QSSF is the cheapest way to turn pulse propagation into a quantum-information diagnostic.</p>
+      <ul>
+        <li>**Bogoliubov-preserving integrator.** The same Strang splitting that integrates the nonlinear Schrödinger equation also evolves $U$, $V$ with the same order and the same symplectic invariant.</li>
+        <li>**Exact Gaussian diagnostics.** Symplectic eigenvalues, Williamson modes, entropy, and purity are direct functionals of the propagated covariance matrix; no sampling, no truncation.</li>
+        <li>**Low effective dimension.** Resonant-radiation bands with many Fourier bins are dominated by a handful of Williamson modes — QSSF quantifies exactly how many.</li>
+        <li>**Lossless Gaussian regime.** Where Wigner and $P$-rep would introduce sampling noise or non-Gaussian truncation, QSSF stays exact as long as the Gaussian-sector approximation holds.</li>
+      </ul>
+      <p class="article-meta">Reference: arXiv:2606.24643 &middot; The Quantum Split-Step Fourier Algorithm for Nonlinear Optical Waveguides</p>
+    </article>  </main>
+<script type="module" src="/blog/listen.js"></script>
+</body>
+</html>
