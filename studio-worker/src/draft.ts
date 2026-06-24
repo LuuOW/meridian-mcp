@@ -13,6 +13,44 @@ import { slugifyTitle } from "./arxiv"
 import { callLLM, type LLMConfig, LLMSchemaError } from "./llm"
 import { SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, type BriefingJSON } from "./prompts"
 
+
+
+// ─── Inlined nav block ─────────────────────────────────────────────
+// Every published post needs the same nav as /blog/, the docs index, etc.
+// Instead of relying on a post-publish sync-nav.py step (fragile), we read
+// landing/blog/index.html once per Worker lifetime, extract the <nav>...</nav>
+// block, and inject it into wrapPageHtml() output. If the read fails, we
+// fall back to no nav and log — sync-nav.py will fill it in on next push.
+let _navCache: { html: string; at: number } | null = null
+const NAV_TTL_MS = 5 * 60 * 1000   // 5 minutes
+
+async function loadNavBlock(env: { GITHUB_TOKEN?: string; GITHUB_REPO?: string }): Promise<string | null> {
+  const now = Date.now()
+  if (_navCache && (now - _navCache.at) < NAV_TTL_MS) return _navCache.html
+  if (!env.GITHUB_TOKEN || env.GITHUB_TOKEN === "DRY-RUN") return null
+  const repo = env.GITHUB_REPO ?? "LuuOW/meridian-mcp"
+  const url = `https://api.github.com/repos/${repo}/contents/landing/blog/index.html?ref=main`
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "authorization": `Bearer ${env.GITHUB_TOKEN}`,
+        "accept": "application/vnd.github+json",
+        "x-github-api-version": "2022-11-28",
+      },
+    })
+    if (!res.ok) return null
+    const j = await res.json() as { content?: string }
+    if (!j.content) return null
+    const html = atob(j.content.replace(/\s+/g, ""))
+    const m = html.match(/<nav class="nav" aria-label="Primary">[\s\S]*?<\/nav>/)
+    if (!m) return null
+    _navCache = { html: m[0], at: now }
+    return m[0]
+  } catch {
+    return null
+  }
+}
+
 export interface DraftArtifacts {
   slug: string
   meta_line: string
@@ -65,12 +103,14 @@ export async function composeDraft(meta: ArxivMeta, env?: LLMEnv): Promise<Draft
       // Trust the schema we asked for; if sections is missing or empty, fall through.
       if (Array.isArray(brief.sections) && brief.sections.length > 0 && brief.takeaway && Array.isArray(brief.takeaway.paragraphs)) {
         const article_body = renderBriefingHtml(slug, meta, brief)
+        const nav_html = await loadNavBlock(env as any)
         const page_html = wrapPageHtml({
           slug, title: meta.title,
           description: `A technical briefing on arXiv:${meta.arxiv_id}: ${(brief.lead || "").slice(0, 200)}${(brief.lead || "").length > 200 ? "…" : ""}`,
           banner_filename: `${slug}-banner.svg`,
           arxiv_id: meta.arxiv_id,
           article_body,
+          nav_html,
         })
         const banner_svg = renderBannerSvg(slug, meta.title, brief)
         return {
@@ -99,19 +139,21 @@ export async function composeDraft(meta: ArxivMeta, env?: LLMEnv): Promise<Draft
 }
 
 // ─── Fallback composer (rule-based) ─────────────────────────────────
-function composeRuleBased(meta: ArxivMeta, slug: string, today: string): DraftArtifacts {
+async function composeRuleBased(meta: ArxivMeta, slug: string, today: string): Promise<DraftArtifacts> {
   const minutes = estimateReadTime(meta.abstract)
   const subject = inferTopic(meta.primary_subject)
   const meta_line = `${today} · ${minutes} min read · ${subject}`
   const { lead, body } = ruleLeadAndBody(meta.abstract)
   const banner_svg = ruleBanner(slug, meta.title)
   const article_body = renderRuleHtml({ meta_line, h1: meta.title, lead, body, slug, arxiv_id: meta.arxiv_id, abs_url: meta.abs_url })
+  const nav_html = await loadNavBlock({} as any)
   const page_html = wrapPageHtml({
     slug, title: meta.title,
     description: `A technical briefing on arXiv:${meta.arxiv_id}: ${lead.slice(0, 200)}${lead.length > 200 ? "…" : ""}`,
     banner_filename: `${slug}-banner.svg`,
     arxiv_id: meta.arxiv_id,
     article_body,
+    nav_html,
   })
   return {
     slug,
@@ -240,16 +282,22 @@ const ARTICLE_BODY_STYLE = `<style>
   .article-body .katex-display > .katex { font-size: 1.18em; }
 </style>`
 
-export function wrapPageHtml(opts: {
+export interface WrapPageOptions {
   slug: string
   title: string
   description: string
   banner_filename: string
   arxiv_id: string
   article_body: string
-}): string {
+  nav_html?: string | null   // optional pre-rendered <nav>...</nav> block
+}
+
+export function wrapPageHtml(opts: WrapPageOptions): string {
   const url = `https://ask-meridian.uk/blog/${opts.slug}/`
   const banner_url = `https://ask-meridian.uk/img/blog/${opts.banner_filename}`
+  const navBlock = opts.nav_html
+    ? `\n${opts.nav_html}\n`
+    : ""
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -272,8 +320,7 @@ export function wrapPageHtml(opts: {
 ${ARTICLE_BODY_STYLE}
 <link rel="stylesheet" href="/nav.css?v=2026-05-14" data-nav-css>
 </head>
-<body>
-  <main id="main" style="padding-top: 48px;">
+<body>${navBlock}  <main id="main" style="padding-top: 48px;">
     ${opts.article_body}
   </main>
 <script type="module" src="/blog/listen.js"></script>
