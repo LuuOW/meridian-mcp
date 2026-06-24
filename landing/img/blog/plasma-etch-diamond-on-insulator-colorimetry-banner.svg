@@ -6,99 +6,93 @@
       <stop offset="60%" stop-color="#050c16" />
       <stop offset="100%" stop-color="#02050a" />
     </radialGradient>
+
     <linearGradient id="goldText" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#f3e9dc" />
       <stop offset="60%" stop-color="#dfc29e" />
       <stop offset="100%" stop-color="#b89773" />
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%"   stop-color="#38bdf8" stop-opacity="0" />
-      <stop offset="50%"  stop-color="#38bdf8" stop-opacity="0.95" />
-      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+
+    <linearGradient id="spectrumGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="20%" stop-color="#f59e0b" />
+      <stop offset="40%" stop-color="#10b981" />
+      <stop offset="60%" stop-color="#3b82f6" />
+      <stop offset="80%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#ec4899" />
     </linearGradient>
-    <linearGradient id="spectrumGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ef4444"/>
-      <stop offset="20%" stop-color="#f59e0b"/>
-      <stop offset="40%" stop-color="#10b981"/>
-      <stop offset="60%" stop-color="#3b82f6"/>
-      <stop offset="80%" stop-color="#8b5cf6"/>
-      <stop offset="100%" stop-color="#ec4899"/>
-    </linearGradient>
+
     <pattern id="dotPattern" width="40" height="40" patternUnits="userSpaceOnUse">
       <circle cx="2" cy="2" r="1" fill="#58a6ff" fill-opacity="0.15"/>
     </pattern>
-    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
 
   <rect width="1920" height="1080" fill="url(#spaceGradient)"/>
   <rect width="1920" height="1080" fill="url(#dotPattern)"/>
+
   <rect x="30" y="30" width="1860" height="1020" rx="10" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.08"/>
 
   <g transform="translate(960, 220)" text-anchor="middle" font-family="Arial, sans-serif">
     <g transform="translate(0, -90)">
       <rect x="-140" y="-18" width="280" height="32" rx="16" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1"/>
       <circle cx="-110" cy="-2" r="3" fill="#38bdf8"/>
-      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">ARXIV BRIEFING</text>
+      <text y="4" font-size="13" font-weight="bold" fill="#a0afb7" letter-spacing="4">DIAMOND PHOTONICS</text>
     </g>
-    <text font-size="56" font-weight="800" fill="#ffffff" letter-spacing="5">METROLOGY</text>
-    <text y="85" font-size="56" font-weight="800" fill="url(#goldText)" letter-spacing="5">PLASMA ETCH PROCESS OPTIMIZATION</text>
-    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">Plasma Etch Process Optimization for Photonic-Grade Diamond-on-Insulator Substrates and Thickness Ev</text>
+
+    <text font-size="54" font-weight="800" fill="#ffffff" letter-spacing="5">PLASMA ETCH PROCESS OPTIMIZATION</text>
+    <text y="85" font-size="54" font-weight="800" fill="url(#goldText)" letter-spacing="5">DIAMOND-ON-INSULATOR SUBSTRATES</text>
+    <text y="170" font-size="20" font-weight="500" fill="#a0afb7" letter-spacing="3" opacity="0.8">COLORIMETRY, SURFACE QUALITY &amp; THIN-FILM UNIFORMITY (arXiv:2606.20412)</text>
   </g>
 
-  
-  <g transform="translate(960, 720)">
-    <text x="-540" y="-220" font-family="monospace" font-size="14" fill="#38bdf8" letter-spacing="2">SPECTRUM</text>
+  <g transform="translate(960, 680)">
+    <path d="M 0,-300 L -300,100 L 300,100 Z" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.28"/>
+    <path d="M 0,-300 L 0,150 L -300,100" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.4"/>
+    <path d="M 0,-300 L 0,150 L 300,100" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0.4"/>
 
-    <!-- spectrum bar with rainbow gradient -->
-    <rect x="-460" y="-30" width="920" height="60" rx="8" fill="url(#spectrumGrad)" opacity="0.9"/>
-    <rect x="-460" y="-30" width="920" height="60" rx="8" fill="none" stroke="#38bdf8" stroke-opacity="0.4"/>
-
-    <!-- wavelength axis with tick marks -->
-    <line x1="-460" y1="50" x2="460" y2="50" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.5"/>
-    
-      <line x1="-400" y1="50" x2="-400" y2="58" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.2"/>
-      <text x="-400" y="74" font-family="monospace" font-size="11" fill="#a0afb7" text-anchor="middle">-2Δ</text>
-    
-      <line x1="-200" y1="50" x2="-200" y2="58" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.2"/>
-      <text x="-200" y="74" font-family="monospace" font-size="11" fill="#a0afb7" text-anchor="middle">-1Δ</text>
-    
-      <line x1="0" y1="50" x2="0" y2="58" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.2"/>
-      <text x="0" y="74" font-family="monospace" font-size="11" fill="#a0afb7" text-anchor="middle">λ₀</text>
-    
-      <line x1="200" y1="50" x2="200" y2="58" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.2"/>
-      <text x="200" y="74" font-family="monospace" font-size="11" fill="#a0afb7" text-anchor="middle">+1Δ</text>
-    
-      <line x1="400" y1="50" x2="400" y2="58" stroke="#ffffff" stroke-opacity="0.6" stroke-width="1.2"/>
-      <text x="400" y="74" font-family="monospace" font-size="11" fill="#a0afb7" text-anchor="middle">+2Δ</text>
-    
-
-    <!-- central peak (the emission line) -->
-    <g filter="url(#glow)">
-      <rect x="-30" y="-50" width="60" height="120" fill="#0ea5e9" opacity="0.85"/>
+    <g stroke="#ffffff" stroke-width="3" opacity="0.82">
+      <line x1="0" y1="0" x2="0" y2="-200"/>
+      <line x1="0" y1="0" x2="-180" y2="80"/>
+      <line x1="0" y1="0" x2="180" y2="80"/>
+      <line x1="0" y1="0" x2="0" y2="120"/>
     </g>
-    <circle cx="0" cy="0" r="22" fill="#0ea5e9">
-      <animate attributeName="r" values="22;28;22" dur="3s" repeatCount="indefinite"/>
+
+    <circle cx="0" cy="0" r="15" fill="#fbbf24">
+      <animate attributeName="r" values="15;20;15" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="fill-opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite"/>
     </circle>
 
-    <!-- secondary peaks -->
-    <g opacity="0.7">
-      <rect x="-280" y="-20" width="14" height="50" fill="#38bdf8"/>
-      <rect x="240" y="-30" width="22" height="60" fill="#38bdf8"/>
+    <g transform="translate(0, -140)" filter="url(#glow)">
+      <rect x="-260" y="-10" width="520" height="20" rx="10" fill="url(#spectrumGrad)" opacity="0.8"/>
     </g>
 
-    <!-- baseline label -->
-    <text x="-460" y="-50" font-family="monospace" font-size="13" fill="#a0afb7">INTENSITY (a.u.)</text>
-    <text x="460" y="-50" font-family="monospace" font-size="13" fill="#a0afb7" text-anchor="end">λ (nm)</text>
+    <g transform="translate(0, 220)">
+      <rect x="-240" y="-35" width="480" height="70" rx="12" fill="#0f172a" fill-opacity="0.9" stroke="#38bdf8" stroke-opacity="0.4"/>
+      <text text-anchor="middle" dominant-baseline="middle" font-family="'Times New Roman', Times, serif" font-size="24" fill="#ffffff">
+        <tspan font-style="italic">t</tspan><tspan baseline-shift="super" font-size="16">^</tspan>
+        <tspan dx="14">=</tspan>
+        <tspan dx="14" font-style="italic">f</tspan><tspan>(</tspan>
+        <tspan font-style="italic">c⃗</tspan><tspan>, </tspan>
+        <tspan font-style="italic">I</tspan><tspan baseline-shift="sub" font-size="16">illum</tspan><tspan>, </tspan>
+        <tspan font-style="italic">S</tspan><tspan baseline-shift="sub" font-size="16">ref</tspan><tspan>)</tspan>
+      </text>
+    </g>
 
-    <!-- caption -->
-    <text x="0" y="160" font-family="monospace" font-size="14" fill="#38bdf8" text-anchor="middle">PRIMARY EMISSION @ λ₀ · FWHM Δλ</text>
+    <text y="320" font-family="monospace" font-size="18" fill="#a78bfa" text-anchor="middle">THIN-FILM DOI · SURFACE ROUGHNESS · COLORIMETRIC THICKNESS CHECK</text>
   </g>
 
   <g stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5">
     <path d="M 50,50 L 150,50 M 50,50 L 50,150"/>
-    <path d="M 1870,50 L 1770,50 M 1870,50 M 1870,150"/>
+    <path d="M 1870,50 L 1770,50 M 1870,50 L 1870,150"/>
     <path d="M 50,1030 L 150,1030 M 50,1030 L 50,930"/>
-    <path d="M 1870,1030 L 1770,1030 M 1870,1030 M 1870,930"/>
+    <path d="M 1870,1030 L 1770,1030 M 1870,1030 L 1870,930"/>
   </g>
 
   <g transform="translate(960, 1010)" text-anchor="middle" font-family="sans-serif">
