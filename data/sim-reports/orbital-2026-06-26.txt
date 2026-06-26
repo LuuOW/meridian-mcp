@@ -1,0 +1,88 @@
+
+=========================================================
+ Orbital classifier — calibration simulation
+ baseline (current) vs variant (proposed)
+=========================================================
+
+[1/3] archetype recall@1 (30 trials ×  12 archetypes)
+
+  archetype                          expect      baseline → variant
+  --------------------------------   --------    ----------------------------
+  planet/anchor-forge                planet      ✓ planet:83% trojan:10%        ✓ planet:83% trojan:10%
+  planet/anchor-mind                 planet      ✓ planet:97% trojan:3%         ✓ planet:97% trojan:3%
+  planet/anchor-signal               planet      ✓ planet:87% trojan:13%        ✓ planet:87% trojan:10%
+  asteroid/short-niche-forge         asteroid    ✗ moon:50% asteroid:50%        ✗ moon:50% asteroid:50%
+  asteroid/short-niche-mind          asteroid    ✓ asteroid:70% moon:27%        ✓ asteroid:70% moon:27%
+  asteroid/short-niche-signal        asteroid    ✓ asteroid:70% moon:30%        ✓ asteroid:70% moon:30%
+  moon/satellite-forge               moon        ✗ asteroid:40% moon:40%        ✗ asteroid:40% moon:40%
+  moon/satellite-mind                moon        ✗ asteroid:60% moon:30%        ✗ asteroid:60% moon:30%
+  comet/specialist                   comet       ✗ planet:90% comet:10%         ✗ planet:90% comet:10%
+  irregular/forge-mind               irregular   ✓ irregular:100%               ✓ irregular:100%
+  irregular/signal-mind              irregular   ✓ irregular:100%               ✓ irregular:100%
+  irregular/forge-signal             irregular   ✓ irregular:100%               ✓ irregular:100%
+
+  baseline recall@1: 8/12 = 66.7%
+  variant  recall@1: 8/12 = 66.7%
+
+[2/3] length bias — classes across body-length sweep
+
+  baseline:
+  archetype                          200ch  400ch  800ch  1500ch 2500ch 3000ch
+  --------------------------------   ----------------------------------------------
+  planet/anchor-forge                astero planet planet planet planet planet
+  planet/anchor-mind                 astero planet planet planet planet planet
+  planet/anchor-signal               astero planet trojan planet planet planet
+  asteroid/short-niche-forge         astero astero planet moon   trojan planet
+  asteroid/short-niche-mind          astero moon   moon   moon   moon   trojan
+  asteroid/short-niche-signal        astero moon   trojan moon   moon   trojan
+  moon/satellite-forge               astero astero planet moon   trojan moon  
+  moon/satellite-mind                astero astero trojan trojan moon   trojan
+  comet/specialist                   comet  comet  comet  comet  planet planet
+  irregular/forge-mind               irregu irregu irregu irregu irregu irregu
+  irregular/signal-mind              irregu irregu irregu irregu irregu irregu
+  irregular/forge-signal             irregu irregu irregu irregu irregu irregu
+
+  variant:
+  archetype                          200ch  400ch  800ch  1500ch 2500ch 3000ch
+  --------------------------------   ----------------------------------------------
+  planet/anchor-forge                astero planet planet planet planet planet
+  planet/anchor-mind                 astero planet planet planet planet planet
+  planet/anchor-signal               astero planet moon   planet planet planet
+  asteroid/short-niche-forge         astero astero planet moon   trojan planet
+  asteroid/short-niche-mind          astero moon   moon   moon   moon   trojan
+  asteroid/short-niche-signal        astero moon   trojan moon   moon   trojan
+  moon/satellite-forge               astero astero planet moon   trojan moon  
+  moon/satellite-mind                astero astero trojan trojan moon   trojan
+  comet/specialist                   comet  comet  comet  comet  planet planet
+  irregular/forge-mind               irregu irregu irregu irregu irregu irregu
+  irregular/signal-mind              irregu irregu irregu irregu irregu irregu
+  irregular/forge-signal             irregu irregu irregu irregu irregu irregu
+
+  pearson(length, planet-flag):  baseline 0.220  →  variant 0.220
+
+[3/3] sibling perturbation stability
+
+  archetype                          baseline (modal · stable?)   variant
+  --------------------------------   --------------------------   --------------------------
+  planet/anchor-forge                planet@75%        3cls   planet@75%        3cls
+  planet/anchor-mind                 planet@83.3%      2cls   planet@83.3%      2cls
+  planet/anchor-signal               planet@83.3%      3cls   planet@83.3%      3cls
+  asteroid/short-niche-forge         asteroid@66.7%    2cls   asteroid@66.7%    2cls
+  asteroid/short-niche-mind          asteroid@58.3%    2cls   asteroid@58.3%    2cls
+  asteroid/short-niche-signal        asteroid@66.7%    2cls   asteroid@66.7%    2cls
+  moon/satellite-forge               moon@50%          3cls   moon@50%          3cls
+  moon/satellite-mind                moon@50%          3cls   moon@50%          3cls
+  comet/specialist                   planet@100%     ✓ 1cls   planet@100%     ✓ 1cls
+  irregular/forge-mind               irregular@100%  ✓ 1cls   irregular@100%  ✓ 1cls
+  irregular/signal-mind              irregular@100%  ✓ 1cls   irregular@100%  ✓ 1cls
+  irregular/forge-signal             irregular@100%  ✓ 1cls   irregular@100%  ✓ 1cls
+
+  fully-stable archetypes: baseline 4/12  →  variant 4/12
+
+[dist] class distribution across all 432 runs (baseline → variant)
+  planet      29.2% →  29.2%  ███████████████
+  moon        15.3% →  15.7%  ████████
+  trojan       6.3% →   5.8%  ███
+  asteroid    22.7% →  22.7%  ███████████
+  comet        1.6% →   1.6%  █
+  irregular   25.0% →  25.0%  █████████████
