@@ -1,0 +1,30 @@
+
+=========================================================
+ Helix recommendation-quality simulation
+ endpoint: https://mcp.ask-meridian.uk/v1/helix
+ trials per injury: 1
+ gold-set size: 19 injuries
+=========================================================
+
+  ✗ Deep corneal abrasion with photophobia after a foreign body … — fetch failed
+  ✗ Second-degree skin burn on the forearm, partial thickness… — fetch failed
+  ✗ Chronic dry eye disease with stinging and inflammation… — fetch failed
+  ✗ Oral mucositis after chemotherapy… — fetch failed
+  ✗ Diabetic foot ulcer with slow granulation… — fetch failed
+  ✗ Corneal endothelial cell loss after intraocular surgery… — fetch failed
+  ✗ Corneal nerve density reduction after LASIK… — fetch failed
+  ✗ Surface skin abrasion needing rapid re-epithelialization… — fetch failed
+  ✗ Bacterial conjunctivitis with mucopurulent discharge… — fetch failed
+  ✗ Protease over-activity blocking healing in a chronic wound b… — fetch failed
+  ✗ Sjögren's-related ocular surface dryness with goblet-cell lo… — fetch failed
+  ✗ Peripheral nerve transection — promote axonal regeneration… — fetch failed
+  ✗ Severe ocular surface chemical trauma… — fetch failed
+  ✗ Burn-induced dermal fibrosis prevention… — fetch failed
+  ✗ Wound bed angiogenesis stimulation in a thick laceration… — fetch failed
+  ✗ Lacrimal gland dysfunction with persistent ocular dryness… — fetch failed
+  ✗ Recurrent corneal erosion syndrome… — fetch failed
+  ✗ Neutrophil-driven chronic inflammation needing protease cont… — fetch failed
+  ✗ Mild dry eye complaints in a contact-lens wearer… — fetch failed
+
+  no successful calls — check endpoint availability or auth.
+
